@@ -1389,13 +1389,13 @@ parameters:
 		-
 			rawMessage: Access to internal property TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::$user from outside its root namespace TYPO3.
 			identifier: property.internal
-			count: 2
+			count: 3
 			path: Classes/Security/AccessControlService.php
 
 		-
 			rawMessage: Cannot cast mixed to int.
 			identifier: cast.int
-			count: 1
+			count: 2
 			path: Classes/Security/AccessControlService.php
 
 		-

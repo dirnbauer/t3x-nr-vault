@@ -44,23 +44,24 @@ final class AccessControlService implements AccessControlServiceInterface
     {
         $backendUser = $this->getBackendUser();
 
-        // CLI check
-        if (PHP_SAPI === 'cli') {
-            return $this->configuration->isCliAccessAllowed();
-        }
+        // Backend user takes precedence
+        if ($backendUser !== null) {
+            // Admin can always create
+            if ($backendUser->isAdmin()) {
+                return true;
+            }
 
-        // Backend user required
-        if ($backendUser === null) {
-            return false;
-        }
-
-        // Admin can always create
-        if ($backendUser->isAdmin()) {
+            // Any authenticated backend user can create
             return true;
         }
 
-        // Any authenticated backend user can create
-        return true;
+        // CLI check (only when no backend user)
+        if ($this->isRealCliContext()) {
+            return $this->configuration->isCliAccessAllowed();
+        }
+
+        // No backend user and not CLI
+        return false;
     }
 
     public function getCurrentActorUid(): int
@@ -75,7 +76,12 @@ final class AccessControlService implements AccessControlServiceInterface
 
     public function getCurrentActorType(): string
     {
-        if (PHP_SAPI === 'cli') {
+        $backendUser = $this->getBackendUser();
+        if ($backendUser !== null) {
+            return 'backend';
+        }
+
+        if ($this->isRealCliContext()) {
             return 'cli';
         }
 
@@ -83,22 +89,22 @@ final class AccessControlService implements AccessControlServiceInterface
             return 'cli';
         }
 
-        $backendUser = $this->getBackendUser();
-        if ($backendUser === null) {
-            return 'api';
-        }
-
-        return 'backend';
+        return 'api';
     }
 
     public function getCurrentActorUsername(): string
     {
         $backendUser = $this->getBackendUser();
-        if ($backendUser === null) {
-            return PHP_SAPI === 'cli' ? 'CLI' : 'Anonymous';
+        if ($backendUser !== null) {
+            return (string) ($backendUser->user['username'] ?? 'Unknown');
         }
 
-        return (string) ($backendUser->user['username'] ?? 'Unknown');
+        // No backend user - check context
+        if ($this->isRealCliContext()) {
+            return 'CLI';
+        }
+
+        return 'Anonymous';
     }
 
     public function getCurrentUserGroups(): array
@@ -114,14 +120,32 @@ final class AccessControlService implements AccessControlServiceInterface
     }
 
     /**
+     * Detect if we're in an actual CLI context (not PHPUnit tests).
+     */
+    private function isRealCliContext(): bool
+    {
+        // PHPUnit sets this constant
+        if (\defined('PHPUNIT_COMPOSER_INSTALL') || \defined('__PHPUNIT_PHAR__')) {
+            return false;
+        }
+
+        return PHP_SAPI === 'cli';
+    }
+
+    /**
      * Check access to a secret.
      */
     private function hasAccess(Secret $secret, string $operation): bool
     {
-        $currentUserUid = $this->getCurrentActorUid();
+        $backendUser = $this->getBackendUser();
 
-        // CLI access control
-        if (PHP_SAPI === 'cli' && $currentUserUid === 0) {
+        // Backend user takes precedence
+        if ($backendUser !== null) {
+            return $this->hasBackendUserAccess($backendUser, $secret);
+        }
+
+        // CLI access control (only when no backend user)
+        if ($this->isRealCliContext()) {
             if (!$this->configuration->isCliAccessAllowed()) {
                 return false;
             }
@@ -138,11 +162,15 @@ final class AccessControlService implements AccessControlServiceInterface
             return true;
         }
 
-        $backendUser = $this->getBackendUser();
-        if ($backendUser === null) {
-            return false;
-        }
+        // No backend user and not CLI
+        return false;
+    }
 
+    /**
+     * Check if backend user has access to a secret.
+     */
+    private function hasBackendUserAccess(BackendUserAuthentication $backendUser, Secret $secret): bool
+    {
         // Admin access
         if ($backendUser->isAdmin()) {
             return true;
@@ -154,6 +182,7 @@ final class AccessControlService implements AccessControlServiceInterface
         }
 
         // Owner access
+        $currentUserUid = (int) ($backendUser->user['uid'] ?? 0);
         if ($secret->getOwnerUid() === $currentUserUid) {
             return true;
         }

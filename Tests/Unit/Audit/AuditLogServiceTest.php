@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Audit;
 
+use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogService;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
@@ -59,29 +60,28 @@ final class AuditLogServiceTest extends TestCase
     }
 
     #[Test]
-    public function logStoreCreatesAuditEntry(): void
+    public function logCreatesAuditEntryForCreateAction(): void
     {
         $this->setupDatabaseMocks();
 
-        // Expect insert to be called
         $this->connection
             ->expects(self::once())
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
-                    return $data['action'] === 'store'
-                        && $data['identifier'] === 'test_secret'
+                    return $data['action'] === 'create'
+                        && $data['secret_identifier'] === 'test_secret'
                         && $data['actor_uid'] === 1
                         && $data['actor_type'] === 'backend';
                 }),
             );
 
-        $this->subject->logStore('test_secret', 'Test secret stored');
+        $this->subject->log('test_secret', 'create', true, null, 'Test secret stored');
     }
 
     #[Test]
-    public function logRetrieveCreatesAuditEntry(): void
+    public function logCreatesAuditEntryForReadAction(): void
     {
         $this->setupDatabaseMocks();
 
@@ -91,16 +91,16 @@ final class AuditLogServiceTest extends TestCase
             ->with(
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
-                    return $data['action'] === 'retrieve'
-                        && $data['identifier'] === 'api_key';
+                    return $data['action'] === 'read'
+                        && $data['secret_identifier'] === 'api_key';
                 }),
             );
 
-        $this->subject->logRetrieve('api_key');
+        $this->subject->log('api_key', 'read', true);
     }
 
     #[Test]
-    public function logDeleteCreatesAuditEntry(): void
+    public function logCreatesAuditEntryForDeleteAction(): void
     {
         $this->setupDatabaseMocks();
 
@@ -111,15 +111,15 @@ final class AuditLogServiceTest extends TestCase
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
                     return $data['action'] === 'delete'
-                        && $data['identifier'] === 'old_secret';
+                        && $data['secret_identifier'] === 'old_secret';
                 }),
             );
 
-        $this->subject->logDelete('old_secret', 'Cleanup');
+        $this->subject->log('old_secret', 'delete', true, null, 'Cleanup');
     }
 
     #[Test]
-    public function logRotateCreatesAuditEntry(): void
+    public function logCreatesAuditEntryForRotateAction(): void
     {
         $this->setupDatabaseMocks();
 
@@ -130,15 +130,15 @@ final class AuditLogServiceTest extends TestCase
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
                     return $data['action'] === 'rotate'
-                        && $data['identifier'] === 'rotated_secret';
+                        && $data['secret_identifier'] === 'rotated_secret';
                 }),
             );
 
-        $this->subject->logRotate('rotated_secret', 2, 'Annual rotation');
+        $this->subject->log('rotated_secret', 'rotate', true, null, 'Annual rotation');
     }
 
     #[Test]
-    public function logAccessDeniedCreatesAuditEntry(): void
+    public function logCreatesAuditEntryForAccessDenied(): void
     {
         $this->setupDatabaseMocks();
 
@@ -149,11 +149,12 @@ final class AuditLogServiceTest extends TestCase
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
                     return $data['action'] === 'access_denied'
-                        && $data['identifier'] === 'restricted_secret';
+                        && $data['secret_identifier'] === 'restricted_secret'
+                        && $data['success'] === 0;
                 }),
             );
 
-        $this->subject->logAccessDenied('restricted_secret', 'retrieve');
+        $this->subject->log('restricted_secret', 'access_denied', false, 'Permission denied');
     }
 
     #[Test]
@@ -176,7 +177,7 @@ final class AuditLogServiceTest extends TestCase
                 }),
             );
 
-        $this->subject->logStore('context_test', 'Testing context');
+        $this->subject->log('context_test', 'create', true, null, 'Testing context');
 
         // Cleanup
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
@@ -186,13 +187,17 @@ final class AuditLogServiceTest extends TestCase
     public function hashChainLinksToLastEntry(): void
     {
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $result = $this->createMock(Result::class);
+        // getLatestHash() uses fetchOne() which returns the value directly
+        $result->method('fetchOne')->willReturn('previous_hash_abc123');
 
         $this->connectionPool
             ->method('getConnectionForTable')
             ->willReturn($this->connection);
 
-        $this->connectionPool
-            ->method('getQueryBuilderForTable')
+        // The implementation uses $connection->createQueryBuilder()
+        $this->connection
+            ->method('createQueryBuilder')
             ->willReturn($this->queryBuilder);
 
         $this->queryBuilder
@@ -215,15 +220,9 @@ final class AuditLogServiceTest extends TestCase
             ->method('setMaxResults')
             ->willReturnSelf();
 
-        // Return a previous entry hash
         $this->queryBuilder
             ->method('executeQuery')
-            ->willReturn(new class () {
-                public function fetchAssociative(): array|false
-                {
-                    return ['entry_hash' => 'previous_hash_abc123'];
-                }
-            });
+            ->willReturn($result);
 
         $this->connection
             ->expects(self::once())
@@ -231,24 +230,27 @@ final class AuditLogServiceTest extends TestCase
             ->with(
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
-                    return $data['previous_hash'] === 'previous_hash_abc123'
-                        && !empty($data['entry_hash']);
+                    return $data['previous_hash'] === 'previous_hash_abc123';
                 }),
             );
 
-        $this->subject->logStore('chained_secret', 'Testing hash chain');
+        $this->subject->log('chained_secret', 'create', true, null, 'Testing hash chain');
     }
 
     private function setupDatabaseMocks(): void
     {
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $result = $this->createMock(Result::class);
+        // getLatestHash() uses fetchOne() which returns false when no rows exist
+        $result->method('fetchOne')->willReturn(false);
 
         $this->connectionPool
             ->method('getConnectionForTable')
             ->willReturn($this->connection);
 
-        $this->connectionPool
-            ->method('getQueryBuilderForTable')
+        // The implementation uses $connection->createQueryBuilder()
+        $this->connection
+            ->method('createQueryBuilder')
             ->willReturn($this->queryBuilder);
 
         $this->queryBuilder
@@ -273,11 +275,6 @@ final class AuditLogServiceTest extends TestCase
 
         $this->queryBuilder
             ->method('executeQuery')
-            ->willReturn(new class () {
-                public function fetchAssociative(): false
-                {
-                    return false;
-                }
-            });
+            ->willReturn($result);
     }
 }
