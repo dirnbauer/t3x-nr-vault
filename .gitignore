@@ -24,3 +24,4 @@ composer.lock
 /.phpunit.result.cache
 /coverage/
 Tests/Build/.phpunit.cache/
+.php-cs-fixer.cache
