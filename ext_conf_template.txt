@@ -1,0 +1,69 @@
+####################
+### STORAGE ###
+####################
+
+# cat=Storage; type=options[local,hashicorp,aws]; label=Storage Adapter: Backend storage for encrypted secrets (local = database, hashicorp = HashiCorp Vault, aws = AWS Secrets Manager)
+storageAdapter = local
+
+#################
+### MASTER KEY ###
+#################
+
+# cat=Master Key; type=options[typo3=TYPO3 Encryption Key,file=External File,env=Environment Variable]; label=Master Key Provider: Source of the master encryption key
+masterKeyProvider = typo3
+
+# cat=Master Key; type=string; label=Master Key Source: File path (for 'file' provider) or environment variable name (for 'env' provider). Ignored when using 'typo3' provider.
+masterKeySource = NR_VAULT_MASTER_KEY
+
+###################
+### ENCRYPTION ###
+###################
+
+# cat=Encryption; type=boolean; label=Prefer XChaCha20-Poly1305: Use XChaCha20-Poly1305 instead of AES-256-GCM for encryption. XChaCha20 provides larger nonce and is misuse-resistant.
+preferXChaCha20 = 0
+
+#################
+### SECURITY ###
+#################
+
+# cat=Security; type=boolean; label=Allow CLI Access: Enable secret access via CLI commands (requires proper authentication)
+allowCliAccess = 0
+
+# cat=Security; type=string; label=CLI Access Groups: Comma-separated list of backend user group IDs allowed CLI access
+cliAccessGroups =
+
+# cat=Security; type=int+; label=Audit Log Retention (days): Number of days to keep audit log entries (0 = forever)
+auditLogRetention = 365
+
+##################
+### PERFORMANCE ###
+##################
+
+# cat=Performance; type=boolean; label=Enable Cache: Enable request-scoped caching of decrypted secrets
+cacheEnabled = 1
+
+########################
+### HASHICORP VAULT ###
+########################
+
+# cat=HashiCorp Vault; type=string; label=Vault Address: HashiCorp Vault server address (e.g., https://vault.example.com:8200)
+hashicorp.address =
+
+# cat=HashiCorp Vault; type=string; label=Secret Path: Path prefix for secrets in Vault (e.g., secret/data/typo3)
+hashicorp.path = secret/data/typo3
+
+# cat=HashiCorp Vault; type=options[token,kubernetes,approle]; label=Auth Method: Authentication method for Vault
+hashicorp.authMethod = token
+
+# cat=HashiCorp Vault; type=string; label=Token: Vault token (only for token auth method). Use environment variable VAULT_TOKEN in production.
+hashicorp.token =
+
+################################
+### AWS SECRETS MANAGER ###
+################################
+
+# cat=AWS Secrets Manager; type=string; label=AWS Region: AWS region for Secrets Manager (e.g., eu-central-1)
+aws.region =
+
+# cat=AWS Secrets Manager; type=string; label=Secret Prefix: Prefix for secret names in AWS Secrets Manager
+aws.secretPrefix = typo3/

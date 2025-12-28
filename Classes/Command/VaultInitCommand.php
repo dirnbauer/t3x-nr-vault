@@ -54,13 +54,24 @@ final class VaultInitCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
+        // Check if using typo3 provider (no init needed)
+        $provider = $this->configuration->getMasterKeyProvider();
+        if ($provider === 'typo3' && !$input->getOption('output') && !$input->getOption('env')) {
+            $io->success('No initialization needed. Using TYPO3 encryption key as master key provider.');
+            $io->note('To use a different provider, configure masterKeyProvider in extension settings.');
+
+            return Command::SUCCESS;
+        }
+
         // Determine output location
         $outputFile = $input->getOption('output');
         $outputEnv = $input->getOption('env');
 
         if ($outputFile === null && !$outputEnv) {
-            // Use configured path or default
-            $outputFile = $this->configuration->getMasterKeyPath();
+            // Use configured source (file path) or default
+            $source = $this->configuration->getMasterKeySource();
+            // Only use source if it looks like a path (contains / or \)
+            $outputFile = (str_contains($source, '/') || str_contains($source, '\\')) ? $source : '';
             if ($outputFile === '') {
                 $outputFile = \TYPO3\CMS\Core\Core\Environment::getVarPath() . '/vault/master.key';
             }
