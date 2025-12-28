@@ -1,0 +1,25 @@
+# IDE/Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.obsidian/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts (future)
+/vendor/
+/var/
+/.Build/
+/public/
+composer.lock
+
+# Rust (future)
+/rust/target/
+*.so
+
+# Testing
+/.phpunit.result.cache
+/coverage/
