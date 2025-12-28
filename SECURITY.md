@@ -14,9 +14,9 @@ We take security vulnerabilities in nr-vault seriously. If you discover a securi
 
 **DO NOT** create a public GitHub issue for security vulnerabilities.
 
-Instead, please report security vulnerabilities by emailing:
+Use GitHub's private security reporting feature:
 
-**security@netresearch.de**
+**[Report a vulnerability](https://github.com/netresearch/t3x-nr-vault/security/advisories/new)**
 
 Include the following information:
 - Description of the vulnerability
