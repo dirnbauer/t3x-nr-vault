@@ -17,6 +17,10 @@ use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
+use Netresearch\NrVault\Event\SecretAccessedEvent;
+use Netresearch\NrVault\Event\SecretCreatedEvent;
+use Netresearch\NrVault\Event\SecretDeletedEvent;
+use Netresearch\NrVault\Event\SecretRotatedEvent;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
@@ -26,6 +30,7 @@ use Netresearch\NrVault\Http\VaultHttpClient;
 use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**
@@ -42,6 +47,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly AccessControlServiceInterface $accessControlService,
         private readonly AuditLogServiceInterface $auditLogService,
         private readonly ExtensionConfiguration $configuration,
+        private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }
 
@@ -54,86 +60,97 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             throw ValidationException::emptySecret();
         }
 
-        // Encrypt the secret
-        $encrypted = $this->encryptionService->encrypt($secret, $identifier);
+        try {
+            // Encrypt the secret
+            $encrypted = $this->encryptionService->encrypt($secret, $identifier);
 
-        // Build secret entity
-        $secretEntity = new Secret();
-        $secretEntity->setIdentifier($identifier);
-        $secretEntity->setEncryptedValue($encrypted['encrypted_value']);
-        $secretEntity->setEncryptedDek($encrypted['encrypted_dek']);
-        $secretEntity->setDekNonce($encrypted['dek_nonce']);
-        $secretEntity->setValueNonce($encrypted['value_nonce']);
-        $secretEntity->setValueChecksum($encrypted['value_checksum']);
-        $secretEntity->setAdapter('local');
+            // Build secret entity
+            $secretEntity = new Secret();
+            $secretEntity->setIdentifier($identifier);
+            $secretEntity->setEncryptedValue($encrypted['encrypted_value']);
+            $secretEntity->setEncryptedDek($encrypted['encrypted_dek']);
+            $secretEntity->setDekNonce($encrypted['dek_nonce']);
+            $secretEntity->setValueNonce($encrypted['value_nonce']);
+            $secretEntity->setValueChecksum($encrypted['value_checksum']);
+            $secretEntity->setAdapter('local');
 
-        // Apply options
-        if (isset($options['owner'])) {
-            $secretEntity->setOwnerUid((int)$options['owner']);
-        } else {
-            $secretEntity->setOwnerUid($this->accessControlService->getCurrentActorUid());
-        }
-
-        if (isset($options['groups'])) {
-            $secretEntity->setAllowedGroups((array)$options['groups']);
-        }
-
-        if (isset($options['context'])) {
-            $secretEntity->setContext((string)$options['context']);
-        }
-
-        if (isset($options['description'])) {
-            $secretEntity->setDescription((string)$options['description']);
-        }
-
-        if (isset($options['metadata'])) {
-            $secretEntity->setMetadata((array)$options['metadata']);
-        }
-
-        if (isset($options['pid'])) {
-            $secretEntity->setPid((int)$options['pid']);
-        }
-
-        if (isset($options['expiresAt'])) {
-            $expiresAt = $options['expiresAt'];
-            if ($expiresAt instanceof \DateTimeInterface) {
-                $expiresAt = $expiresAt->getTimestamp();
+            // Apply options
+            if (isset($options['owner'])) {
+                $secretEntity->setOwnerUid((int)$options['owner']);
+            } else {
+                $secretEntity->setOwnerUid($this->accessControlService->getCurrentActorUid());
             }
-            $secretEntity->setExpiresAt((int)$expiresAt);
+
+            if (isset($options['groups'])) {
+                $secretEntity->setAllowedGroups((array)$options['groups']);
+            }
+
+            if (isset($options['context'])) {
+                $secretEntity->setContext((string)$options['context']);
+            }
+
+            if (isset($options['description'])) {
+                $secretEntity->setDescription((string)$options['description']);
+            }
+
+            if (isset($options['metadata'])) {
+                $secretEntity->setMetadata((array)$options['metadata']);
+            }
+
+            if (isset($options['pid'])) {
+                $secretEntity->setPid((int)$options['pid']);
+            }
+
+            if (isset($options['expiresAt'])) {
+                $expiresAt = $options['expiresAt'];
+                if ($expiresAt instanceof \DateTimeInterface) {
+                    $expiresAt = $expiresAt->getTimestamp();
+                }
+                $secretEntity->setExpiresAt((int)$expiresAt);
+            }
+
+            // Check if updating existing
+            $existing = $this->adapter->retrieve($identifier);
+            $isNew = $existing === null;
+
+            if (!$isNew) {
+                $secretEntity->setUid($existing->getUid());
+                $secretEntity->setCrdate($existing->getCrdate());
+                $secretEntity->setVersion($existing->getVersion());
+            } else {
+                $secretEntity->setCrdate(time());
+                $secretEntity->setCruserId($this->accessControlService->getCurrentActorUid());
+            }
+
+            // Store the secret
+            $this->adapter->store($secretEntity);
+
+            // Log the action
+            $this->auditLogService->log(
+                $identifier,
+                $isNew ? 'create' : 'update',
+                true,
+                null,
+                null,
+                $isNew ? null : $existing->getValueChecksum(),
+                $encrypted['value_checksum']
+            );
+
+            // Dispatch PSR-14 event for new secrets
+            if ($isNew) {
+                $this->eventDispatcher?->dispatch(new SecretCreatedEvent(
+                    $identifier,
+                    $secretEntity,
+                    $this->accessControlService->getCurrentActorUid(),
+                ));
+            }
+
+            // Clear cache
+            unset($this->cache[$identifier]);
+        } finally {
+            // Securely wipe the plaintext even if an exception occurred
+            sodium_memzero($secret);
         }
-
-        // Check if updating existing
-        $existing = $this->adapter->retrieve($identifier);
-        $isNew = $existing === null;
-
-        if (!$isNew) {
-            $secretEntity->setUid($existing->getUid());
-            $secretEntity->setCrdate($existing->getCrdate());
-            $secretEntity->setVersion($existing->getVersion());
-        } else {
-            $secretEntity->setCrdate(time());
-            $secretEntity->setCruserId($this->accessControlService->getCurrentActorUid());
-        }
-
-        // Store the secret
-        $this->adapter->store($secretEntity);
-
-        // Log the action
-        $this->auditLogService->log(
-            $identifier,
-            $isNew ? 'create' : 'update',
-            true,
-            null,
-            null,
-            $isNew ? null : $existing->getValueChecksum(),
-            $encrypted['value_checksum']
-        );
-
-        // Clear cache
-        unset($this->cache[$identifier]);
-
-        // Securely wipe the plaintext
-        sodium_memzero($secret);
     }
 
     public function retrieve(string $identifier): ?string
@@ -182,6 +199,13 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         // Log success
         $this->auditLogService->log($identifier, 'read', true);
 
+        // Dispatch PSR-14 event
+        $this->eventDispatcher?->dispatch(new SecretAccessedEvent(
+            $identifier,
+            $this->accessControlService->getCurrentActorUid(),
+            $secret->getContext(),
+        ));
+
         // Cache for this request
         if ($this->configuration->isCacheEnabled()) {
             $this->cache[$identifier] = $plaintext;
@@ -224,6 +248,13 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             null
         );
 
+        // Dispatch PSR-14 event
+        $this->eventDispatcher?->dispatch(new SecretDeletedEvent(
+            $identifier,
+            $this->accessControlService->getCurrentActorUid(),
+            $reason,
+        ));
+
         // Clear cache
         unset($this->cache[$identifier]);
     }
@@ -245,39 +276,49 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             throw ValidationException::emptySecret();
         }
 
-        $hashBefore = $secret->getValueChecksum();
+        try {
+            $hashBefore = $secret->getValueChecksum();
 
-        // Encrypt the new secret
-        $encrypted = $this->encryptionService->encrypt($newSecret, $identifier);
+            // Encrypt the new secret
+            $encrypted = $this->encryptionService->encrypt($newSecret, $identifier);
 
-        // Update secret
-        $secret->setEncryptedValue($encrypted['encrypted_value']);
-        $secret->setEncryptedDek($encrypted['encrypted_dek']);
-        $secret->setDekNonce($encrypted['dek_nonce']);
-        $secret->setValueNonce($encrypted['value_nonce']);
-        $secret->setValueChecksum($encrypted['value_checksum']);
-        $secret->incrementVersion();
-        $secret->setLastRotatedAt(time());
+            // Update secret
+            $secret->setEncryptedValue($encrypted['encrypted_value']);
+            $secret->setEncryptedDek($encrypted['encrypted_dek']);
+            $secret->setDekNonce($encrypted['dek_nonce']);
+            $secret->setValueNonce($encrypted['value_nonce']);
+            $secret->setValueChecksum($encrypted['value_checksum']);
+            $secret->incrementVersion();
+            $secret->setLastRotatedAt(time());
 
-        // Store
-        $this->adapter->store($secret);
+            // Store
+            $this->adapter->store($secret);
 
-        // Log
-        $this->auditLogService->log(
-            $identifier,
-            'rotate',
-            true,
-            null,
-            $reason,
-            $hashBefore,
-            $encrypted['value_checksum']
-        );
+            // Log
+            $this->auditLogService->log(
+                $identifier,
+                'rotate',
+                true,
+                null,
+                $reason,
+                $hashBefore,
+                $encrypted['value_checksum']
+            );
 
-        // Clear cache
-        unset($this->cache[$identifier]);
+            // Dispatch PSR-14 event
+            $this->eventDispatcher?->dispatch(new SecretRotatedEvent(
+                $identifier,
+                $secret->getVersion(),
+                $this->accessControlService->getCurrentActorUid(),
+                $reason,
+            ));
 
-        // Securely wipe
-        sodium_memzero($newSecret);
+            // Clear cache
+            unset($this->cache[$identifier]);
+        } finally {
+            // Securely wipe the plaintext even if an exception occurred
+            sodium_memzero($newSecret);
+        }
     }
 
     public function list(?string $pattern = null): array

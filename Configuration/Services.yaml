@@ -24,6 +24,10 @@ services:
     public: true
 
   # Vault service
+  Netresearch\NrVault\Service\VaultService:
+    arguments:
+      $eventDispatcher: '@Psr\EventDispatcher\EventDispatcherInterface'
+
   Netresearch\NrVault\Service\VaultServiceInterface:
     alias: Netresearch\NrVault\Service\VaultService
     public: true
