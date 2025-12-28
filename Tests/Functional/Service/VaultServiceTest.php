@@ -35,9 +35,12 @@ final class VaultServiceTest extends FunctionalTestCase
 
     private ?string $masterKeyPath = null;
 
+    private bool $setupCompleted = false;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->setupCompleted = true;
 
         // Create a temporary master key for testing
         $this->masterKeyPath = $this->instancePath . '/master.key';
@@ -84,7 +87,10 @@ final class VaultServiceTest extends FunctionalTestCase
             unlink($this->masterKeyPath);
         }
 
-        parent::tearDown();
+        // Only call parent tearDown if setUp completed (instancePath is initialized)
+        if ($this->setupCompleted) {
+            parent::tearDown();
+        }
     }
 
     #[Test]
