@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="vaultGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2F99A4"/>
+      <stop offset="100%" style="stop-color:#267d86"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle with Netresearch primary color -->
+  <circle cx="32" cy="32" r="30" fill="url(#vaultGradient)"/>
+  <!-- Lock body -->
+  <rect x="18" y="28" width="28" height="22" rx="3" ry="3" fill="#ffffff"/>
+  <!-- Lock shackle -->
+  <path d="M24 28V22C24 16.477 28.477 12 34 12H30C24.477 12 20 16.477 20 22V28"
+        stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M40 28V22C40 16.477 35.523 12 30 12H34C39.523 12 44 16.477 44 22V28"
+        stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Keyhole -->
+  <circle cx="32" cy="37" r="4" fill="#2F99A4"/>
+  <rect x="30" y="37" width="4" height="8" fill="#2F99A4"/>
+  <!-- Accent dot (Netresearch orange) -->
+  <circle cx="52" cy="12" r="6" fill="#FF4D00"/>
+</svg>
