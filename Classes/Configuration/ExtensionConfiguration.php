@@ -14,6 +14,15 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
 {
     private const EXTENSION_KEY = 'nr_vault';
 
+    // Default values as constants for maintainability
+    public const DEFAULT_STORAGE_ADAPTER = 'local';
+    public const DEFAULT_MASTER_KEY_PROVIDER = 'typo3';
+    public const DEFAULT_MASTER_KEY_SOURCE = 'NR_VAULT_MASTER_KEY';
+    public const DEFAULT_AUDIT_LOG_RETENTION = 365;
+    public const DEFAULT_ALLOW_CLI_ACCESS = false;
+    public const DEFAULT_CACHE_ENABLED = true;
+    public const DEFAULT_PREFER_XCHACHA20 = false;
+
     private array $configuration;
 
     public function __construct(
@@ -23,35 +32,27 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
     }
 
     /**
-     * Get storage adapter identifier.
+     * Get storage adapter identifier (local, hashicorp, aws).
      */
-    public function getAdapter(): string
+    public function getStorageAdapter(): string
     {
-        return (string) ($this->configuration['adapter'] ?? 'local');
+        return (string) ($this->configuration['storageAdapter'] ?? self::DEFAULT_STORAGE_ADAPTER);
     }
 
     /**
-     * Get master key provider identifier.
+     * Get master key provider identifier (typo3, file, env, derived).
      */
     public function getMasterKeyProvider(): string
     {
-        return (string) ($this->configuration['masterKeyProvider'] ?? 'file');
+        return (string) ($this->configuration['masterKeyProvider'] ?? self::DEFAULT_MASTER_KEY_PROVIDER);
     }
 
     /**
-     * Get master key file path.
+     * Get master key source (file path for 'file', env var name for 'env').
      */
-    public function getMasterKeyPath(): string
+    public function getMasterKeySource(): string
     {
-        return (string) ($this->configuration['masterKeyPath'] ?? '');
-    }
-
-    /**
-     * Get master key environment variable name.
-     */
-    public function getMasterKeyEnvVar(): string
-    {
-        return (string) ($this->configuration['masterKeyEnvVar'] ?? 'NR_VAULT_MASTER_KEY');
+        return (string) ($this->configuration['masterKeySource'] ?? self::DEFAULT_MASTER_KEY_SOURCE);
     }
 
     /**
@@ -59,7 +60,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAuditLogRetention(): int
     {
-        return (int) ($this->configuration['auditLogRetention'] ?? 365);
+        return (int) ($this->configuration['auditLogRetention'] ?? self::DEFAULT_AUDIT_LOG_RETENTION);
     }
 
     /**
@@ -67,7 +68,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function isCliAccessAllowed(): bool
     {
-        return (bool) ($this->configuration['allowCliAccess'] ?? false);
+        return (bool) ($this->configuration['allowCliAccess'] ?? self::DEFAULT_ALLOW_CLI_ACCESS);
     }
 
     /**
@@ -90,7 +91,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function isCacheEnabled(): bool
     {
-        return (bool) ($this->configuration['cacheEnabled'] ?? true);
+        return (bool) ($this->configuration['cacheEnabled'] ?? self::DEFAULT_CACHE_ENABLED);
     }
 
     /**
@@ -98,7 +99,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function preferXChaCha20(): bool
     {
-        return (bool) ($this->configuration['preferXChaCha20'] ?? false);
+        return (bool) ($this->configuration['preferXChaCha20'] ?? self::DEFAULT_PREFER_XCHACHA20);
     }
 
     /**

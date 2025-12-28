@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Crypto;
 
+use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Exception\MasterKeyException;
 
@@ -110,9 +111,10 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
 
     private function getKeyPath(): string
     {
-        $configured = $this->configuration->getMasterKeyPath();
-        if ($configured !== '') {
-            return $configured;
+        $source = $this->configuration->getMasterKeySource();
+        // For file provider, source is the file path
+        if ($source !== '' && $source !== ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE) {
+            return $source;
         }
 
         return '';

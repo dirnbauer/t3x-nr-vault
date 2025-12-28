@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Crypto;
 
+use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Exception\MasterKeyException;
 
@@ -25,7 +26,7 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 
     public function isAvailable(): bool
     {
-        $varName = $this->configuration->getMasterKeyEnvVar();
+        $varName = $this->getEnvVarName();
         $value = getenv($varName);
 
         return $value !== false && $value !== '';
@@ -33,7 +34,7 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 
     public function getMasterKey(): string
     {
-        $varName = $this->configuration->getMasterKeyEnvVar();
+        $varName = $this->getEnvVarName();
         $value = getenv($varName);
 
         if ($value === false || $value === '') {
@@ -67,5 +68,12 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
     public function generateMasterKey(): string
     {
         return random_bytes(self::KEY_LENGTH);
+    }
+
+    private function getEnvVarName(): string
+    {
+        $source = $this->configuration->getMasterKeySource();
+        // For env provider, source is the environment variable name
+        return $source !== '' ? $source : ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE;
     }
 }

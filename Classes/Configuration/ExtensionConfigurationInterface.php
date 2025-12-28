@@ -10,24 +10,19 @@ namespace Netresearch\NrVault\Configuration;
 interface ExtensionConfigurationInterface
 {
     /**
-     * Get storage adapter identifier.
+     * Get storage adapter identifier (local, hashicorp, aws).
      */
-    public function getAdapter(): string;
+    public function getStorageAdapter(): string;
 
     /**
-     * Get master key provider identifier.
+     * Get master key provider identifier (typo3, file, env, derived).
      */
     public function getMasterKeyProvider(): string;
 
     /**
-     * Get master key file path.
+     * Get master key source (file path for 'file', env var name for 'env').
      */
-    public function getMasterKeyPath(): string;
-
-    /**
-     * Get master key environment variable name.
-     */
-    public function getMasterKeyEnvVar(): string;
+    public function getMasterKeySource(): string;
 
     /**
      * Get audit log retention days (0 = forever).

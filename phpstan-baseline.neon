@@ -741,7 +741,7 @@ parameters:
 		-
 			rawMessage: Cannot cast mixed to string.
 			identifier: cast.string
-			count: 4
+			count: 3
 			path: Classes/Configuration/ExtensionConfiguration.php
 
 		-
