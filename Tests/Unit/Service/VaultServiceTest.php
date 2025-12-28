@@ -1,0 +1,471 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Service;
+
+use Netresearch\NrVault\Adapter\VaultAdapterInterface;
+use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
+use Netresearch\NrVault\Domain\Model\Secret;
+use Netresearch\NrVault\Exception\AccessDeniedException;
+use Netresearch\NrVault\Exception\SecretExpiredException;
+use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Exception\ValidationException;
+use Netresearch\NrVault\Security\AccessControlServiceInterface;
+use Netresearch\NrVault\Service\VaultService;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(VaultService::class)]
+final class VaultServiceTest extends TestCase
+{
+    private VaultService $subject;
+    private VaultAdapterInterface&MockObject $adapter;
+    private EncryptionServiceInterface&MockObject $encryptionService;
+    private AccessControlServiceInterface&MockObject $accessControlService;
+    private AuditLogServiceInterface&MockObject $auditLogService;
+    private ExtensionConfiguration&MockObject $configuration;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->adapter = $this->createMock(VaultAdapterInterface::class);
+        $this->encryptionService = $this->createMock(EncryptionServiceInterface::class);
+        $this->accessControlService = $this->createMock(AccessControlServiceInterface::class);
+        $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
+        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+
+        $this->accessControlService
+            ->method('getCurrentActorUid')
+            ->willReturn(1);
+
+        $this->configuration
+            ->method('isCacheEnabled')
+            ->willReturn(false);
+
+        $this->subject = new VaultService(
+            $this->adapter,
+            $this->encryptionService,
+            $this->accessControlService,
+            $this->auditLogService,
+            $this->configuration,
+        );
+    }
+
+    #[Test]
+    public function storeEncryptsAndSavesSecret(): void
+    {
+        $identifier = 'myApiKey';
+        $secretValue = 'super-secret-value';
+
+        $this->encryptionService
+            ->expects(self::once())
+            ->method('encrypt')
+            ->with($secretValue, $identifier)
+            ->willReturn([
+                'encrypted_value' => 'enc_value',
+                'encrypted_dek' => 'enc_dek',
+                'dek_nonce' => 'nonce1',
+                'value_nonce' => 'nonce2',
+                'value_checksum' => 'checksum',
+            ]);
+
+        $this->adapter
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn(null);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static function (Secret $secret) use ($identifier): bool {
+                return $secret->getIdentifier() === $identifier
+                    && $secret->getEncryptedValue() === 'enc_value'
+                    && $secret->getEncryptedDek() === 'enc_dek';
+            }));
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log');
+
+        $this->subject->store($identifier, $secretValue);
+    }
+
+    #[Test]
+    public function storeRejectsEmptyIdentifier(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $this->subject->store('', 'secret');
+    }
+
+    #[Test]
+    public function storeRejectsEmptySecret(): void
+    {
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('empty');
+
+        $this->subject->store('validIdentifier', '');
+    }
+
+    #[Test]
+    public function retrieveDecryptsAndReturnsSecret(): void
+    {
+        $identifier = 'myApiKey';
+        $expectedValue = 'decrypted-secret';
+
+        $secret = $this->createSecretEntity($identifier);
+
+        $this->adapter
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->with($secret)
+            ->willReturn(true);
+
+        $this->encryptionService
+            ->expects(self::once())
+            ->method('decrypt')
+            ->willReturn($expectedValue);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static function (Secret $s): bool {
+                return $s->getReadCount() === 1
+                    && $s->getLastReadAt() > 0;
+            }));
+
+        $result = $this->subject->retrieve($identifier);
+
+        self::assertEquals($expectedValue, $result);
+    }
+
+    #[Test]
+    public function retrieveReturnsNullForNonExistentSecret(): void
+    {
+        $this->adapter
+            ->method('retrieve')
+            ->with('nonexistent')
+            ->willReturn(null);
+
+        $result = $this->subject->retrieve('nonexistent');
+
+        self::assertNull($result);
+    }
+
+    #[Test]
+    public function retrieveThrowsAccessDeniedWithoutPermission(): void
+    {
+        $secret = $this->createSecretEntity('restricted');
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(false);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log');
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->subject->retrieve('restricted');
+    }
+
+    #[Test]
+    public function retrieveThrowsExceptionForExpiredSecret(): void
+    {
+        $secret = $this->createSecretEntity('expired');
+        $secret->setExpiresAt(time() - 3600); // Expired 1 hour ago
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(true);
+
+        $this->expectException(SecretExpiredException::class);
+
+        $this->subject->retrieve('expired');
+    }
+
+    #[Test]
+    public function deleteRemovesSecretWithPermission(): void
+    {
+        $identifier = 'toDelete';
+        $secret = $this->createSecretEntity($identifier);
+
+        $this->adapter
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canDelete')
+            ->with($secret)
+            ->willReturn(true);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('delete')
+            ->with($identifier);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log');
+
+        $this->subject->delete($identifier, 'Test deletion');
+    }
+
+    #[Test]
+    public function deleteThrowsNotFoundForNonExistent(): void
+    {
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn(null);
+
+        $this->expectException(SecretNotFoundException::class);
+
+        $this->subject->delete('nonexistent');
+    }
+
+    #[Test]
+    public function deleteThrowsAccessDeniedWithoutPermission(): void
+    {
+        $secret = $this->createSecretEntity('protected');
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canDelete')
+            ->willReturn(false);
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->subject->delete('protected');
+    }
+
+    #[Test]
+    public function rotateUpdatesSecretValue(): void
+    {
+        $identifier = 'toRotate';
+        $newSecret = 'new-secret-value';
+        $secret = $this->createSecretEntity($identifier);
+        $secret->setVersion(1);
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canWrite')
+            ->willReturn(true);
+
+        $this->encryptionService
+            ->expects(self::once())
+            ->method('encrypt')
+            ->with($newSecret, $identifier)
+            ->willReturn([
+                'encrypted_value' => 'new_enc',
+                'encrypted_dek' => 'new_dek',
+                'dek_nonce' => 'new_nonce1',
+                'value_nonce' => 'new_nonce2',
+                'value_checksum' => 'new_checksum',
+            ]);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static function (Secret $s): bool {
+                return $s->getVersion() === 2
+                    && $s->getLastRotatedAt() > 0
+                    && $s->getEncryptedValue() === 'new_enc';
+            }));
+
+        $this->subject->rotate($identifier, $newSecret, 'Annual rotation');
+    }
+
+    #[Test]
+    public function rotateThrowsNotFoundForNonExistent(): void
+    {
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn(null);
+
+        $this->expectException(SecretNotFoundException::class);
+
+        $this->subject->rotate('nonexistent', 'newsecret');
+    }
+
+    #[Test]
+    public function rotateThrowsAccessDeniedWithoutPermission(): void
+    {
+        $secret = $this->createSecretEntity('protected');
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canWrite')
+            ->willReturn(false);
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->subject->rotate('protected', 'newsecret');
+    }
+
+    #[Test]
+    public function rotateRejectsEmptyNewSecret(): void
+    {
+        $secret = $this->createSecretEntity('mySecret');
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canWrite')
+            ->willReturn(true);
+
+        $this->expectException(ValidationException::class);
+
+        $this->subject->rotate('mySecret', '');
+    }
+
+    #[Test]
+    public function existsReturnsTrueForExistingSecret(): void
+    {
+        $this->adapter
+            ->method('exists')
+            ->with('existing')
+            ->willReturn(true);
+
+        self::assertTrue($this->subject->exists('existing'));
+    }
+
+    #[Test]
+    public function existsReturnsFalseForNonExistent(): void
+    {
+        $this->adapter
+            ->method('exists')
+            ->with('nonexistent')
+            ->willReturn(false);
+
+        self::assertFalse($this->subject->exists('nonexistent'));
+    }
+
+    #[Test]
+    public function listReturnsAccessibleSecrets(): void
+    {
+        $secret1 = $this->createSecretEntity('secret1');
+        $secret2 = $this->createSecretEntity('secret2');
+
+        $this->adapter
+            ->method('list')
+            ->willReturn(['secret1', 'secret2', 'secret3']);
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturnCallback(static fn (string $id) => match ($id) {
+                'secret1' => $secret1,
+                'secret2' => $secret2,
+                default => null,
+            });
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturnCallback(static fn (Secret $s) => $s->getIdentifier() !== 'secret2');
+
+        $result = $this->subject->list();
+
+        self::assertCount(1, $result);
+        self::assertEquals('secret1', $result[0]['identifier']);
+    }
+
+    #[Test]
+    public function getMetadataReturnsSecretMetadata(): void
+    {
+        $identifier = 'metaSecret';
+        $secret = $this->createSecretEntity($identifier);
+        $secret->setDescription('Test description');
+        $secret->setContext('testing');
+        $secret->setVersion(3);
+        $secret->setMetadata(['key' => 'value']);
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(true);
+
+        $result = $this->subject->getMetadata($identifier);
+
+        self::assertEquals($identifier, $result['identifier']);
+        self::assertEquals('Test description', $result['description']);
+        self::assertEquals('testing', $result['context']);
+        self::assertEquals(3, $result['version']);
+        self::assertEquals(['key' => 'value'], $result['metadata']);
+    }
+
+    #[Test]
+    public function getMetadataThrowsNotFoundForNonExistent(): void
+    {
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn(null);
+
+        $this->expectException(SecretNotFoundException::class);
+
+        $this->subject->getMetadata('nonexistent');
+    }
+
+    #[Test]
+    public function httpReturnsVaultHttpClient(): void
+    {
+        $result = $this->subject->http();
+
+        self::assertNotNull($result);
+    }
+
+    #[Test]
+    public function clearCacheClearsInternalCache(): void
+    {
+        // This test verifies clearCache doesn't throw
+        $this->subject->clearCache();
+        $this->expectNotToPerformAssertions();
+    }
+
+    private function createSecretEntity(string $identifier): Secret
+    {
+        $secret = new Secret();
+        $secret->setIdentifier($identifier);
+        $secret->setEncryptedValue('encrypted');
+        $secret->setEncryptedDek('dek');
+        $secret->setDekNonce('nonce1');
+        $secret->setValueNonce('nonce2');
+        $secret->setValueChecksum('checksum');
+        $secret->setOwnerUid(1);
+        $secret->setVersion(1);
+
+        return $secret;
+    }
+}
