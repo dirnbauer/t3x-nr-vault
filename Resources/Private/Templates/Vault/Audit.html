@@ -1,5 +1,6 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
       xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
       data-namespace-typo3-fluid="true">
 
 <f:layout name="Module" />
@@ -9,45 +10,47 @@
 </f:section>
 
 <f:section name="Content">
-    <div class="vault-module">
+    <div class="vault-module" role="main" aria-label="Vault Audit Log">
         <div class="vault-header">
-            <h1>
+            <h1 id="audit-page-title">
                 <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title" />
             </h1>
-            <div class="vault-actions">
-                <a href="{f:uri.action(action: 'secrets')}" class="btn btn-default">
+            <nav class="vault-actions" aria-label="Audit actions">
+                <a href="{f:uri.action(action: 'secrets')}" class="btn btn-default" aria-label="View secrets list">
                     <core:icon identifier="actions-database" />
                     <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title" />
                 </a>
                 <f:if condition="{isAdmin}">
-                    <button type="button" class="btn btn-default t3js-vault-verify-chain">
+                    <button type="button" class="btn btn-default t3js-vault-verify-chain" aria-label="Verify audit hash chain integrity">
                         <core:icon identifier="actions-check" />
                         <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verify_chain" />
                     </button>
                     <div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-bs-toggle="dropdown">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Export audit log">
                             <core:icon identifier="actions-download" />
                             <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.export" />
                         </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{f:uri.action(action: 'export', arguments: '{format: \"json\"}')}">JSON</a></li>
-                            <li><a class="dropdown-item" href="{f:uri.action(action: 'export', arguments: '{format: \"csv\"}')}">CSV</a></li>
+                        <ul class="dropdown-menu" role="menu">
+                            <li role="menuitem"><a class="dropdown-item" href="{f:uri.action(action: 'export', arguments: '{format: \"json\"}')}">JSON</a></li>
+                            <li role="menuitem"><a class="dropdown-item" href="{f:uri.action(action: 'export', arguments: '{format: \"csv\"}')}">CSV</a></li>
                         </ul>
                     </div>
                 </f:if>
-            </div>
+            </nav>
         </div>
 
-        <div class="vault-filters">
-            <form method="get" class="form-inline">
+        <section class="vault-filters" aria-labelledby="filter-heading">
+            <h2 id="filter-heading" class="visually-hidden">Filter audit log entries</h2>
+            <form method="get" class="form-inline" role="search" aria-label="Filter audit log">
                 <input type="hidden" name="action" value="audit" />
                 <div class="form-group">
                     <label for="filter-secret">Secret:</label>
-                    <input type="text" id="filter-secret" name="secretIdentifier" value="{filters.secretIdentifier}" class="form-control form-control-sm" placeholder="Secret identifier" />
+                    <input type="text" id="filter-secret" name="secretIdentifier" value="{filters.secretIdentifier}" class="form-control form-control-sm" placeholder="Secret identifier" aria-describedby="filter-secret-help" />
+                    <span id="filter-secret-help" class="visually-hidden">Enter secret identifier to filter</span>
                 </div>
                 <div class="form-group">
                     <label for="filter-action">Action:</label>
-                    <select id="filter-action" name="action" class="form-select form-select-sm">
+                    <select id="filter-action" name="action" class="form-select form-select-sm" aria-label="Filter by action type">
                         <option value="">All</option>
                         <f:for each="{actions}" as="action">
                             <option value="{action}" selected="{f:if(condition: '{filters.action} == {action}', then: 'selected')}">{action}</option>
@@ -56,57 +59,60 @@
                 </div>
                 <div class="form-group">
                     <label for="filter-since">Since:</label>
-                    <input type="date" id="filter-since" name="since" value="{filters.since}" class="form-control form-control-sm" />
+                    <input type="date" id="filter-since" name="since" value="{filters.since}" class="form-control form-control-sm" aria-label="Filter entries from this date" />
                 </div>
                 <div class="form-group">
                     <label for="filter-until">Until:</label>
-                    <input type="date" id="filter-until" name="until" value="{filters.until}" class="form-control form-control-sm" />
+                    <input type="date" id="filter-until" name="until" value="{filters.until}" class="form-control form-control-sm" aria-label="Filter entries until this date" />
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm">
+                <button type="submit" class="btn btn-primary btn-sm" aria-label="Apply filters">
                     <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter" />
                 </button>
             </form>
-        </div>
+        </section>
 
-        <div class="vault-stats">
-            <span class="badge badge-info">{totalCount} entries</span>
-            <span class="badge badge-secondary">Page {currentPage} of {totalPages}</span>
+        <div class="vault-stats" role="status" aria-live="polite">
+            <span class="badge badge-info" aria-label="{totalCount} audit entries">{totalCount} entries</span>
+            <span class="badge badge-secondary" aria-label="Current page {currentPage} of {totalPages}">Page {currentPage} of {totalPages}</span>
         </div>
 
         <f:if condition="{entries}">
             <f:then>
-                <div class="table-fit">
-                    <table class="table table-striped table-hover table-sm">
+                <div class="table-fit" role="region" aria-labelledby="audit-page-title">
+                    <table class="table table-striped table-hover table-sm" aria-describedby="audit-table-description">
+                        <caption id="audit-table-description" class="visually-hidden">
+                            Audit log entries showing secret access history with timestamps, actions, and verification hashes
+                        </caption>
                         <thead>
                             <tr>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.timestamp" /></th>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.secret" /></th>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.action" /></th>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.success" /></th>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.actor" /></th>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.ip" /></th>
-                                <th><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.hash" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.timestamp" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.secret" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.action" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.success" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.actor" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.ip" /></th>
+                                <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.hash" /></th>
                             </tr>
                         </thead>
                         <tbody>
                             <f:for each="{entries}" as="entry">
-                                <tr class="{f:if(condition: entry.success, else: 'table-danger')}">
+                                <tr class="{f:if(condition: entry.success, else: 'table-danger')}" aria-label="Audit entry for {entry.secretIdentifier}">
                                     <td><small>{entry.timestamp}</small></td>
-                                    <td><code class="small">{entry.secretIdentifier}</code></td>
+                                    <td><code class="small" aria-label="Secret: {entry.secretIdentifier}">{entry.secretIdentifier}</code></td>
                                     <td>
-                                        <span class="badge badge-{f:switch(expression: entry.action, cases: {create: 'success', read: 'info', update: 'warning', delete: 'danger', rotate: 'primary', access_denied: 'danger', default: 'secondary'})}">{entry.action}</span>
+                                        <span class="badge badge-{f:switch(expression: entry.action, cases: {create: 'success', read: 'info', update: 'warning', delete: 'danger', rotate: 'primary', access_denied: 'danger', default: 'secondary'})}" aria-label="Action: {entry.action}">{entry.action}</span>
                                     </td>
-                                    <td>
+                                    <td aria-label="{f:if(condition: entry.success, then: 'Successful', else: 'Failed')}">
                                         <f:if condition="{entry.success}">
-                                            <f:then><core:icon identifier="actions-check" size="small" /></f:then>
-                                            <f:else><core:icon identifier="actions-close" size="small" /> <small class="text-danger">{entry.errorMessage}</small></f:else>
+                                            <f:then><core:icon identifier="actions-check" size="small" aria-hidden="true" /><span class="visually-hidden">Success</span></f:then>
+                                            <f:else><core:icon identifier="actions-close" size="small" aria-hidden="true" /><span class="visually-hidden">Failed</span> <small class="text-danger">{entry.errorMessage}</small></f:else>
                                         </f:if>
                                     </td>
                                     <td>
-                                        <small>{entry.actorUsername} ({entry.actorType})</small>
+                                        <small aria-label="Actor: {entry.actorUsername}">{entry.actorUsername} ({entry.actorType})</small>
                                     </td>
-                                    <td><small>{entry.ipAddress}</small></td>
-                                    <td><code class="small">{entry.entryHash}</code></td>
+                                    <td><small aria-label="IP Address: {entry.ipAddress}">{entry.ipAddress}</small></td>
+                                    <td><code class="small" aria-label="Hash: {entry.entryHash}">{entry.entryHash}</code></td>
                                 </tr>
                             </f:for>
                         </tbody>
@@ -114,25 +120,25 @@
                 </div>
 
                 <f:if condition="{totalPages} > 1">
-                    <nav aria-label="Pagination">
+                    <nav aria-label="Audit log pagination">
                         <ul class="pagination pagination-sm">
                             <f:if condition="{currentPage} > 1">
                                 <li class="page-item">
-                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: 1}')}">First</a>
+                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: 1}')}" aria-label="Go to first page">First</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: currentPage - 1}')}">Previous</a>
+                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: currentPage - 1}')}" aria-label="Go to previous page">Previous</a>
                                 </li>
                             </f:if>
-                            <li class="page-item active">
+                            <li class="page-item active" aria-current="page">
                                 <span class="page-link">{currentPage}</span>
                             </li>
                             <f:if condition="{currentPage} < {totalPages}">
                                 <li class="page-item">
-                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: currentPage + 1}')}">Next</a>
+                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: currentPage + 1}')}" aria-label="Go to next page">Next</a>
                                 </li>
                                 <li class="page-item">
-                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: totalPages}')}">Last</a>
+                                    <a class="page-link" href="{f:uri.action(action: 'audit', arguments: '{page: totalPages}')}" aria-label="Go to last page">Last</a>
                                 </li>
                             </f:if>
                         </ul>
@@ -140,9 +146,9 @@
                 </f:if>
             </f:then>
             <f:else>
-                <div class="callout callout-info">
+                <div class="callout callout-info" role="alert" aria-live="polite">
                     <div class="media">
-                        <div class="media-left">
+                        <div class="media-left" aria-hidden="true">
                             <core:icon identifier="actions-info" size="small" />
                         </div>
                         <div class="media-body">
