@@ -6,9 +6,10 @@ namespace Netresearch\NrVault\Tests\Functional\Service;
 
 use Netresearch\NrVault\Adapter\LocalEncryptionAdapter;
 use Netresearch\NrVault\Audit\AuditLogService;
+use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionService;
-use Netresearch\NrVault\Crypto\MasterKeyProvider\FileMasterKeyProvider;
+use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
 use Netresearch\NrVault\Security\AccessControlService;
 use Netresearch\NrVault\Service\VaultService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -50,7 +51,13 @@ final class VaultServiceTest extends FunctionalTestCase
 
         // Set up services
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $masterKeyProvider = new FileMasterKeyProvider($this->masterKeyPath);
+
+        // Create mock configuration for master key provider
+        $keyProviderConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $keyProviderConfig->method('getMasterKeySource')->willReturn($this->masterKeyPath);
+        $keyProviderConfig->method('getAutoKeyPath')->willReturn($this->masterKeyPath);
+
+        $masterKeyProvider = new FileMasterKeyProvider($keyProviderConfig);
         $encryptionService = new EncryptionService($masterKeyProvider);
         $adapter = new LocalEncryptionAdapter($connectionPool);
         $accessControlService = $this->createMock(AccessControlService::class);
