@@ -30,6 +30,7 @@ help:
 up:
 	ddev start
 	ddev install-v14
+	$(MAKE) docs
 
 down:
 	ddev stop
@@ -61,7 +62,7 @@ fix:
 
 # === Documentation ===
 docs:
-	docker run --rm -v "$(PWD)":/project -t ghcr.io/typo3-documentation/render-guides:latest --config=Documentation
+	docker run --rm -v "$$(pwd)":/project -t ghcr.io/typo3-documentation/render-guides:latest --config=Documentation
 
 docs-open: docs
 	@echo "Opening documentation..."
