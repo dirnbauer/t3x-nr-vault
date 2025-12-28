@@ -11,14 +11,23 @@ Extension configuration
 
 Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuration`.
 
-.. confval:: adapter
+.. confval:: storageAdapter
 
    :type: string
    :Default: local
    :Options: local, hashicorp, aws
 
-   Storage adapter for secrets. Use "local" for database storage,
-   or configure external providers like HashiCorp Vault or AWS Secrets Manager.
+   Where secrets are stored.
+
+   local
+      Store secrets in the TYPO3 database (default). Secrets are encrypted
+      with envelope encryption before storage.
+
+   hashicorp
+      Use HashiCorp Vault as the backend. Requires additional configuration.
+
+   aws
+      Use AWS Secrets Manager. Requires AWS credentials configuration.
 
 .. confval:: masterKeyProvider
 
