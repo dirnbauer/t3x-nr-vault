@@ -90,6 +90,10 @@ services:
     tags:
       - name: console.command
 
+  Netresearch\NrVault\Command\VaultRotateMasterKeyCommand:
+    tags:
+      - name: console.command
+
   # HTTP Client
   Netresearch\NrVault\Http\VaultHttpClientInterface:
     alias: Netresearch\NrVault\Http\VaultHttpClient

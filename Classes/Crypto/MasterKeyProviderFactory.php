@@ -21,6 +21,7 @@ final class MasterKeyProviderFactory
         $provider = $this->configuration->getMasterKeyProvider();
 
         return match ($provider) {
+            'typo3' => new Typo3MasterKeyProvider(),
             'file' => new FileMasterKeyProvider($this->configuration),
             'env' => new EnvironmentMasterKeyProvider($this->configuration),
             default => throw ConfigurationException::invalidProvider($provider),
@@ -42,6 +43,12 @@ final class MasterKeyProviderFactory
             // Fall through to auto-detection
         }
 
+        // Try TYPO3 encryption key (always available after installation)
+        $typo3Provider = new Typo3MasterKeyProvider();
+        if ($typo3Provider->isAvailable()) {
+            return $typo3Provider;
+        }
+
         // Try environment variable
         $envProvider = new EnvironmentMasterKeyProvider($this->configuration);
         if ($envProvider->isAvailable()) {
@@ -54,7 +61,7 @@ final class MasterKeyProviderFactory
             return $fileProvider;
         }
 
-        // No provider available - return file provider for initialization
-        return $fileProvider;
+        // No provider available - return typo3 provider (will fail with clear error)
+        return $typo3Provider;
     }
 }
