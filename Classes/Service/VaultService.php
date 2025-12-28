@@ -21,6 +21,7 @@ use Netresearch\NrVault\Event\SecretAccessedEvent;
 use Netresearch\NrVault\Event\SecretCreatedEvent;
 use Netresearch\NrVault\Event\SecretDeletedEvent;
 use Netresearch\NrVault\Event\SecretRotatedEvent;
+use Netresearch\NrVault\Event\SecretUpdatedEvent;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
@@ -136,11 +137,17 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 $encrypted['value_checksum']
             );
 
-            // Dispatch PSR-14 event for new secrets
+            // Dispatch PSR-14 event
             if ($isNew) {
                 $this->eventDispatcher?->dispatch(new SecretCreatedEvent(
                     $identifier,
                     $secretEntity,
+                    $this->accessControlService->getCurrentActorUid(),
+                ));
+            } else {
+                $this->eventDispatcher?->dispatch(new SecretUpdatedEvent(
+                    $identifier,
+                    $secretEntity->getVersion(),
                     $this->accessControlService->getCurrentActorUid(),
                 ));
             }
