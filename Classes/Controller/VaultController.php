@@ -10,9 +10,12 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\Response;
+use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -61,6 +64,9 @@ final class VaultController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
 
+        // Add DocHeader buttons
+        $this->addDocHeaderButtons($moduleTemplate, $request, 'secrets');
+
         // Get secrets list
         $secrets = $this->vaultService->list();
 
@@ -101,6 +107,9 @@ final class VaultController
     private function auditAction(ServerRequestInterface $request): ResponseInterface
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
+
+        // Add DocHeader buttons
+        $this->addDocHeaderButtons($moduleTemplate, $request, 'audit');
 
         $queryParams = $request->getQueryParams();
 
@@ -284,6 +293,75 @@ final class VaultController
         return $response
             ->withHeader('Content-Type', 'text/csv')
             ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . date('Y-m-d') . '.csv"');
+    }
+
+    /**
+     * Add DocHeader buttons to the module template.
+     */
+    private function addDocHeaderButtons(
+        ModuleTemplate $moduleTemplate,
+        ServerRequestInterface $request,
+        string $currentAction
+    ): void {
+        $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        $lang = $this->getLanguageService();
+
+        // Refresh button
+        $refreshButton = $buttonBar->makeLinkButton()
+            ->setHref((string)$request->getUri())
+            ->setTitle($lang->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
+            ->setIcon($this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
+        $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
+
+        // Secrets button (if not current)
+        if ($currentAction !== 'secrets') {
+            $secretsButton = $buttonBar->makeLinkButton()
+                ->setHref($this->buildModuleUri($request, ['action' => 'secrets']))
+                ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.secrets'))
+                ->setIcon($this->iconFactory->getIcon('actions-lock', Icon::SIZE_SMALL));
+            $buttonBar->addButton($secretsButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
+        }
+
+        // Audit button (if not current)
+        if ($currentAction !== 'audit') {
+            $auditButton = $buttonBar->makeLinkButton()
+                ->setHref($this->buildModuleUri($request, ['action' => 'audit']))
+                ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.audit'))
+                ->setIcon($this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL));
+            $buttonBar->addButton($auditButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
+        }
+
+        // Admin-only buttons
+        if ($this->isAdmin()) {
+            // Verify chain button
+            $verifyButton = $buttonBar->makeLinkButton()
+                ->setHref($this->buildModuleUri($request, ['action' => 'verifyChain']))
+                ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.verifyChain'))
+                ->setIcon($this->iconFactory->getIcon('actions-check', Icon::SIZE_SMALL))
+                ->setClasses('t3js-vault-verify-chain');
+            $buttonBar->addButton($verifyButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
+
+            // Export button (on audit page)
+            if ($currentAction === 'audit') {
+                $exportButton = $buttonBar->makeLinkButton()
+                    ->setHref($this->buildModuleUri($request, ['action' => 'export', 'format' => 'json']))
+                    ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.export'))
+                    ->setIcon($this->iconFactory->getIcon('actions-download', Icon::SIZE_SMALL));
+                $buttonBar->addButton($exportButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
+            }
+        }
+    }
+
+    /**
+     * Build a URI for the current module with additional parameters.
+     */
+    private function buildModuleUri(ServerRequestInterface $request, array $additionalParams = []): string
+    {
+        $uri = $request->getUri();
+        parse_str($uri->getQuery(), $params);
+        $params = array_merge($params, $additionalParams);
+
+        return (string)$uri->withQuery(http_build_query($params));
     }
 
     private function isAdmin(): bool
