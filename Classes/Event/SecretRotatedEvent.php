@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Event;
+
+/**
+ * Event dispatched when a secret is rotated.
+ *
+ * This event allows listeners to react to secret rotation,
+ * e.g., to invalidate caches, notify dependent systems, or trigger sync operations.
+ */
+final readonly class SecretRotatedEvent
+{
+    public function __construct(
+        private string $identifier,
+        private int $newVersion,
+        private int $actorUid,
+        private string $reason = '',
+    ) {}
+
+    public function getIdentifier(): string
+    {
+        return $this->identifier;
+    }
+
+    public function getNewVersion(): int
+    {
+        return $this->newVersion;
+    }
+
+    public function getActorUid(): int
+    {
+        return $this->actorUid;
+    }
+
+    public function getReason(): string
+    {
+        return $this->reason;
+    }
+}
