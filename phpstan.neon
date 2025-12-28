@@ -1,0 +1,38 @@
+includes:
+    - vendor/phpstan/phpstan/conf/bleedingEdge.neon
+
+parameters:
+    level: 8
+    paths:
+        - Classes
+    excludePaths:
+        analyseAndScan:
+            - Classes/Domain/Model/Secret.php
+
+    # PHP version targeting
+    phpVersion: 80500
+
+    # Strict rules
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    reportUnmatchedIgnoredErrors: true
+
+    # TYPO3-specific settings
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        # TYPO3 GLOBALS usage (to be refactored)
+        - '#Access to an undefined property TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication::\$user#'
+        - '#Variable \$GLOBALS might not be defined#'
+
+        # Sodium extension
+        - '#Function sodium_memzero not found#'
+        - '#Function sodium_crypto_aead_aes256gcm_.+ not found#'
+        - '#Function sodium_crypto_aead_xchacha20poly1305_.+ not found#'
+        - '#Constant SODIUM_.+ not found#'
+
+    # Type coverage
+    typeAliases:
+        SecretOptions: 'array{owner?: int, groups?: int[], context?: string, description?: string, metadata?: array<string, mixed>, pid?: int, expiresAt?: int|\DateTimeInterface}'
+        EncryptedData: 'array{encrypted_value: string, encrypted_dek: string, dek_nonce: string, value_nonce: string, value_checksum: string}'
+        SecretMetadata: 'array{identifier: string, description: string, owner: int, groups: int[], context: string, version: int, createdAt: int, updatedAt: int, expiresAt: int|null, lastRotatedAt: int|null, metadata: array<string, mixed>}'
