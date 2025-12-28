@@ -1,6 +1,6 @@
 includes:
     - .Build/vendor/phpstan/phpstan/conf/bleedingEdge.neon
-    - .Build/vendor/carlosas/phpat/extension.neon
+    - .Build/vendor/phpat/phpat/extension.neon
     - phpstan-baseline.neon
     - phpat.neon
 

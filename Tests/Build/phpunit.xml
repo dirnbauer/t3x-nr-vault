@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
     backupGlobals="true"
     bootstrap="../bootstrap.php"
     cacheDirectory=".phpunit.cache"
@@ -24,19 +24,14 @@
         </testsuite>
     </testsuites>
 
-    <coverage includeUncoveredFiles="true">
+    <source>
         <include>
             <directory suffix=".php">../../Classes</directory>
         </include>
         <exclude>
             <directory>../../Classes/Exception</directory>
         </exclude>
-        <report>
-            <clover outputFile=".phpunit.cache/clover.xml"/>
-            <html outputDirectory=".phpunit.cache/coverage"/>
-            <text outputFile="php://stdout"/>
-        </report>
-    </coverage>
+    </source>
 
     <php>
         <ini name="display_errors" value="1"/>
