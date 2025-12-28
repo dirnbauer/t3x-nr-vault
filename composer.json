@@ -20,10 +20,10 @@
             "role": "Developer"
         }
     ],
-    "homepage": "https://github.com/netresearch/nr-vault",
+    "homepage": "https://github.com/netresearch/t3x-nr-vault",
     "support": {
-        "issues": "https://github.com/netresearch/nr-vault/issues",
-        "source": "https://github.com/netresearch/nr-vault"
+        "issues": "https://github.com/netresearch/t3x-nr-vault/issues",
+        "source": "https://github.com/netresearch/t3x-nr-vault"
     },
     "require": {
         "php": "^8.5",

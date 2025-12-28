@@ -19,7 +19,7 @@ Please be respectful and constructive in all interactions. We welcome contributi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/netresearch/nr-vault.git
+   git clone https://github.com/netresearch/t3x-nr-vault.git
    cd nr-vault
    ```
 
