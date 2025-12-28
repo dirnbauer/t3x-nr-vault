@@ -4,6 +4,12 @@
 Developer
 =========
 
+.. toctree::
+   :maxdepth: 2
+
+   Api
+   Commands
+
 Architecture overview
 =====================
 
