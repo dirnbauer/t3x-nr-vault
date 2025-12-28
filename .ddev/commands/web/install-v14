@@ -1,108 +1,95 @@
 #!/bin/bash
 
-## Description: Install TYPO3 v14 for extension development
+## Description: Install TYPO3 v14 with nr_vault extension
 ## Usage: install-v14
 ## Example: ddev install-v14
 
 set -e
 
-echo "Installing TYPO3 v14 for nr-vault extension development..."
+V14_DIR="/var/www/html/v14"
+EXTENSION_DIR="/var/www/nr_vault"
 
-# Create necessary directories
-mkdir -p .Build/public .Build/config .Build/var
+echo "=== Installing TYPO3 v14 with nr_vault extension ==="
 
-# Create minimal TYPO3 configuration
-cat > .Build/config/system/settings.php << 'EOF'
-<?php
-return [
-    'BE' => [
-        'debug' => true,
-        'installToolPassword' => '$argon2i$v=19$m=65536,t=16,p=1$QS5VWmRLSjZVMm1MWjNNdw$c1eHpD1k9F1cP1p9hT1LBKjYX8YvRj0xKOq/qJY7K3I',
-        'passwordHashing' => [
-            'className' => 'TYPO3\\CMS\\Core\\Crypto\\PasswordHashing\\Argon2iPasswordHash',
-            'options' => [],
-        ],
-    ],
-    'DB' => [
-        'Connections' => [
-            'Default' => [
-                'charset' => 'utf8mb4',
-                'driver' => 'mysqli',
-                'host' => 'db',
-                'password' => 'db',
-                'port' => 3306,
-                'user' => 'db',
-                'dbname' => 'db',
-            ],
-        ],
-    ],
-    'EXTENSIONS' => [
-        'backend' => [
-            'backendFavicon' => '',
-            'backendLogo' => '',
-            'loginBackgroundImage' => '',
-            'loginFootnote' => '',
-            'loginHighlightColor' => '',
-            'loginLogo' => '',
-            'loginLogoAlt' => '',
-        ],
-        'nr_vault' => [
-            'adapter' => 'local',
-            'masterKeyProvider' => 'env',
-            'masterKeyEnvVar' => 'NR_VAULT_MASTER_KEY',
-            'allowCliAccess' => true,
-        ],
-    ],
-    'SYS' => [
-        'devIPmask' => '*',
-        'displayErrors' => 1,
-        'encryptionKey' => 'dev-encryption-key-for-testing-only-not-for-production-use-12345',
-        'exceptionalErrors' => 4096,
-        'sitename' => 'nr-vault Development',
-        'trustedHostsPattern' => '.*',
-    ],
-];
-EOF
+# Create v14 directory if it doesn't exist
+if [ ! -d "$V14_DIR" ]; then
+    mkdir -p "$V14_DIR"
+fi
 
-# Create public index.php
-cat > .Build/public/index.php << 'EOF'
-<?php
-// Entry point for TYPO3 CMS
-call_user_func(static function () {
-    $classLoader = require dirname(__DIR__) . '/vendor/autoload.php';
-    \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::run(0, \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_FE);
-    \TYPO3\CMS\Core\Core\Bootstrap::init($classLoader)->get(\TYPO3\CMS\Frontend\Http\Application::class)->run();
-});
-EOF
+cd "$V14_DIR"
 
-# Create typo3 CLI entry point
-mkdir -p .Build/public/typo3
-cat > .Build/public/typo3/index.php << 'EOF'
-<?php
-call_user_func(static function () {
-    $classLoader = require dirname(__DIR__, 2) . '/vendor/autoload.php';
-    \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::run(1, \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_BE);
-    \TYPO3\CMS\Core\Core\Bootstrap::init($classLoader)->get(\TYPO3\CMS\Backend\Http\Application::class)->run();
-});
-EOF
+# Initialize composer project if not exists
+if [ ! -f "composer.json" ]; then
+    echo "Creating TYPO3 v14 project..."
+    # Clean any leftover files
+    rm -rf ./* ./.[!.]* 2>/dev/null || true
 
-# Ensure dependencies are installed
-composer install --no-progress --prefer-dist
+    # Create project in temp directory first (avoids volume mount issues)
+    TEMP_DIR=$(mktemp -d)
+    composer create-project typo3/cms-base-distribution:^14 "$TEMP_DIR" --no-interaction
 
-# Run database schema update
-.Build/bin/typo3 database:updateschema "*.add,*.change" --no-interaction || true
+    # Copy files to target (cp works better with volume mounts than mv)
+    cp -a "$TEMP_DIR"/. "$V14_DIR"/
+    rm -rf "$TEMP_DIR"
+fi
 
-# Create admin user if not exists
-.Build/bin/typo3 backend:createadmin --username=admin --password=Joh316! --email=admin@example.com --no-interaction 2>/dev/null || true
+# Set PHP platform to 8.5 (nr_vault requires PHP 8.5+)
+echo "Configuring PHP platform..."
+composer config platform.php 8.5.0
+
+# Add local extension as path repository
+echo "Configuring local extension repository..."
+composer config repositories.nr_vault path "$EXTENSION_DIR" --no-interaction 2>/dev/null || true
+
+# Require the extension (use @dev for local path)
+echo "Requiring nr_vault extension..."
+composer require netresearch/nr-vault:@dev --no-interaction
+
+# Run TYPO3 setup if not already done
+if [ ! -f "config/system/settings.php" ]; then
+    echo "Running TYPO3 setup..."
+
+    # Create database if not exists
+    mysql -h db -u root -proot -e "CREATE DATABASE IF NOT EXISTS v14;" 2>/dev/null || true
+
+    # Run setup
+    vendor/bin/typo3 setup \
+        --driver=mysqli \
+        --host=db \
+        --port=3306 \
+        --dbname=v14 \
+        --username=root \
+        --password=root \
+        --admin-username="${TYPO3_SETUP_ADMIN_USERNAME:-admin}" \
+        --admin-email="${TYPO3_SETUP_ADMIN_EMAIL:-admin@example.com}" \
+        --admin-user-password="${TYPO3_SETUP_ADMIN_PASSWORD:-Joh316!!}" \
+        --project-name="${TYPO3_PROJECT_NAME:-EXT:nr_vault Dev Environment}" \
+        --server-type="${TYPO3_SERVER_TYPE:-apache}" \
+        --no-interaction \
+        --force
+fi
+
+# Configure trusted hosts pattern for DDEV
+echo "Configuring trusted hosts..."
+sed -i "s/'sitename' => 'EXT:nr_vault Dev',/'sitename' => 'EXT:nr_vault Dev',\n        'trustedHostsPattern' => '.*\\\\.ddev\\\\.site',/" config/system/settings.php
+
+# Set up all extensions (includes nr_vault)
+echo "Setting up extensions..."
+vendor/bin/typo3 extension:setup
+
+# Clear caches
+echo "Clearing caches..."
+vendor/bin/typo3 cache:flush
 
 echo ""
-echo "TYPO3 v14 installation complete!"
+echo "=== TYPO3 v14 installation complete ==="
 echo ""
 echo "Access URLs:"
-echo "  Frontend: https://nr-vault.ddev.site/"
-echo "  Backend:  https://nr-vault.ddev.site/typo3/"
+echo "  Landing page: https://${DDEV_SITENAME}.ddev.site/"
+echo "  TYPO3 v14:    https://v14.${DDEV_SITENAME}.ddev.site/typo3/"
+echo "  Documentation: https://docs.${DDEV_SITENAME}.ddev.site/"
 echo ""
 echo "Login credentials:"
 echo "  Username: admin"
-echo "  Password: Joh316!"
+echo "  Password: Joh316!!"
 echo ""
