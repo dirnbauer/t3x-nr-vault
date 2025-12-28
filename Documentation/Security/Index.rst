@@ -10,11 +10,33 @@ Encryption architecture
 nr-vault uses envelope encryption, an industry-standard pattern for
 protecting sensitive data.
 
-.. figure:: /Images/envelope-encryption.png
-   :alt: Envelope encryption diagram
-   :class: with-shadow
+.. uml::
+   :caption: Envelope encryption: Each secret has its own DEK encrypted by the master key.
 
-   Envelope encryption: Each secret has its own DEK encrypted by the master key.
+   skinparam backgroundColor white
+   skinparam shadowing false
+   skinparam componentStyle rectangle
+
+   rectangle "Master Key" as MK #2F99A4
+   rectangle "Secret 1" as S1 {
+      rectangle "DEK₁ (encrypted)" as DEK1 #CCCDCC
+      rectangle "Value (encrypted)" as V1 #F5F5F5
+   }
+   rectangle "Secret 2" as S2 {
+      rectangle "DEK₂ (encrypted)" as DEK2 #CCCDCC
+      rectangle "Value (encrypted)" as V2 #F5F5F5
+   }
+   rectangle "Secret 3" as S3 {
+      rectangle "DEK₃ (encrypted)" as DEK3 #CCCDCC
+      rectangle "Value (encrypted)" as V3 #F5F5F5
+   }
+
+   MK --> DEK1 : encrypts
+   MK --> DEK2 : encrypts
+   MK --> DEK3 : encrypts
+   DEK1 --> V1 : encrypts
+   DEK2 --> V2 : encrypts
+   DEK3 --> V3 : encrypts
 
 How it works
 ------------
@@ -60,10 +82,32 @@ Both algorithms provide:
 Master key security
 ===================
 
-The master key is the root of trust for all secrets. Protect it carefully:
+The master key is the root of trust for all secrets.
 
-Storage recommendations
------------------------
+Provider security comparison
+----------------------------
+
+**TYPO3 provider** (default, recommended for most users)
+   Security depends on TYPO3's encryption key protection. Suitable for
+   environments where the encryption key is properly secured in settings.php.
+   No additional configuration required.
+
+**File provider** (recommended for high-security environments)
+   Allows storing the key outside the database and web root with strict
+   permissions. Requires server access to configure.
+
+**Environment provider** (recommended for containers)
+   Ideal for containerized deployments where secrets are injected at runtime.
+   Follows 12-factor app methodology.
+
+**Derived provider** (for air-gapped systems)
+   Key is derived from a passphrase using Argon2id. Useful when no persistent
+   key storage is available.
+
+File storage recommendations
+----------------------------
+
+When using the file provider:
 
 1. **Outside web root**: Never store in publicly accessible directories.
 
@@ -140,6 +184,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 **DO NOT** create a public GitHub issue.
 
-Email security concerns to: **security@netresearch.de**
+Use GitHub's private security reporting feature:
+`Report a vulnerability <https://github.com/netresearch/t3x-nr-vault/security/advisories/new>`__
 
 See :file:`SECURITY.md` for the full security policy.
