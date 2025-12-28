@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionService;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
@@ -18,7 +18,7 @@ final class EncryptionServiceTest extends TestCase
 {
     private EncryptionService $subject;
     private MasterKeyProviderInterface&MockObject $masterKeyProvider;
-    private ExtensionConfiguration&MockObject $configuration;
+    private ExtensionConfigurationInterface&MockObject $configuration;
     private string $testMasterKey;
 
     protected function setUp(): void
@@ -33,7 +33,7 @@ final class EncryptionServiceTest extends TestCase
             ->method('getMasterKey')
             ->willReturn($this->testMasterKey);
 
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
         $this->configuration
             ->method('preferXChaCha20')
             ->willReturn(false);
@@ -303,7 +303,7 @@ final class EncryptionServiceTest extends TestCase
     public function encryptWithXChaCha20WhenConfigured(): void
     {
         // Configure to prefer XChaCha20
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
         $this->configuration
             ->method('preferXChaCha20')
             ->willReturn(true);

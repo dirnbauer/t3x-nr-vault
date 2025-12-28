@@ -6,7 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\Service;
 
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Exception\AccessDeniedException;
@@ -28,7 +28,7 @@ final class VaultServiceTest extends TestCase
     private EncryptionServiceInterface&MockObject $encryptionService;
     private AccessControlServiceInterface&MockObject $accessControlService;
     private AuditLogServiceInterface&MockObject $auditLogService;
-    private ExtensionConfiguration&MockObject $configuration;
+    private ExtensionConfigurationInterface&MockObject $configuration;
 
     protected function setUp(): void
     {
@@ -38,7 +38,7 @@ final class VaultServiceTest extends TestCase
         $this->encryptionService = $this->createMock(EncryptionServiceInterface::class);
         $this->accessControlService = $this->createMock(AccessControlServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
 
         $this->accessControlService
             ->method('getCurrentActorUid')

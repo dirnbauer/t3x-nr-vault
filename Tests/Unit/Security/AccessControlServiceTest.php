@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Security;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Security\AccessControlService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,13 +17,13 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 final class AccessControlServiceTest extends TestCase
 {
     private AccessControlService $subject;
-    private ExtensionConfiguration&MockObject $configuration;
+    private ExtensionConfigurationInterface&MockObject $configuration;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
         $this->subject = new AccessControlService($this->configuration);
 
         // Reset GLOBALS for clean state

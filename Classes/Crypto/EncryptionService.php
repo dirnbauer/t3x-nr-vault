@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Crypto;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
 
 /**
@@ -22,7 +22,7 @@ final class EncryptionService implements EncryptionServiceInterface
 {
     public function __construct(
         private readonly MasterKeyProviderInterface $masterKeyProvider,
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
     ) {
     }
 

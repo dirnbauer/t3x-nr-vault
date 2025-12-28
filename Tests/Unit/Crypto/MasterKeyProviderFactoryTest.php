@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EnvironmentMasterKeyProvider;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
@@ -18,13 +18,13 @@ use PHPUnit\Framework\TestCase;
 final class MasterKeyProviderFactoryTest extends TestCase
 {
     private MasterKeyProviderFactory $subject;
-    private ExtensionConfiguration&MockObject $configuration;
+    private ExtensionConfigurationInterface&MockObject $configuration;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
         $this->subject = new MasterKeyProviderFactory($this->configuration);
     }
 

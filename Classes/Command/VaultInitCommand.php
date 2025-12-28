@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -22,7 +22,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class VaultInitCommand extends Command
 {
     public function __construct(
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
     ) {
         parent::__construct();
     }

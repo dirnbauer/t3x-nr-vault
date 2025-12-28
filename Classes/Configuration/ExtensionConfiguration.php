@@ -10,7 +10,7 @@ use TYPO3\CMS\Core\SingletonInterface;
 /**
  * Extension configuration wrapper with typed accessors.
  */
-final class ExtensionConfiguration implements SingletonInterface
+final class ExtensionConfiguration implements ExtensionConfigurationInterface, SingletonInterface
 {
     private const EXTENSION_KEY = 'nr_vault';
 

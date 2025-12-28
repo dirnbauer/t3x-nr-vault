@@ -6,7 +6,6 @@ namespace Netresearch\NrVault\Tests\Unit\Audit;
 
 use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogService;
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,7 +23,6 @@ final class AuditLogServiceTest extends TestCase
     private AuditLogService $subject;
     private ConnectionPool&MockObject $connectionPool;
     private AccessControlServiceInterface&MockObject $accessControlService;
-    private ExtensionConfiguration&MockObject $configuration;
     private QueryBuilder&MockObject $queryBuilder;
     private Connection&MockObject $connection;
 
@@ -34,7 +32,6 @@ final class AuditLogServiceTest extends TestCase
 
         $this->connectionPool = $this->createMock(ConnectionPool::class);
         $this->accessControlService = $this->createMock(AccessControlServiceInterface::class);
-        $this->configuration = $this->createMock(ExtensionConfiguration::class);
         $this->queryBuilder = $this->createMock(QueryBuilder::class);
         $this->connection = $this->createMock(Connection::class);
 
@@ -47,15 +44,13 @@ final class AuditLogServiceTest extends TestCase
         $this->accessControlService
             ->method('getCurrentActorUsername')
             ->willReturn('admin');
-
-        $this->configuration
-            ->method('isAuditLoggingEnabled')
-            ->willReturn(true);
+        $this->accessControlService
+            ->method('getCurrentUserGroups')
+            ->willReturn([]);
 
         $this->subject = new AuditLogService(
             $this->connectionPool,
             $this->accessControlService,
-            $this->configuration,
         );
     }
 
@@ -155,28 +150,6 @@ final class AuditLogServiceTest extends TestCase
             );
 
         $this->subject->logAccessDenied('restricted_secret', 'retrieve');
-    }
-
-    #[Test]
-    public function disabledLoggingSkipsInsert(): void
-    {
-        $configuration = $this->createMock(ExtensionConfiguration::class);
-        $configuration
-            ->method('isAuditLoggingEnabled')
-            ->willReturn(false);
-
-        $subject = new AuditLogService(
-            $this->connectionPool,
-            $this->accessControlService,
-            $configuration,
-        );
-
-        // Connection should never be requested
-        $this->connectionPool
-            ->expects(self::never())
-            ->method('getConnectionForTable');
-
-        $subject->logStore('test', 'Should not log');
     }
 
     #[Test]

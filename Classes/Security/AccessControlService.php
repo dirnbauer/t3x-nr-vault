@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Security;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 final class AccessControlService implements AccessControlServiceInterface
 {
     public function __construct(
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
     ) {
     }
 

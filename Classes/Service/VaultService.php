@@ -14,7 +14,7 @@ namespace Netresearch\NrVault\Service;
 
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Event\SecretAccessedEvent;
@@ -47,7 +47,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly EncryptionServiceInterface $encryptionService,
         private readonly AccessControlServiceInterface $accessControlService,
         private readonly AuditLogServiceInterface $auditLogService,
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {
     }

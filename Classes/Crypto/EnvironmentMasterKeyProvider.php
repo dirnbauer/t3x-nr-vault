@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Crypto;
 
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Exception\MasterKeyException;
 
 /**
@@ -15,7 +15,7 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
     private const KEY_LENGTH = 32; // 256 bits
 
     public function __construct(
-        private readonly ExtensionConfiguration $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
     ) {
     }
 

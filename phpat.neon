@@ -1,0 +1,4 @@
+# PHPat Architecture Rules
+services:
+    -
+        class: Netresearch\NrVault\Tests\Architecture\ArchitectureTest
