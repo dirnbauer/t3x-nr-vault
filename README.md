@@ -1,6 +1,6 @@
 # nr-vault: Secure Secrets Management for TYPO3
 
-A TYPO3 extension providing centralized, secure storage for API keys, credentials, and other secrets with encryption at rest, access control, and audit logging.
+A TYPO3 v14 extension providing centralized, secure storage for API keys, credentials, and other secrets with encryption at rest, access control, audit logging, and a secure HTTP client.
 
 ## Problem Statement
 
@@ -19,30 +19,48 @@ Every extension that needs to store API keys reinvents this wheel, often insecur
 
 nr-vault provides:
 
-- **Envelope encryption** with AES-256-GCM
+- **Envelope encryption** with AES-256-GCM via libsodium
 - **Master key management** (file, environment variable, or derived)
-- **Per-secret access control** via backend user groups
-- **Audit logging** of all secret access
+- **Per-secret access control** via backend user groups with context scoping
+- **Audit logging** of all secret access with tamper-evident hash chain
 - **Key rotation** support for both secrets and master key
 - **TCA integration** via custom `vaultSecret` field type
-- **Optional external vault adapters** (HashiCorp Vault, AWS Secrets Manager)
+- **Vault HTTP Client** - make authenticated API calls without exposing secrets
+- **CLI commands** for DevOps automation
+- **Optional external vault adapters** (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault)
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    VaultServiceInterface                     │
-├─────────────────────────────────────────────────────────────┤
-│ store()  retrieve()  rotate()  delete()  list()             │
-└─────────────────────────────────────────────────────────────┘
-                              │
-       ┌──────────────────────┼──────────────────────┐
-       ▼                      ▼                      ▼
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ LocalEncryption │  │ HashiCorpVault  │  │ AWSSecrets      │
-│ Adapter         │  │ Adapter         │  │ Adapter         │
-│ (DEFAULT)       │  │ (Optional)      │  │ (Optional)      │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         TYPO3 Backend                                    │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │
+│  │  TCA Field      │  │ Backend Module  │  │  CLI Commands   │          │
+│  │  (vaultSecret)  │  │  (Secrets Mgr)  │  │                 │          │
+│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘          │
+│           └────────────────────┼─────────────────────┘                   │
+│                                ▼                                          │
+│  ┌───────────────────────────────────────────────────────────────────┐   │
+│  │                        VaultService                                │   │
+│  │  store() │ retrieve() │ rotate() │ delete() │ list() │ http()     │   │
+│  └───────────────────────────────────────────────────────────────────┘   │
+│                                │                                          │
+│      ┌─────────────────────────┼─────────────────────────┐               │
+│      ▼                         ▼                         ▼               │
+│  ┌────────────────┐   ┌────────────────┐   ┌────────────────┐           │
+│  │ AccessControl  │   │ EncryptionSvc  │   │  AuditLogSvc   │           │
+│  │ Service        │   │                │   │                │           │
+│  └────────────────┘   └───────┬────────┘   └────────────────┘           │
+│                               │                                           │
+│                               ▼                                           │
+│  ┌────────────────────────────────────────────────────────────────────┐  │
+│  │                      Vault Adapters                                 │  │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │  │
+│  │  │ LocalDatabase│  │ HashiCorp    │  │ AWS Secrets  │              │  │
+│  │  │ (DEFAULT)    │  │ Vault        │  │ Manager      │              │  │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘              │  │
+│  └────────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Encryption Model
@@ -66,13 +84,15 @@ Benefits:
 
 ## Quick Start
 
+### Store and Retrieve Secrets
+
 ```php
-use Netresearch\NrVault\Service\VaultService;
+use Netresearch\NrVault\Service\VaultServiceInterface;
 
 class MyService
 {
     public function __construct(
-        private readonly VaultService $vault,
+        private readonly VaultServiceInterface $vault,
     ) {}
 
     public function storeApiKey(string $provider, string $apiKey): void
@@ -83,6 +103,8 @@ class MyService
             options: [
                 'owner' => $GLOBALS['BE_USER']->user['uid'],
                 'groups' => [1, 2],  // Admin, Editor groups
+                'context' => 'payment',  // Permission scoping
+                'expiresAt' => time() + 86400 * 90,  // 90 days
             ]
         );
     }
@@ -93,6 +115,34 @@ class MyService
     }
 }
 ```
+
+### Vault HTTP Client
+
+Make authenticated API calls without exposing secrets to your code:
+
+```php
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Http\SecretPlacement;
+
+class PaymentService
+{
+    public function __construct(
+        private readonly VaultServiceInterface $vault,
+    ) {}
+
+    public function chargeCustomer(array $payload): array
+    {
+        // Secret is injected by vault - never visible to this code
+        $response = $this->vault->http()
+            ->withSecret('stripe_api_key', SecretPlacement::BearerAuth)
+            ->post('https://api.stripe.com/v1/charges', $payload);
+
+        return $response->json();
+    }
+}
+```
+
+Secret placement options: `BearerAuth`, `BasicAuthPassword`, `Header`, `QueryParam`, `BodyField`, `UrlSegment`.
 
 ## TCA Integration
 
@@ -110,11 +160,34 @@ class MyService
 ],
 ```
 
+## CLI Commands
+
+```bash
+# Initialize vault (create master key)
+vendor/bin/typo3 vault:init
+
+# List secrets (respects access control)
+vendor/bin/typo3 vault:list
+
+# Rotate a secret
+vendor/bin/typo3 vault:rotate my_secret_id --reason="Scheduled rotation"
+
+# Rotate master key (re-encrypts all DEKs)
+vendor/bin/typo3 vault:master-key:rotate --new-key-file=/path/to/new.key
+
+# View audit log
+vendor/bin/typo3 vault:audit --identifier=my_secret_id --days=30
+
+# Export secrets (encrypted backup)
+vendor/bin/typo3 vault:export --output=secrets.enc
+```
+
 ## Requirements
 
-- TYPO3 v12.4 LTS or v13.x
-- PHP 8.1+
-- Sodium extension (included in PHP 7.2+)
+- **TYPO3**: v14.0+
+- **PHP**: ^8.5
+- **Extensions**: `ext-sodium` (bundled with PHP)
+- **CPU**: AES-NI support recommended (XChaCha20-Poly1305 fallback available)
 
 ## Documentation
 
@@ -122,19 +195,29 @@ class MyService
 - [API Reference](docs/api.md)
 - [Database Schema](docs/database.md)
 - [Security Considerations](docs/security.md)
-- [External Adapters](docs/adapters.md)
-- [Migration Guide](docs/migration.md)
+- [Implementation Plan](docs/implementation-plan.md)
+- [Delivery Plan](docs/delivery-plan.md)
+- [Use Cases](docs/use-cases.md)
 
-## Comparison with Other Systems
+## Feature Comparison
 
-| Feature | nr-vault | Drupal Key | Laravel Secrets |
-|---------|----------|------------|-----------------|
-| Self-contained | Yes | Yes | Yes |
-| External vault support | Pluggable | Pluggable | Limited |
-| Access control | BE user groups | By key | N/A |
-| Audit logging | Full | Limited | None |
-| TCA integration | Native | Form API | N/A |
-| Key rotation | CLI + API | Manual | CLI |
+| Feature | nr-vault | Drupal Key | Laravel Secrets | Symfony Secrets |
+|---------|----------|------------|-----------------|-----------------|
+| Envelope encryption | Yes | No | No | No |
+| Per-secret DEKs | Yes | No | No | No |
+| External vault support | Pluggable | Pluggable | Limited | HashiCorp |
+| Access control | BE groups + context | By key | N/A | N/A |
+| Audit logging | Full + hash chain | Limited | None | None |
+| TCA/Form integration | Native | Form API | N/A | N/A |
+| Key rotation CLI | Yes | Manual | Yes | Yes |
+| HTTP client | Yes | No | No | No |
+| OAuth auto-refresh | Yes | No | No | No |
+
+## Roadmap
+
+- **Phase 1-5**: Core functionality (current focus)
+- **Phase 6**: External adapters (HashiCorp, AWS, Azure) + Optional Rust FFI for zero-PHP-exposure
+- **Phase 7**: Service Registry - abstract away both credentials AND endpoints
 
 ## License
 

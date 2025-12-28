@@ -1,11 +1,15 @@
 # nr-vault API Reference
 
+**Target:** TYPO3 v14.0+ | PHP 8.5+
+
 ## VaultServiceInterface
 
 The primary interface for interacting with the vault.
 
 ```php
 namespace Netresearch\NrVault\Service;
+
+use Netresearch\NrVault\Http\VaultHttpClientInterface;
 
 interface VaultServiceInterface
 {
@@ -20,8 +24,10 @@ interface VaultServiceInterface
      * @param array  $options    Optional configuration:
      *                           - owner: int - BE user UID who owns this secret
      *                           - groups: int[] - BE user group UIDs allowed to access
-     *                           - expires: \DateTimeInterface|null - When secret expires
+     *                           - context: string - Permission scoping (e.g., 'payment', 'hr')
+     *                           - expiresAt: int|\DateTimeInterface|null - When secret expires
      *                           - metadata: array - Custom metadata (JSON-serializable)
+     *                           - description: string - Human-readable description
      *                           - pid: int - Page ID for multi-site scoping
      *
      * @throws ValidationException If identifier is invalid
@@ -62,11 +68,12 @@ interface VaultServiceInterface
      * Removes the secret from storage. This action is logged.
      *
      * @param string $identifier The secret identifier
+     * @param string $reason     Required reason for deletion (compliance requirement)
      *
      * @throws SecretNotFoundException If secret doesn't exist
      * @throws AccessDeniedException If current user lacks permission
      */
-    public function delete(string $identifier): void;
+    public function delete(string $identifier, string $reason = ''): void;
 
     /**
      * Rotate a secret.
@@ -76,12 +83,13 @@ interface VaultServiceInterface
      *
      * @param string $identifier The secret identifier
      * @param string $newSecret  The new secret value
+     * @param string $reason     Required reason for rotation (compliance requirement)
      *
      * @throws SecretNotFoundException If secret doesn't exist
      * @throws AccessDeniedException If current user lacks permission
      * @throws EncryptionException If encryption fails
      */
-    public function rotate(string $identifier, string $newSecret): void;
+    public function rotate(string $identifier, string $newSecret, string $reason = ''): void;
 
     /**
      * List all accessible secret identifiers.
@@ -91,6 +99,7 @@ interface VaultServiceInterface
      * @param array $filters Optional filters:
      *                       - owner: int - Filter by owner UID
      *                       - prefix: string - Filter by identifier prefix
+     *                       - context: string - Filter by permission context
      *                       - pid: int - Filter by page ID
      *
      * @return string[] Array of secret identifiers
@@ -106,12 +115,15 @@ interface VaultServiceInterface
      *
      * @return array{
      *     identifier: string,
+     *     description: string,
      *     owner: int,
      *     groups: int[],
+     *     context: string,
      *     version: int,
      *     createdAt: \DateTimeInterface,
      *     updatedAt: \DateTimeInterface,
      *     expiresAt: ?\DateTimeInterface,
+     *     lastRotatedAt: ?\DateTimeInterface,
      *     metadata: array,
      * }
      *
@@ -119,6 +131,284 @@ interface VaultServiceInterface
      * @throws AccessDeniedException If current user lacks permission
      */
     public function getMetadata(string $identifier): array;
+
+    /**
+     * Get the Vault HTTP Client for making authenticated API calls.
+     *
+     * The HTTP client injects secrets into requests without exposing
+     * them to calling code.
+     *
+     * @return VaultHttpClientInterface
+     */
+    public function http(): VaultHttpClientInterface;
+}
+```
+
+## VaultHttpClientInterface
+
+Make authenticated HTTP requests with automatic secret injection.
+
+```php
+namespace Netresearch\NrVault\Http;
+
+use Psr\Http\Message\ResponseInterface;
+
+interface VaultHttpClientInterface
+{
+    /**
+     * Attach a secret to be injected into requests.
+     *
+     * @param string          $identifier Secret identifier in vault
+     * @param SecretPlacement $placement  How/where to inject the secret
+     * @param string|null     $name       Custom header/param name (optional)
+     *
+     * @return self Fluent interface
+     */
+    public function withSecret(
+        string $identifier,
+        SecretPlacement $placement,
+        ?string $name = null
+    ): self;
+
+    /**
+     * Attach OAuth credentials for automatic token refresh.
+     *
+     * @param OAuthConfig $config OAuth configuration
+     *
+     * @return self Fluent interface
+     */
+    public function withOAuth(OAuthConfig $config): self;
+
+    /**
+     * Send a GET request.
+     *
+     * @param string $url     Request URL
+     * @param array  $options Request options (headers, query, etc.)
+     *
+     * @return VaultHttpResponse
+     */
+    public function get(string $url, array $options = []): VaultHttpResponse;
+
+    /**
+     * Send a POST request.
+     *
+     * @param string       $url     Request URL
+     * @param array|string $body    Request body
+     * @param array        $options Request options
+     *
+     * @return VaultHttpResponse
+     */
+    public function post(string $url, array|string $body = [], array $options = []): VaultHttpResponse;
+
+    /**
+     * Send a PUT request.
+     *
+     * @param string       $url     Request URL
+     * @param array|string $body    Request body
+     * @param array        $options Request options
+     *
+     * @return VaultHttpResponse
+     */
+    public function put(string $url, array|string $body = [], array $options = []): VaultHttpResponse;
+
+    /**
+     * Send a PATCH request.
+     *
+     * @param string       $url     Request URL
+     * @param array|string $body    Request body
+     * @param array        $options Request options
+     *
+     * @return VaultHttpResponse
+     */
+    public function patch(string $url, array|string $body = [], array $options = []): VaultHttpResponse;
+
+    /**
+     * Send a DELETE request.
+     *
+     * @param string $url     Request URL
+     * @param array  $options Request options
+     *
+     * @return VaultHttpResponse
+     */
+    public function delete(string $url, array $options = []): VaultHttpResponse;
+
+    /**
+     * Send a request with any HTTP method.
+     *
+     * @param string       $method  HTTP method
+     * @param string       $url     Request URL
+     * @param array|string $body    Request body (optional)
+     * @param array        $options Request options
+     *
+     * @return VaultHttpResponse
+     */
+    public function request(
+        string $method,
+        string $url,
+        array|string $body = [],
+        array $options = []
+    ): VaultHttpResponse;
+}
+```
+
+## SecretPlacement Enum
+
+Defines where secrets are injected in HTTP requests.
+
+```php
+namespace Netresearch\NrVault\Http;
+
+enum SecretPlacement: string
+{
+    /**
+     * Inject as Bearer token in Authorization header.
+     * Authorization: Bearer <secret>
+     */
+    case BearerAuth = 'bearer_auth';
+
+    /**
+     * Inject as Basic auth password (username from options).
+     * Authorization: Basic base64(username:secret)
+     */
+    case BasicAuthPassword = 'basic_auth_password';
+
+    /**
+     * Inject as custom header value.
+     * X-Api-Key: <secret>
+     */
+    case Header = 'header';
+
+    /**
+     * Inject as query parameter.
+     * ?api_key=<secret>
+     */
+    case QueryParam = 'query_param';
+
+    /**
+     * Inject into JSON body field.
+     * {"api_key": "<secret>", ...}
+     */
+    case BodyField = 'body_field';
+
+    /**
+     * Replace placeholder in URL.
+     * /api/{secret}/resource
+     */
+    case UrlSegment = 'url_segment';
+}
+```
+
+## VaultHttpResponse
+
+Response wrapper with convenience methods.
+
+```php
+namespace Netresearch\NrVault\Http;
+
+use Psr\Http\Message\ResponseInterface;
+
+final class VaultHttpResponse
+{
+    public function __construct(
+        private readonly ResponseInterface $response,
+    ) {}
+
+    /**
+     * Get the underlying PSR-7 response.
+     */
+    public function getResponse(): ResponseInterface;
+
+    /**
+     * Get HTTP status code.
+     */
+    public function getStatusCode(): int;
+
+    /**
+     * Check if response was successful (2xx).
+     */
+    public function isSuccessful(): bool;
+
+    /**
+     * Get response body as string.
+     */
+    public function getBody(): string;
+
+    /**
+     * Parse response body as JSON.
+     *
+     * @param bool $assoc Return associative array (default) or objects
+     *
+     * @return array|object
+     *
+     * @throws \JsonException If body is not valid JSON
+     */
+    public function json(bool $assoc = true): array|object;
+
+    /**
+     * Get a response header value.
+     *
+     * @param string $name Header name (case-insensitive)
+     *
+     * @return string|null Header value or null if not present
+     */
+    public function getHeader(string $name): ?string;
+
+    /**
+     * Get all response headers.
+     *
+     * @return array<string, string[]>
+     */
+    public function getHeaders(): array;
+}
+```
+
+## OAuthConfig
+
+Configuration for OAuth authentication with automatic token refresh.
+
+```php
+namespace Netresearch\NrVault\Http;
+
+final class OAuthConfig
+{
+    public function __construct(
+        /**
+         * Vault identifier for client ID.
+         */
+        public readonly string $clientIdIdentifier,
+
+        /**
+         * Vault identifier for client secret.
+         */
+        public readonly string $clientSecretIdentifier,
+
+        /**
+         * Token endpoint URL.
+         */
+        public readonly string $tokenUrl,
+
+        /**
+         * OAuth grant type.
+         */
+        public readonly string $grantType = 'client_credentials',
+
+        /**
+         * OAuth scopes (space-separated or array).
+         */
+        public readonly string|array $scopes = [],
+
+        /**
+         * Vault identifier for storing/retrieving access token.
+         * If set, tokens are cached in vault with expiration.
+         */
+        public readonly ?string $tokenIdentifier = null,
+
+        /**
+         * Token refresh buffer in seconds.
+         * Refresh token this many seconds before expiry.
+         */
+        public readonly int $refreshBuffer = 60,
+    ) {}
 }
 ```
 
@@ -128,6 +418,8 @@ Interface for storage adapters (local encryption, HashiCorp Vault, AWS, etc.).
 
 ```php
 namespace Netresearch\NrVault\Adapter;
+
+use Netresearch\NrVault\Domain\Model\Secret;
 
 interface VaultAdapterInterface
 {
@@ -146,22 +438,20 @@ interface VaultAdapterInterface
     public function isAvailable(): bool;
 
     /**
-     * Store an encrypted secret.
+     * Store a secret.
      *
-     * @param string $identifier Unique identifier
-     * @param string $encryptedValue Already-encrypted value (for local) or plaintext (for external)
-     * @param array  $metadata Secret metadata
+     * @param Secret $secret The secret entity to store
      */
-    public function store(string $identifier, string $encryptedValue, array $metadata): void;
+    public function store(Secret $secret): void;
 
     /**
-     * Retrieve an encrypted secret.
+     * Retrieve a secret by identifier.
      *
      * @param string $identifier The secret identifier
      *
-     * @return string|null The encrypted value (for local) or plaintext (for external)
+     * @return Secret|null The secret entity or null if not found
      */
-    public function retrieve(string $identifier): ?string;
+    public function retrieve(string $identifier): ?Secret;
 
     /**
      * Delete a secret.
@@ -189,7 +479,7 @@ interface VaultAdapterInterface
     public function list(array $filters = []): array;
 
     /**
-     * Get metadata for a secret.
+     * Get metadata for a secret without decrypting value.
      *
      * @param string $identifier The secret identifier
      *
@@ -209,7 +499,7 @@ interface VaultAdapterInterface
 
 ## EncryptionServiceInterface
 
-Low-level encryption operations.
+Low-level encryption operations using AES-256-GCM.
 
 ```php
 namespace Netresearch\NrVault\Crypto;
@@ -217,71 +507,101 @@ namespace Netresearch\NrVault\Crypto;
 interface EncryptionServiceInterface
 {
     /**
-     * Encrypt a value using the master key.
+     * Encrypt a secret value with a unique DEK.
      *
-     * @param string $plaintext The value to encrypt
+     * @param string $plaintext  The value to encrypt
+     * @param string $identifier Secret identifier (used as AAD)
      *
-     * @return string Base64-encoded ciphertext (includes nonce and auth tag)
+     * @return array{
+     *     encrypted_value: string,
+     *     encrypted_dek: string,
+     *     dek_nonce: string,
+     *     value_nonce: string,
+     *     value_checksum: string,
+     * }
      *
      * @throws EncryptionException If encryption fails
      */
-    public function encrypt(string $plaintext): string;
+    public function encrypt(string $plaintext, string $identifier): array;
 
     /**
-     * Decrypt a value using the master key.
+     * Decrypt a secret value.
      *
-     * @param string $ciphertext Base64-encoded ciphertext
+     * @param string $encryptedValue Base64-encoded ciphertext
+     * @param string $encryptedDek   Base64-encoded encrypted DEK
+     * @param string $dekNonce       Base64-encoded DEK nonce
+     * @param string $valueNonce     Base64-encoded value nonce
+     * @param string $identifier     Secret identifier (used as AAD)
      *
      * @return string The decrypted plaintext
      *
      * @throws EncryptionException If decryption fails (wrong key, tampered data)
      */
-    public function decrypt(string $ciphertext): string;
+    public function decrypt(
+        string $encryptedValue,
+        string $encryptedDek,
+        string $dekNonce,
+        string $valueNonce,
+        string $identifier
+    ): string;
 
     /**
      * Generate a new Data Encryption Key.
      *
-     * @return string 32-byte random key
+     * @return string 32-byte random key (SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES)
      */
     public function generateDek(): string;
 
     /**
      * Encrypt a DEK with the master key.
      *
-     * @param string $dek The data encryption key
+     * @param string $dek        The data encryption key
+     * @param string $identifier Secret identifier (used as AAD)
      *
-     * @return string Encrypted DEK
+     * @return array{encrypted_dek: string, nonce: string}
      */
-    public function encryptDek(string $dek): string;
+    public function encryptDek(string $dek, string $identifier): array;
 
     /**
      * Decrypt a DEK with the master key.
      *
-     * @param string $encryptedDek The encrypted DEK
+     * @param string $encryptedDek Base64-encoded encrypted DEK
+     * @param string $nonce        Base64-encoded nonce
+     * @param string $identifier   Secret identifier (used as AAD)
      *
      * @return string The plaintext DEK
      */
-    public function decryptDek(string $encryptedDek): string;
+    public function decryptDek(string $encryptedDek, string $nonce, string $identifier): string;
 
     /**
-     * Encrypt a secret value using a DEK.
+     * Calculate value checksum for change detection.
      *
      * @param string $plaintext The secret value
-     * @param string $dek       The data encryption key
      *
-     * @return string Encrypted secret
+     * @return string SHA-256 hash (64 hex characters)
      */
-    public function encryptWithDek(string $plaintext, string $dek): string;
+    public function calculateChecksum(string $plaintext): string;
 
     /**
-     * Decrypt a secret value using a DEK.
+     * Re-encrypt a DEK with a new master key.
      *
-     * @param string $ciphertext The encrypted secret
-     * @param string $dek        The data encryption key
+     * Used during master key rotation.
      *
-     * @return string Decrypted secret
+     * @param string $encryptedDek   Current encrypted DEK
+     * @param string $dekNonce       Current DEK nonce
+     * @param string $identifier     Secret identifier
+     * @param string $oldMasterKey   Previous master key
+     * @param string $newMasterKey   New master key
+     *
+     * @return array{encrypted_dek: string, nonce: string}
      */
-    public function decryptWithDek(string $ciphertext, string $dek): string;
+    public function reEncryptDek(
+        string $encryptedDek,
+        string $dekNonce,
+        string $identifier,
+        string $oldMasterKey,
+        string $newMasterKey
+    ): array;
 }
 ```
 
@@ -337,7 +657,7 @@ interface MasterKeyProviderInterface
 
 ## AuditLogServiceInterface
 
-Logging of all vault operations.
+Logging of all vault operations with tamper-evident hash chain.
 
 ```php
 namespace Netresearch\NrVault\Audit;
@@ -347,16 +667,24 @@ interface AuditLogServiceInterface
     /**
      * Log a vault operation.
      *
-     * @param string $secretIdentifier The secret that was accessed
-     * @param string $action           One of: create, read, update, delete, rotate
-     * @param bool   $success          Whether operation succeeded
-     * @param string|null $errorMessage If failed, the error message
+     * @param string      $secretIdentifier The secret that was accessed
+     * @param string      $action           One of: create, read, update, delete, rotate, access_denied, http_call
+     * @param bool        $success          Whether operation succeeded
+     * @param string|null $errorMessage     If failed, the error message
+     * @param string|null $reason           Reason for operation (required for rotate/delete)
+     * @param string|null $hashBefore       Secret's value_checksum before operation
+     * @param string|null $hashAfter        Secret's value_checksum after operation
+     * @param array       $context          Additional context (JSON-serializable)
      */
     public function log(
         string $secretIdentifier,
         string $action,
         bool $success,
-        ?string $errorMessage = null
+        ?string $errorMessage = null,
+        ?string $reason = null,
+        ?string $hashBefore = null,
+        ?string $hashAfter = null,
+        array $context = []
     ): void;
 
     /**
@@ -393,133 +721,317 @@ interface AuditLogServiceInterface
      * @return array Exportable audit data
      */
     public function export(array $filters = []): array;
+
+    /**
+     * Verify hash chain integrity.
+     *
+     * @param int|null $fromUid Starting UID (null = from beginning)
+     * @param int|null $toUid   Ending UID (null = to latest)
+     *
+     * @return array{valid: bool, errors: array<int, string>}
+     */
+    public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array;
+
+    /**
+     * Get the hash of the most recent audit log entry.
+     *
+     * @return string|null SHA-256 hash or null if no entries exist
+     */
+    public function getLatestHash(): ?string;
+}
+```
+
+## AccessControlServiceInterface
+
+Access control for secrets based on ownership and group membership.
+
+```php
+namespace Netresearch\NrVault\Security;
+
+use Netresearch\NrVault\Domain\Model\Secret;
+
+interface AccessControlServiceInterface
+{
+    /**
+     * Check if current user can read a secret.
+     *
+     * @param Secret $secret The secret to check
+     *
+     * @return bool True if access is allowed
+     */
+    public function canRead(Secret $secret): bool;
+
+    /**
+     * Check if current user can write/update a secret.
+     *
+     * @param Secret $secret The secret to check
+     *
+     * @return bool True if access is allowed
+     */
+    public function canWrite(Secret $secret): bool;
+
+    /**
+     * Check if current user can delete a secret.
+     *
+     * @param Secret $secret The secret to check
+     *
+     * @return bool True if access is allowed
+     */
+    public function canDelete(Secret $secret): bool;
+
+    /**
+     * Check if current user can create secrets.
+     *
+     * @return bool True if access is allowed
+     */
+    public function canCreate(): bool;
+
+    /**
+     * Get the current actor UID.
+     *
+     * @return int Backend user UID (0 for CLI/system)
+     */
+    public function getCurrentActorUid(): int;
+
+    /**
+     * Get the current actor type.
+     *
+     * @return string One of: 'backend', 'cli', 'api', 'scheduler'
+     */
+    public function getCurrentActorType(): string;
+
+    /**
+     * Get the current actor's username.
+     *
+     * @return string Username or 'CLI' for command line
+     */
+    public function getCurrentActorUsername(): string;
+
+    /**
+     * Get groups the current user belongs to.
+     *
+     * @return int[] Array of BE group UIDs
+     */
+    public function getCurrentUserGroups(): array;
 }
 ```
 
 ## CLI Commands
 
+### vault:init
+
+```bash
+# Initialize vault (create master key)
+vendor/bin/typo3 vault:init
+
+# Initialize with specific path
+vendor/bin/typo3 vault:init --key-path=/var/secrets/typo3/vault-master.key
+```
+
 ### vault:store
 
 ```bash
 # Store a new secret (interactive)
-./vendor/bin/typo3 vault:store my_api_key
+vendor/bin/typo3 vault:store my_api_key
 
 # Store with value from stdin
-echo "secret123" | ./vendor/bin/typo3 vault:store my_api_key --stdin
+echo "secret123" | vendor/bin/typo3 vault:store my_api_key --stdin
 
 # Store with options
-./vendor/bin/typo3 vault:store my_api_key --owner=1 --groups=1,2 --expires="+30 days"
+vendor/bin/typo3 vault:store my_api_key \
+    --owner=1 \
+    --groups=1,2 \
+    --context=payment \
+    --expires="+30 days" \
+    --description="Stripe API key for production"
 ```
 
 ### vault:retrieve
 
 ```bash
 # Get a secret value (outputs to stdout)
-./vendor/bin/typo3 vault:retrieve my_api_key
+vendor/bin/typo3 vault:retrieve my_api_key
 
 # Check if secret exists (exit code 0 = exists, 1 = not found)
-./vendor/bin/typo3 vault:exists my_api_key
+vendor/bin/typo3 vault:exists my_api_key
 ```
 
 ### vault:rotate
 
 ```bash
 # Rotate a secret (interactive)
-./vendor/bin/typo3 vault:rotate my_api_key
+vendor/bin/typo3 vault:rotate my_api_key --reason="Scheduled rotation"
 
 # Rotate with new value from stdin
-echo "newsecret456" | ./vendor/bin/typo3 vault:rotate my_api_key --stdin
+echo "newsecret456" | vendor/bin/typo3 vault:rotate my_api_key --stdin --reason="Key compromised"
 ```
 
 ### vault:delete
 
 ```bash
 # Delete a secret
-./vendor/bin/typo3 vault:delete my_api_key
+vendor/bin/typo3 vault:delete my_api_key --reason="No longer needed"
 
 # Force delete without confirmation
-./vendor/bin/typo3 vault:delete my_api_key --force
+vendor/bin/typo3 vault:delete my_api_key --force --reason="Cleanup"
 ```
 
 ### vault:list
 
 ```bash
 # List all secrets (identifiers only)
-./vendor/bin/typo3 vault:list
+vendor/bin/typo3 vault:list
 
-# List with prefix filter
-./vendor/bin/typo3 vault:list --prefix=my_extension_
+# List with filters
+vendor/bin/typo3 vault:list --prefix=my_extension_ --context=payment
 
-# List with owner filter
-./vendor/bin/typo3 vault:list --owner=1
+# List with owner filter and JSON output
+vendor/bin/typo3 vault:list --owner=1 --format=json
 ```
 
 ### vault:audit
 
 ```bash
 # Show recent audit logs
-./vendor/bin/typo3 vault:audit
+vendor/bin/typo3 vault:audit
 
-# Filter by secret
-./vendor/bin/typo3 vault:audit --secret=my_api_key
+# Filter by secret and days
+vendor/bin/typo3 vault:audit --identifier=my_api_key --days=30
 
 # Filter by action and time
-./vendor/bin/typo3 vault:audit --action=read --since="2024-01-01"
+vendor/bin/typo3 vault:audit --action=read --since="2024-01-01"
 
 # Export to JSON
-./vendor/bin/typo3 vault:audit --format=json > audit.json
+vendor/bin/typo3 vault:audit --format=json > audit.json
+
+# Verify hash chain integrity
+vendor/bin/typo3 vault:audit:verify
 ```
 
 ### vault:master-key
 
 ```bash
 # Generate a new master key (outputs to stdout, doesn't store)
-./vendor/bin/typo3 vault:master-key:generate
+vendor/bin/typo3 vault:master-key:generate
 
 # Rotate master key (re-encrypts all DEKs)
-./vendor/bin/typo3 vault:master-key:rotate
+vendor/bin/typo3 vault:master-key:rotate --new-key-file=/path/to/new.key
 
 # Export master key (for backup)
-./vendor/bin/typo3 vault:master-key:export
+vendor/bin/typo3 vault:master-key:export
+```
+
+### vault:expire
+
+```bash
+# Check for expired secrets
+vendor/bin/typo3 vault:expire:check
+
+# List secrets expiring soon
+vendor/bin/typo3 vault:expire:upcoming --days=30
+
+# Send notifications for expiring secrets
+vendor/bin/typo3 vault:expire:notify
 ```
 
 ## Usage Examples
 
-### Storing an API Key
+### Storing an API Key with Context
 
 ```php
-use Netresearch\NrVault\Service\VaultService;
+use Netresearch\NrVault\Service\VaultServiceInterface;
 
-class MyApiService
+class PaymentService
 {
     public function __construct(
-        private readonly VaultService $vault,
+        private readonly VaultServiceInterface $vault,
     ) {}
 
-    public function saveApiKey(int $providerUid, string $apiKey): void
+    public function saveGatewayCredentials(int $gatewayUid, string $apiKey): void
     {
         $this->vault->store(
-            identifier: "my_extension_provider_{$providerUid}_api_key",
+            identifier: "payment_gateway_{$gatewayUid}_api_key",
             secret: $apiKey,
             options: [
                 'owner' => $GLOBALS['BE_USER']->user['uid'] ?? 0,
                 'groups' => [1],  // Admin group only
+                'context' => 'payment',  // Payment context
+                'description' => 'Payment gateway API key',
                 'metadata' => [
-                    'provider_uid' => $providerUid,
+                    'gateway_uid' => $gatewayUid,
                     'type' => 'api_key',
                 ],
             ]
         );
     }
 
-    public function getApiKey(int $providerUid): ?string
+    public function getGatewayCredentials(int $gatewayUid): ?string
     {
-        return $this->vault->retrieve("my_extension_provider_{$providerUid}_api_key");
+        return $this->vault->retrieve("payment_gateway_{$gatewayUid}_api_key");
     }
 }
 ```
 
-### Rotating Secrets
+### Using the Vault HTTP Client
+
+```php
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Http\SecretPlacement;
+
+class StripeService
+{
+    public function __construct(
+        private readonly VaultServiceInterface $vault,
+    ) {}
+
+    public function createCharge(array $payload): array
+    {
+        // Secret is injected automatically - never visible to this code
+        $response = $this->vault->http()
+            ->withSecret('stripe_api_key', SecretPlacement::BearerAuth)
+            ->post('https://api.stripe.com/v1/charges', $payload);
+
+        if (!$response->isSuccessful()) {
+            throw new PaymentException('Charge failed: ' . $response->getBody());
+        }
+
+        return $response->json();
+    }
+}
+```
+
+### Using OAuth with Token Refresh
+
+```php
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Http\OAuthConfig;
+
+class GoogleCalendarService
+{
+    public function __construct(
+        private readonly VaultServiceInterface $vault,
+    ) {}
+
+    public function getEvents(): array
+    {
+        $oauth = new OAuthConfig(
+            clientIdIdentifier: 'google_client_id',
+            clientSecretIdentifier: 'google_client_secret',
+            tokenUrl: 'https://oauth2.googleapis.com/token',
+            scopes: ['calendar.readonly'],
+            tokenIdentifier: 'google_access_token',  // Cache token in vault
+        );
+
+        $response = $this->vault->http()
+            ->withOAuth($oauth)
+            ->get('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+
+        return $response->json();
+    }
+}
+```
+
+### Rotating Secrets with Reason
 
 ```php
 public function rotateApiKey(int $providerUid, string $newApiKey): void
@@ -530,26 +1042,11 @@ public function rotateApiKey(int $providerUid, string $newApiKey): void
         throw new \RuntimeException('API key not found');
     }
 
-    $this->vault->rotate($identifier, $newApiKey);
-}
-```
-
-### Listing User's Secrets
-
-```php
-public function getUserSecrets(int $userUid): array
-{
-    $identifiers = $this->vault->list([
-        'owner' => $userUid,
-        'prefix' => 'my_extension_',
-    ]);
-
-    $secrets = [];
-    foreach ($identifiers as $identifier) {
-        $secrets[$identifier] = $this->vault->getMetadata($identifier);
-    }
-
-    return $secrets;
+    $this->vault->rotate(
+        $identifier,
+        $newApiKey,
+        reason: 'Scheduled quarterly rotation'
+    );
 }
 ```
 
@@ -567,6 +1064,8 @@ return [
                 'parameters' => [
                     // {uid} is replaced with record UID
                     'vaultIdentifier' => 'myext_config_{uid}_api_key',
+                    // Permission context
+                    'context' => 'payment',
                     // Show button to generate new key
                     'showRotateButton' => true,
                     // Show button to reveal key (temporarily)
@@ -579,3 +1078,8 @@ return [
     ],
 ];
 ```
+
+---
+
+*API Version: 2.0*
+*Compatible with: TYPO3 v14.0+ | PHP 8.5+*

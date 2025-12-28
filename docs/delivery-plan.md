@@ -1,8 +1,10 @@
 # nr-vault Delivery Plan: Maximum Security with Minimal User Impact
 
+**Target:** TYPO3 v14.0+ | PHP 8.5+
+
 ## Executive Summary
 
-This document outlines the delivery strategy for nr-vault, a TYPO3 secret management extension designed to provide enterprise-grade security while maintaining seamless integration with existing workflows. The core philosophy is **"security by default, complexity by choice"** - users get strong protection automatically, with advanced features available when needed.
+This document outlines the delivery strategy for nr-vault, a TYPO3 v14 secret management extension designed to provide enterprise-grade security while maintaining seamless integration with existing workflows. The core philosophy is **"security by default, complexity by choice"** - users get strong protection automatically, with advanced features available when needed.
 
 ---
 
@@ -1044,76 +1046,111 @@ DON'T:
 
 ## 8. Delivery Phases
 
-### Phase 1: Core Infrastructure (Weeks 1-3)
+### Phase 1: Core Infrastructure
 
-**Goal:** Working encryption and storage
+**Goal:** Working encryption and storage with envelope encryption model
 
-- [ ] Database schema and migrations
-- [ ] EncryptionService (AES-256-GCM)
+- [ ] Database schema and migrations (tx_nrvault_secret, tx_nrvault_audit_log, MM table)
+- [ ] EncryptionService (AES-256-GCM via libsodium with XChaCha20-Poly1305 fallback)
 - [ ] MasterKeyProvider implementations (file, env, derived)
+- [ ] MasterKeyProviderFactory for provider resolution
 - [ ] LocalEncryptionAdapter
 - [ ] VaultService facade
 - [ ] Unit tests for crypto operations
 
 **Deliverable:** Secrets can be stored/retrieved via API
 
-### Phase 2: Access Control & Audit (Weeks 4-5)
+### Phase 2: Access Control & Audit
 
-**Goal:** Security controls in place
+**Goal:** Security controls in place with tamper-evident logging
 
-- [ ] AccessControlService
-- [ ] AuditLogService
-- [ ] Event dispatching
+- [ ] AccessControlService with context-based scoping
+- [ ] AuditLogService with hash chain for tamper detection
+- [ ] CLI access control enforcement (allowCliAccess, cliAccessGroups)
+- [ ] PSR-14 event dispatching (SecretStoredEvent, SecretRetrievedEvent, etc.)
 - [ ] Exception hierarchy
 - [ ] Integration tests
 
-**Deliverable:** Multi-user access control working
+**Deliverable:** Multi-user access control working with full audit trail
 
-### Phase 3: TYPO3 Integration (Weeks 6-8)
+### Phase 3: TYPO3 Integration
 
-**Goal:** Backend UI complete
+**Goal:** Backend UI complete with native TYPO3 patterns
 
-- [ ] TCA vaultSecret field type
-- [ ] Backend module (secrets list)
-- [ ] Backend module (audit viewer)
-- [ ] TCA DataHandler hooks
+- [ ] TCA vaultSecret field type with FormEngine integration
+- [ ] Backend module (secrets list with filtering)
+- [ ] Backend module (audit viewer with hash chain verification)
+- [ ] DataHandler hooks for TCA field operations
 - [ ] Functional tests
 
 **Deliverable:** Full backend experience
 
-### Phase 4: CLI & DevOps (Weeks 9-10)
+### Phase 4: CLI & DevOps
 
 **Goal:** Automation ready
 
 - [ ] CLI commands (store, retrieve, rotate, delete, list)
 - [ ] CLI commands (master-key operations)
-- [ ] CLI commands (audit)
-- [ ] Scheduler tasks (expiry check)
+- [ ] CLI commands (audit with hash chain verification)
+- [ ] Scheduler tasks (expiry check, notifications)
+- [ ] vault:init command for first-run setup
 
 **Deliverable:** CLI automation complete
 
-### Phase 5: Migration Tools (Weeks 11-12)
+### Phase 5: Vault HTTP Client
+
+**Goal:** Secure API calls without secret exposure
+
+- [ ] VaultHttpClient implementation
+- [ ] SecretPlacement enum (BearerAuth, Header, QueryParam, BodyField, etc.)
+- [ ] VaultHttpResponse wrapper
+- [ ] OAuth support with automatic token refresh
+- [ ] Audit logging for HTTP calls
+- [ ] Integration tests
+
+**Deliverable:** Make authenticated API calls without exposing secrets
+
+### Phase 6: Migration & Documentation
 
 **Goal:** Adoption enabled
 
 - [ ] Secret detection service
 - [ ] Migration wizard (backend)
 - [ ] Migration CLI commands
-- [ ] Documentation
+- [ ] Comprehensive documentation
 - [ ] Security guide
 
 **Deliverable:** Ready for production use
 
-### Phase 6: External Adapters (Post-Release)
+### Phase 7: External Adapters & Rust FFI (Future)
 
-**Goal:** Enterprise features
+**Goal:** Enterprise features and zero-PHP exposure option
 
 - [ ] HashiCorp Vault adapter
 - [ ] AWS Secrets Manager adapter
 - [ ] Azure Key Vault adapter
+- [ ] Optional Rust FFI for zero-PHP-exposure encryption
 - [ ] Enterprise documentation
 
-**Deliverable:** Cloud-native options
+**Deliverable:** Cloud-native options with hardware-level security
+
+### Phase 8: Service Registry (Future)
+
+**Goal:** Complete endpoint abstraction
+
+- [ ] ServiceRegistryInterface
+- [ ] Service configuration with URL templates
+- [ ] Automatic credential + endpoint resolution
+- [ ] Service health monitoring
+- [ ] Environment-aware configuration
+
+**Deliverable:** Abstract away both credentials AND endpoints
+
+```php
+// Future API
+$response = $vault->service('stripe')->post('charges', $payload);
+// Automatically resolves: URL + API version + credentials
+```
 
 ---
 
@@ -1348,6 +1385,7 @@ final class AccessDeniedEvent
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: 2024-01-20*
-*Status: Draft for Review*
+---
+
+*Document Version: 2.0*
+*Compatible with: TYPO3 v14.0+ | PHP 8.5+*

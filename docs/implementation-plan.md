@@ -1,5 +1,5 @@
 # nr-vault Implementation Plan
-## TYPO3 v14 | PHP 8.4/8.5 | Secure Secrets Management Extension
+## TYPO3 v14 | PHP 8.5+ | Secure Secrets Management Extension
 
 ---
 
@@ -34,7 +34,7 @@
 | **Vendor** | Netresearch DTT GmbH |
 | **Composer Name** | `netresearch/nr-vault` |
 | **TYPO3 Compatibility** | v14.0+ |
-| **PHP Requirement** | ^8.4 |
+| **PHP Requirement** | ^8.5 |
 | **License** | GPL-2.0-or-later |
 
 ### 1.2 Core Dependencies
@@ -42,7 +42,7 @@
 ```json
 {
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "typo3/cms-core": "^14.0",
         "typo3/cms-backend": "^14.0",
         "typo3/cms-extbase": "^14.0",
@@ -497,9 +497,8 @@ nr_vault/
 │   ├── Controller/
 │   │   └── VaultController.php
 │   │
-│   ├── EventListener/
-│   │   ├── AfterRecordSavedEventListener.php
-│   │   └── BeforeRecordDeletedEventListener.php
+│   ├── Hook/
+│   │   └── DataHandlerHook.php
 │   │
 │   ├── Scheduler/
 │   │   ├── ExpiredSecretsTask.php
@@ -975,8 +974,8 @@ final class EncryptionService implements EncryptionServiceInterface
     public function encrypt(string $plaintext, string $identifier): array
     {
         try {
-            // Generate Data Encryption Key (DEK)
-            $dek = sodium_crypto_secretbox_keygen();
+            // Generate Data Encryption Key (DEK) - 32 bytes for AES-256-GCM
+            $dek = random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
 
             // Generate nonces
             $dekNonce = random_bytes(self::NONCE_LENGTH);
@@ -1298,8 +1297,21 @@ final class AccessControlService implements AccessControlServiceInterface
 
         $currentUserUid = $this->getCurrentUserUid();
 
-        // CLI context with no user = system access
+        // CLI context with no user - check if CLI access is allowed
         if ($currentUserUid === 0 && PHP_SAPI === 'cli') {
+            // CLI access must be explicitly enabled in configuration
+            if (!$this->configuration->isCliAccessAllowed()) {
+                return false;
+            }
+
+            // If CLI access groups are configured, check if secret is in allowed groups
+            $cliAccessGroups = $this->configuration->getCliAccessGroups();
+            if (!empty($cliAccessGroups)) {
+                $secretGroups = $secret->getAllowedGroups();
+                return !empty(array_intersect($secretGroups, $cliAccessGroups));
+            }
+
+            // No group restriction = full CLI access (if enabled)
             return true;
         }
 
@@ -1737,30 +1749,42 @@ Using PSR-14 events instead of DataHandler hooks for cleaner, more maintainable 
 
 declare(strict_types=1);
 
-namespace Netresearch\NrVault\EventListener;
+namespace Netresearch\NrVault\Hook;
 
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use TYPO3\CMS\Core\Attribute\AsEventListener;
-use TYPO3\CMS\Core\DataHandling\Event\AfterRecordSavedEvent;
-use TYPO3\CMS\Core\DataHandling\Event\BeforeRecordDeletedEvent;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Handle vault secret fields via PSR-14 events.
+ * DataHandler hook for processing vault secret fields.
+ *
+ * TYPO3 v14 uses DataHandler hooks for record operations.
+ * This is the reliable approach for intercepting save/delete operations.
  */
-#[AsEventListener(identifier: 'nr-vault/after-record-saved')]
-final class AfterRecordSavedEventListener
+final class DataHandlerHook
 {
     public function __construct(
         private readonly VaultServiceInterface $vaultService,
     ) {}
 
-    public function __invoke(AfterRecordSavedEvent $event): void
-    {
-        $table = $event->getTable();
-        $uid = $event->getUid();
-        $fields = $event->getFields();
+    /**
+     * Process vault secret fields after record is saved.
+     * Hook: processDatamap_afterDatabaseOperations
+     */
+    public function processDatamap_afterDatabaseOperations(
+        string $status,
+        string $table,
+        string|int $id,
+        array $fieldArray,
+        DataHandler $dataHandler
+    ): void {
+        // Resolve actual UID for new records
+        $uid = is_numeric($id) ? (int)$id : (int)($dataHandler->substNEWwithIDs[$id] ?? 0);
+        if ($uid === 0) {
+            return;
+        }
 
-        foreach ($fields as $fieldName => $value) {
+        foreach ($fieldArray as $fieldName => $value) {
             // Check if this is a vault secret field (contains our marker)
             if (!is_array($value) || !isset($value['_vault_identifier'])) {
                 continue;
@@ -1793,22 +1817,20 @@ final class AfterRecordSavedEventListener
             }
         }
     }
-}
 
-#[AsEventListener(identifier: 'nr-vault/before-record-deleted')]
-final class BeforeRecordDeletedEventListener
-{
-    public function __construct(
-        private readonly VaultServiceInterface $vaultService,
-    ) {}
-
-    public function __invoke(BeforeRecordDeletedEvent $event): void
-    {
-        $table = $event->getTable();
-        $uid = $event->getUid();
-
+    /**
+     * Clean up vault secrets when record is deleted.
+     * Hook: processCmdmap_deleteAction
+     */
+    public function processCmdmap_deleteAction(
+        string $table,
+        int $id,
+        array $recordToDelete,
+        bool &$recordWasDeleted,
+        DataHandler $dataHandler
+    ): void {
         // Find vault secrets for this record
-        $prefix = $table . '_' . $uid . '_';
+        $prefix = $table . '_' . $id . '_';
         $secrets = $this->vaultService->list(['prefix' => $prefix]);
 
         foreach ($secrets as $secret) {
@@ -1824,28 +1846,37 @@ final class BeforeRecordDeletedEventListener
 }
 ```
 
-**Event listener registration** (Configuration/Services.yaml):
+**Hook registration** (Configuration/ext_localconf.php):
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Netresearch\NrVault\Hook\DataHandlerHook;
+
+defined('TYPO3') or die();
+
+// Register DataHandler hooks for vault secret processing
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'][]
+    = DataHandlerHook::class;
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'][]
+    = DataHandlerHook::class;
+```
+
+**Services.yaml registration:**
 
 ```yaml
 services:
-  Netresearch\NrVault\EventListener\AfterRecordSavedEventListener:
-    tags:
-      - name: event.listener
-        identifier: 'nr-vault/after-record-saved'
-        event: TYPO3\CMS\Core\DataHandling\Event\AfterRecordSavedEvent
-
-  Netresearch\NrVault\EventListener\BeforeRecordDeletedEventListener:
-    tags:
-      - name: event.listener
-        identifier: 'nr-vault/before-record-deleted'
-        event: TYPO3\CMS\Core\DataHandling\Event\BeforeRecordDeletedEvent
+  Netresearch\NrVault\Hook\DataHandlerHook:
+    public: true
 ```
 
-**Why PSR-14 over DataHandler hooks:**
-- No fragile `processDatamap_*` string matching
-- Clean dependency injection
-- Testable in isolation
-- TYPO3 v14 recommended pattern
+**Why DataHandler hooks in TYPO3 v14:**
+- Direct access to record operations at the right lifecycle point
+- Works with all record operations (new, update, copy, delete)
+- Clean dependency injection via constructor
+- Testable in isolation with mocked DataHandler
 
 ---
 
@@ -1889,18 +1920,24 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
+/**
+ * Backend module controller for vault management.
+ *
+ * TYPO3 v14 backend controllers use #[AsController] attribute
+ * and do NOT extend ActionController. They are pure PSR-7 controllers.
+ */
 #[AsController]
-final class VaultController extends ActionController
+final class VaultController
 {
     public function __construct(
         private readonly VaultServiceInterface $vaultService,
         private readonly AuditLogRepository $auditLogRepository,
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
+        private readonly UriBuilder $uriBuilder,
     ) {}
 
     /**
@@ -4267,7 +4304,7 @@ Based on security best practices and scope management:
 
 ---
 
-*Document Version: 1.2.0*
+*Document Version: 1.3.0*
 *Last Updated: 2025-12-28*
 *Status: Implementation Ready*
 *Incorporates feedback from alternative planning document*
