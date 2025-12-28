@@ -219,10 +219,24 @@ vendor/bin/typo3 vault:export --output=secrets.enc
 - **Phase 6**: External adapters (HashiCorp, AWS, Azure) + Optional Rust FFI for zero-PHP-exposure
 - **Phase 7**: Service Registry - abstract away both credentials AND endpoints
 
+## Installation
+
+```bash
+composer require netresearch/nr-vault
+```
+
+Or in DDEV:
+
+```bash
+ddev start
+ddev install-v14
+ddev vault-init
+```
+
 ## License
 
 GPL-2.0-or-later
 
-## Author
+---
 
-Netresearch DTT GmbH
+**[n]** Developed by [Netresearch DTT GmbH](https://www.netresearch.de/) - Enterprise TYPO3 Solutions
