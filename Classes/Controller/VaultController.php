@@ -17,8 +17,8 @@ use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\Response;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 
@@ -310,7 +310,7 @@ final class VaultController
         $refreshButton = $buttonBar->makeLinkButton()
             ->setHref((string) $request->getUri())
             ->setTitle($lang->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
-            ->setIcon($this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
+            ->setIcon($this->iconFactory->getIcon('actions-refresh', IconSize::SMALL));
         $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
         // Secrets button (if not current)
@@ -318,7 +318,7 @@ final class VaultController
             $secretsButton = $buttonBar->makeLinkButton()
                 ->setHref($this->buildModuleUri($request, ['action' => 'secrets']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.secrets'))
-                ->setIcon($this->iconFactory->getIcon('actions-lock', Icon::SIZE_SMALL));
+                ->setIcon($this->iconFactory->getIcon('actions-lock', IconSize::SMALL));
             $buttonBar->addButton($secretsButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
         }
 
@@ -327,7 +327,7 @@ final class VaultController
             $auditButton = $buttonBar->makeLinkButton()
                 ->setHref($this->buildModuleUri($request, ['action' => 'audit']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.audit'))
-                ->setIcon($this->iconFactory->getIcon('actions-document-history-open', Icon::SIZE_SMALL));
+                ->setIcon($this->iconFactory->getIcon('actions-document-history-open', IconSize::SMALL));
             $buttonBar->addButton($auditButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
         }
 
@@ -337,7 +337,7 @@ final class VaultController
             $verifyButton = $buttonBar->makeLinkButton()
                 ->setHref($this->buildModuleUri($request, ['action' => 'verifyChain']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.verifyChain'))
-                ->setIcon($this->iconFactory->getIcon('actions-check', Icon::SIZE_SMALL))
+                ->setIcon($this->iconFactory->getIcon('actions-check', IconSize::SMALL))
                 ->setClasses('t3js-vault-verify-chain');
             $buttonBar->addButton($verifyButton, ButtonBar::BUTTON_POSITION_RIGHT, 1);
 
@@ -346,7 +346,7 @@ final class VaultController
                 $exportButton = $buttonBar->makeLinkButton()
                     ->setHref($this->buildModuleUri($request, ['action' => 'export', 'format' => 'json']))
                     ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.export'))
-                    ->setIcon($this->iconFactory->getIcon('actions-download', Icon::SIZE_SMALL));
+                    ->setIcon($this->iconFactory->getIcon('actions-download', IconSize::SMALL));
                 $buttonBar->addButton($exportButton, ButtonBar::BUTTON_POSITION_RIGHT, 2);
             }
         }
