@@ -29,12 +29,13 @@ The main service for interacting with the vault.
       :param string $secret: The secret value to store
       :param array $options: Optional configuration (owner, groups, context, expiresAt, metadata)
 
-   .. php:method:: retrieve(string $identifier): ?string
+   .. php:method:: retrieve(string $identifier)
 
       Retrieve a secret from the vault.
 
       :param string $identifier: The secret identifier
       :returns: The decrypted secret value or null if not found
+      :returntype: string|null
       :throws AccessDeniedException: If user lacks read permission
       :throws SecretExpiredException: If the secret has expired
 

@@ -4,4 +4,4 @@
 Sitemap
 =======
 
-:ref:`genindex`
+See the :doc:`table of contents </Index>` for a complete overview.
