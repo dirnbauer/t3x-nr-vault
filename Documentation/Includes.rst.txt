@@ -1,0 +1,12 @@
+.. This file contains global includes for all documentation files.
+   Add common substitutions, links, and other reusable content here.
+
+.. |extension_key| replace:: nr_vault
+.. |extension_name| replace:: nr-vault
+.. |vendor| replace:: Netresearch DTT GmbH
+.. |typo3_version| replace:: 14.0
+.. |php_version| replace:: 8.5
+
+.. _Netresearch: https://www.netresearch.de/
+.. _GitHub: https://github.com/netresearch/nr-vault
+.. _issues: https://github.com/netresearch/nr-vault/issues
