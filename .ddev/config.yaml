@@ -1,0 +1,22 @@
+name: nr-vault
+type: typo3
+docroot: .Build/public
+php_version: "8.5"
+webserver_type: apache-fpm
+database:
+  type: mariadb
+  version: "10.11"
+xdebug_enabled: false
+additional_hostnames: []
+additional_fqdns: []
+use_dns_when_possible: true
+composer_version: "2"
+nodejs_version: "20"
+
+web_environment:
+  - TYPO3_CONTEXT=Development
+  - NR_VAULT_MASTER_KEY=dev-only-test-key-do-not-use-in-prod
+
+hooks:
+  post-start:
+    - exec: composer install --no-progress --prefer-dist

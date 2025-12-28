@@ -1,0 +1,108 @@
+#!/bin/bash
+
+## Description: Install TYPO3 v14 for extension development
+## Usage: install-v14
+## Example: ddev install-v14
+
+set -e
+
+echo "Installing TYPO3 v14 for nr-vault extension development..."
+
+# Create necessary directories
+mkdir -p .Build/public .Build/config .Build/var
+
+# Create minimal TYPO3 configuration
+cat > .Build/config/system/settings.php << 'EOF'
+<?php
+return [
+    'BE' => [
+        'debug' => true,
+        'installToolPassword' => '$argon2i$v=19$m=65536,t=16,p=1$QS5VWmRLSjZVMm1MWjNNdw$c1eHpD1k9F1cP1p9hT1LBKjYX8YvRj0xKOq/qJY7K3I',
+        'passwordHashing' => [
+            'className' => 'TYPO3\\CMS\\Core\\Crypto\\PasswordHashing\\Argon2iPasswordHash',
+            'options' => [],
+        ],
+    ],
+    'DB' => [
+        'Connections' => [
+            'Default' => [
+                'charset' => 'utf8mb4',
+                'driver' => 'mysqli',
+                'host' => 'db',
+                'password' => 'db',
+                'port' => 3306,
+                'user' => 'db',
+                'dbname' => 'db',
+            ],
+        ],
+    ],
+    'EXTENSIONS' => [
+        'backend' => [
+            'backendFavicon' => '',
+            'backendLogo' => '',
+            'loginBackgroundImage' => '',
+            'loginFootnote' => '',
+            'loginHighlightColor' => '',
+            'loginLogo' => '',
+            'loginLogoAlt' => '',
+        ],
+        'nr_vault' => [
+            'adapter' => 'local',
+            'masterKeyProvider' => 'env',
+            'masterKeyEnvVar' => 'NR_VAULT_MASTER_KEY',
+            'allowCliAccess' => true,
+        ],
+    ],
+    'SYS' => [
+        'devIPmask' => '*',
+        'displayErrors' => 1,
+        'encryptionKey' => 'dev-encryption-key-for-testing-only-not-for-production-use-12345',
+        'exceptionalErrors' => 4096,
+        'sitename' => 'nr-vault Development',
+        'trustedHostsPattern' => '.*',
+    ],
+];
+EOF
+
+# Create public index.php
+cat > .Build/public/index.php << 'EOF'
+<?php
+// Entry point for TYPO3 CMS
+call_user_func(static function () {
+    $classLoader = require dirname(__DIR__) . '/vendor/autoload.php';
+    \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::run(0, \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_FE);
+    \TYPO3\CMS\Core\Core\Bootstrap::init($classLoader)->get(\TYPO3\CMS\Frontend\Http\Application::class)->run();
+});
+EOF
+
+# Create typo3 CLI entry point
+mkdir -p .Build/public/typo3
+cat > .Build/public/typo3/index.php << 'EOF'
+<?php
+call_user_func(static function () {
+    $classLoader = require dirname(__DIR__, 2) . '/vendor/autoload.php';
+    \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::run(1, \TYPO3\CMS\Core\Core\SystemEnvironmentBuilder::REQUESTTYPE_BE);
+    \TYPO3\CMS\Core\Core\Bootstrap::init($classLoader)->get(\TYPO3\CMS\Backend\Http\Application::class)->run();
+});
+EOF
+
+# Ensure dependencies are installed
+composer install --no-progress --prefer-dist
+
+# Run database schema update
+.Build/bin/typo3 database:updateschema "*.add,*.change" --no-interaction || true
+
+# Create admin user if not exists
+.Build/bin/typo3 backend:createadmin --username=admin --password=Joh316! --email=admin@example.com --no-interaction 2>/dev/null || true
+
+echo ""
+echo "TYPO3 v14 installation complete!"
+echo ""
+echo "Access URLs:"
+echo "  Frontend: https://nr-vault.ddev.site/"
+echo "  Backend:  https://nr-vault.ddev.site/typo3/"
+echo ""
+echo "Login credentials:"
+echo "  Username: admin"
+echo "  Password: Joh316!"
+echo ""

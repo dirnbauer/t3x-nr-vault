@@ -1,0 +1,39 @@
+#!/bin/bash
+
+## Description: Initialize vault with a development master key
+## Usage: vault-init
+## Example: ddev vault-init
+
+set -e
+
+echo "Initializing nr-vault for development..."
+
+# Generate a random master key for development
+MASTER_KEY=$(openssl rand -base64 32)
+
+echo ""
+echo "Development master key generated!"
+echo ""
+echo "Add this to your .ddev/config.yaml web_environment:"
+echo ""
+echo "  - NR_VAULT_MASTER_KEY=${MASTER_KEY}"
+echo ""
+echo "Or export it manually:"
+echo ""
+echo "  export NR_VAULT_MASTER_KEY='${MASTER_KEY}'"
+echo ""
+echo "WARNING: This key is for development only!"
+echo "         Never use development keys in production."
+echo ""
+
+# Create var directory for file-based key storage
+mkdir -p .Build/var/secrets
+
+# Optionally write to file for file-based provider
+KEY_FILE=".Build/var/secrets/vault-master.key"
+echo -n "${MASTER_KEY}" | base64 -d > "${KEY_FILE}" 2>/dev/null || echo -n "${MASTER_KEY}" > "${KEY_FILE}"
+chmod 600 "${KEY_FILE}"
+
+echo "Master key also written to: ${KEY_FILE}"
+echo "(For file-based master key provider)"
+echo ""
