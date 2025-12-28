@@ -33,7 +33,7 @@ final class VaultServiceTest extends FunctionalTestCase
 
     private VaultService $subject;
 
-    private string $masterKeyPath;
+    private ?string $masterKeyPath = null;
 
     protected function setUp(): void
     {
@@ -74,8 +74,8 @@ final class VaultServiceTest extends FunctionalTestCase
 
     protected function tearDown(): void
     {
-        // Clean up master key
-        if (file_exists($this->masterKeyPath)) {
+        // Clean up master key (if setUp completed successfully)
+        if ($this->masterKeyPath !== null && file_exists($this->masterKeyPath)) {
             // Securely wipe the file contents before deletion
             $content = file_get_contents($this->masterKeyPath);
             if ($content !== false) {
