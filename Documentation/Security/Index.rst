@@ -100,10 +100,6 @@ Provider security comparison
    Ideal for containerized deployments where secrets are injected at runtime.
    Follows 12-factor app methodology.
 
-**Derived provider** (for air-gapped systems)
-   Key is derived from a passphrase using Argon2id. Useful when no persistent
-   key storage is available.
-
 File storage recommendations
 ----------------------------
 

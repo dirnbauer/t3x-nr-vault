@@ -86,15 +86,23 @@ The fastest way to get started is using an environment variable:
 Verify installation
 ===================
 
-Verify the installation using the CLI:
+Verify the installation by listing secrets (should return empty if newly installed):
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:status
+   vendor/bin/typo3 vault:list
 
-This command checks:
+If the command executes without errors, the extension is properly configured.
 
--  Extension is properly installed
--  Master key is accessible
--  Database tables exist
--  Encryption is working
+You can also test by storing and retrieving a test secret:
+
+.. code-block:: bash
+
+   # Store a test secret
+   vendor/bin/typo3 vault:store test_secret --value="test-value"
+
+   # Retrieve it
+   vendor/bin/typo3 vault:retrieve test_secret
+
+   # Clean up
+   vendor/bin/typo3 vault:delete test_secret --force

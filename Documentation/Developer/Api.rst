@@ -132,31 +132,79 @@ Vault HTTP client
 -----------------
 
 The vault provides an HTTP client that can inject secrets into requests
-without exposing them to your code.
+without exposing them to your code. Secrets are specified via options.
 
 .. php:interface:: VaultHttpClientInterface
 
-   .. php:method:: withSecret(string $identifier, SecretPlacement $placement, ?string $name = null): self
+   .. php:method:: request(string $method, string $url, array $options = []): ResponseInterface
 
-      Configure a secret to be injected into requests.
+      Make an HTTP request with vault-provided authentication.
 
-      :param string $identifier: The secret identifier in the vault
-      :param SecretPlacement $placement: How to inject the secret
-      :param string|null $name: Header/parameter name (optional for some placements)
+      :param string $method: HTTP method (GET, POST, PUT, DELETE, etc.)
+      :param string $url: Request URL
+      :param array $options: Request options including auth_secret, auth_type, headers, etc.
+
+   .. php:method:: get(string $url, array $options = []): ResponseInterface
+
+      Shorthand for GET request.
+
+   .. php:method:: post(string $url, array $options = []): ResponseInterface
+
+      Shorthand for POST request.
+
+Authentication options
+~~~~~~~~~~~~~~~~~~~~~~
+
+auth_secret
+   Secret identifier for authentication
+
+auth_type
+   Authentication type: ``bearer``, ``basic``, ``header``, or ``query``
+
+auth_header
+   Custom header name (for ``header`` type, default: ``X-API-Key``)
+
+auth_query_param
+   Query parameter name (for ``query`` type, default: ``api_key``)
+
+auth_username_secret
+   Separate username secret (for ``basic`` type)
+
+reason
+   Reason for access (logged in audit)
 
 .. code-block:: php
 
-   use Netresearch\NrVault\Http\SecretPlacement;
-
    // Bearer authentication
-   $response = $this->vault->http()
-       ->withSecret('stripe_api_key', SecretPlacement::BearerAuth)
-       ->post('https://api.stripe.com/v1/charges', $payload);
+   $response = $this->vault->http()->post(
+       'https://api.stripe.com/v1/charges',
+       [
+           'auth_secret' => 'stripe_api_key',
+           'auth_type' => 'bearer',
+           'json' => $payload,
+       ]
+   );
 
    // Custom header
-   $response = $this->vault->http()
-       ->withSecret('api_token', SecretPlacement::Header, 'X-API-Key')
-       ->get('https://api.example.com/data');
+   $response = $this->vault->http()->get(
+       'https://api.example.com/data',
+       [
+           'auth_secret' => 'api_token',
+           'auth_type' => 'header',
+           'auth_header' => 'X-API-Key',
+       ]
+   );
+
+   // Basic authentication with separate credentials
+   $response = $this->vault->http()->get(
+       'https://api.example.com/secure',
+       [
+           'auth_username_secret' => 'service_username',
+           'auth_secret' => 'service_password',
+           'auth_type' => 'basic',
+           'reason' => 'Fetching secure data',
+       ]
+   );
 
 .. _api-events:
 
@@ -197,3 +245,19 @@ The vault dispatches events during secret operations.
    - :php:`getIdentifier()`: The secret identifier
    - :php:`getActorUid()`: User ID who deleted it
    - :php:`getReason()`: The deletion reason
+
+.. php:class:: SecretUpdatedEvent
+
+   Dispatched when a secret value is updated (without rotation).
+
+   - :php:`getIdentifier()`: The secret identifier
+   - :php:`getNewVersion()`: The new version number
+   - :php:`getActorUid()`: User ID who updated it
+
+.. php:class:: MasterKeyRotatedEvent
+
+   Dispatched after master key rotation completes.
+
+   - :php:`getSecretsReEncrypted()`: Number of secrets re-encrypted
+   - :php:`getActorUid()`: User ID who performed the rotation
+   - :php:`getRotatedAt()`: DateTimeImmutable of when rotation completed

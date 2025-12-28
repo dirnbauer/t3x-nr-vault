@@ -33,7 +33,7 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
 
    :type: string
    :Default: typo3
-   :Options: typo3, file, env, derived
+   :Options: typo3, file, env
 
    How to retrieve the master encryption key.
 
@@ -47,9 +47,6 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
    env
       Read from an environment variable.
 
-   derived
-      Derive from a passphrase using Argon2id.
-
 .. confval:: masterKeySource
 
    :type: string
@@ -60,7 +57,6 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
    -  **file**: Path to the key file (e.g., ``/secure/path/vault.key``).
    -  **env**: Environment variable name (e.g., ``NR_VAULT_MASTER_KEY``).
    -  **typo3**: Not used (key derived from TYPO3's encryption key).
-   -  **derived**: Salt value for key derivation (optional).
 
 .. confval:: allowCliAccess
 
@@ -167,34 +163,6 @@ Configure in extension settings:
 
 This is ideal for containerized deployments where secrets are injected
 via environment variables.
-
-Derived provider (CLI only)
----------------------------
-
-Derive the master key from a passphrase using Argon2id.
-
-Configure in extension settings:
-
--  :confval:`masterKeyProvider`: derived
-
-.. warning::
-
-   The derived provider is **CLI-only**. It cannot be used for backend
-   web UI operations because there is no secure way to prompt for or
-   transmit the passphrase in a web context.
-
-For CLI operations, the passphrase is prompted interactively:
-
-.. code-block:: bash
-
-   ddev exec vendor/bin/typo3 vault:secret:list
-   # Prompts: Enter master key passphrase:
-
-Use this provider for:
-
--  Batch operations via CLI
--  Air-gapped systems without persistent key storage
--  Scripts where passphrase can be piped securely
 
 Access control
 ==============

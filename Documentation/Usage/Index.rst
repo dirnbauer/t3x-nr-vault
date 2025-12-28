@@ -48,25 +48,31 @@ Click :guilabel:`Reveal` to temporarily show a secret value.
 CLI commands
 ============
 
-vault:get
----------
+vault:retrieve
+--------------
 
 Retrieve a secret value:
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:get payment/stripe-api-key
+   vendor/bin/typo3 vault:retrieve payment/stripe-api-key
 
-vault:set
----------
+   # Quiet mode for scripting
+   API_KEY=$(vendor/bin/typo3 vault:retrieve -q payment/stripe-api-key)
+
+vault:store
+-----------
 
 Create or update a secret:
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:set payment/stripe-api-key "sk_live_..."
+   vendor/bin/typo3 vault:store payment/stripe-api-key --value="sk_live_..."
 
 Options:
+
+--value
+   The secret value (prompts if not provided)
 
 --description
    Add a description
@@ -86,8 +92,8 @@ List all accessible secrets:
 
    vendor/bin/typo3 vault:list
 
-   # Filter by context
-   vendor/bin/typo3 vault:list --context=payment
+   # Filter by pattern
+   vendor/bin/typo3 vault:list --pattern="payment/*"
 
 vault:delete
 ------------
@@ -96,27 +102,29 @@ Delete a secret:
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:delete payment/stripe-api-key
+   vendor/bin/typo3 vault:delete payment/stripe-api-key --reason="No longer needed"
 
 vault:rotate
 ------------
 
-Rotate the master key:
+Rotate a secret with a new value:
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:rotate-master-key
+   vendor/bin/typo3 vault:rotate payment/stripe-api-key --reason="Quarterly rotation"
 
-This re-encrypts all DEKs with a new master key.
+vault:rotate-master-key
+-----------------------
 
-vault:status
-------------
-
-Check vault status:
+Rotate the master encryption key (re-encrypts all DEKs):
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:status
+   # Using old key from file, new key from current config
+   vendor/bin/typo3 vault:rotate-master-key --old-key=/path/to/old.key --confirm
+
+   # Dry run to simulate
+   vendor/bin/typo3 vault:rotate-master-key --old-key=/path/to/old.key --dry-run
 
 PHP API
 =======
@@ -125,28 +133,28 @@ Inject the VaultService to access secrets programmatically:
 
 .. code-block:: php
 
-   use Netresearch\NrVault\Service\VaultService;
+   use Netresearch\NrVault\Service\VaultServiceInterface;
 
    final class PaymentService
    {
        public function __construct(
-           private readonly VaultService $vaultService,
+           private readonly VaultServiceInterface $vaultService,
        ) {}
 
        public function getApiKey(): string
        {
-           return $this->vaultService->get('payment/stripe-api-key');
+           return $this->vaultService->retrieve('payment/stripe-api-key');
        }
    }
 
-Creating secrets
-----------------
+Storing secrets
+---------------
 
 .. code-block:: php
 
-   $this->vaultService->set(
+   $this->vaultService->store(
        identifier: 'payment/stripe-api-key',
-       value: 'sk_live_...',
+       secret: 'sk_live_...',
        options: [
            'description' => 'Stripe production API key',
            'context' => 'payment',
@@ -154,13 +162,13 @@ Creating secrets
        ],
    );
 
-Checking access
----------------
+Checking existence
+------------------
 
 .. code-block:: php
 
    if ($this->vaultService->exists('payment/stripe-api-key')) {
-       $value = $this->vaultService->get('payment/stripe-api-key');
+       $value = $this->vaultService->retrieve('payment/stripe-api-key');
    }
 
 Listing secrets
@@ -171,5 +179,5 @@ Listing secrets
    // Get all accessible secrets
    $secrets = $this->vaultService->list();
 
-   // Filter by context
-   $paymentSecrets = $this->vaultService->list(context: 'payment');
+   // Filter by pattern
+   $paymentSecrets = $this->vaultService->list(pattern: 'payment/*');

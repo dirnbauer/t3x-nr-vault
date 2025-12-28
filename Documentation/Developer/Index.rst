@@ -24,7 +24,7 @@ Crypto layer
 
 Storage layer
    :php:`SecretRepository` - Database persistence.
-   :php:`StorageAdapterInterface` - External storage abstraction.
+   :php:`VaultAdapterInterface` - Storage backend abstraction.
 
 Security layer
    :php:`AccessControlService` - Permission checks.
@@ -36,24 +36,35 @@ Extending nr-vault
 Custom storage adapters
 -----------------------
 
-Implement :php:`StorageAdapterInterface` to add new storage backends:
+Implement :php:`VaultAdapterInterface` to add new storage backends:
 
 .. code-block:: php
 
-   namespace MyVendor\MyExtension\Storage;
+   namespace MyVendor\MyExtension\Adapter;
 
-   use Netresearch\NrVault\Storage\StorageAdapterInterface;
+   use Netresearch\NrVault\Adapter\VaultAdapterInterface;
+   use Netresearch\NrVault\Domain\Model\Secret;
 
-   final class CustomStorageAdapter implements StorageAdapterInterface
+   final class CustomAdapter implements VaultAdapterInterface
    {
-       public function store(string $identifier, array $data): void
+       public function getIdentifier(): string
        {
-           // Store encrypted data in your backend
+           return 'custom';
        }
 
-       public function retrieve(string $identifier): ?array
+       public function isAvailable(): bool
        {
-           // Retrieve encrypted data from your backend
+           // Check if your backend is configured and reachable
+       }
+
+       public function store(Secret $secret): void
+       {
+           // Store secret in your backend
+       }
+
+       public function retrieve(string $identifier): ?Secret
+       {
+           // Retrieve secret from your backend
        }
 
        public function delete(string $identifier): void
@@ -61,9 +72,24 @@ Implement :php:`StorageAdapterInterface` to add new storage backends:
            // Delete from your backend
        }
 
-       public function list(?string $context = null): array
+       public function exists(string $identifier): bool
        {
-           // List available secrets
+           // Check if secret exists
+       }
+
+       public function list(array $filters = []): array
+       {
+           // List secret identifiers
+       }
+
+       public function getMetadata(string $identifier): ?array
+       {
+           // Get secret metadata
+       }
+
+       public function updateMetadata(string $identifier, array $metadata): void
+       {
+           // Update metadata
        }
    }
 
@@ -71,9 +97,9 @@ Register in :file:`Services.yaml`:
 
 .. code-block:: yaml
 
-   MyVendor\MyExtension\Storage\CustomStorageAdapter:
+   MyVendor\MyExtension\Adapter\CustomAdapter:
      tags:
-       - name: nr_vault.storage_adapter
+       - name: nr_vault.adapter
          identifier: custom
 
 Custom master key providers
@@ -126,8 +152,11 @@ SecretAccessedEvent
 SecretCreatedEvent
    Dispatched when a new secret is created.
 
+SecretRotatedEvent
+   Dispatched when a secret is rotated with a new value.
+
 SecretUpdatedEvent
-   Dispatched when a secret value is updated.
+   Dispatched when a secret value is updated (without rotation).
 
 SecretDeletedEvent
    Dispatched when a secret is deleted.
@@ -149,7 +178,7 @@ Example listener:
        {
            // Custom logging or alerting
            $identifier = $event->getIdentifier();
-           $actor = $event->getActor();
+           $actorUid = $event->getActorUid();
        }
    }
 
@@ -213,11 +242,11 @@ VaultService
 
    Main facade for vault operations.
 
-   .. php:method:: get(string $identifier): string
+   .. php:method:: retrieve(string $identifier): ?string
 
       Retrieve a decrypted secret value.
 
-   .. php:method:: set(string $identifier, string $value, array $options = []): void
+   .. php:method:: store(string $identifier, string $secret, array $options = []): void
 
       Create or update a secret.
 
@@ -225,13 +254,25 @@ VaultService
 
       Check if a secret exists and is accessible.
 
-   .. php:method:: delete(string $identifier): void
+   .. php:method:: delete(string $identifier, string $reason = ''): void
 
       Delete a secret.
 
-   .. php:method:: list(?string $context = null): array
+   .. php:method:: rotate(string $identifier, string $newSecret, string $reason = ''): void
+
+      Rotate a secret with a new value.
+
+   .. php:method:: list(?string $pattern = null): array
 
       List accessible secrets.
+
+   .. php:method:: getMetadata(string $identifier): array
+
+      Get metadata for a secret.
+
+   .. php:method:: http(): VaultHttpClientInterface
+
+      Get the Vault HTTP Client.
 
 EncryptionService
 -----------------
@@ -251,3 +292,11 @@ EncryptionService
    .. php:method:: generateDek(): string
 
       Generate a new Data Encryption Key.
+
+   .. php:method:: calculateChecksum(string $plaintext): string
+
+      Calculate value checksum for change detection.
+
+   .. php:method:: reEncryptDek(string $encryptedDek, string $dekNonce, string $identifier, string $oldMasterKey, string $newMasterKey): array
+
+      Re-encrypt a DEK with a new master key (for master key rotation).

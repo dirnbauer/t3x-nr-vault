@@ -22,11 +22,14 @@ Initialize the vault by creating a master key.
 Options
 -------
 
---key-file=PATH
-   Path to store the master key file (default: var/vault/master.key)
+--output, -o
+   Path to store the master key file (default: configured path or var/vault/master.key)
 
---force
-   Overwrite existing master key (dangerous!)
+--force, -f
+   Overwrite existing master key (dangerous - existing secrets become unrecoverable!)
+
+--env, -e
+   Output key as environment variable format instead of file
 
 Example
 -------
@@ -37,7 +40,10 @@ Example
    vendor/bin/typo3 vault:init
 
    # Specify custom key file location
-   vendor/bin/typo3 vault:init --key-file=/secure/path/vault.key
+   vendor/bin/typo3 vault:init --output=/secure/path/vault.key
+
+   # Output as environment variable
+   vendor/bin/typo3 vault:init --env
 
 .. warning::
 
@@ -257,63 +263,54 @@ Example
    # Export to JSON
    vendor/bin/typo3 vault:audit --format=json > audit.json
 
-.. _command-master-key-rotate:
+.. _command-rotate-master-key:
 
-vault:master-key:rotate
+vault:rotate-master-key
 =======================
 
-Rotate the master encryption key.
+Rotate the master encryption key. Re-encrypts all DEKs with a new master key.
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:master-key:rotate [options]
+   vendor/bin/typo3 vault:rotate-master-key [options]
 
 Options
 -------
 
---new-key-file=PATH
-   Path to the new master key file
+--old-key=PATH
+   Path to file containing the old master key (defaults to current configured key)
 
---backup
-   Create backup of old key before rotation
+--new-key=PATH
+   Path to file containing the new master key (defaults to current configured key)
+
+--dry-run
+   Simulate the rotation without making changes
+
+--confirm
+   Required for actual execution (safety measure)
 
 .. warning::
 
    Master key rotation re-encrypts all Data Encryption Keys (DEKs).
-   Ensure you have a backup before proceeding.
+   Ensure you have a backup of the old key before proceeding.
 
 Example
 -------
 
 .. code-block:: bash
 
-   vendor/bin/typo3 vault:master-key:rotate \
-     --new-key-file=/secure/path/new-master.key \
-     --backup
+   # Old key from file, new key from current config
+   vendor/bin/typo3 vault:rotate-master-key \
+     --old-key=/secure/path/old-master.key \
+     --confirm
 
-.. _command-export:
+   # Both keys from files
+   vendor/bin/typo3 vault:rotate-master-key \
+     --old-key=/path/to/old.key \
+     --new-key=/path/to/new.key \
+     --confirm
 
-vault:export
-============
-
-Export secrets for backup (encrypted).
-
-.. code-block:: bash
-
-   vendor/bin/typo3 vault:export [options]
-
-Options
--------
-
---output=PATH
-   Output file path (default: vault-backup.enc)
-
---password=PASS
-   Encryption password (will prompt if not provided)
-
-Example
--------
-
-.. code-block:: bash
-
-   vendor/bin/typo3 vault:export --output=/backup/secrets.enc
+   # Dry run to verify before actual rotation
+   vendor/bin/typo3 vault:rotate-master-key \
+     --old-key=/path/to/old.key \
+     --dry-run
