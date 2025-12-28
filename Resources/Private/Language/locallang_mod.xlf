@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="messages" date="2024-12-28T00:00:00Z" product-name="nr_vault">
+        <header/>
+        <body>
+            <trans-unit id="mlang_tabs_tab">
+                <source>Vault</source>
+            </trans-unit>
+            <trans-unit id="mlang_labels_tabdescr">
+                <source>Manage secrets and view audit logs</source>
+            </trans-unit>
+            <trans-unit id="secrets.title">
+                <source>Secrets</source>
+            </trans-unit>
+            <trans-unit id="secrets.identifier">
+                <source>Identifier</source>
+            </trans-unit>
+            <trans-unit id="secrets.owner">
+                <source>Owner</source>
+            </trans-unit>
+            <trans-unit id="secrets.created">
+                <source>Created</source>
+            </trans-unit>
+            <trans-unit id="secrets.updated">
+                <source>Updated</source>
+            </trans-unit>
+            <trans-unit id="secrets.read_count">
+                <source>Read Count</source>
+            </trans-unit>
+            <trans-unit id="secrets.last_read">
+                <source>Last Read</source>
+            </trans-unit>
+            <trans-unit id="secrets.empty">
+                <source>No secrets found</source>
+            </trans-unit>
+            <trans-unit id="audit.title">
+                <source>Audit Log</source>
+            </trans-unit>
+            <trans-unit id="audit.timestamp">
+                <source>Timestamp</source>
+            </trans-unit>
+            <trans-unit id="audit.secret">
+                <source>Secret</source>
+            </trans-unit>
+            <trans-unit id="audit.action">
+                <source>Action</source>
+            </trans-unit>
+            <trans-unit id="audit.success">
+                <source>Success</source>
+            </trans-unit>
+            <trans-unit id="audit.actor">
+                <source>Actor</source>
+            </trans-unit>
+            <trans-unit id="audit.ip">
+                <source>IP Address</source>
+            </trans-unit>
+            <trans-unit id="audit.hash">
+                <source>Entry Hash</source>
+            </trans-unit>
+            <trans-unit id="audit.empty">
+                <source>No audit entries found</source>
+            </trans-unit>
+            <trans-unit id="audit.filter">
+                <source>Filter</source>
+            </trans-unit>
+            <trans-unit id="audit.export">
+                <source>Export</source>
+            </trans-unit>
+            <trans-unit id="audit.verify_chain">
+                <source>Verify Hash Chain</source>
+            </trans-unit>
+            <trans-unit id="audit.chain_valid">
+                <source>Hash chain is valid - no tampering detected</source>
+            </trans-unit>
+            <trans-unit id="audit.chain_invalid">
+                <source>Hash chain verification failed</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

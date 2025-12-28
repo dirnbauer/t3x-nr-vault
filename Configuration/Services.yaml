@@ -1,0 +1,88 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Netresearch\NrVault\:
+    resource: '../Classes/*'
+    exclude:
+      - '../Classes/Domain/Model/*'
+      - '../Classes/Exception/*'
+
+  # Configuration
+  Netresearch\NrVault\Configuration\ExtensionConfiguration:
+    public: true
+
+  # Crypto services
+  Netresearch\NrVault\Crypto\EncryptionServiceInterface:
+    alias: Netresearch\NrVault\Crypto\EncryptionService
+    public: true
+
+  Netresearch\NrVault\Crypto\MasterKeyProviderInterface:
+    factory: ['@Netresearch\NrVault\Crypto\MasterKeyProviderFactory', 'create']
+    public: true
+
+  # Vault service
+  Netresearch\NrVault\Service\VaultServiceInterface:
+    alias: Netresearch\NrVault\Service\VaultService
+    public: true
+
+  # Access control
+  Netresearch\NrVault\Security\AccessControlServiceInterface:
+    alias: Netresearch\NrVault\Security\AccessControlService
+    public: true
+
+  # Audit logging
+  Netresearch\NrVault\Audit\AuditLogServiceInterface:
+    alias: Netresearch\NrVault\Audit\AuditLogService
+    public: true
+
+  # Adapters
+  Netresearch\NrVault\Adapter\VaultAdapterInterface:
+    alias: Netresearch\NrVault\Adapter\LocalEncryptionAdapter
+    public: true
+
+  # Controllers
+  Netresearch\NrVault\Controller\VaultController:
+    public: true
+    tags:
+      - name: backend.controller
+
+  # DataHandler hook
+  Netresearch\NrVault\Hook\DataHandlerHook:
+    public: true
+
+  # CLI Commands
+  Netresearch\NrVault\Command\VaultInitCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultStoreCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultRetrieveCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultRotateCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultDeleteCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultListCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultAuditCommand:
+    tags:
+      - name: console.command
+
+  # HTTP Client
+  Netresearch\NrVault\Http\VaultHttpClientInterface:
+    alias: Netresearch\NrVault\Http\VaultHttpClient
+    public: true

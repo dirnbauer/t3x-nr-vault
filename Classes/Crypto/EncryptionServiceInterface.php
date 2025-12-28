@@ -1,0 +1,87 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Crypto;
+
+use Netresearch\NrVault\Exception\EncryptionException;
+
+/**
+ * Interface for encryption operations.
+ */
+interface EncryptionServiceInterface
+{
+    /**
+     * Encrypt a secret value with a unique DEK.
+     *
+     * @param string $plaintext  The value to encrypt
+     * @param string $identifier Secret identifier (used as AAD)
+     *
+     * @return array{
+     *     encrypted_value: string,
+     *     encrypted_dek: string,
+     *     dek_nonce: string,
+     *     value_nonce: string,
+     *     value_checksum: string,
+     * }
+     *
+     * @throws EncryptionException If encryption fails
+     */
+    public function encrypt(string $plaintext, string $identifier): array;
+
+    /**
+     * Decrypt a secret value.
+     *
+     * @param string $encryptedValue Base64-encoded ciphertext
+     * @param string $encryptedDek   Base64-encoded encrypted DEK
+     * @param string $dekNonce       Base64-encoded DEK nonce
+     * @param string $valueNonce     Base64-encoded value nonce
+     * @param string $identifier     Secret identifier (used as AAD)
+     *
+     * @return string The decrypted plaintext
+     *
+     * @throws EncryptionException If decryption fails
+     */
+    public function decrypt(
+        string $encryptedValue,
+        string $encryptedDek,
+        string $dekNonce,
+        string $valueNonce,
+        string $identifier
+    ): string;
+
+    /**
+     * Generate a new Data Encryption Key.
+     *
+     * @return string 32-byte random key
+     */
+    public function generateDek(): string;
+
+    /**
+     * Calculate value checksum for change detection.
+     *
+     * @param string $plaintext The secret value
+     *
+     * @return string SHA-256 hash (64 hex characters)
+     */
+    public function calculateChecksum(string $plaintext): string;
+
+    /**
+     * Re-encrypt a DEK with a new master key.
+     *
+     * @param string $encryptedDek Current encrypted DEK
+     * @param string $dekNonce     Current DEK nonce
+     * @param string $identifier   Secret identifier
+     * @param string $oldMasterKey Previous master key
+     * @param string $newMasterKey New master key
+     *
+     * @return array{encrypted_dek: string, nonce: string}
+     */
+    public function reEncryptDek(
+        string $encryptedDek,
+        string $dekNonce,
+        string $identifier,
+        string $oldMasterKey,
+        string $newMasterKey
+    ): array;
+}

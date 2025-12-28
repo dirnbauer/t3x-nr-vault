@@ -1,0 +1,119 @@
+/**
+ * Backend module styles for nr_vault.
+ */
+
+.vault-module {
+    padding: 1rem;
+}
+
+.vault-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.vault-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.vault-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.vault-filters {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--bs-light);
+    border-radius: 0.25rem;
+}
+
+.vault-filters .form-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.vault-filters .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.vault-filters label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.vault-stats {
+    margin-bottom: 1rem;
+}
+
+.vault-stats .badge {
+    margin-right: 0.5rem;
+}
+
+/* Table adjustments */
+.vault-module .table code {
+    background: transparent;
+    padding: 0;
+    font-size: 0.85em;
+}
+
+.vault-module .table-sm td,
+.vault-module .table-sm th {
+    padding: 0.5rem;
+}
+
+/* Action badges */
+.badge-success { background-color: #28a745; }
+.badge-info { background-color: #17a2b8; }
+.badge-warning { background-color: #ffc107; color: #000; }
+.badge-danger { background-color: #dc3545; }
+.badge-primary { background-color: #007bff; }
+.badge-secondary { background-color: #6c757d; }
+
+/* Pagination */
+.vault-module .pagination {
+    margin-top: 1rem;
+}
+
+/* Hash chain verification result */
+.vault-chain-result {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.25rem;
+}
+
+.vault-chain-result.valid {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.vault-chain-result.invalid {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .vault-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .vault-filters .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .vault-filters .form-group {
+        width: 100%;
+    }
+}

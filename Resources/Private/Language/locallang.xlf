@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="messages" date="2024-12-28T00:00:00Z" product-name="nr_vault">
+        <header/>
+        <body>
+            <trans-unit id="vault_secret.placeholder_exists">
+                <source>Secret stored in vault (enter new value to update)</source>
+            </trans-unit>
+            <trans-unit id="vault_secret.toggle_visibility">
+                <source>Toggle visibility</source>
+            </trans-unit>
+            <trans-unit id="vault_secret.clear">
+                <source>Clear secret</source>
+            </trans-unit>
+            <trans-unit id="error.access_denied">
+                <source>Access denied</source>
+            </trans-unit>
+            <trans-unit id="error.secret_not_found">
+                <source>Secret not found</source>
+            </trans-unit>
+            <trans-unit id="error.encryption_failed">
+                <source>Encryption failed</source>
+            </trans-unit>
+            <trans-unit id="error.master_key_unavailable">
+                <source>Master key unavailable</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
