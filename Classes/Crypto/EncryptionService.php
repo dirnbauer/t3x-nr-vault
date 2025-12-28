@@ -20,8 +20,6 @@ use Netresearch\NrVault\Exception\EncryptionException;
  */
 final class EncryptionService implements EncryptionServiceInterface
 {
-    private const NONCE_LENGTH = SODIUM_CRYPTO_AEAD_AES256GCM_NPUBBYTES; // 12 bytes
-
     public function __construct(
         private readonly MasterKeyProviderInterface $masterKeyProvider,
         private readonly ExtensionConfiguration $configuration,
@@ -36,9 +34,10 @@ final class EncryptionService implements EncryptionServiceInterface
             // Generate unique DEK for this secret
             $dek = $this->generateDek();
 
-            // Generate nonces
-            $dekNonce = random_bytes(self::NONCE_LENGTH);
-            $valueNonce = random_bytes(self::NONCE_LENGTH);
+            // Generate nonces with algorithm-appropriate length
+            $nonceLength = $this->getNonceLength();
+            $dekNonce = random_bytes($nonceLength);
+            $valueNonce = random_bytes($nonceLength);
 
             // Encrypt the DEK with master key
             $encryptedDek = $this->encryptWithKey($dek, $masterKey, $dekNonce, $identifier);
@@ -136,8 +135,8 @@ final class EncryptionService implements EncryptionServiceInterface
             // Decrypt DEK with old master key
             $dek = $this->decryptWithKey($encryptedDekBytes, $oldMasterKey, $dekNonceBytes, $identifier);
 
-            // Generate new nonce
-            $newNonce = random_bytes(self::NONCE_LENGTH);
+            // Generate new nonce with algorithm-appropriate length
+            $newNonce = random_bytes($this->getNonceLength());
 
             // Encrypt DEK with new master key
             $newEncryptedDek = $this->encryptWithKey($dek, $newMasterKey, $newNonce, $identifier);
@@ -163,10 +162,7 @@ final class EncryptionService implements EncryptionServiceInterface
             return sodium_crypto_aead_aes256gcm_encrypt($plaintext, $aad, $nonce, $key);
         }
 
-        // Pad nonce for XChaCha20 (needs 24 bytes)
-        $xNonce = str_pad($nonce, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES, "\0");
-
-        return sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($plaintext, $aad, $xNonce, $key);
+        return sodium_crypto_aead_xchacha20poly1305_ietf_encrypt($plaintext, $aad, $nonce, $key);
     }
 
     /**
@@ -177,9 +173,7 @@ final class EncryptionService implements EncryptionServiceInterface
         if ($this->useAes256Gcm()) {
             $result = sodium_crypto_aead_aes256gcm_decrypt($ciphertext, $aad, $nonce, $key);
         } else {
-            // Pad nonce for XChaCha20 (needs 24 bytes)
-            $xNonce = str_pad($nonce, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES, "\0");
-            $result = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($ciphertext, $aad, $xNonce, $key);
+            $result = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($ciphertext, $aad, $nonce, $key);
         }
 
         if ($result === false) {
@@ -187,6 +181,16 @@ final class EncryptionService implements EncryptionServiceInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Get the nonce length for the current algorithm.
+     */
+    private function getNonceLength(): int
+    {
+        return $this->useAes256Gcm()
+            ? SODIUM_CRYPTO_AEAD_AES256GCM_NPUBBYTES
+            : SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES;
     }
 
     /**
