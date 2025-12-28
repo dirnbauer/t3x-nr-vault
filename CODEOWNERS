@@ -1,0 +1,20 @@
+# CODEOWNERS for nr-vault
+#
+# These owners will be automatically requested for review on pull requests
+
+# Default owners for everything in the repo
+* @netresearch/typo3-team
+
+# Security-critical code requires security review
+/Classes/Crypto/ @netresearch/security-team @netresearch/typo3-team
+/Classes/Security/ @netresearch/security-team @netresearch/typo3-team
+/Classes/Audit/ @netresearch/security-team @netresearch/typo3-team
+
+# Configuration and CI/CD
+/.github/ @netresearch/devops-team
+/Build/ @netresearch/devops-team
+/.ddev/ @netresearch/devops-team
+
+# Documentation
+/Documentation/ @netresearch/docs-team @netresearch/typo3-team
+README.md @netresearch/docs-team
