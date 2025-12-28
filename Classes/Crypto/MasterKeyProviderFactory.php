@@ -14,8 +14,7 @@ final class MasterKeyProviderFactory
 {
     public function __construct(
         private readonly ExtensionConfigurationInterface $configuration,
-    ) {
-    }
+    ) {}
 
     public function create(): MasterKeyProviderInterface
     {

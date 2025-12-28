@@ -10,33 +10,56 @@ namespace Netresearch\NrVault\Domain\Model;
 final class Secret
 {
     private ?int $uid = null;
+
     private int $pid = 0;
+
     private string $identifier = '';
+
     private string $description = '';
+
     private ?string $encryptedValue = null;
+
     private string $encryptedDek = '';
+
     private string $dekNonce = '';
+
     private string $valueNonce = '';
+
     private int $encryptionVersion = 1;
+
     private string $valueChecksum = '';
+
     private int $ownerUid = 0;
 
     /** @var int[] */
     private array $allowedGroups = [];
 
     private string $context = '';
+
     private int $version = 1;
+
     private int $expiresAt = 0;
+
     private int $lastRotatedAt = 0;
+
     private array $metadata = [];
+
     private string $adapter = 'local';
+
     private string $externalReference = '';
+
     private int $tstamp = 0;
+
     private int $crdate = 0;
+
     private int $cruserId = 0;
+
     private bool $deleted = false;
+
     private bool $hidden = false;
+
     private int $readCount = 0;
+
     private int $lastReadAt = 0;
 
     public function getUid(): ?int
@@ -47,6 +70,7 @@ final class Secret
     public function setUid(?int $uid): self
     {
         $this->uid = $uid;
+
         return $this;
     }
 
@@ -58,6 +82,7 @@ final class Secret
     public function setPid(int $pid): self
     {
         $this->pid = $pid;
+
         return $this;
     }
 
@@ -69,6 +94,7 @@ final class Secret
     public function setIdentifier(string $identifier): self
     {
         $this->identifier = $identifier;
+
         return $this;
     }
 
@@ -80,6 +106,7 @@ final class Secret
     public function setDescription(string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -91,6 +118,7 @@ final class Secret
     public function setEncryptedValue(?string $encryptedValue): self
     {
         $this->encryptedValue = $encryptedValue;
+
         return $this;
     }
 
@@ -102,6 +130,7 @@ final class Secret
     public function setEncryptedDek(string $encryptedDek): self
     {
         $this->encryptedDek = $encryptedDek;
+
         return $this;
     }
 
@@ -113,6 +142,7 @@ final class Secret
     public function setDekNonce(string $dekNonce): self
     {
         $this->dekNonce = $dekNonce;
+
         return $this;
     }
 
@@ -124,6 +154,7 @@ final class Secret
     public function setValueNonce(string $valueNonce): self
     {
         $this->valueNonce = $valueNonce;
+
         return $this;
     }
 
@@ -135,6 +166,7 @@ final class Secret
     public function setEncryptionVersion(int $encryptionVersion): self
     {
         $this->encryptionVersion = $encryptionVersion;
+
         return $this;
     }
 
@@ -146,6 +178,7 @@ final class Secret
     public function setValueChecksum(string $valueChecksum): self
     {
         $this->valueChecksum = $valueChecksum;
+
         return $this;
     }
 
@@ -157,6 +190,7 @@ final class Secret
     public function setOwnerUid(int $ownerUid): self
     {
         $this->ownerUid = $ownerUid;
+
         return $this;
     }
 
@@ -174,6 +208,7 @@ final class Secret
     public function setAllowedGroups(array $allowedGroups): self
     {
         $this->allowedGroups = array_map('intval', $allowedGroups);
+
         return $this;
     }
 
@@ -185,6 +220,7 @@ final class Secret
     public function setContext(string $context): self
     {
         $this->context = $context;
+
         return $this;
     }
 
@@ -196,12 +232,14 @@ final class Secret
     public function setVersion(int $version): self
     {
         $this->version = $version;
+
         return $this;
     }
 
     public function incrementVersion(): self
     {
         $this->version++;
+
         return $this;
     }
 
@@ -213,6 +251,7 @@ final class Secret
     public function setExpiresAt(int $expiresAt): self
     {
         $this->expiresAt = $expiresAt;
+
         return $this;
     }
 
@@ -229,6 +268,7 @@ final class Secret
     public function setLastRotatedAt(int $lastRotatedAt): self
     {
         $this->lastRotatedAt = $lastRotatedAt;
+
         return $this;
     }
 
@@ -240,6 +280,7 @@ final class Secret
     public function setMetadata(array $metadata): self
     {
         $this->metadata = $metadata;
+
         return $this;
     }
 
@@ -251,6 +292,7 @@ final class Secret
     public function setAdapter(string $adapter): self
     {
         $this->adapter = $adapter;
+
         return $this;
     }
 
@@ -262,6 +304,7 @@ final class Secret
     public function setExternalReference(string $externalReference): self
     {
         $this->externalReference = $externalReference;
+
         return $this;
     }
 
@@ -273,6 +316,7 @@ final class Secret
     public function setTstamp(int $tstamp): self
     {
         $this->tstamp = $tstamp;
+
         return $this;
     }
 
@@ -284,6 +328,7 @@ final class Secret
     public function setCrdate(int $crdate): self
     {
         $this->crdate = $crdate;
+
         return $this;
     }
 
@@ -295,6 +340,7 @@ final class Secret
     public function setCruserId(int $cruserId): self
     {
         $this->cruserId = $cruserId;
+
         return $this;
     }
 
@@ -306,6 +352,7 @@ final class Secret
     public function setDeleted(bool $deleted): self
     {
         $this->deleted = $deleted;
+
         return $this;
     }
 
@@ -317,6 +364,7 @@ final class Secret
     public function setHidden(bool $hidden): self
     {
         $this->hidden = $hidden;
+
         return $this;
     }
 
@@ -328,12 +376,14 @@ final class Secret
     public function setReadCount(int $readCount): self
     {
         $this->readCount = $readCount;
+
         return $this;
     }
 
     public function incrementReadCount(): self
     {
         $this->readCount++;
+
         return $this;
     }
 
@@ -345,6 +395,7 @@ final class Secret
     public function setLastReadAt(int $lastReadAt): self
     {
         $this->lastReadAt = $lastReadAt;
+
         return $this;
     }
 
@@ -354,40 +405,40 @@ final class Secret
     public static function fromDatabaseRow(array $row): self
     {
         $secret = new self();
-        $secret->uid = isset($row['uid']) ? (int)$row['uid'] : null;
-        $secret->pid = (int)($row['pid'] ?? 0);
-        $secret->identifier = (string)($row['identifier'] ?? '');
-        $secret->description = (string)($row['description'] ?? '');
+        $secret->uid = isset($row['uid']) ? (int) $row['uid'] : null;
+        $secret->pid = (int) ($row['pid'] ?? 0);
+        $secret->identifier = (string) ($row['identifier'] ?? '');
+        $secret->description = (string) ($row['description'] ?? '');
         $secret->encryptedValue = $row['encrypted_value'] ?? null;
-        $secret->encryptedDek = (string)($row['encrypted_dek'] ?? '');
-        $secret->dekNonce = (string)($row['dek_nonce'] ?? '');
-        $secret->valueNonce = (string)($row['value_nonce'] ?? '');
-        $secret->encryptionVersion = (int)($row['encryption_version'] ?? 1);
-        $secret->valueChecksum = (string)($row['value_checksum'] ?? '');
-        $secret->ownerUid = (int)($row['owner_uid'] ?? 0);
-        $secret->context = (string)($row['context'] ?? '');
-        $secret->version = (int)($row['version'] ?? 1);
-        $secret->expiresAt = (int)($row['expires_at'] ?? 0);
-        $secret->lastRotatedAt = (int)($row['last_rotated_at'] ?? 0);
-        $secret->adapter = (string)($row['adapter'] ?? 'local');
-        $secret->externalReference = (string)($row['external_reference'] ?? '');
-        $secret->tstamp = (int)($row['tstamp'] ?? 0);
-        $secret->crdate = (int)($row['crdate'] ?? 0);
-        $secret->cruserId = (int)($row['cruser_id'] ?? 0);
-        $secret->deleted = (bool)($row['deleted'] ?? false);
-        $secret->hidden = (bool)($row['hidden'] ?? false);
-        $secret->readCount = (int)($row['read_count'] ?? 0);
-        $secret->lastReadAt = (int)($row['last_read_at'] ?? 0);
+        $secret->encryptedDek = (string) ($row['encrypted_dek'] ?? '');
+        $secret->dekNonce = (string) ($row['dek_nonce'] ?? '');
+        $secret->valueNonce = (string) ($row['value_nonce'] ?? '');
+        $secret->encryptionVersion = (int) ($row['encryption_version'] ?? 1);
+        $secret->valueChecksum = (string) ($row['value_checksum'] ?? '');
+        $secret->ownerUid = (int) ($row['owner_uid'] ?? 0);
+        $secret->context = (string) ($row['context'] ?? '');
+        $secret->version = (int) ($row['version'] ?? 1);
+        $secret->expiresAt = (int) ($row['expires_at'] ?? 0);
+        $secret->lastRotatedAt = (int) ($row['last_rotated_at'] ?? 0);
+        $secret->adapter = (string) ($row['adapter'] ?? 'local');
+        $secret->externalReference = (string) ($row['external_reference'] ?? '');
+        $secret->tstamp = (int) ($row['tstamp'] ?? 0);
+        $secret->crdate = (int) ($row['crdate'] ?? 0);
+        $secret->cruserId = (int) ($row['cruser_id'] ?? 0);
+        $secret->deleted = (bool) ($row['deleted'] ?? false);
+        $secret->hidden = (bool) ($row['hidden'] ?? false);
+        $secret->readCount = (int) ($row['read_count'] ?? 0);
+        $secret->lastReadAt = (int) ($row['last_read_at'] ?? 0);
 
         // Parse metadata JSON
         if (!empty($row['metadata'])) {
-            $decoded = json_decode((string)$row['metadata'], true);
-            $secret->metadata = is_array($decoded) ? $decoded : [];
+            $decoded = json_decode((string) $row['metadata'], true);
+            $secret->metadata = \is_array($decoded) ? $decoded : [];
         }
 
         // Parse allowed groups (comma-separated or from MM table)
         if (!empty($row['allowed_groups'])) {
-            $groups = (string)$row['allowed_groups'];
+            $groups = (string) $row['allowed_groups'];
             $secret->allowedGroups = array_filter(array_map('intval', explode(',', $groups)));
         }
 

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Service;
 
+use DateTimeInterface;
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
@@ -49,8 +50,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly AuditLogServiceInterface $auditLogService,
         private readonly ExtensionConfigurationInterface $configuration,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
-    ) {
-    }
+    ) {}
 
     public function store(string $identifier, string $secret, array $options = []): void
     {
@@ -77,37 +77,37 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
 
             // Apply options
             if (isset($options['owner'])) {
-                $secretEntity->setOwnerUid((int)$options['owner']);
+                $secretEntity->setOwnerUid((int) $options['owner']);
             } else {
                 $secretEntity->setOwnerUid($this->accessControlService->getCurrentActorUid());
             }
 
             if (isset($options['groups'])) {
-                $secretEntity->setAllowedGroups((array)$options['groups']);
+                $secretEntity->setAllowedGroups((array) $options['groups']);
             }
 
             if (isset($options['context'])) {
-                $secretEntity->setContext((string)$options['context']);
+                $secretEntity->setContext((string) $options['context']);
             }
 
             if (isset($options['description'])) {
-                $secretEntity->setDescription((string)$options['description']);
+                $secretEntity->setDescription((string) $options['description']);
             }
 
             if (isset($options['metadata'])) {
-                $secretEntity->setMetadata((array)$options['metadata']);
+                $secretEntity->setMetadata((array) $options['metadata']);
             }
 
             if (isset($options['pid'])) {
-                $secretEntity->setPid((int)$options['pid']);
+                $secretEntity->setPid((int) $options['pid']);
             }
 
             if (isset($options['expiresAt'])) {
                 $expiresAt = $options['expiresAt'];
-                if ($expiresAt instanceof \DateTimeInterface) {
+                if ($expiresAt instanceof DateTimeInterface) {
                     $expiresAt = $expiresAt->getTimestamp();
                 }
-                $secretEntity->setExpiresAt((int)$expiresAt);
+                $secretEntity->setExpiresAt((int) $expiresAt);
             }
 
             // Check if updating existing
@@ -134,7 +134,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 null,
                 null,
                 $isNew ? null : $existing->getValueChecksum(),
-                $encrypted['value_checksum']
+                $encrypted['value_checksum'],
             );
 
             // Dispatch PSR-14 event
@@ -175,12 +175,14 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         // Check access
         if (!$this->accessControlService->canRead($secret)) {
             $this->auditLogService->log($identifier, 'access_denied', false, 'Read access denied');
+
             throw AccessDeniedException::forIdentifier($identifier, 'insufficient permissions');
         }
 
         // Check expiration
         if ($secret->isExpired()) {
             $this->auditLogService->log($identifier, 'read', false, 'Secret has expired');
+
             throw SecretExpiredException::forIdentifier($identifier, $secret->getExpiresAt());
         }
 
@@ -191,10 +193,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 $secret->getEncryptedDek(),
                 $secret->getDekNonce(),
                 $secret->getValueNonce(),
-                $identifier
+                $identifier,
             );
         } catch (EncryptionException $e) {
             $this->auditLogService->log($identifier, 'read', false, 'Decryption failed: ' . $e->getMessage());
+
             throw $e;
         }
 
@@ -236,6 +239,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         // Check access
         if (!$this->accessControlService->canDelete($secret)) {
             $this->auditLogService->log($identifier, 'access_denied', false, 'Delete access denied');
+
             throw AccessDeniedException::forIdentifier($identifier, 'delete permission denied');
         }
 
@@ -252,7 +256,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             null,
             $reason,
             $hashBefore,
-            null
+            null,
         );
 
         // Dispatch PSR-14 event
@@ -276,6 +280,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         // Check access
         if (!$this->accessControlService->canWrite($secret)) {
             $this->auditLogService->log($identifier, 'access_denied', false, 'Rotate access denied');
+
             throw AccessDeniedException::forIdentifier($identifier, 'rotate permission denied');
         }
 
@@ -309,7 +314,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 null,
                 $reason,
                 $hashBefore,
-                $encrypted['value_checksum']
+                $encrypted['value_checksum'],
             );
 
             // Dispatch PSR-14 event
@@ -375,6 +380,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         // Check access
         if (!$this->accessControlService->canRead($secret)) {
             $this->auditLogService->log($identifier, 'access_denied', false, 'Metadata access denied');
+
             throw AccessDeniedException::forIdentifier($identifier, 'insufficient permissions');
         }
 
@@ -397,7 +403,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     {
         return new VaultHttpClient(
             $this,
-            $this->auditLogService
+            $this->auditLogService,
         );
     }
 

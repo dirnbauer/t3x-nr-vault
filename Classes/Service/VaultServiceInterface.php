@@ -20,15 +20,15 @@ interface VaultServiceInterface
      * Store a secret.
      *
      * @param string $identifier Unique identifier for the secret
-     * @param string $secret     The secret value to store
-     * @param array  $options    Optional configuration:
-     *                           - owner: int - BE user UID who owns this secret
-     *                           - groups: int[] - BE user group UIDs allowed to access
-     *                           - context: string - Permission scoping
-     *                           - expiresAt: int|\DateTimeInterface|null - When secret expires
-     *                           - metadata: array - Custom metadata
-     *                           - description: string - Human-readable description
-     *                           - pid: int - Page ID for multi-site scoping
+     * @param string $secret The secret value to store
+     * @param array $options Optional configuration:
+     *                       - owner: int - BE user UID who owns this secret
+     *                       - groups: int[] - BE user group UIDs allowed to access
+     *                       - context: string - Permission scoping
+     *                       - expiresAt: int|\DateTimeInterface|null - When secret expires
+     *                       - metadata: array - Custom metadata
+     *                       - description: string - Human-readable description
+     *                       - pid: int - Page ID for multi-site scoping
      *
      * @throws ValidationException If identifier is invalid
      * @throws EncryptionException If encryption fails
@@ -38,11 +38,11 @@ interface VaultServiceInterface
     /**
      * Retrieve a secret value.
      *
-     * @return string|null The secret value, or null if not found
-     *
      * @throws AccessDeniedException If current user lacks permission
      * @throws EncryptionException If decryption fails
      * @throws SecretExpiredException If secret has expired
+     *
+     * @return string|null The secret value, or null if not found
      */
     public function retrieve(string $identifier): ?string;
 
@@ -72,6 +72,7 @@ interface VaultServiceInterface
      * List all accessible secrets with metadata.
      *
      * @param string|null $pattern Optional pattern to filter identifiers (supports * wildcard)
+     *
      * @return array<array{
      *     identifier: string,
      *     owner_uid: int,
@@ -88,6 +89,9 @@ interface VaultServiceInterface
     /**
      * Get metadata about a secret.
      *
+     * @throws SecretNotFoundException If secret doesn't exist
+     * @throws AccessDeniedException If current user lacks permission
+     *
      * @return array{
      *     identifier: string,
      *     description: string,
@@ -101,9 +105,6 @@ interface VaultServiceInterface
      *     lastRotatedAt: ?int,
      *     metadata: array,
      * }
-     *
-     * @throws SecretNotFoundException If secret doesn't exist
-     * @throws AccessDeniedException If current user lacks permission
      */
     public function getMetadata(string $identifier): array;
 

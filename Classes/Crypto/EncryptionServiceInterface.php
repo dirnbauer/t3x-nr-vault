@@ -14,8 +14,10 @@ interface EncryptionServiceInterface
     /**
      * Encrypt a secret value with a unique DEK.
      *
-     * @param string $plaintext  The value to encrypt
+     * @param string $plaintext The value to encrypt
      * @param string $identifier Secret identifier (used as AAD)
+     *
+     * @throws EncryptionException If encryption fails
      *
      * @return array{
      *     encrypted_value: string,
@@ -24,8 +26,6 @@ interface EncryptionServiceInterface
      *     value_nonce: string,
      *     value_checksum: string,
      * }
-     *
-     * @throws EncryptionException If encryption fails
      */
     public function encrypt(string $plaintext, string $identifier): array;
 
@@ -33,21 +33,21 @@ interface EncryptionServiceInterface
      * Decrypt a secret value.
      *
      * @param string $encryptedValue Base64-encoded ciphertext
-     * @param string $encryptedDek   Base64-encoded encrypted DEK
-     * @param string $dekNonce       Base64-encoded DEK nonce
-     * @param string $valueNonce     Base64-encoded value nonce
-     * @param string $identifier     Secret identifier (used as AAD)
-     *
-     * @return string The decrypted plaintext
+     * @param string $encryptedDek Base64-encoded encrypted DEK
+     * @param string $dekNonce Base64-encoded DEK nonce
+     * @param string $valueNonce Base64-encoded value nonce
+     * @param string $identifier Secret identifier (used as AAD)
      *
      * @throws EncryptionException If decryption fails
+     *
+     * @return string The decrypted plaintext
      */
     public function decrypt(
         string $encryptedValue,
         string $encryptedDek,
         string $dekNonce,
         string $valueNonce,
-        string $identifier
+        string $identifier,
     ): string;
 
     /**
@@ -70,8 +70,8 @@ interface EncryptionServiceInterface
      * Re-encrypt a DEK with a new master key.
      *
      * @param string $encryptedDek Current encrypted DEK
-     * @param string $dekNonce     Current DEK nonce
-     * @param string $identifier   Secret identifier
+     * @param string $dekNonce Current DEK nonce
+     * @param string $identifier Secret identifier
      * @param string $oldMasterKey Previous master key
      * @param string $newMasterKey New master key
      *
@@ -82,6 +82,6 @@ interface EncryptionServiceInterface
         string $dekNonce,
         string $identifier,
         string $oldMasterKey,
-        string $newMasterKey
+        string $newMasterKey,
     ): array;
 }

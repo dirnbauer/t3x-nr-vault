@@ -36,32 +36,32 @@ final class VaultRotateCommand extends Command
             ->addArgument(
                 'identifier',
                 InputArgument::REQUIRED,
-                'Identifier of the secret to rotate'
+                'Identifier of the secret to rotate',
             )
             ->addOption(
                 'value',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'The new secret value (will prompt if not provided)'
+                'The new secret value (will prompt if not provided)',
             )
             ->addOption(
                 'stdin',
                 null,
                 InputOption::VALUE_NONE,
-                'Read new secret value from stdin'
+                'Read new secret value from stdin',
             )
             ->addOption(
                 'file',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Read new secret value from file'
+                'Read new secret value from file',
             )
             ->addOption(
                 'reason',
                 'r',
                 InputOption::VALUE_REQUIRED,
                 'Reason for rotation (required)',
-                'Manual rotation via CLI'
+                'Manual rotation via CLI',
             );
     }
 
@@ -74,7 +74,8 @@ final class VaultRotateCommand extends Command
         // Check if secret exists
         $metadata = $this->vaultService->getMetadata($identifier);
         if ($metadata === null) {
-            $io->error(sprintf('Secret not found: %s', $identifier));
+            $io->error(\sprintf('Secret not found: %s', $identifier));
+
             return Command::FAILURE;
         }
 
@@ -82,12 +83,13 @@ final class VaultRotateCommand extends Command
         $newValue = $this->getSecretValue($input, $io);
         if ($newValue === null) {
             $io->error('No new secret value provided');
+
             return Command::FAILURE;
         }
 
         try {
             $this->vaultService->rotate($identifier, $newValue, $reason);
-            $io->success(sprintf('Secret "%s" rotated successfully', $identifier));
+            $io->success(\sprintf('Secret "%s" rotated successfully', $identifier));
 
             // Show rotation info
             $io->table(
@@ -96,7 +98,7 @@ final class VaultRotateCommand extends Command
                     ['Identifier', $identifier],
                     ['Reason', $reason],
                     ['Rotated at', date('Y-m-d H:i:s')],
-                ]
+                ],
             );
 
             // Clear the value from memory
@@ -104,10 +106,12 @@ final class VaultRotateCommand extends Command
 
             return Command::SUCCESS;
         } catch (SecretNotFoundException $e) {
-            $io->error(sprintf('Secret not found: %s', $identifier));
+            $io->error(\sprintf('Secret not found: %s', $identifier));
+
             return Command::FAILURE;
         } catch (VaultException $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -126,6 +130,7 @@ final class VaultRotateCommand extends Command
             if ($value !== false) {
                 return rtrim($value, "\n\r");
             }
+
             return null;
         }
 
@@ -133,13 +138,15 @@ final class VaultRotateCommand extends Command
         $file = $input->getOption('file');
         if ($file !== null) {
             if (!file_exists($file)) {
-                $io->error(sprintf('File not found: %s', $file));
+                $io->error(\sprintf('File not found: %s', $file));
+
                 return null;
             }
             $value = file_get_contents($file);
             if ($value !== false) {
                 return $value;
             }
+
             return null;
         }
 

@@ -12,8 +12,8 @@ final class SecretNotFoundException extends VaultException
     public static function forIdentifier(string $identifier): self
     {
         return new self(
-            sprintf('Secret with identifier "%s" not found', $identifier),
-            1703800001
+            \sprintf('Secret with identifier "%s" not found', $identifier),
+            1703800001,
         );
     }
 }

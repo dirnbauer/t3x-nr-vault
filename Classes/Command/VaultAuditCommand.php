@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
+use DateTimeImmutable;
+use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -35,63 +37,63 @@ final class VaultAuditCommand extends Command
                 'identifier',
                 'i',
                 InputOption::VALUE_REQUIRED,
-                'Filter by secret identifier'
+                'Filter by secret identifier',
             )
             ->addOption(
                 'action',
                 'a',
                 InputOption::VALUE_REQUIRED,
-                'Filter by action (create, read, update, delete, rotate, access_denied)'
+                'Filter by action (create, read, update, delete, rotate, access_denied)',
             )
             ->addOption(
                 'actor',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter by actor UID'
+                'Filter by actor UID',
             )
             ->addOption(
                 'since',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter entries since date (Y-m-d or Y-m-d H:i:s)'
+                'Filter entries since date (Y-m-d or Y-m-d H:i:s)',
             )
             ->addOption(
                 'until',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter entries until date (Y-m-d or Y-m-d H:i:s)'
+                'Filter entries until date (Y-m-d or Y-m-d H:i:s)',
             )
             ->addOption(
                 'success',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter by success status (true/false)'
+                'Filter by success status (true/false)',
             )
             ->addOption(
                 'format',
                 'f',
                 InputOption::VALUE_REQUIRED,
                 'Output format: table, json, csv',
-                'table'
+                'table',
             )
             ->addOption(
                 'limit',
                 'l',
                 InputOption::VALUE_REQUIRED,
                 'Maximum number of results',
-                '50'
+                '50',
             )
             ->addOption(
                 'verify',
                 null,
                 InputOption::VALUE_NONE,
-                'Verify hash chain integrity'
+                'Verify hash chain integrity',
             )
             ->addOption(
                 'export',
                 'e',
                 InputOption::VALUE_REQUIRED,
-                'Export to file'
+                'Export to file',
             );
     }
 
@@ -107,13 +109,14 @@ final class VaultAuditCommand extends Command
         // Build filters
         $filters = $this->buildFilters($input);
         $format = $input->getOption('format');
-        $limit = (int)$input->getOption('limit');
+        $limit = (int) $input->getOption('limit');
 
         try {
             $entries = $this->auditLogService->query($filters, $limit, 0);
 
             if (empty($entries)) {
                 $io->info('No audit entries found');
+
                 return Command::SUCCESS;
             }
 
@@ -126,14 +129,12 @@ final class VaultAuditCommand extends Command
             // Output to console
             switch ($format) {
                 case 'json':
-                    $data = array_map(fn($e) => $e->toArray(), $entries);
+                    $data = array_map(fn ($e) => $e->toArray(), $entries);
                     $output->writeln(json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
                     break;
-
                 case 'csv':
                     $this->outputCsv($output, $entries);
                     break;
-
                 default:
                     $this->outputTable($io, $entries);
             }
@@ -141,6 +142,7 @@ final class VaultAuditCommand extends Command
             return Command::SUCCESS;
         } catch (VaultException $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -158,21 +160,21 @@ final class VaultAuditCommand extends Command
         }
 
         if ($input->getOption('actor')) {
-            $filters['actorUid'] = (int)$input->getOption('actor');
+            $filters['actorUid'] = (int) $input->getOption('actor');
         }
 
         if ($input->getOption('since')) {
             try {
-                $filters['since'] = new \DateTimeImmutable($input->getOption('since'));
-            } catch (\Exception) {
+                $filters['since'] = new DateTimeImmutable($input->getOption('since'));
+            } catch (Exception) {
                 // Invalid date, skip
             }
         }
 
         if ($input->getOption('until')) {
             try {
-                $filters['until'] = new \DateTimeImmutable($input->getOption('until'));
-            } catch (\Exception) {
+                $filters['until'] = new DateTimeImmutable($input->getOption('until'));
+            } catch (Exception) {
                 // Invalid date, skip
             }
         }
@@ -193,6 +195,7 @@ final class VaultAuditCommand extends Command
 
         if ($result['valid']) {
             $io->success('Hash chain is valid - no tampering detected');
+
             return Command::SUCCESS;
         }
 
@@ -202,10 +205,10 @@ final class VaultAuditCommand extends Command
             $io->table(
                 ['Entry UID', 'Error'],
                 array_map(
-                    fn($uid, $error) => [$uid, $error],
+                    fn ($uid, $error) => [$uid, $error],
                     array_keys($result['errors']),
-                    array_values($result['errors'])
-                )
+                    array_values($result['errors']),
+                ),
             );
         }
 
@@ -229,10 +232,10 @@ final class VaultAuditCommand extends Command
 
         $io->table(
             ['Timestamp', 'Secret', 'Action', 'OK', 'Actor', 'IP', 'Hash'],
-            $rows
+            $rows,
         );
 
-        $io->writeln(sprintf('<info>Total: %d entries</info>', count($entries)));
+        $io->writeln(\sprintf('<info>Total: %d entries</info>', \count($entries)));
     }
 
     private function outputCsv(OutputInterface $output, array $entries): void
@@ -242,7 +245,7 @@ final class VaultAuditCommand extends Command
 
         // Rows
         foreach ($entries as $entry) {
-            $output->writeln(sprintf(
+            $output->writeln(\sprintf(
                 '%s,%s,%s,%d,%s,%s,%s,%s',
                 date('Y-m-d H:i:s', $entry->crdate),
                 $this->escapeCsv($entry->secretIdentifier),
@@ -251,14 +254,14 @@ final class VaultAuditCommand extends Command
                 $this->escapeCsv($entry->actorUsername),
                 $entry->actorType,
                 $entry->ipAddress,
-                $entry->entryHash
+                $entry->entryHash,
             ));
         }
     }
 
     private function exportToFile(SymfonyStyle $io, array $entries, string $file, string $format): int
     {
-        $data = array_map(fn($e) => $e->toArray(), $entries);
+        $data = array_map(fn ($e) => $e->toArray(), $entries);
 
         $content = match ($format) {
             'csv' => $this->formatCsv($data),
@@ -267,11 +270,13 @@ final class VaultAuditCommand extends Command
 
         $result = file_put_contents($file, $content);
         if ($result === false) {
-            $io->error(sprintf('Failed to write to file: %s', $file));
+            $io->error(\sprintf('Failed to write to file: %s', $file));
+
             return Command::FAILURE;
         }
 
-        $io->success(sprintf('Exported %d entries to: %s', count($entries), $file));
+        $io->success(\sprintf('Exported %d entries to: %s', \count($entries), $file));
+
         return Command::SUCCESS;
     }
 
@@ -285,7 +290,7 @@ final class VaultAuditCommand extends Command
         fputcsv($output, array_keys($data[0]));
 
         foreach ($data as $row) {
-            if (isset($row['context']) && is_array($row['context'])) {
+            if (isset($row['context']) && \is_array($row['context'])) {
                 $row['context'] = json_encode($row['context']);
             }
             fputcsv($output, $row);
@@ -303,6 +308,7 @@ final class VaultAuditCommand extends Command
         if (str_contains($value, ',') || str_contains($value, '"') || str_contains($value, "\n")) {
             return '"' . str_replace('"', '""', $value) . '"';
         }
+
         return $value;
     }
 }

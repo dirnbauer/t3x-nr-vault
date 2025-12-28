@@ -16,8 +16,7 @@ final class LocalEncryptionAdapter implements VaultAdapterInterface
     public function __construct(
         private readonly SecretRepository $secretRepository,
         private readonly EncryptionServiceInterface $encryptionService,
-    ) {
-    }
+    ) {}
 
     public function getIdentifier(): string
     {

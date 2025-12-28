@@ -34,8 +34,6 @@ interface VaultHttpClientInterface
      *     reason?: string
      * } $options Request options
      *
-     * @return ResponseInterface
-     *
      * @throws \Netresearch\NrVault\Exception\VaultException If secret retrieval fails
      * @throws \Psr\Http\Client\ClientExceptionInterface If request fails
      */

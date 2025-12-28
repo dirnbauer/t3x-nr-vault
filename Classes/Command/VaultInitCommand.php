@@ -34,19 +34,19 @@ final class VaultInitCommand extends Command
                 'output',
                 'o',
                 InputOption::VALUE_REQUIRED,
-                'Output file for the master key (defaults to configured path or var/vault/master.key)'
+                'Output file for the master key (defaults to configured path or var/vault/master.key)',
             )
             ->addOption(
                 'force',
                 'f',
                 InputOption::VALUE_NONE,
-                'Overwrite existing master key (DANGEROUS: will make existing secrets unrecoverable)'
+                'Overwrite existing master key (DANGEROUS: will make existing secrets unrecoverable)',
             )
             ->addOption(
                 'env',
                 'e',
                 InputOption::VALUE_NONE,
-                'Output key as environment variable format instead of file'
+                'Output key as environment variable format instead of file',
             );
     }
 
@@ -68,11 +68,12 @@ final class VaultInitCommand extends Command
 
         // Check if key already exists
         if ($outputFile !== null && file_exists($outputFile) && !$input->getOption('force')) {
-            $io->error(sprintf(
+            $io->error(\sprintf(
                 'Master key already exists at: %s' . PHP_EOL .
                 'Use --force to overwrite (WARNING: existing secrets will become unrecoverable)',
-                $outputFile
+                $outputFile,
             ));
+
             return Command::FAILURE;
         }
 
@@ -84,16 +85,17 @@ final class VaultInitCommand extends Command
             $encoded = sodium_bin2base64($masterKey, SODIUM_BASE64_VARIANT_ORIGINAL);
             $io->writeln('Add the following to your environment:');
             $io->newLine();
-            $io->writeln(sprintf('export TYPO3_VAULT_MASTER_KEY="%s"', $encoded));
+            $io->writeln(\sprintf('export TYPO3_VAULT_MASTER_KEY="%s"', $encoded));
             $io->newLine();
             $io->warning('Store this key securely! It cannot be recovered if lost.');
         } else {
             // Ensure directory exists
-            $dir = dirname($outputFile);
+            $dir = \dirname($outputFile);
             if (!is_dir($dir)) {
-                if (!mkdir($dir, 0700, true)) {
-                    $io->error(sprintf('Failed to create directory: %s', $dir));
+                if (!mkdir($dir, 0o700, true)) {
+                    $io->error(\sprintf('Failed to create directory: %s', $dir));
                     sodium_memzero($masterKey);
+
                     return Command::FAILURE;
                 }
             }
@@ -101,23 +103,24 @@ final class VaultInitCommand extends Command
             // Write key to file with restrictive permissions
             $result = file_put_contents($outputFile, $masterKey);
             if ($result === false) {
-                $io->error(sprintf('Failed to write master key to: %s', $outputFile));
+                $io->error(\sprintf('Failed to write master key to: %s', $outputFile));
                 sodium_memzero($masterKey);
+
                 return Command::FAILURE;
             }
 
             // Set restrictive permissions (owner read/write only)
-            chmod($outputFile, 0600);
+            chmod($outputFile, 0o600);
 
-            $io->success(sprintf('Master key generated and saved to: %s', $outputFile));
+            $io->success(\sprintf('Master key generated and saved to: %s', $outputFile));
             $io->table(
                 ['Property', 'Value'],
                 [
                     ['Key file', $outputFile],
                     ['Permissions', '0600 (owner read/write only)'],
                     ['Algorithm', 'XSalsa20-Poly1305 (sodium_crypto_secretbox)'],
-                    ['Key length', strlen($masterKey) . ' bytes'],
-                ]
+                    ['Key length', \strlen($masterKey) . ' bytes'],
+                ],
             );
 
             $io->warning([

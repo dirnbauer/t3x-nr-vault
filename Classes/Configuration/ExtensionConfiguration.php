@@ -27,7 +27,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAdapter(): string
     {
-        return (string)($this->configuration['adapter'] ?? 'local');
+        return (string) ($this->configuration['adapter'] ?? 'local');
     }
 
     /**
@@ -35,7 +35,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getMasterKeyProvider(): string
     {
-        return (string)($this->configuration['masterKeyProvider'] ?? 'file');
+        return (string) ($this->configuration['masterKeyProvider'] ?? 'file');
     }
 
     /**
@@ -43,7 +43,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getMasterKeyPath(): string
     {
-        return (string)($this->configuration['masterKeyPath'] ?? '');
+        return (string) ($this->configuration['masterKeyPath'] ?? '');
     }
 
     /**
@@ -51,7 +51,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getMasterKeyEnvVar(): string
     {
-        return (string)($this->configuration['masterKeyEnvVar'] ?? 'NR_VAULT_MASTER_KEY');
+        return (string) ($this->configuration['masterKeyEnvVar'] ?? 'NR_VAULT_MASTER_KEY');
     }
 
     /**
@@ -59,7 +59,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAuditLogRetention(): int
     {
-        return (int)($this->configuration['auditLogRetention'] ?? 365);
+        return (int) ($this->configuration['auditLogRetention'] ?? 365);
     }
 
     /**
@@ -67,7 +67,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function isCliAccessAllowed(): bool
     {
-        return (bool)($this->configuration['allowCliAccess'] ?? false);
+        return (bool) ($this->configuration['allowCliAccess'] ?? false);
     }
 
     /**
@@ -78,11 +78,11 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
     public function getCliAccessGroups(): array
     {
         $groups = $this->configuration['cliAccessGroups'] ?? [];
-        if (is_string($groups)) {
+        if (\is_string($groups)) {
             $groups = array_filter(array_map('intval', explode(',', $groups)));
         }
 
-        return array_map('intval', (array)$groups);
+        return array_map('intval', (array) $groups);
     }
 
     /**
@@ -90,7 +90,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function isCacheEnabled(): bool
     {
-        return (bool)($this->configuration['cacheEnabled'] ?? true);
+        return (bool) ($this->configuration['cacheEnabled'] ?? true);
     }
 
     /**
@@ -98,7 +98,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function preferXChaCha20(): bool
     {
-        return (bool)($this->configuration['preferXChaCha20'] ?? false);
+        return (bool) ($this->configuration['preferXChaCha20'] ?? false);
     }
 
     /**
@@ -108,7 +108,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getHashiCorpConfig(): array
     {
-        return (array)($this->configuration['hashicorp'] ?? []);
+        return (array) ($this->configuration['hashicorp'] ?? []);
     }
 
     /**
@@ -118,7 +118,7 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAwsConfig(): array
     {
-        return (array)($this->configuration['aws'] ?? []);
+        return (array) ($this->configuration['aws'] ?? []);
     }
 
     /**

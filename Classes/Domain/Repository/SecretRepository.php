@@ -14,12 +14,12 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 final class SecretRepository
 {
     private const TABLE_NAME = 'tx_nrvault_secret';
+
     private const MM_TABLE_NAME = 'tx_nrvault_secret_begroups_mm';
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
-    ) {
-    }
+    ) {}
 
     public function findByIdentifier(string $identifier): ?Secret
     {
@@ -29,7 +29,7 @@ final class SecretRepository
             ->from(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->eq('identifier', $queryBuilder->createNamedParameter($identifier)),
-                $queryBuilder->expr()->eq('deleted', 0)
+                $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
             ->fetchAssociative();
@@ -41,7 +41,7 @@ final class SecretRepository
         $secret = Secret::fromDatabaseRow($row);
 
         // Load groups from MM table
-        $groups = $this->loadGroupsForSecret((int)$row['uid']);
+        $groups = $this->loadGroupsForSecret((int) $row['uid']);
         if (!empty($groups)) {
             $secret->setAllowedGroups($groups);
         }
@@ -57,7 +57,7 @@ final class SecretRepository
             ->from(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)),
-                $queryBuilder->expr()->eq('deleted', 0)
+                $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
             ->fetchAssociative();
@@ -85,12 +85,12 @@ final class SecretRepository
             ->from(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->eq('identifier', $queryBuilder->createNamedParameter($identifier)),
-                $queryBuilder->expr()->eq('deleted', 0)
+                $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
             ->fetchOne();
 
-        return (int)$count > 0;
+        return (int) $count > 0;
     }
 
     public function save(Secret $secret): void
@@ -102,13 +102,13 @@ final class SecretRepository
             // Insert new secret
             $data['crdate'] = time();
             $connection->insert(self::TABLE_NAME, $data);
-            $secret->setUid((int)$connection->lastInsertId(self::TABLE_NAME));
+            $secret->setUid((int) $connection->lastInsertId(self::TABLE_NAME));
         } else {
             // Update existing secret
             $connection->update(
                 self::TABLE_NAME,
                 $data,
-                ['uid' => $secret->getUid()]
+                ['uid' => $secret->getUid()],
             );
         }
 
@@ -126,7 +126,7 @@ final class SecretRepository
         $this->getConnection()->update(
             self::TABLE_NAME,
             ['deleted' => 1, 'tstamp' => time()],
-            ['uid' => $secret->getUid()]
+            ['uid' => $secret->getUid()],
         );
     }
 
@@ -134,6 +134,7 @@ final class SecretRepository
      * Find all secrets matching filters.
      *
      * @param array{owner?: int, prefix?: string, context?: string, pid?: int} $filters
+     *
      * @return string[]
      */
     public function findIdentifiers(array $filters = []): array
@@ -146,25 +147,25 @@ final class SecretRepository
 
         if (isset($filters['owner'])) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('owner_uid', $queryBuilder->createNamedParameter($filters['owner'], Connection::PARAM_INT))
+                $queryBuilder->expr()->eq('owner_uid', $queryBuilder->createNamedParameter($filters['owner'], Connection::PARAM_INT)),
             );
         }
 
         if (isset($filters['prefix'])) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->like('identifier', $queryBuilder->createNamedParameter($filters['prefix'] . '%'))
+                $queryBuilder->expr()->like('identifier', $queryBuilder->createNamedParameter($filters['prefix'] . '%')),
             );
         }
 
         if (isset($filters['context'])) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('context', $queryBuilder->createNamedParameter($filters['context']))
+                $queryBuilder->expr()->eq('context', $queryBuilder->createNamedParameter($filters['context'])),
             );
         }
 
         if (isset($filters['pid'])) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($filters['pid'], Connection::PARAM_INT))
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($filters['pid'], Connection::PARAM_INT)),
             );
         }
 
@@ -174,7 +175,7 @@ final class SecretRepository
         $identifiers = [];
 
         while ($row = $result->fetchAssociative()) {
-            $identifiers[] = (string)$row['identifier'];
+            $identifiers[] = (string) $row['identifier'];
         }
 
         return $identifiers;
@@ -184,6 +185,7 @@ final class SecretRepository
      * Find all secrets accessible by specific groups.
      *
      * @param int[] $groupUids
+     *
      * @return Secret[]
      */
     public function findByGroups(array $groupUids): array
@@ -213,7 +215,7 @@ final class SecretRepository
             ->from(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->in('uid', array_map('intval', $secretUids)),
-                $queryBuilder->expr()->eq('deleted', 0)
+                $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
             ->fetchAllAssociative();
@@ -221,7 +223,7 @@ final class SecretRepository
         $secrets = [];
         foreach ($rows as $row) {
             $secret = Secret::fromDatabaseRow($row);
-            $groups = $this->loadGroupsForSecret((int)$row['uid']);
+            $groups = $this->loadGroupsForSecret((int) $row['uid']);
             if (!empty($groups)) {
                 $secret->setAllowedGroups($groups);
             }
@@ -245,12 +247,12 @@ final class SecretRepository
             ->where(
                 $queryBuilder->expr()->gt('expires_at', 0),
                 $queryBuilder->expr()->lt('expires_at', time()),
-                $queryBuilder->expr()->eq('deleted', 0)
+                $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn($row) => Secret::fromDatabaseRow($row), $rows);
+        return array_map(fn ($row) => Secret::fromDatabaseRow($row), $rows);
     }
 
     /**
@@ -270,13 +272,13 @@ final class SecretRepository
             ->where(
                 $queryBuilder->expr()->gt('expires_at', $now),
                 $queryBuilder->expr()->lte('expires_at', $future),
-                $queryBuilder->expr()->eq('deleted', 0)
+                $queryBuilder->expr()->eq('deleted', 0),
             )
             ->orderBy('expires_at', 'ASC')
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn($row) => Secret::fromDatabaseRow($row), $rows);
+        return array_map(fn ($row) => Secret::fromDatabaseRow($row), $rows);
     }
 
     /**
@@ -285,7 +287,8 @@ final class SecretRepository
     public function countAll(): int
     {
         $queryBuilder = $this->getConnection()->createQueryBuilder();
-        return (int)$queryBuilder
+
+        return (int) $queryBuilder
             ->count('uid')
             ->from(self::TABLE_NAME)
             ->where($queryBuilder->expr()->eq('deleted', 0))
@@ -309,7 +312,7 @@ final class SecretRepository
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn($row) => (int)$row['uid_foreign'], $rows);
+        return array_map(fn ($row) => (int) $row['uid_foreign'], $rows);
     }
 
     /**

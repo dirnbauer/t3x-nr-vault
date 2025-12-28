@@ -47,6 +47,7 @@ interface VaultAdapterInterface
      * List all secret identifiers.
      *
      * @param array{owner?: int, prefix?: string, context?: string, pid?: int} $filters
+     *
      * @return string[]
      */
     public function list(array $filters = []): array;

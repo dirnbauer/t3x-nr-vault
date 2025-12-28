@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class DataHandlerHook
 {
     private array $vaultFieldsConfig = [];
+
     private array $pendingSecrets = [];
 
     /**
@@ -29,7 +30,7 @@ final class DataHandlerHook
         array &$fieldArray,
         string $table,
         string|int $id,
-        DataHandler $dataHandler
+        DataHandler $dataHandler,
     ): void {
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
@@ -49,12 +50,12 @@ final class DataHandlerHook
             $value = $fieldArray[$fieldName];
 
             // Handle array format from form element
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $secretValue = $value['value'] ?? $value[0] ?? '';
                 $vaultIdentifier = $value['_vault_identifier'] ?? '';
                 $originalChecksum = $value['_vault_checksum'] ?? '';
             } else {
-                $secretValue = (string)$value;
+                $secretValue = (string) $value;
                 $vaultIdentifier = '';
                 $originalChecksum = '';
             }
@@ -89,7 +90,7 @@ final class DataHandlerHook
         string $table,
         string|int $id,
         array $fieldArray,
-        DataHandler $dataHandler
+        DataHandler $dataHandler,
     ): void {
         // Get actual UID for new records
         $uid = $id;
@@ -105,7 +106,7 @@ final class DataHandlerHook
             $originalChecksum = $secretData['originalChecksum'];
 
             // Build vault identifier
-            $vaultIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int)$uid);
+            $vaultIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int) $uid);
 
             try {
                 $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
@@ -121,7 +122,7 @@ final class DataHandlerHook
                     $vaultService->store($vaultIdentifier, $secretValue, [
                         'table' => $table,
                         'field' => $fieldName,
-                        'uid' => (int)$uid,
+                        'uid' => (int) $uid,
                         'source' => 'tca_field',
                     ]);
                 } else {
@@ -131,11 +132,11 @@ final class DataHandlerHook
             } catch (VaultException $e) {
                 $dataHandler->log(
                     $table,
-                    (int)$uid,
+                    (int) $uid,
                     $status === 'new' ? 1 : 2,
                     0,
                     1,
-                    'Vault error for field "' . $fieldName . '": ' . $e->getMessage()
+                    'Vault error for field "' . $fieldName . '": ' . $e->getMessage(),
                 );
             }
         }
@@ -154,7 +155,7 @@ final class DataHandlerHook
         string|int $id,
         mixed $value,
         DataHandler $dataHandler,
-        bool $pasteUpdate
+        bool $pasteUpdate,
     ): void {
         if ($command !== 'delete') {
             return;
@@ -169,7 +170,7 @@ final class DataHandlerHook
                 continue;
             }
 
-            $vaultIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int)$id);
+            $vaultIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int) $id);
 
             try {
                 $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
@@ -182,11 +183,11 @@ final class DataHandlerHook
             } catch (VaultException $e) {
                 $dataHandler->log(
                     $table,
-                    (int)$id,
+                    (int) $id,
                     3,
                     0,
                     1,
-                    'Vault error during delete for field "' . $fieldName . '": ' . $e->getMessage()
+                    'Vault error during delete for field "' . $fieldName . '": ' . $e->getMessage(),
                 );
             }
         }
@@ -202,7 +203,7 @@ final class DataHandlerHook
         string|int $id,
         mixed $value,
         DataHandler $dataHandler,
-        bool $pasteUpdate
+        bool $pasteUpdate,
     ): void {
         if ($command !== 'copy') {
             return;
@@ -222,8 +223,8 @@ final class DataHandlerHook
                 continue;
             }
 
-            $sourceIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int)$id);
-            $targetIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int)$newId);
+            $sourceIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int) $id);
+            $targetIdentifier = $this->buildVaultIdentifier($table, $fieldName, (int) $newId);
 
             try {
                 $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
@@ -238,18 +239,18 @@ final class DataHandlerHook
                 $vaultService->store($targetIdentifier, $sourceValue, [
                     'table' => $table,
                     'field' => $fieldName,
-                    'uid' => (int)$newId,
+                    'uid' => (int) $newId,
                     'source' => 'record_copy',
                     'copied_from' => $sourceIdentifier,
                 ]);
             } catch (VaultException $e) {
                 $dataHandler->log(
                     $table,
-                    (int)$newId,
+                    (int) $newId,
                     1,
                     0,
                     1,
-                    'Vault error during copy for field "' . $fieldName . '": ' . $e->getMessage()
+                    'Vault error during copy for field "' . $fieldName . '": ' . $e->getMessage(),
                 );
             }
         }
@@ -260,6 +261,6 @@ final class DataHandlerHook
      */
     private function buildVaultIdentifier(string $table, string $field, int $uid): string
     {
-        return sprintf('%s__%s__%d', $table, $field, $uid);
+        return \sprintf('%s__%s__%d', $table, $field, $uid);
     }
 }

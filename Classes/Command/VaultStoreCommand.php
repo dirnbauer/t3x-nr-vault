@@ -35,37 +35,37 @@ final class VaultStoreCommand extends Command
             ->addArgument(
                 'identifier',
                 InputArgument::REQUIRED,
-                'Unique identifier for the secret (alphanumeric, underscores, max 255 chars)'
+                'Unique identifier for the secret (alphanumeric, underscores, max 255 chars)',
             )
             ->addOption(
                 'value',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'The secret value (will prompt if not provided)'
+                'The secret value (will prompt if not provided)',
             )
             ->addOption(
                 'stdin',
                 null,
                 InputOption::VALUE_NONE,
-                'Read secret value from stdin'
+                'Read secret value from stdin',
             )
             ->addOption(
                 'file',
                 'f',
                 InputOption::VALUE_REQUIRED,
-                'Read secret value from file'
+                'Read secret value from file',
             )
             ->addOption(
                 'metadata',
                 'm',
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Additional metadata as key=value pairs'
+                'Additional metadata as key=value pairs',
             )
             ->addOption(
                 'groups',
                 'g',
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Backend user group IDs that can access this secret'
+                'Backend user group IDs that can access this secret',
             );
     }
 
@@ -78,6 +78,7 @@ final class VaultStoreCommand extends Command
         $value = $this->getSecretValue($input, $io);
         if ($value === null) {
             $io->error('No secret value provided');
+
             return Command::FAILURE;
         }
 
@@ -92,7 +93,7 @@ final class VaultStoreCommand extends Command
 
         try {
             $this->vaultService->store($identifier, $value, $metadata);
-            $io->success(sprintf('Secret "%s" stored successfully', $identifier));
+            $io->success(\sprintf('Secret "%s" stored successfully', $identifier));
 
             // Clear the value from memory
             sodium_memzero($value);
@@ -100,6 +101,7 @@ final class VaultStoreCommand extends Command
             return Command::SUCCESS;
         } catch (VaultException $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -118,6 +120,7 @@ final class VaultStoreCommand extends Command
             if ($value !== false) {
                 return rtrim($value, "\n\r");
             }
+
             return null;
         }
 
@@ -125,13 +128,15 @@ final class VaultStoreCommand extends Command
         $file = $input->getOption('file');
         if ($file !== null) {
             if (!file_exists($file)) {
-                $io->error(sprintf('File not found: %s', $file));
+                $io->error(\sprintf('File not found: %s', $file));
+
                 return null;
             }
             $value = file_get_contents($file);
             if ($value !== false) {
                 return $value;
             }
+
             return null;
         }
 
@@ -152,6 +157,7 @@ final class VaultStoreCommand extends Command
                 $metadata[trim($key)] = trim($value);
             }
         }
+
         return $metadata;
     }
 }

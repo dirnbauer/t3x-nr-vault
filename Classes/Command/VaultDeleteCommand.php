@@ -36,20 +36,20 @@ final class VaultDeleteCommand extends Command
             ->addArgument(
                 'identifier',
                 InputArgument::REQUIRED,
-                'Identifier of the secret to delete'
+                'Identifier of the secret to delete',
             )
             ->addOption(
                 'reason',
                 'r',
                 InputOption::VALUE_REQUIRED,
                 'Reason for deletion (required for audit)',
-                'Manual deletion via CLI'
+                'Manual deletion via CLI',
             )
             ->addOption(
                 'force',
                 'f',
                 InputOption::VALUE_NONE,
-                'Skip confirmation prompt'
+                'Skip confirmation prompt',
             );
     }
 
@@ -62,7 +62,8 @@ final class VaultDeleteCommand extends Command
         // Check if secret exists
         $metadata = $this->vaultService->getMetadata($identifier);
         if ($metadata === null) {
-            $io->error(sprintf('Secret not found: %s', $identifier));
+            $io->error(\sprintf('Secret not found: %s', $identifier));
+
             return Command::FAILURE;
         }
 
@@ -75,32 +76,35 @@ final class VaultDeleteCommand extends Command
                 ['Created', date('Y-m-d H:i:s', $metadata['crdate'] ?? 0)],
                 ['Read count', $metadata['read_count'] ?? 0],
                 ['Last read', $metadata['last_read_at'] ? date('Y-m-d H:i:s', $metadata['last_read_at']) : 'Never'],
-            ]
+            ],
         );
 
         // Confirm unless --force
         if (!$input->getOption('force')) {
             $confirmed = $io->confirm(
-                sprintf('Are you sure you want to delete secret "%s"? This action cannot be undone.', $identifier),
-                false
+                \sprintf('Are you sure you want to delete secret "%s"? This action cannot be undone.', $identifier),
+                false,
             );
 
             if (!$confirmed) {
                 $io->info('Deletion cancelled');
+
                 return Command::SUCCESS;
             }
         }
 
         try {
             $this->vaultService->delete($identifier, $reason);
-            $io->success(sprintf('Secret "%s" deleted successfully', $identifier));
+            $io->success(\sprintf('Secret "%s" deleted successfully', $identifier));
 
             return Command::SUCCESS;
         } catch (SecretNotFoundException $e) {
-            $io->error(sprintf('Secret not found: %s', $identifier));
+            $io->error(\sprintf('Secret not found: %s', $identifier));
+
             return Command::FAILURE;
         } catch (VaultException $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }

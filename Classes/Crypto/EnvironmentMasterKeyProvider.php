@@ -16,8 +16,7 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 
     public function __construct(
         private readonly ExtensionConfigurationInterface $configuration,
-    ) {
-    }
+    ) {}
 
     public function getIdentifier(): string
     {
@@ -43,15 +42,15 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 
         // Handle base64-encoded keys
         $key = $value;
-        if (strlen($key) !== self::KEY_LENGTH) {
+        if (\strlen($key) !== self::KEY_LENGTH) {
             $decoded = base64_decode($value, true);
-            if ($decoded !== false && strlen($decoded) === self::KEY_LENGTH) {
+            if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
                 $key = $decoded;
             }
         }
 
-        if (strlen($key) !== self::KEY_LENGTH) {
-            throw MasterKeyException::invalidLength(self::KEY_LENGTH, strlen($key));
+        if (\strlen($key) !== self::KEY_LENGTH) {
+            throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
         }
 
         return $key;
@@ -61,7 +60,7 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
     {
         // Cannot store to environment variable at runtime
         throw MasterKeyException::cannotStore(
-            'Environment variables cannot be persisted. Set the environment variable manually.'
+            'Environment variables cannot be persisted. Set the environment variable manually.',
         );
     }
 

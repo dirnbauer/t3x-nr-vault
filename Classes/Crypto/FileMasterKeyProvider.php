@@ -6,7 +6,6 @@ namespace Netresearch\NrVault\Crypto;
 
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Exception\MasterKeyException;
-use TYPO3\CMS\Core\Core\Environment;
 
 /**
  * File-based master key provider.
@@ -17,8 +16,7 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
 
     public function __construct(
         private readonly ExtensionConfigurationInterface $configuration,
-    ) {
-    }
+    ) {}
 
     public function getIdentifier(): string
     {
@@ -60,9 +58,9 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
         }
 
         // Handle base64-encoded keys
-        if (strlen($key) !== self::KEY_LENGTH) {
+        if (\strlen($key) !== self::KEY_LENGTH) {
             $decoded = base64_decode($key, true);
-            if ($decoded !== false && strlen($decoded) === self::KEY_LENGTH) {
+            if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
                 $key = $decoded;
             }
         }
@@ -70,8 +68,8 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
         // Trim any whitespace (newlines from file)
         $key = trim($key);
 
-        if (strlen($key) !== self::KEY_LENGTH) {
-            throw MasterKeyException::invalidLength(self::KEY_LENGTH, strlen($key));
+        if (\strlen($key) !== self::KEY_LENGTH) {
+            throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
         }
 
         return $key;
@@ -79,8 +77,8 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
 
     public function storeMasterKey(string $key): void
     {
-        if (strlen($key) !== self::KEY_LENGTH) {
-            throw MasterKeyException::invalidLength(self::KEY_LENGTH, strlen($key));
+        if (\strlen($key) !== self::KEY_LENGTH) {
+            throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
         }
 
         $path = $this->getKeyPath();
@@ -88,9 +86,9 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
             $path = $this->configuration->getAutoKeyPath();
         }
 
-        $dir = dirname($path);
+        $dir = \dirname($path);
         if (!is_dir($dir)) {
-            if (!mkdir($dir, 0700, true) && !is_dir($dir)) {
+            if (!mkdir($dir, 0o700, true) && !is_dir($dir)) {
                 throw MasterKeyException::cannotStore("Cannot create directory: {$dir}");
             }
         }
@@ -102,7 +100,7 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
         }
 
         // Secure the file permissions
-        chmod($path, 0400);
+        chmod($path, 0o400);
     }
 
     public function generateMasterKey(): string

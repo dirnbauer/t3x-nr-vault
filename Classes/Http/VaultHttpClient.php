@@ -7,7 +7,6 @@ namespace Netresearch\NrVault\Http;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Psr7\Request;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
@@ -54,7 +53,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
                 $guzzleOptions,
                 $authSecret,
                 $authType,
-                $options
+                $options,
             );
         }
 
@@ -74,7 +73,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
                 $response->getStatusCode(),
                 true,
                 null,
-                $reason
+                $reason,
             );
 
             return $response;
@@ -87,13 +86,13 @@ final class VaultHttpClient implements VaultHttpClientInterface
                 0,
                 false,
                 $e->getMessage(),
-                $reason
+                $reason,
             );
 
             throw new VaultException(
-                sprintf('HTTP request failed: %s', $e->getMessage()),
+                \sprintf('HTTP request failed: %s', $e->getMessage()),
                 0,
-                $e
+                $e,
             );
         }
     }
@@ -141,7 +140,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         $guzzleOptions = [];
 
         foreach ($options as $key => $value) {
-            if (in_array($key, $vaultKeys, true)) {
+            if (\in_array($key, $vaultKeys, true)) {
                 continue;
             }
 
@@ -180,7 +179,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         array $guzzleOptions,
         string $secretIdentifier,
         string $authType,
-        array $options
+        array $options,
     ): array {
         $secret = $this->vaultService->retrieve($secretIdentifier);
 
@@ -192,24 +191,20 @@ final class VaultHttpClient implements VaultHttpClientInterface
             case 'bearer':
                 $guzzleOptions['headers']['Authorization'] = 'Bearer ' . $secret;
                 break;
-
             case 'basic':
                 // Secret is expected to be "username:password" format
                 $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($secret);
                 break;
-
             case 'header':
                 $headerName = $options['auth_header'] ?? 'X-API-Key';
                 $guzzleOptions['headers'][$headerName] = $secret;
                 break;
-
             case 'query':
                 $paramName = $options['auth_query_param'] ?? 'api_key';
                 $guzzleOptions['query'][$paramName] = $secret;
                 break;
-
             default:
-                throw new VaultException(sprintf('Unknown auth type: %s', $authType));
+                throw new VaultException(\sprintf('Unknown auth type: %s', $authType));
         }
 
         // Clear secret from memory
@@ -236,6 +231,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
             $password = $this->vaultService->retrieve($passwordSecret);
             if ($password === null) {
                 sodium_memzero($username);
+
                 throw new SecretNotFoundException($passwordSecret);
             }
         }
@@ -261,7 +257,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         int $statusCode,
         bool $success,
         ?string $errorMessage,
-        string $reason
+        string $reason,
     ): void {
         // Parse URL to get host (don't log full URL for security)
         $parsedUrl = parse_url($url);
@@ -281,7 +277,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
                 'host' => $host,
                 'path' => $path,
                 'status_code' => $statusCode,
-            ]
+            ],
         );
     }
 }

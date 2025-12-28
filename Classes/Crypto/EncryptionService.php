@@ -14,6 +14,7 @@ namespace Netresearch\NrVault\Crypto;
 
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
+use SodiumException;
 
 /**
  * Envelope encryption service using AES-256-GCM or XChaCha20-Poly1305.
@@ -23,8 +24,7 @@ final class EncryptionService implements EncryptionServiceInterface
     public function __construct(
         private readonly MasterKeyProviderInterface $masterKeyProvider,
         private readonly ExtensionConfigurationInterface $configuration,
-    ) {
-    }
+    ) {}
 
     public function encrypt(string $plaintext, string $identifier): array
     {
@@ -60,7 +60,7 @@ final class EncryptionService implements EncryptionServiceInterface
                 'value_nonce' => base64_encode($valueNonce),
                 'value_checksum' => $checksum,
             ];
-        } catch (\SodiumException $e) {
+        } catch (SodiumException $e) {
             throw EncryptionException::encryptionFailed($e->getMessage());
         }
     }
@@ -70,7 +70,7 @@ final class EncryptionService implements EncryptionServiceInterface
         string $encryptedDek,
         string $dekNonce,
         string $valueNonce,
-        string $identifier
+        string $identifier,
     ): string {
         $masterKey = $this->masterKeyProvider->getMasterKey();
 
@@ -81,8 +81,8 @@ final class EncryptionService implements EncryptionServiceInterface
             $dekNonceBytes = base64_decode($dekNonce, true);
             $valueNonceBytes = base64_decode($valueNonce, true);
 
-            if ($encryptedValueBytes === false || $encryptedDekBytes === false ||
-                $dekNonceBytes === false || $valueNonceBytes === false) {
+            if ($encryptedValueBytes === false || $encryptedDekBytes === false
+                || $dekNonceBytes === false || $valueNonceBytes === false) {
                 throw EncryptionException::decryptionFailed('Invalid base64 encoding');
             }
 
@@ -97,7 +97,7 @@ final class EncryptionService implements EncryptionServiceInterface
             sodium_memzero($masterKey);
 
             return $plaintext;
-        } catch (\SodiumException $e) {
+        } catch (SodiumException $e) {
             throw EncryptionException::decryptionFailed($e->getMessage());
         }
     }
@@ -121,7 +121,7 @@ final class EncryptionService implements EncryptionServiceInterface
         string $dekNonce,
         string $identifier,
         string $oldMasterKey,
-        string $newMasterKey
+        string $newMasterKey,
     ): array {
         try {
             // Decode
@@ -148,7 +148,7 @@ final class EncryptionService implements EncryptionServiceInterface
                 'encrypted_dek' => base64_encode($newEncryptedDek),
                 'nonce' => base64_encode($newNonce),
             ];
-        } catch (\SodiumException $e) {
+        } catch (SodiumException $e) {
             throw EncryptionException::encryptionFailed($e->getMessage());
         }
     }

@@ -12,12 +12,12 @@ final class SecretExpiredException extends VaultException
     public static function forIdentifier(string $identifier, int $expiredAt): self
     {
         return new self(
-            sprintf(
+            \sprintf(
                 'Secret "%s" expired at %s',
                 $identifier,
-                date('Y-m-d H:i:s', $expiredAt)
+                date('Y-m-d H:i:s', $expiredAt),
             ),
-            1703800002
+            1703800002,
         );
     }
 }

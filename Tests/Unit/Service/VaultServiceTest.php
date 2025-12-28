@@ -24,10 +24,15 @@ use PHPUnit\Framework\TestCase;
 final class VaultServiceTest extends TestCase
 {
     private VaultService $subject;
+
     private VaultAdapterInterface&MockObject $adapter;
+
     private EncryptionServiceInterface&MockObject $encryptionService;
+
     private AccessControlServiceInterface&MockObject $accessControlService;
+
     private AuditLogServiceInterface&MockObject $auditLogService;
+
     private ExtensionConfigurationInterface&MockObject $configuration;
 
     protected function setUp(): void

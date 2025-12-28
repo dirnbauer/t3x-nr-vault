@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
+use DateTimeImmutable;
+use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -19,7 +21,6 @@ use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Backend module controller for vault management.
@@ -39,8 +40,7 @@ final class VaultController
         private readonly VaultServiceInterface $vaultService,
         private readonly AuditLogServiceInterface $auditLogService,
         private readonly AccessControlServiceInterface $accessControlService,
-    ) {
-    }
+    ) {}
 
     /**
      * Main entry point - secrets list.
@@ -89,13 +89,13 @@ final class VaultController
 
         $moduleTemplate->assignMultiple([
             'secrets' => $accessibleSecrets,
-            'totalCount' => count($accessibleSecrets),
+            'totalCount' => \count($accessibleSecrets),
             'currentAction' => 'secrets',
             'isAdmin' => $this->isAdmin(),
         ]);
 
         $moduleTemplate->setTitle($this->getLanguageService()->sL(
-            'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'
+            'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab',
         ));
 
         return $moduleTemplate->renderResponse('Vault/Secrets');
@@ -122,35 +122,35 @@ final class VaultController
             $filters['action'] = $queryParams['action'];
         }
         if (!empty($queryParams['actorUid'])) {
-            $filters['actorUid'] = (int)$queryParams['actorUid'];
+            $filters['actorUid'] = (int) $queryParams['actorUid'];
         }
         if (isset($queryParams['success']) && $queryParams['success'] !== '') {
-            $filters['success'] = (bool)$queryParams['success'];
+            $filters['success'] = (bool) $queryParams['success'];
         }
         if (!empty($queryParams['since'])) {
             try {
-                $filters['since'] = new \DateTimeImmutable($queryParams['since']);
-            } catch (\Exception) {
+                $filters['since'] = new DateTimeImmutable($queryParams['since']);
+            } catch (Exception) {
                 // Invalid date, ignore
             }
         }
         if (!empty($queryParams['until'])) {
             try {
-                $filters['until'] = new \DateTimeImmutable($queryParams['until']);
-            } catch (\Exception) {
+                $filters['until'] = new DateTimeImmutable($queryParams['until']);
+            } catch (Exception) {
                 // Invalid date, ignore
             }
         }
 
         // Pagination
-        $page = max(1, (int)($queryParams['page'] ?? 1));
+        $page = max(1, (int) ($queryParams['page'] ?? 1));
         $limit = 50;
         $offset = ($page - 1) * $limit;
 
         // Get audit entries
         $entries = $this->auditLogService->query($filters, $limit, $offset);
         $totalCount = $this->auditLogService->count($filters);
-        $totalPages = (int)ceil($totalCount / $limit);
+        $totalPages = (int) ceil($totalCount / $limit);
 
         // Format entries for display
         $formattedEntries = [];
@@ -184,7 +184,7 @@ final class VaultController
         ]);
 
         $moduleTemplate->setTitle($this->getLanguageService()->sL(
-            'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'
+            'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab',
         ) . ' - Audit Log');
 
         return $moduleTemplate->renderResponse('Vault/Audit');
@@ -211,7 +211,7 @@ final class VaultController
             'errors' => $result['errors'],
             'message' => $result['valid']
                 ? 'Hash chain is valid - no tampering detected'
-                : 'Hash chain verification failed - ' . count($result['errors']) . ' error(s) found',
+                : 'Hash chain verification failed - ' . \count($result['errors']) . ' error(s) found',
         ]);
     }
 
@@ -235,14 +235,14 @@ final class VaultController
         $filters = [];
         if (!empty($queryParams['since'])) {
             try {
-                $filters['since'] = new \DateTimeImmutable($queryParams['since']);
-            } catch (\Exception) {
+                $filters['since'] = new DateTimeImmutable($queryParams['since']);
+            } catch (Exception) {
             }
         }
         if (!empty($queryParams['until'])) {
             try {
-                $filters['until'] = new \DateTimeImmutable($queryParams['until']);
-            } catch (\Exception) {
+                $filters['until'] = new DateTimeImmutable($queryParams['until']);
+            } catch (Exception) {
             }
         }
 
@@ -277,7 +277,7 @@ final class VaultController
             // Rows
             foreach ($data as $row) {
                 // Flatten context array
-                if (isset($row['context']) && is_array($row['context'])) {
+                if (isset($row['context']) && \is_array($row['context'])) {
                     $row['context'] = json_encode($row['context']);
                 }
                 fputcsv($output, $row);
@@ -301,14 +301,14 @@ final class VaultController
     private function addDocHeaderButtons(
         ModuleTemplate $moduleTemplate,
         ServerRequestInterface $request,
-        string $currentAction
+        string $currentAction,
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         $lang = $this->getLanguageService();
 
         // Refresh button
         $refreshButton = $buttonBar->makeLinkButton()
-            ->setHref((string)$request->getUri())
+            ->setHref((string) $request->getUri())
             ->setTitle($lang->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.reload'))
             ->setIcon($this->iconFactory->getIcon('actions-refresh', Icon::SIZE_SMALL));
         $buttonBar->addButton($refreshButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
@@ -361,12 +361,13 @@ final class VaultController
         parse_str($uri->getQuery(), $params);
         $params = array_merge($params, $additionalParams);
 
-        return (string)$uri->withQuery(http_build_query($params));
+        return (string) $uri->withQuery(http_build_query($params));
     }
 
     private function isAdmin(): bool
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
+
         return $backendUser !== null && $backendUser->isAdmin();
     }
 

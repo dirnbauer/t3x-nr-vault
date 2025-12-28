@@ -36,25 +36,25 @@ final class VaultRetrieveCommand extends Command
             ->addArgument(
                 'identifier',
                 InputArgument::REQUIRED,
-                'Identifier of the secret to retrieve'
+                'Identifier of the secret to retrieve',
             )
             ->addOption(
                 'output',
                 'o',
                 InputOption::VALUE_REQUIRED,
-                'Write secret to file instead of stdout'
+                'Write secret to file instead of stdout',
             )
             ->addOption(
                 'no-newline',
                 'n',
                 InputOption::VALUE_NONE,
-                'Do not append newline to output'
+                'Do not append newline to output',
             )
             ->addOption(
                 'reason',
                 'r',
                 InputOption::VALUE_REQUIRED,
-                'Reason for retrieving this secret (for audit log)'
+                'Reason for retrieving this secret (for audit log)',
             );
     }
 
@@ -75,15 +75,16 @@ final class VaultRetrieveCommand extends Command
                 // Write to file with restricted permissions
                 $result = file_put_contents($outputFile, $value);
                 if ($result === false) {
-                    $io->error(sprintf('Failed to write to file: %s', $outputFile));
+                    $io->error(\sprintf('Failed to write to file: %s', $outputFile));
                     sodium_memzero($value);
+
                     return Command::FAILURE;
                 }
 
                 // Set restrictive permissions
-                chmod($outputFile, 0600);
+                chmod($outputFile, 0o600);
 
-                $io->success(sprintf('Secret written to: %s', $outputFile));
+                $io->success(\sprintf('Secret written to: %s', $outputFile));
             } else {
                 // Write to stdout
                 $newline = $input->getOption('no-newline') ? '' : PHP_EOL;
@@ -95,10 +96,12 @@ final class VaultRetrieveCommand extends Command
 
             return Command::SUCCESS;
         } catch (SecretNotFoundException $e) {
-            $io->error(sprintf('Secret not found: %s', $identifier));
+            $io->error(\sprintf('Secret not found: %s', $identifier));
+
             return Command::FAILURE;
         } catch (VaultException $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }

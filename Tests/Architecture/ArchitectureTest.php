@@ -93,7 +93,7 @@ final class ArchitectureTest
     {
         return PHPat::rule()
             ->classes(
-                Selector::classname('/^Netresearch\\\\NrVault\\\\.*Service$/', true)
+                Selector::classname('/^Netresearch\\\\NrVault\\\\.*Service$/', true),
             )
             ->excluding(
                 Selector::classname('/.*Interface$/', true),

@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Event;
 
+use DateTimeImmutable;
+
 /**
  * Event dispatched after master key rotation completes.
  */
@@ -19,7 +21,7 @@ final readonly class MasterKeyRotatedEvent
     public function __construct(
         private int $secretsReEncrypted,
         private int $actorUid,
-        private \DateTimeImmutable $rotatedAt,
+        private DateTimeImmutable $rotatedAt,
     ) {}
 
     public function getSecretsReEncrypted(): int
@@ -32,7 +34,7 @@ final readonly class MasterKeyRotatedEvent
         return $this->actorUid;
     }
 
-    public function getRotatedAt(): \DateTimeImmutable
+    public function getRotatedAt(): DateTimeImmutable
     {
         return $this->rotatedAt;
     }

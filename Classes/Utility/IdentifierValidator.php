@@ -12,7 +12,9 @@ use Netresearch\NrVault\Exception\ValidationException;
 final class IdentifierValidator
 {
     private const MIN_LENGTH = 3;
+
     private const MAX_LENGTH = 255;
+
     private const PATTERN = '/^[a-zA-Z][a-zA-Z0-9_]*$/';
 
     /**
@@ -26,25 +28,25 @@ final class IdentifierValidator
             throw ValidationException::invalidIdentifier($identifier, 'cannot be empty');
         }
 
-        $length = strlen($identifier);
+        $length = \strlen($identifier);
         if ($length < self::MIN_LENGTH) {
             throw ValidationException::invalidIdentifier(
                 $identifier,
-                sprintf('must be at least %d characters', self::MIN_LENGTH)
+                \sprintf('must be at least %d characters', self::MIN_LENGTH),
             );
         }
 
         if ($length > self::MAX_LENGTH) {
             throw ValidationException::invalidIdentifier(
                 $identifier,
-                sprintf('cannot exceed %d characters', self::MAX_LENGTH)
+                \sprintf('cannot exceed %d characters', self::MAX_LENGTH),
             );
         }
 
         if (!preg_match(self::PATTERN, $identifier)) {
             throw ValidationException::invalidIdentifier(
                 $identifier,
-                'must start with a letter and contain only letters, numbers, and underscores'
+                'must start with a letter and contain only letters, numbers, and underscores',
             );
         }
     }
@@ -56,6 +58,7 @@ final class IdentifierValidator
     {
         try {
             self::validate($identifier);
+
             return true;
         } catch (ValidationException) {
             return false;
@@ -85,11 +88,11 @@ final class IdentifierValidator
         $identifier = trim($identifier, '_');
 
         // Enforce length limits
-        if (strlen($identifier) < self::MIN_LENGTH) {
+        if (\strlen($identifier) < self::MIN_LENGTH) {
             $identifier = str_pad($identifier, self::MIN_LENGTH, '_');
         }
 
-        if (strlen($identifier) > self::MAX_LENGTH) {
+        if (\strlen($identifier) > self::MAX_LENGTH) {
             $identifier = substr($identifier, 0, self::MAX_LENGTH);
         }
 

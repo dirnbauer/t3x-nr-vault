@@ -17,8 +17,11 @@ use PHPUnit\Framework\TestCase;
 final class EncryptionServiceTest extends TestCase
 {
     private EncryptionService $subject;
+
     private MasterKeyProviderInterface&MockObject $masterKeyProvider;
+
     private ExtensionConfigurationInterface&MockObject $configuration;
+
     private string $testMasterKey;
 
     protected function setUp(): void
@@ -142,7 +145,7 @@ final class EncryptionServiceTest extends TestCase
 
         // Tamper with the encrypted value
         $tamperedValue = base64_encode(
-            substr(base64_decode($encrypted['encrypted_value']), 0, -1) . 'X'
+            substr(base64_decode($encrypted['encrypted_value'], true), 0, -1) . 'X',
         );
 
         $this->expectException(EncryptionException::class);
@@ -176,7 +179,7 @@ final class EncryptionServiceTest extends TestCase
         $dek = $this->subject->generateDek();
 
         // AES-256-GCM key should be 32 bytes
-        self::assertEquals(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES, strlen($dek));
+        self::assertEquals(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES, \strlen($dek));
     }
 
     #[Test]
@@ -197,7 +200,7 @@ final class EncryptionServiceTest extends TestCase
         $checksum = $this->subject->calculateChecksum($plaintext);
 
         // SHA-256 produces 64 hex characters
-        self::assertEquals(64, strlen($checksum));
+        self::assertEquals(64, \strlen($checksum));
         self::assertEquals(hash('sha256', $plaintext), $checksum);
     }
 

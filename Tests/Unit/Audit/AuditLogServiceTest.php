@@ -21,9 +21,13 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 final class AuditLogServiceTest extends TestCase
 {
     private AuditLogService $subject;
+
     private ConnectionPool&MockObject $connectionPool;
+
     private AccessControlServiceInterface&MockObject $accessControlService;
+
     private QueryBuilder&MockObject $queryBuilder;
+
     private Connection&MockObject $connection;
 
     protected function setUp(): void
@@ -168,8 +172,7 @@ final class AuditLogServiceTest extends TestCase
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data): bool {
                     return isset($data['ip_address'])
-                        && isset($data['user_agent'])
-                        && isset($data['request_id']);
+                        && isset($data['user_agent'], $data['request_id']);
                 }),
             );
 
@@ -215,7 +218,7 @@ final class AuditLogServiceTest extends TestCase
         // Return a previous entry hash
         $this->queryBuilder
             ->method('executeQuery')
-            ->willReturn(new class {
+            ->willReturn(new class () {
                 public function fetchAssociative(): array|false
                 {
                     return ['entry_hash' => 'previous_hash_abc123'];
@@ -270,7 +273,7 @@ final class AuditLogServiceTest extends TestCase
 
         $this->queryBuilder
             ->method('executeQuery')
-            ->willReturn(new class {
+            ->willReturn(new class () {
                 public function fetchAssociative(): false
                 {
                     return false;

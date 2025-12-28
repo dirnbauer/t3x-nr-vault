@@ -12,8 +12,8 @@ final class ValidationException extends VaultException
     public static function invalidIdentifier(string $identifier, string $reason): self
     {
         return new self(
-            sprintf('Invalid secret identifier "%s": %s', $identifier, $reason),
-            1703800012
+            \sprintf('Invalid secret identifier "%s": %s', $identifier, $reason),
+            1703800012,
         );
     }
 
@@ -25,8 +25,8 @@ final class ValidationException extends VaultException
     public static function invalidOption(string $option, string $reason): self
     {
         return new self(
-            sprintf('Invalid option "%s": %s', $option, $reason),
-            1703800014
+            \sprintf('Invalid option "%s": %s', $option, $reason),
+            1703800014,
         );
     }
 }

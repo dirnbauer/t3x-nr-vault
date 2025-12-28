@@ -17,6 +17,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 final class AccessControlServiceTest extends TestCase
 {
     private AccessControlService $subject;
+
     private ExtensionConfigurationInterface&MockObject $configuration;
 
     protected function setUp(): void

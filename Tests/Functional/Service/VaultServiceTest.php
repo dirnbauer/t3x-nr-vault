@@ -9,8 +9,6 @@ use Netresearch\NrVault\Audit\AuditLogService;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionService;
 use Netresearch\NrVault\Crypto\MasterKeyProvider\FileMasterKeyProvider;
-use Netresearch\NrVault\Exception\AccessDeniedException;
-use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Security\AccessControlService;
 use Netresearch\NrVault\Service\VaultService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -34,6 +32,7 @@ final class VaultServiceTest extends FunctionalTestCase
     ];
 
     private VaultService $subject;
+
     private string $masterKeyPath;
 
     protected function setUp(): void
@@ -44,7 +43,7 @@ final class VaultServiceTest extends FunctionalTestCase
         $this->masterKeyPath = $this->instancePath . '/master.key';
         $masterKey = sodium_crypto_secretbox_keygen();
         file_put_contents($this->masterKeyPath, $masterKey);
-        chmod($this->masterKeyPath, 0600);
+        chmod($this->masterKeyPath, 0o600);
 
         // Set up services
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
@@ -215,7 +214,7 @@ final class VaultServiceTest extends FunctionalTestCase
         $row = $connection->select(
             ['encrypted_value', 'encrypted_dek', 'dek_nonce', 'value_nonce'],
             'tx_nrvault_secrets',
-            ['identifier' => $identifier]
+            ['identifier' => $identifier],
         )->fetchAssociative();
 
         // Verify that stored values are not plaintext

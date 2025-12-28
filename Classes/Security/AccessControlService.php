@@ -23,8 +23,7 @@ final class AccessControlService implements AccessControlServiceInterface
 {
     public function __construct(
         private readonly ExtensionConfigurationInterface $configuration,
-    ) {
-    }
+    ) {}
 
     public function canRead(Secret $secret): bool
     {
@@ -71,7 +70,7 @@ final class AccessControlService implements AccessControlServiceInterface
             return 0;
         }
 
-        return (int)($backendUser->user['uid'] ?? 0);
+        return (int) ($backendUser->user['uid'] ?? 0);
     }
 
     public function getCurrentActorType(): string
@@ -80,7 +79,7 @@ final class AccessControlService implements AccessControlServiceInterface
             return 'cli';
         }
 
-        if (defined('TYPO3_cliMode') && TYPO3_cliMode) {
+        if (\defined('TYPO3_cliMode') && TYPO3_cliMode) {
             return 'cli';
         }
 
@@ -99,7 +98,7 @@ final class AccessControlService implements AccessControlServiceInterface
             return PHP_SAPI === 'cli' ? 'CLI' : 'Anonymous';
         }
 
-        return (string)($backendUser->user['username'] ?? 'Unknown');
+        return (string) ($backendUser->user['username'] ?? 'Unknown');
     }
 
     public function getCurrentUserGroups(): array
@@ -110,6 +109,7 @@ final class AccessControlService implements AccessControlServiceInterface
         }
 
         $groups = $backendUser->userGroupsUID ?? [];
+
         return array_map('intval', $groups);
     }
 
@@ -130,6 +130,7 @@ final class AccessControlService implements AccessControlServiceInterface
             $cliAccessGroups = $this->configuration->getCliAccessGroups();
             if (!empty($cliAccessGroups)) {
                 $secretGroups = $secret->getAllowedGroups();
+
                 return !empty(array_intersect($secretGroups, $cliAccessGroups));
             }
 

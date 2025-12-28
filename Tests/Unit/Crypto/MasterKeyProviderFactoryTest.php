@@ -18,6 +18,7 @@ use PHPUnit\Framework\TestCase;
 final class MasterKeyProviderFactoryTest extends TestCase
 {
     private MasterKeyProviderFactory $subject;
+
     private ExtensionConfigurationInterface&MockObject $configuration;
 
     protected function setUp(): void

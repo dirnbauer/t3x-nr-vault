@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Form\Element;
 
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Throwable;
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -62,7 +63,7 @@ final class VaultSecretElement extends AbstractFormElement
                     $hasValue = true;
                     $valueChecksum = $metadata['value_checksum'] ?? '';
                 }
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Secret doesn't exist yet
             }
         }
@@ -71,7 +72,7 @@ final class VaultSecretElement extends AbstractFormElement
         $placeholder = '';
         if ($hasValue) {
             $placeholder = $this->getLanguageService()->sL(
-                'LLL:EXT:nr_vault/Resources/Private/Language/locallang.xlf:vault_secret.placeholder_exists'
+                'LLL:EXT:nr_vault/Resources/Private/Language/locallang.xlf:vault_secret.placeholder_exists',
             ) ?: '••••••••';
         } else {
             $placeholder = $config['placeholder'] ?? '';
@@ -101,7 +102,7 @@ final class VaultSecretElement extends AbstractFormElement
         }
 
         if ($config['max'] ?? 0) {
-            $attributes['maxlength'] = (string)(int)$config['max'];
+            $attributes['maxlength'] = (string) (int) $config['max'];
         }
 
         if ($config['readOnly'] ?? false) {
@@ -155,7 +156,7 @@ final class VaultSecretElement extends AbstractFormElement
 
         // Add JavaScript module
         $resultArray['javaScriptModules'][] = JavaScriptModuleInstruction::create(
-            '@netresearch/nr-vault/vault-secret-element.js'
+            '@netresearch/nr-vault/vault-secret-element.js',
         );
 
         return $resultArray;
@@ -166,12 +167,12 @@ final class VaultSecretElement extends AbstractFormElement
      */
     private function buildVaultIdentifier(string $table, string $field, int|string $uid): string
     {
-        if ($uid === 0 || $uid === 'NEW' || str_starts_with((string)$uid, 'NEW')) {
+        if ($uid === 0 || $uid === 'NEW' || str_starts_with((string) $uid, 'NEW')) {
             // New record - identifier will be generated after save
             return '';
         }
 
         // Format: table__field__uid
-        return sprintf('%s__%s__%d', $table, $field, (int)$uid);
+        return \sprintf('%s__%s__%d', $table, $field, (int) $uid);
     }
 }

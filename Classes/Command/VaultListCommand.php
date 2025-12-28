@@ -35,21 +35,21 @@ final class VaultListCommand extends Command
                 'pattern',
                 'p',
                 InputOption::VALUE_REQUIRED,
-                'Filter by identifier pattern (supports * wildcard)'
+                'Filter by identifier pattern (supports * wildcard)',
             )
             ->addOption(
                 'format',
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Output format: table, json, csv',
-                'table'
+                'table',
             )
             ->addOption(
                 'limit',
                 'l',
                 InputOption::VALUE_REQUIRED,
                 'Maximum number of results',
-                '100'
+                '100',
             );
     }
 
@@ -58,18 +58,19 @@ final class VaultListCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $pattern = $input->getOption('pattern');
         $format = $input->getOption('format');
-        $limit = (int)$input->getOption('limit');
+        $limit = (int) $input->getOption('limit');
 
         try {
             $secrets = $this->vaultService->list($pattern);
 
             // Apply limit
-            if ($limit > 0 && count($secrets) > $limit) {
-                $secrets = array_slice($secrets, 0, $limit);
+            if ($limit > 0 && \count($secrets) > $limit) {
+                $secrets = \array_slice($secrets, 0, $limit);
             }
 
             if (empty($secrets)) {
                 $io->info('No secrets found');
+
                 return Command::SUCCESS;
             }
 
@@ -77,11 +78,9 @@ final class VaultListCommand extends Command
                 case 'json':
                     $output->writeln(json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
                     break;
-
                 case 'csv':
                     $this->outputCsv($output, $secrets);
                     break;
-
                 default:
                     $this->outputTable($io, $secrets);
             }
@@ -89,6 +88,7 @@ final class VaultListCommand extends Command
             return Command::SUCCESS;
         } catch (VaultException $e) {
             $io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }
@@ -109,10 +109,10 @@ final class VaultListCommand extends Command
 
         $io->table(
             ['Identifier', 'Owner', 'Created', 'Updated', 'Reads', 'Last Read'],
-            $rows
+            $rows,
         );
 
-        $io->writeln(sprintf('<info>Total: %d secrets</info>', count($secrets)));
+        $io->writeln(\sprintf('<info>Total: %d secrets</info>', \count($secrets)));
     }
 
     private function outputCsv(OutputInterface $output, array $secrets): void
@@ -122,14 +122,14 @@ final class VaultListCommand extends Command
 
         // Rows
         foreach ($secrets as $secret) {
-            $output->writeln(sprintf(
+            $output->writeln(\sprintf(
                 '%s,%d,%s,%s,%d,%s',
                 $this->escapeCsv($secret['identifier']),
                 $secret['owner_uid'] ?? 0,
                 date('Y-m-d H:i:s', $secret['crdate'] ?? 0),
                 date('Y-m-d H:i:s', $secret['tstamp'] ?? 0),
                 $secret['read_count'] ?? 0,
-                $secret['last_read_at'] ? date('Y-m-d H:i:s', $secret['last_read_at']) : ''
+                $secret['last_read_at'] ? date('Y-m-d H:i:s', $secret['last_read_at']) : '',
             ));
         }
     }
@@ -139,6 +139,7 @@ final class VaultListCommand extends Command
         if (str_contains($value, ',') || str_contains($value, '"') || str_contains($value, "\n")) {
             return '"' . str_replace('"', '""', $value) . '"';
         }
+
         return $value;
     }
 }

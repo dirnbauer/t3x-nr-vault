@@ -134,7 +134,7 @@ final class IdentifierValidatorTest extends TestCase
         $longIdentifier = str_repeat('a', 300);
         $result = IdentifierValidator::sanitize($longIdentifier);
 
-        self::assertEquals(255, strlen($result));
+        self::assertEquals(255, \strlen($result));
     }
 
     #[Test]

@@ -12,11 +12,11 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
 
+use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequest;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Audit log service with tamper-evident hash chain.
@@ -28,8 +28,7 @@ final class AuditLogService implements AuditLogServiceInterface
     public function __construct(
         private readonly ConnectionPool $connectionPool,
         private readonly AccessControlServiceInterface $accessControlService,
-    ) {
-    }
+    ) {}
 
     public function log(
         string $secretIdentifier,
@@ -39,7 +38,7 @@ final class AuditLogService implements AuditLogServiceInterface
         ?string $reason = null,
         ?string $hashBefore = null,
         ?string $hashAfter = null,
-        array $context = []
+        array $context = [],
     ): void {
         $connection = $this->getConnection();
 
@@ -70,7 +69,7 @@ final class AuditLogService implements AuditLogServiceInterface
 
         // Insert to get UID
         $connection->insert(self::TABLE_NAME, $data);
-        $uid = (int)$connection->lastInsertId(self::TABLE_NAME);
+        $uid = (int) $connection->lastInsertId(self::TABLE_NAME);
 
         // Calculate entry hash
         $entryHash = $this->calculateEntryHash([
@@ -85,7 +84,7 @@ final class AuditLogService implements AuditLogServiceInterface
         $connection->update(
             self::TABLE_NAME,
             ['entry_hash' => $entryHash],
-            ['uid' => $uid]
+            ['uid' => $uid],
         );
     }
 
@@ -104,8 +103,8 @@ final class AuditLogService implements AuditLogServiceInterface
         $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
 
         return array_map(
-            fn(array $row) => AuditLogEntry::fromDatabaseRow($row),
-            $rows
+            fn (array $row) => AuditLogEntry::fromDatabaseRow($row),
+            $rows,
         );
     }
 
@@ -118,13 +117,14 @@ final class AuditLogService implements AuditLogServiceInterface
 
         $this->applyFilters($queryBuilder, $filters);
 
-        return (int)$queryBuilder->executeQuery()->fetchOne();
+        return (int) $queryBuilder->executeQuery()->fetchOne();
     }
 
     public function export(array $filters = []): array
     {
         $entries = $this->query($filters, PHP_INT_MAX, 0);
-        return array_map(fn(AuditLogEntry $entry) => $entry->toArray(), $entries);
+
+        return array_map(fn (AuditLogEntry $entry) => $entry->toArray(), $entries);
     }
 
     public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array
@@ -137,13 +137,13 @@ final class AuditLogService implements AuditLogServiceInterface
 
         if ($fromUid !== null) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->gte('uid', $queryBuilder->createNamedParameter($fromUid, Connection::PARAM_INT))
+                $queryBuilder->expr()->gte('uid', $queryBuilder->createNamedParameter($fromUid, Connection::PARAM_INT)),
             );
         }
 
         if ($toUid !== null) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->lte('uid', $queryBuilder->createNamedParameter($toUid, Connection::PARAM_INT))
+                $queryBuilder->expr()->lte('uid', $queryBuilder->createNamedParameter($toUid, Connection::PARAM_INT)),
             );
         }
 
@@ -153,21 +153,21 @@ final class AuditLogService implements AuditLogServiceInterface
 
         foreach ($rows as $row) {
             $expectedHash = $this->calculateEntryHash([
-                'uid' => (int)$row['uid'],
+                'uid' => (int) $row['uid'],
                 'secret_identifier' => $row['secret_identifier'],
                 'action' => $row['action'],
-                'actor_uid' => (int)$row['actor_uid'],
-                'crdate' => (int)$row['crdate'],
+                'actor_uid' => (int) $row['actor_uid'],
+                'crdate' => (int) $row['crdate'],
             ], $previousHash);
 
             // Verify previous_hash matches
             if ($row['previous_hash'] !== $previousHash) {
-                $errors[(int)$row['uid']] = 'Previous hash mismatch - chain broken';
+                $errors[(int) $row['uid']] = 'Previous hash mismatch - chain broken';
             }
 
             // Verify entry_hash is correct
             if ($row['entry_hash'] !== $expectedHash) {
-                $errors[(int)$row['uid']] = 'Entry hash mismatch - possible tampering';
+                $errors[(int) $row['uid']] = 'Entry hash mismatch - possible tampering';
             }
 
             $previousHash = $row['entry_hash'];
@@ -190,7 +190,7 @@ final class AuditLogService implements AuditLogServiceInterface
             ->executeQuery()
             ->fetchOne();
 
-        return $hash !== false ? (string)$hash : null;
+        return $hash !== false ? (string) $hash : null;
     }
 
     /**
@@ -219,8 +219,8 @@ final class AuditLogService implements AuditLogServiceInterface
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'secret_identifier',
-                    $queryBuilder->createNamedParameter($filters['secretIdentifier'])
-                )
+                    $queryBuilder->createNamedParameter($filters['secretIdentifier']),
+                ),
             );
         }
 
@@ -228,8 +228,8 @@ final class AuditLogService implements AuditLogServiceInterface
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'action',
-                    $queryBuilder->createNamedParameter($filters['action'])
-                )
+                    $queryBuilder->createNamedParameter($filters['action']),
+                ),
             );
         }
 
@@ -237,8 +237,8 @@ final class AuditLogService implements AuditLogServiceInterface
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'actor_uid',
-                    $queryBuilder->createNamedParameter($filters['actorUid'], Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($filters['actorUid'], Connection::PARAM_INT),
+                ),
             );
         }
 
@@ -246,26 +246,26 @@ final class AuditLogService implements AuditLogServiceInterface
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'success',
-                    $queryBuilder->createNamedParameter($filters['success'] ? 1 : 0, Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($filters['success'] ? 1 : 0, Connection::PARAM_INT),
+                ),
             );
         }
 
-        if (isset($filters['since']) && $filters['since'] instanceof \DateTimeInterface) {
+        if (isset($filters['since']) && $filters['since'] instanceof DateTimeInterface) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->gte(
                     'crdate',
-                    $queryBuilder->createNamedParameter($filters['since']->getTimestamp(), Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($filters['since']->getTimestamp(), Connection::PARAM_INT),
+                ),
             );
         }
 
-        if (isset($filters['until']) && $filters['until'] instanceof \DateTimeInterface) {
+        if (isset($filters['until']) && $filters['until'] instanceof DateTimeInterface) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->lte(
                     'crdate',
-                    $queryBuilder->createNamedParameter($filters['until']->getTimestamp(), Connection::PARAM_INT)
-                )
+                    $queryBuilder->createNamedParameter($filters['until']->getTimestamp(), Connection::PARAM_INT),
+                ),
             );
         }
     }
@@ -287,7 +287,7 @@ final class AuditLogService implements AuditLogServiceInterface
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
-        return (string)($request->getServerParams()['REMOTE_ADDR'] ?? '');
+        return (string) ($request->getServerParams()['REMOTE_ADDR'] ?? '');
     }
 
     private function getUserAgent(): string
@@ -298,7 +298,7 @@ final class AuditLogService implements AuditLogServiceInterface
         }
 
         $userAgent = $request->getHeaderLine('User-Agent');
-        if (strlen($userAgent) > 500) {
+        if (\strlen($userAgent) > 500) {
             $userAgent = substr($userAgent, 0, 500);
         }
 

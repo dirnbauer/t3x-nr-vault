@@ -29,8 +29,7 @@ final class AuditLogEntry
         public readonly string $hashAfter,
         public readonly int $crdate,
         public readonly array $context,
-    ) {
-    }
+    ) {}
 
     /**
      * Create from database row.
@@ -39,31 +38,31 @@ final class AuditLogEntry
     {
         $context = [];
         if (!empty($row['context'])) {
-            $decoded = json_decode((string)$row['context'], true);
-            if (is_array($decoded)) {
+            $decoded = json_decode((string) $row['context'], true);
+            if (\is_array($decoded)) {
                 $context = $decoded;
             }
         }
 
         return new self(
-            uid: (int)$row['uid'],
-            secretIdentifier: (string)($row['secret_identifier'] ?? ''),
-            action: (string)($row['action'] ?? ''),
-            success: (bool)($row['success'] ?? false),
+            uid: (int) $row['uid'],
+            secretIdentifier: (string) ($row['secret_identifier'] ?? ''),
+            action: (string) ($row['action'] ?? ''),
+            success: (bool) ($row['success'] ?? false),
             errorMessage: $row['error_message'] ?: null,
             reason: $row['reason'] ?: null,
-            actorUid: (int)($row['actor_uid'] ?? 0),
-            actorType: (string)($row['actor_type'] ?? ''),
-            actorUsername: (string)($row['actor_username'] ?? ''),
-            actorRole: (string)($row['actor_role'] ?? ''),
-            ipAddress: (string)($row['ip_address'] ?? ''),
-            userAgent: (string)($row['user_agent'] ?? ''),
-            requestId: (string)($row['request_id'] ?? ''),
-            previousHash: (string)($row['previous_hash'] ?? ''),
-            entryHash: (string)($row['entry_hash'] ?? ''),
-            hashBefore: (string)($row['hash_before'] ?? ''),
-            hashAfter: (string)($row['hash_after'] ?? ''),
-            crdate: (int)($row['crdate'] ?? 0),
+            actorUid: (int) ($row['actor_uid'] ?? 0),
+            actorType: (string) ($row['actor_type'] ?? ''),
+            actorUsername: (string) ($row['actor_username'] ?? ''),
+            actorRole: (string) ($row['actor_role'] ?? ''),
+            ipAddress: (string) ($row['ip_address'] ?? ''),
+            userAgent: (string) ($row['user_agent'] ?? ''),
+            requestId: (string) ($row['request_id'] ?? ''),
+            previousHash: (string) ($row['previous_hash'] ?? ''),
+            entryHash: (string) ($row['entry_hash'] ?? ''),
+            hashBefore: (string) ($row['hash_before'] ?? ''),
+            hashAfter: (string) ($row['hash_after'] ?? ''),
+            crdate: (int) ($row['crdate'] ?? 0),
             context: $context,
         );
     }

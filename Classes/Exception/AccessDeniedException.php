@@ -11,7 +11,7 @@ final class AccessDeniedException extends VaultException
 {
     public static function forIdentifier(string $identifier, string $reason = ''): self
     {
-        $message = sprintf('Access denied to secret "%s"', $identifier);
+        $message = \sprintf('Access denied to secret "%s"', $identifier);
         if ($reason !== '') {
             $message .= ': ' . $reason;
         }

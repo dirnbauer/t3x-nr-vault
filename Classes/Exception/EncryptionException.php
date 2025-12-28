@@ -32,8 +32,8 @@ final class EncryptionException extends VaultException
     public static function algorithmNotAvailable(string $algorithm): self
     {
         return new self(
-            sprintf('Encryption algorithm "%s" is not available', $algorithm),
-            1703800007
+            \sprintf('Encryption algorithm "%s" is not available', $algorithm),
+            1703800007,
         );
     }
 }
