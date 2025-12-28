@@ -1,0 +1,5 @@
+# nr-vault Settings
+# Configurable settings exposed via Site Sets
+
+# No TypoScript/settings required for this backend-only extension
+# This file exists for TYPO3 v14 Site Sets conformance

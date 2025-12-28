@@ -1,0 +1,5 @@
+# nr-vault Site Set Configuration
+# TYPO3 v14 Site Sets pattern
+name: nr-vault
+label: 'Vault - Secure Secrets Management'
+dependencies: []
