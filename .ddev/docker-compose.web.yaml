@@ -1,0 +1,28 @@
+services:
+  web:
+    environment:
+      - EXTENSION_KEY=nr_vault
+      - PACKAGE_NAME=netresearch/nr-vault
+
+      # TYPO3 v14 config
+      - TYPO3_DB_DRIVER=mysqli
+      - TYPO3_DB_USERNAME=root
+      - TYPO3_DB_PASSWORD=root
+      - TYPO3_DB_HOST=db
+      - TYPO3_SETUP_ADMIN_EMAIL=admin@example.com
+      - TYPO3_SETUP_ADMIN_USERNAME=admin
+      - TYPO3_SETUP_ADMIN_PASSWORD=Joh316!!
+      - TYPO3_PROJECT_NAME=EXT:nr_vault Dev Environment
+      - TYPO3_SERVER_TYPE=apache
+
+      # nr-vault development master key
+      - NR_VAULT_MASTER_KEY=dev-only-test-key-do-not-use-in-prod-32bytes!
+    volumes:
+      - type: bind
+        source: ../
+        target: /var/www/nr_vault
+        consistency: cached
+      - type: bind
+        source: ./.v14-data
+        target: /var/www/html/v14
+        consistency: cached
