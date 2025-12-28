@@ -4,9 +4,4 @@
 Sitemap
 =======
 
-.. toctree::
-   :maxdepth: 5
-   :titlesonly:
-   :glob:
-
-   **/Index
+:ref:`genindex`
