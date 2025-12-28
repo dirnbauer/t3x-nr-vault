@@ -1,10 +1,21 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
       data-namespace-typo3-fluid="true">
 
-<f:render section="Before" optional="true" />
+<f:be.pageRenderer
+    includeCssFiles="{0: '{f:uri.resource(path: \'Css/backend.css\')}'}"
+    includeJavaScriptModules="{0: '@netresearch/nr-vault/vault-backend.js'}"
+/>
 
-<f:render section="Content" />
+<div class="module" data-module-id="tools_nrvault" data-module-name="nr-vault">
+    <f:render section="Before" optional="true" />
 
-<f:render section="After" optional="true" />
+    <div class="module-body t3js-module-body">
+        <f:flashMessages queueIdentifier="core.template.flashMessages" />
+        <f:render section="Content" />
+    </div>
+
+    <f:render section="After" optional="true" />
+</div>
 
 </html>
