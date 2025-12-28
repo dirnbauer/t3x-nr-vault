@@ -2,7 +2,7 @@ includes:
     - vendor/phpstan/phpstan/conf/bleedingEdge.neon
 
 parameters:
-    level: 8
+    level: 9
     paths:
         - Classes
     excludePaths:
@@ -16,20 +16,26 @@ parameters:
     checkMissingIterableValueType: true
     checkGenericClassInNonGenericObjectType: true
     reportUnmatchedIgnoredErrors: true
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    checkUninitializedProperties: true
 
     # TYPO3-specific settings
     treatPhpDocTypesAsCertain: false
 
     ignoreErrors:
-        # TYPO3 GLOBALS usage (to be refactored)
+        # TYPO3 GLOBALS usage (required for backend user access)
         - '#Access to an undefined property TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication::\$user#'
         - '#Variable \$GLOBALS might not be defined#'
+        - '#Access to an undefined property TYPO3\\CMS\\Core\\Authentication\\BackendUserAuthentication::\$userGroupsUID#'
 
-        # Sodium extension
+        # Sodium extension (stubs not available in CI)
         - '#Function sodium_memzero not found#'
         - '#Function sodium_crypto_aead_aes256gcm_.+ not found#'
         - '#Function sodium_crypto_aead_xchacha20poly1305_.+ not found#'
         - '#Constant SODIUM_.+ not found#'
+
+        # TYPO3 DataHandler hook signatures
+        - '#Method Netresearch\\NrVault\\Hook\\DataHandlerHook::processCmdmap_.*\(\) has parameter \$value with no type specified#'
 
     # Type coverage
     typeAliases:

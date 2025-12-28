@@ -1,5 +1,13 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Security;
