@@ -75,6 +75,18 @@
             <trans-unit id="audit.chain_invalid">
                 <source>Hash chain verification failed</source>
             </trans-unit>
+            <trans-unit id="action.secrets">
+                <source>Secrets</source>
+            </trans-unit>
+            <trans-unit id="action.audit">
+                <source>Audit Log</source>
+            </trans-unit>
+            <trans-unit id="action.verifyChain">
+                <source>Verify Chain</source>
+            </trans-unit>
+            <trans-unit id="action.export">
+                <source>Export</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>
