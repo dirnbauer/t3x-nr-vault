@@ -20,7 +20,7 @@ final class OrphanCleanupTaskAdditionalFieldProvider extends AbstractAdditionalF
 {
     public function getAdditionalFields(
         array &$taskInfo,
-        ?AbstractTask $task,
+        $task,
         SchedulerModuleController $schedulerModule,
     ): array {
         $currentAction = $schedulerModule->getCurrentAction();
