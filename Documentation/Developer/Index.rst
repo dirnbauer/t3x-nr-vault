@@ -9,6 +9,7 @@ Developer
 
    Api
    Commands
+   TcaIntegration
 
 Architecture overview
 =====================
