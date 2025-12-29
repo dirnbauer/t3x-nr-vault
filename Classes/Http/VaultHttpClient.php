@@ -10,21 +10,27 @@ use GuzzleHttp\Exception\GuzzleException;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Http\OAuth\OAuthConfig;
+use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 
 /**
  * HTTP client that injects vault secrets as authentication.
  *
- * Supports various authentication types:
- * - basic: HTTP Basic Authentication (username:password)
- * - bearer: Bearer token in Authorization header
- * - header: Custom header with secret value
- * - query: Query parameter with secret value
+ * Supports various authentication types via SecretPlacement enum:
+ * - Bearer: Bearer token in Authorization header
+ * - BasicAuth: HTTP Basic Authentication
+ * - Header: Custom header with secret value
+ * - QueryParam: Query parameter with secret value
+ * - BodyField: Secret in request body
+ * - OAuth2: OAuth 2.0 with automatic token refresh
+ * - ApiKey: X-API-Key header (shorthand)
  */
 final class VaultHttpClient implements VaultHttpClientInterface
 {
     private ClientInterface $client;
+    private ?OAuthTokenManager $oauthManager = null;
 
     public function __construct(
         private readonly VaultServiceInterface $vaultService,
@@ -38,28 +44,43 @@ final class VaultHttpClient implements VaultHttpClientInterface
         ]);
     }
 
+    /**
+     * @inheritDoc
+     */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         $authSecret = $options['auth_secret'] ?? null;
-        $authType = $options['auth_type'] ?? 'bearer';
+        $authType = $options['auth_type'] ?? null;
+        $placement = $options['placement'] ?? null;
+        $oauthConfig = $options['oauth_config'] ?? null;
         $reason = $options['reason'] ?? 'HTTP API call';
+
+        // Convert string auth_type to SecretPlacement enum for backwards compatibility
+        if ($placement === null && $authType !== null) {
+            $placement = SecretPlacement::tryFrom($authType);
+        }
 
         // Remove vault-specific options before passing to Guzzle
         $guzzleOptions = $this->extractGuzzleOptions($options);
 
+        // Handle OAuth2 authentication
+        if ($placement === SecretPlacement::OAuth2 && $oauthConfig instanceof OAuthConfig) {
+            $guzzleOptions = $this->injectOAuthAuthentication($guzzleOptions, $oauthConfig);
+            $authSecret = 'oauth2:' . $oauthConfig->clientIdSecret;
+        }
         // Inject authentication from vault
-        if ($authSecret !== null) {
+        elseif ($authSecret !== null && $placement !== null) {
             $guzzleOptions = $this->injectAuthentication(
                 $guzzleOptions,
                 $authSecret,
-                $authType,
+                $placement,
                 $options,
             );
         }
-
-        // Basic auth with separate username/password secrets
-        if (isset($options['auth_username_secret'])) {
+        // Legacy: Basic auth with separate username/password secrets
+        elseif (isset($options['auth_username_secret'])) {
             $guzzleOptions = $this->injectBasicAuthFromSecrets($guzzleOptions, $options);
+            $authSecret = $options['auth_username_secret'];
         }
 
         try {
@@ -97,6 +118,20 @@ final class VaultHttpClient implements VaultHttpClientInterface
         }
     }
 
+    /**
+     * Make a request and return a VaultHttpResponse wrapper.
+     *
+     * @param string $method HTTP method
+     * @param string $url Request URL
+     * @param array<string, mixed> $options Request options
+     */
+    public function send(string $method, string $url, array $options = []): VaultHttpResponse
+    {
+        $response = $this->request($method, $url, $options);
+
+        return VaultHttpResponse::fromPsrResponse($response);
+    }
+
     public function get(string $url, array $options = []): ResponseInterface
     {
         return $this->request('GET', $url, $options);
@@ -123,7 +158,30 @@ final class VaultHttpClient implements VaultHttpClientInterface
     }
 
     /**
+     * Get the OAuth token manager (creates one if needed).
+     */
+    public function getOAuthManager(): OAuthTokenManager
+    {
+        if ($this->oauthManager === null) {
+            $this->oauthManager = new OAuthTokenManager($this->vaultService);
+        }
+
+        return $this->oauthManager;
+    }
+
+    /**
+     * Set a custom OAuth token manager.
+     */
+    public function setOAuthManager(OAuthTokenManager $manager): void
+    {
+        $this->oauthManager = $manager;
+    }
+
+    /**
      * Extract Guzzle-compatible options from vault options.
+     *
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
      */
     private function extractGuzzleOptions(array $options): array
     {
@@ -133,7 +191,10 @@ final class VaultHttpClient implements VaultHttpClientInterface
             'auth_type',
             'auth_header',
             'auth_query_param',
+            'auth_body_field',
             'auth_username_secret',
+            'placement',
+            'oauth_config',
             'reason',
         ];
 
@@ -174,11 +235,15 @@ final class VaultHttpClient implements VaultHttpClientInterface
 
     /**
      * Inject authentication from vault secret.
+     *
+     * @param array<string, mixed> $guzzleOptions
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
      */
     private function injectAuthentication(
         array $guzzleOptions,
         string $secretIdentifier,
-        string $authType,
+        SecretPlacement $placement,
         array $options,
     ): array {
         $secret = $this->vaultService->retrieve($secretIdentifier);
@@ -187,24 +252,47 @@ final class VaultHttpClient implements VaultHttpClientInterface
             throw new SecretNotFoundException($secretIdentifier);
         }
 
-        switch ($authType) {
-            case 'bearer':
+        $guzzleOptions['headers'] ??= [];
+        $guzzleOptions['query'] ??= [];
+
+        switch ($placement) {
+            case SecretPlacement::Bearer:
                 $guzzleOptions['headers']['Authorization'] = 'Bearer ' . $secret;
                 break;
-            case 'basic':
+
+            case SecretPlacement::BasicAuth:
                 // Secret is expected to be "username:password" format
                 $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($secret);
                 break;
-            case 'header':
+
+            case SecretPlacement::Header:
                 $headerName = $options['auth_header'] ?? 'X-API-Key';
                 $guzzleOptions['headers'][$headerName] = $secret;
                 break;
-            case 'query':
+
+            case SecretPlacement::ApiKey:
+                $guzzleOptions['headers']['X-API-Key'] = $secret;
+                break;
+
+            case SecretPlacement::QueryParam:
                 $paramName = $options['auth_query_param'] ?? 'api_key';
                 $guzzleOptions['query'][$paramName] = $secret;
                 break;
-            default:
-                throw new VaultException(\sprintf('Unknown auth type: %s', $authType));
+
+            case SecretPlacement::BodyField:
+                $fieldName = $options['auth_body_field'] ?? 'api_key';
+                if (isset($guzzleOptions['json'])) {
+                    $guzzleOptions['json'][$fieldName] = $secret;
+                } elseif (isset($guzzleOptions['form_params'])) {
+                    $guzzleOptions['form_params'][$fieldName] = $secret;
+                } else {
+                    $guzzleOptions['form_params'] = [$fieldName => $secret];
+                }
+                break;
+
+            case SecretPlacement::OAuth2:
+                // OAuth2 is handled separately via injectOAuthAuthentication
+                break;
         }
 
         // Clear secret from memory
@@ -214,7 +302,30 @@ final class VaultHttpClient implements VaultHttpClientInterface
     }
 
     /**
+     * Inject OAuth 2.0 authentication.
+     *
+     * @param array<string, mixed> $guzzleOptions
+     * @return array<string, mixed>
+     */
+    private function injectOAuthAuthentication(array $guzzleOptions, OAuthConfig $config): array
+    {
+        $accessToken = $this->getOAuthManager()->getAccessToken($config);
+
+        $guzzleOptions['headers'] ??= [];
+        $guzzleOptions['headers']['Authorization'] = 'Bearer ' . $accessToken;
+
+        // Clear token from memory after use
+        sodium_memzero($accessToken);
+
+        return $guzzleOptions;
+    }
+
+    /**
      * Inject HTTP Basic auth from separate username and password secrets.
+     *
+     * @param array<string, mixed> $guzzleOptions
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
      */
     private function injectBasicAuthFromSecrets(array $guzzleOptions, array $options): array
     {
@@ -236,6 +347,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
             }
         }
 
+        $guzzleOptions['headers'] ??= [];
         $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($username . ':' . $password);
 
         // Clear from memory

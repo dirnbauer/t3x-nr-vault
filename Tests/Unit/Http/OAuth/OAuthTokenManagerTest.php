@@ -1,0 +1,442 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
+
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Request;
+use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Http\OAuth\OAuthConfig;
+use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
+use Psr\Log\LoggerInterface;
+
+#[CoversClass(OAuthTokenManager::class)]
+final class OAuthTokenManagerTest extends TestCase
+{
+    private OAuthTokenManager $subject;
+
+    private VaultServiceInterface&MockObject $vaultService;
+
+    private ClientInterface&MockObject $httpClient;
+
+    private LoggerInterface&MockObject $logger;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->vaultService = $this->createMock(VaultServiceInterface::class);
+        $this->httpClient = $this->createMock(ClientInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
+
+        $this->subject = new OAuthTokenManager(
+            $this->vaultService,
+            $this->logger,
+            $this->httpClient,
+        );
+    }
+
+    #[Test]
+    public function getAccessTokenFetchesNewToken(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $response = $this->createSuccessfulTokenResponse([
+            'access_token' => 'new-access-token',
+            'token_type' => 'Bearer',
+            'expires_in' => 3600,
+        ]);
+
+        $this->httpClient
+            ->expects(self::once())
+            ->method('request')
+            ->with('POST', 'https://auth.example.com/token', self::anything())
+            ->willReturn($response);
+
+        $token = $this->subject->getAccessToken($config);
+
+        self::assertSame('new-access-token', $token);
+    }
+
+    #[Test]
+    public function getAccessTokenReturnsCachedToken(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $response = $this->createSuccessfulTokenResponse([
+            'access_token' => 'cached-token',
+            'token_type' => 'Bearer',
+            'expires_in' => 3600,
+        ]);
+
+        $this->httpClient
+            ->expects(self::once())
+            ->method('request')
+            ->willReturn($response);
+
+        // First call fetches token
+        $token1 = $this->subject->getAccessToken($config);
+        // Second call returns cached token (no HTTP request)
+        $token2 = $this->subject->getAccessToken($config);
+
+        self::assertSame('cached-token', $token1);
+        self::assertSame('cached-token', $token2);
+    }
+
+    #[Test]
+    public function getAccessTokenRefreshesExpiredToken(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+        $config = new OAuthConfig(
+            tokenEndpoint: $config->tokenEndpoint,
+            clientIdSecret: $config->clientIdSecret,
+            clientSecretSecret: $config->clientSecretSecret,
+            tokenExpiryBuffer: 120, // 2 minute buffer
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        // First response: token expires in 60 seconds (within 120 second buffer)
+        $response1 = $this->createSuccessfulTokenResponse([
+            'access_token' => 'expiring-token',
+            'token_type' => 'Bearer',
+            'expires_in' => 60,
+        ]);
+
+        // Second response: new token
+        $response2 = $this->createSuccessfulTokenResponse([
+            'access_token' => 'refreshed-token',
+            'token_type' => 'Bearer',
+            'expires_in' => 3600,
+        ]);
+
+        $this->httpClient
+            ->expects(self::exactly(2))
+            ->method('request')
+            ->willReturnOnConsecutiveCalls($response1, $response2);
+
+        // First call: gets expiring token
+        $token1 = $this->subject->getAccessToken($config);
+        // Second call: token within buffer, fetches new one
+        $token2 = $this->subject->getAccessToken($config);
+
+        self::assertSame('expiring-token', $token1);
+        self::assertSame('refreshed-token', $token2);
+    }
+
+    #[Test]
+    public function getAccessTokenThrowsForMissingClientId(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->with('oauth/client-id')
+            ->willReturn(null);
+
+        $this->expectException(SecretNotFoundException::class);
+
+        $this->subject->getAccessToken($config);
+    }
+
+    #[Test]
+    public function getAccessTokenThrowsForMissingClientSecret(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                default => null,
+            });
+
+        $this->expectException(SecretNotFoundException::class);
+
+        $this->subject->getAccessToken($config);
+    }
+
+    #[Test]
+    public function getAccessTokenThrowsForFailedRequest(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(401);
+
+        $this->httpClient
+            ->method('request')
+            ->willReturn($response);
+
+        $this->expectException(VaultException::class);
+        $this->expectExceptionMessage('OAuth token request failed with status 401');
+
+        $this->subject->getAccessToken($config);
+    }
+
+    #[Test]
+    public function getAccessTokenThrowsForMissingAccessToken(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $response = $this->createSuccessfulTokenResponse([
+            'token_type' => 'Bearer',
+            // Missing access_token
+        ]);
+
+        $this->httpClient
+            ->method('request')
+            ->willReturn($response);
+
+        $this->expectException(VaultException::class);
+        $this->expectExceptionMessage('OAuth response missing access_token');
+
+        $this->subject->getAccessToken($config);
+    }
+
+    #[Test]
+    public function getAccessTokenHandlesHttpException(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $this->httpClient
+            ->method('request')
+            ->willThrowException(new RequestException(
+                'Connection timeout',
+                new Request('POST', 'https://auth.example.com/token'),
+            ));
+
+        $this->expectException(VaultException::class);
+        $this->expectExceptionMessage('OAuth token request failed: Connection timeout');
+
+        $this->subject->getAccessToken($config);
+    }
+
+    #[Test]
+    public function getAccessTokenIncludesScopes(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+            scopes: ['read', 'write'],
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $capturedParams = null;
+        $response = $this->createSuccessfulTokenResponse([
+            'access_token' => 'token-with-scope',
+            'token_type' => 'Bearer',
+            'expires_in' => 3600,
+            'scope' => 'read write',
+        ]);
+
+        $this->httpClient
+            ->expects(self::once())
+            ->method('request')
+            ->with('POST', 'https://auth.example.com/token', self::callback(
+                function (array $options) use (&$capturedParams) {
+                    $capturedParams = $options['form_params'] ?? [];
+
+                    return true;
+                },
+            ))
+            ->willReturn($response);
+
+        $this->subject->getAccessToken($config);
+
+        self::assertArrayHasKey('scope', $capturedParams);
+        self::assertSame('read write', $capturedParams['scope']);
+    }
+
+    #[Test]
+    public function clearCacheClearsSpecificConfig(): void
+    {
+        $config1 = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth1.example.com/token',
+            clientIdSecret: 'oauth1/client-id',
+            clientSecretSecret: 'oauth1/client-secret',
+        );
+
+        $config2 = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth2.example.com/token',
+            clientIdSecret: 'oauth2/client-id',
+            clientSecretSecret: 'oauth2/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth1/client-id' => 'client-1',
+                'oauth1/client-secret' => 'secret-1',
+                'oauth2/client-id' => 'client-2',
+                'oauth2/client-secret' => 'secret-2',
+                default => null,
+            });
+
+        $this->httpClient
+            ->method('request')
+            ->willReturn($this->createSuccessfulTokenResponse([
+                'access_token' => 'token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]));
+
+        // Populate cache
+        $this->subject->getAccessToken($config1);
+        $this->subject->getAccessToken($config2);
+
+        // Clear only config1
+        $this->subject->clearCache($config1);
+
+        // config2 should still be cached (only 3 requests total)
+        $this->httpClient
+            ->expects(self::exactly(1))
+            ->method('request');
+
+        $this->subject->getAccessToken($config1); // New request
+    }
+
+    #[Test]
+    public function clearCacheClearsAllConfigs(): void
+    {
+        $config = OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturnCallback(fn(string $id) => match ($id) {
+                'oauth/client-id' => 'my-client-id',
+                'oauth/client-secret' => 'my-client-secret',
+                default => null,
+            });
+
+        $this->httpClient
+            ->expects(self::exactly(2))
+            ->method('request')
+            ->willReturn($this->createSuccessfulTokenResponse([
+                'access_token' => 'token',
+                'token_type' => 'Bearer',
+                'expires_in' => 3600,
+            ]));
+
+        // First call: fetch
+        $this->subject->getAccessToken($config);
+
+        // Clear all
+        $this->subject->clearCache();
+
+        // Second call: fetch again (not from cache)
+        $this->subject->getAccessToken($config);
+    }
+
+    private function createSuccessfulTokenResponse(array $data): ResponseInterface&MockObject
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn(json_encode($data));
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(200);
+        $response->method('getBody')->willReturn($stream);
+
+        return $response;
+    }
+}

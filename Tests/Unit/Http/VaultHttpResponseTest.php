@@ -1,0 +1,359 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Http;
+
+use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Http\VaultHttpResponse;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
+
+#[CoversClass(VaultHttpResponse::class)]
+final class VaultHttpResponseTest extends TestCase
+{
+    #[Test]
+    public function getStatusCodeReturnsResponseStatusCode(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn(200);
+
+        $response = VaultHttpResponse::fromPsrResponse($psrResponse);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function getReasonPhraseReturnsResponseReasonPhrase(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getReasonPhrase')->willReturn('OK');
+
+        $response = VaultHttpResponse::fromPsrResponse($psrResponse);
+
+        self::assertSame('OK', $response->getReasonPhrase());
+    }
+
+    #[Test]
+    #[DataProvider('successfulStatusCodesProvider')]
+    public function isSuccessfulReturnsTrueFor2xxCodes(int $statusCode): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn($statusCode);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertTrue($response->isSuccessful());
+    }
+
+    public static function successfulStatusCodesProvider(): iterable
+    {
+        yield '200 OK' => [200];
+        yield '201 Created' => [201];
+        yield '204 No Content' => [204];
+        yield '299 boundary' => [299];
+    }
+
+    #[Test]
+    #[DataProvider('clientErrorStatusCodesProvider')]
+    public function isClientErrorReturnsTrueFor4xxCodes(int $statusCode): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn($statusCode);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertTrue($response->isClientError());
+    }
+
+    public static function clientErrorStatusCodesProvider(): iterable
+    {
+        yield '400 Bad Request' => [400];
+        yield '401 Unauthorized' => [401];
+        yield '403 Forbidden' => [403];
+        yield '404 Not Found' => [404];
+        yield '499 boundary' => [499];
+    }
+
+    #[Test]
+    #[DataProvider('serverErrorStatusCodesProvider')]
+    public function isServerErrorReturnsTrueFor5xxCodes(int $statusCode): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn($statusCode);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertTrue($response->isServerError());
+    }
+
+    public static function serverErrorStatusCodesProvider(): iterable
+    {
+        yield '500 Internal Server Error' => [500];
+        yield '502 Bad Gateway' => [502];
+        yield '503 Service Unavailable' => [503];
+        yield '599 boundary' => [599];
+    }
+
+    #[Test]
+    public function isErrorReturnsTrueForClientAndServerErrors(): void
+    {
+        $clientError = $this->createMock(ResponseInterface::class);
+        $clientError->method('getStatusCode')->willReturn(404);
+
+        $serverError = $this->createMock(ResponseInterface::class);
+        $serverError->method('getStatusCode')->willReturn(500);
+
+        $success = $this->createMock(ResponseInterface::class);
+        $success->method('getStatusCode')->willReturn(200);
+
+        self::assertTrue((new VaultHttpResponse($clientError))->isError());
+        self::assertTrue((new VaultHttpResponse($serverError))->isError());
+        self::assertFalse((new VaultHttpResponse($success))->isError());
+    }
+
+    #[Test]
+    public function isRedirectReturnsTrueFor3xxCodes(): void
+    {
+        $redirect = $this->createMock(ResponseInterface::class);
+        $redirect->method('getStatusCode')->willReturn(302);
+
+        $success = $this->createMock(ResponseInterface::class);
+        $success->method('getStatusCode')->willReturn(200);
+
+        self::assertTrue((new VaultHttpResponse($redirect))->isRedirect());
+        self::assertFalse((new VaultHttpResponse($success))->isRedirect());
+    }
+
+    #[Test]
+    public function getBodyReturnsStringBody(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('{"data": "test"}');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame('{"data": "test"}', $response->getBody());
+    }
+
+    #[Test]
+    public function jsonDecodesBodyAsArray(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('{"name": "test", "value": 123}');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        $json = $response->json();
+
+        self::assertIsArray($json);
+        self::assertSame('test', $json['name']);
+        self::assertSame(123, $json['value']);
+    }
+
+    #[Test]
+    public function jsonDecodesBodyAsObject(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('{"name": "test"}');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        $json = $response->json(false);
+
+        self::assertIsObject($json);
+        self::assertSame('test', $json->name);
+    }
+
+    #[Test]
+    public function jsonReturnsEmptyArrayForEmptyBody(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame([], $response->json(true));
+        self::assertNull($response->json(false));
+    }
+
+    #[Test]
+    public function jsonThrowsExceptionForInvalidJson(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('not valid json');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        $this->expectException(\JsonException::class);
+        $response->json();
+    }
+
+    #[Test]
+    public function jsonGetReturnsNestedValue(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('{"data": {"user": {"name": "John"}}}');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame('John', $response->jsonGet('data.user.name'));
+        self::assertSame(['name' => 'John'], $response->jsonGet('data.user'));
+        self::assertNull($response->jsonGet('data.user.email'));
+        self::assertSame('default', $response->jsonGet('data.user.email', 'default'));
+    }
+
+    #[Test]
+    public function jsonGetReturnsDefaultForInvalidJson(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('not valid json');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame('default', $response->jsonGet('key', 'default'));
+    }
+
+    #[Test]
+    public function getHeaderReturnsFirstHeaderValue(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')->with('Content-Type')->willReturn(['application/json', 'charset=utf-8']);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame('application/json', $response->getHeader('Content-Type'));
+    }
+
+    #[Test]
+    public function getHeaderReturnsNullForMissingHeader(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')->with('X-Custom')->willReturn([]);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertNull($response->getHeader('X-Custom'));
+    }
+
+    #[Test]
+    public function getHeaderValuesReturnsAllValues(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')->with('Accept')->willReturn(['application/json', 'text/html']);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame(['application/json', 'text/html'], $response->getHeaderValues('Accept'));
+    }
+
+    #[Test]
+    public function getContentTypeStripsParameters(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')
+            ->with('Content-Type')
+            ->willReturn(['application/json; charset=utf-8']);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame('application/json', $response->getContentType());
+    }
+
+    #[Test]
+    public function isJsonReturnsTrueForJsonContentTypes(): void
+    {
+        $jsonResponse = $this->createMock(ResponseInterface::class);
+        $jsonResponse->method('getHeader')
+            ->with('Content-Type')
+            ->willReturn(['application/json']);
+
+        $apiResponse = $this->createMock(ResponseInterface::class);
+        $apiResponse->method('getHeader')
+            ->with('Content-Type')
+            ->willReturn(['application/vnd.api+json']);
+
+        $htmlResponse = $this->createMock(ResponseInterface::class);
+        $htmlResponse->method('getHeader')
+            ->with('Content-Type')
+            ->willReturn(['text/html']);
+
+        self::assertTrue((new VaultHttpResponse($jsonResponse))->isJson());
+        self::assertTrue((new VaultHttpResponse($apiResponse))->isJson());
+        self::assertFalse((new VaultHttpResponse($htmlResponse))->isJson());
+    }
+
+    #[Test]
+    public function getContentLengthReturnsIntegerValue(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')
+            ->with('Content-Length')
+            ->willReturn(['1234']);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame(1234, $response->getContentLength());
+    }
+
+    #[Test]
+    public function throwIfErrorThrowsForErrorStatus(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn(404);
+        $psrResponse->method('getReasonPhrase')->willReturn('Not Found');
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        $this->expectException(VaultException::class);
+        $this->expectExceptionMessage('HTTP request failed with status 404: Not Found');
+
+        $response->throwIfError();
+    }
+
+    #[Test]
+    public function throwIfErrorReturnsSelfForSuccess(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn(200);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame($response, $response->throwIfError());
+    }
+
+    #[Test]
+    public function getPsrResponseReturnsUnderlyingResponse(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame($psrResponse, $response->getPsrResponse());
+    }
+}
