@@ -121,9 +121,10 @@ final class VaultHttpResponse
      * Decode JSON response body.
      *
      * @param bool $associative When true, returns associative arrays instead of objects
-     * @return array<string, mixed>|object|null
      *
      * @throws JsonException If JSON is invalid
+     *
+     * @return array<string, mixed>|object|null
      */
     public function json(bool $associative = true): array|object|null
     {
@@ -133,7 +134,7 @@ final class VaultHttpResponse
             return $associative ? [] : null;
         }
 
-        return \json_decode($body, $associative, 512, JSON_THROW_ON_ERROR);
+        return json_decode($body, $associative, 512, JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -154,7 +155,7 @@ final class VaultHttpResponse
             return $default;
         }
 
-        $keys = \explode('.', $key);
+        $keys = explode('.', $key);
         $value = $data;
 
         foreach ($keys as $segment) {
@@ -171,6 +172,7 @@ final class VaultHttpResponse
      * Get a response header value.
      *
      * @param string $name Header name (case-insensitive)
+     *
      * @return string|null First header value or null if not present
      */
     public function getHeader(string $name): ?string
@@ -184,6 +186,7 @@ final class VaultHttpResponse
      * Get all values for a response header.
      *
      * @param string $name Header name (case-insensitive)
+     *
      * @return array<string> Header values
      */
     public function getHeaderValues(string $name): array
@@ -221,9 +224,9 @@ final class VaultHttpResponse
         }
 
         // Strip parameters like charset
-        $parts = \explode(';', $contentType);
+        $parts = explode(';', $contentType);
 
-        return \trim($parts[0]);
+        return trim($parts[0]);
     }
 
     /**
@@ -235,7 +238,7 @@ final class VaultHttpResponse
 
         return $contentType !== null && (
             $contentType === 'application/json'
-            || \str_ends_with($contentType, '+json')
+            || str_ends_with($contentType, '+json')
         );
     }
 

@@ -21,6 +21,46 @@ namespace Netresearch\NrVault\Http;
 enum SecretPlacement: string
 {
     /**
+     * Get a human-readable description of this placement type.
+     */
+    public function description(): string
+    {
+        return match ($this) {
+            self::Bearer => 'Bearer token in Authorization header',
+            self::BasicAuth => 'HTTP Basic Authentication',
+            self::Header => 'Custom header value',
+            self::QueryParam => 'URL query parameter',
+            self::BodyField => 'Request body field',
+            self::OAuth2 => 'OAuth 2.0 with automatic token refresh',
+            self::ApiKey => 'X-API-Key header',
+        };
+    }
+
+    /**
+     * Check if this placement type requires additional configuration.
+     */
+    public function requiresConfig(): bool
+    {
+        return match ($this) {
+            self::Header, self::QueryParam, self::BodyField, self::OAuth2 => true,
+            default => false,
+        };
+    }
+
+    /**
+     * Get the default config key for this placement type.
+     */
+    public function defaultConfigKey(): ?string
+    {
+        return match ($this) {
+            self::Header => 'X-API-Key',
+            self::QueryParam => 'api_key',
+            self::BodyField => 'api_key',
+            self::ApiKey => 'X-API-Key',
+            default => null,
+        };
+    }
+    /**
      * Bearer token in Authorization header.
      * Format: Authorization: Bearer {secret}
      */
@@ -66,45 +106,4 @@ enum SecretPlacement: string
      * Shorthand for Header placement with X-API-Key header
      */
     case ApiKey = 'api_key';
-
-    /**
-     * Get a human-readable description of this placement type.
-     */
-    public function description(): string
-    {
-        return match ($this) {
-            self::Bearer => 'Bearer token in Authorization header',
-            self::BasicAuth => 'HTTP Basic Authentication',
-            self::Header => 'Custom header value',
-            self::QueryParam => 'URL query parameter',
-            self::BodyField => 'Request body field',
-            self::OAuth2 => 'OAuth 2.0 with automatic token refresh',
-            self::ApiKey => 'X-API-Key header',
-        };
-    }
-
-    /**
-     * Check if this placement type requires additional configuration.
-     */
-    public function requiresConfig(): bool
-    {
-        return match ($this) {
-            self::Header, self::QueryParam, self::BodyField, self::OAuth2 => true,
-            default => false,
-        };
-    }
-
-    /**
-     * Get the default config key for this placement type.
-     */
-    public function defaultConfigKey(): ?string
-    {
-        return match ($this) {
-            self::Header => 'X-API-Key',
-            self::QueryParam => 'api_key',
-            self::BodyField => 'api_key',
-            self::ApiKey => 'X-API-Key',
-            default => null,
-        };
-    }
 }

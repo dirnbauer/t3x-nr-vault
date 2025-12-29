@@ -141,7 +141,7 @@ final class OAuthTokenManager
         }
 
         // Add any additional parameters
-        $params = \array_merge($params, $config->additionalParams);
+        $params = array_merge($params, $config->additionalParams);
 
         try {
             $response = $this->httpClient->request('POST', $config->tokenEndpoint, [
@@ -166,7 +166,7 @@ final class OAuthTokenManager
                 ));
             }
 
-            $body = \json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
             if (!isset($body['access_token'])) {
                 throw new VaultException('OAuth response missing access_token');
@@ -224,7 +224,7 @@ final class OAuthTokenManager
      */
     private function getCacheKey(OAuthConfig $config): string
     {
-        return \md5(\implode(':', [
+        return md5(implode(':', [
             $config->tokenEndpoint,
             $config->clientIdSecret,
             $config->grantType,

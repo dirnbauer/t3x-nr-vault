@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 
 /**
  * Fuzz tests for identifier validation and parsing.
@@ -159,7 +160,7 @@ final class IdentifierFuzzTest extends TestCase
             'empty array' => [[]],
             'array with values' => [['a', 'b', 'c']],
             'nested array' => [['a' => ['b' => 'c']]],
-            'object' => [new \stdClass()],
+            'object' => [new stdClass()],
 
             // Injection attempts
             'sql injection single quote' => ["table__field__1'; DROP TABLE users; --"],

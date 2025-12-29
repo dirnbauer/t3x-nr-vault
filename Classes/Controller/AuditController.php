@@ -112,7 +112,7 @@ final class AuditController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title')
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title'),
         );
 
         return $moduleTemplate->renderResponse('Audit/List');
@@ -137,7 +137,7 @@ final class AuditController
             ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME))
             ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
             ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL));
-        $buttonBar->addButton($backButton, \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT, 1);
+        $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
         $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
 
@@ -155,7 +155,7 @@ final class AuditController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verify_chain')
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verify_chain'),
         );
 
         return $moduleTemplate->renderResponse('Audit/VerifyChain');

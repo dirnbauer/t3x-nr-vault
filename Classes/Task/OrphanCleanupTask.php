@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Task;
 
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PDO;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
@@ -23,14 +24,10 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
  */
 final class OrphanCleanupTask extends AbstractTask
 {
-    /**
-     * Only delete orphans older than this many days.
-     */
+    /** Only delete orphans older than this many days. */
     public int $retentionDays = 7;
 
-    /**
-     * Only check secrets for this specific table (optional).
-     */
+    /** Only check secrets for this specific table (optional). */
     public string $tableFilter = '';
 
     public function execute(): bool
@@ -161,7 +158,7 @@ final class OrphanCleanupTask extends AbstractTask
             ->count('*')
             ->from($table)
             ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)),
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, PDO::PARAM_INT)),
             )
             ->executeQuery()
             ->fetchOne();

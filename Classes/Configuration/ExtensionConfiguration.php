@@ -12,16 +12,22 @@ use TYPO3\CMS\Core\SingletonInterface;
  */
 final class ExtensionConfiguration implements ExtensionConfigurationInterface, SingletonInterface
 {
-    private const EXTENSION_KEY = 'nr_vault';
-
     // Default values as constants for maintainability
     public const DEFAULT_STORAGE_ADAPTER = 'local';
+
     public const DEFAULT_MASTER_KEY_PROVIDER = 'typo3';
+
     public const DEFAULT_MASTER_KEY_SOURCE = 'NR_VAULT_MASTER_KEY';
+
     public const DEFAULT_AUDIT_LOG_RETENTION = 365;
+
     public const DEFAULT_ALLOW_CLI_ACCESS = false;
+
     public const DEFAULT_CACHE_ENABLED = true;
+
     public const DEFAULT_PREFER_XCHACHA20 = false;
+
+    private const EXTENSION_KEY = 'nr_vault';
 
     private array $configuration;
 

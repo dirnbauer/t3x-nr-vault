@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Service;
 
 use Doctrine\DBAL\Exception as DbalException;
+use Exception;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -89,9 +90,7 @@ final class SecretDetectionService implements SingletonInterface
         'smtpPassword',
     ];
 
-    /**
-     * @var array<string, array<string, mixed>>
-     */
+    /** @var array<string, array<string, mixed>> */
     private array $detectedSecrets = [];
 
     public function __construct(
@@ -102,6 +101,7 @@ final class SecretDetectionService implements SingletonInterface
      * Scan for potential plaintext secrets across all sources.
      *
      * @param array<string> $excludeTables Tables to exclude from scanning
+     *
      * @return array<string, array<string, mixed>> Detected secrets grouped by source
      */
     public function scan(array $excludeTables = []): array
@@ -153,6 +153,99 @@ final class SecretDetectionService implements SingletonInterface
     }
 
     /**
+     * Scan extension configuration for potential secrets.
+     */
+    public function scanExtensionConfiguration(): void
+    {
+        try {
+            $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
+            $allConfigs = $extensionConfiguration->getAll();
+
+            foreach ($allConfigs as $extKey => $config) {
+                if (!\is_array($config)) {
+                    continue;
+                }
+
+                $this->scanConfigArray($config, "extension:{$extKey}");
+            }
+        } catch (Exception) {
+            // Silently fail if extension configuration is not accessible
+        }
+    }
+
+    /**
+     * Scan LocalConfiguration for potential secrets.
+     */
+    public function scanLocalConfiguration(): void
+    {
+        if (!isset($GLOBALS['TYPO3_CONF_VARS'])) {
+            return;
+        }
+
+        // Check MAIL configuration
+        $mailConfig = $GLOBALS['TYPO3_CONF_VARS']['MAIL'] ?? [];
+        if (!empty($mailConfig['transport_smtp_password'])) {
+            $value = $mailConfig['transport_smtp_password'];
+            if (!$this->looksLikeVaultIdentifier($value)) {
+                $this->detectedSecrets['config:MAIL.transport_smtp_password'] = [
+                    'source' => 'LocalConfiguration',
+                    'path' => 'MAIL.transport_smtp_password',
+                    'severity' => 'high',
+                    'patterns' => [],
+                ];
+            }
+        }
+
+        // Check SYS encryptionKey if it looks weak
+        $encryptionKey = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] ?? '';
+        if (!empty($encryptionKey) && \strlen($encryptionKey) < 32) {
+            $this->detectedSecrets['config:SYS.encryptionKey'] = [
+                'source' => 'LocalConfiguration',
+                'path' => 'SYS.encryptionKey',
+                'severity' => 'medium',
+                'message' => 'Encryption key appears too short (< 32 characters)',
+                'patterns' => [],
+            ];
+        }
+
+        // Check for extensions storing secrets in SYS configuration
+        $this->scanConfigArray(
+            $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] ?? [],
+            'config:EXTENSIONS',
+        );
+    }
+
+    /**
+     * Get detected secrets grouped by severity.
+     *
+     * @return array<string, array<string, array<string, mixed>>>
+     */
+    public function getDetectedSecretsBySeverity(): array
+    {
+        $grouped = [
+            'critical' => [],
+            'high' => [],
+            'medium' => [],
+            'low' => [],
+        ];
+
+        foreach ($this->detectedSecrets as $key => $secret) {
+            $severity = $secret['severity'] ?? 'low';
+            $grouped[$severity][$key] = $secret;
+        }
+
+        return $grouped;
+    }
+
+    /**
+     * Get total count of detected secrets.
+     */
+    public function getDetectedSecretsCount(): int
+    {
+        return \count($this->detectedSecrets);
+    }
+
+    /**
      * Scan a specific table for secret columns.
      */
     private function scanTable(string $tableName): void
@@ -167,7 +260,7 @@ final class SecretDetectionService implements SingletonInterface
                 $columnType = $column->getType()->getName();
 
                 // Only check string-type columns
-                if (!in_array($columnType, ['string', 'text', 'blob'], true)) {
+                if (!\in_array($columnType, ['string', 'text', 'blob'], true)) {
                     continue;
                 }
 
@@ -217,7 +310,7 @@ final class SecretDetectionService implements SingletonInterface
                 $patterns = [];
 
                 foreach ($samples as $row) {
-                    $value = (string)$row[$columnName];
+                    $value = (string) $row[$columnName];
 
                     // Skip if it looks like a vault identifier
                     if ($this->looksLikeVaultIdentifier($value)) {
@@ -244,7 +337,7 @@ final class SecretDetectionService implements SingletonInterface
                         'source' => 'database',
                         'table' => $tableName,
                         'column' => $columnName,
-                        'count' => (int)$count,
+                        'count' => (int) $count,
                         'plaintextCount' => $plaintextCount,
                         'patterns' => array_keys($patterns),
                         'severity' => $this->calculateSeverity($columnName, array_keys($patterns)),
@@ -257,69 +350,6 @@ final class SecretDetectionService implements SingletonInterface
     }
 
     /**
-     * Scan extension configuration for potential secrets.
-     */
-    public function scanExtensionConfiguration(): void
-    {
-        try {
-            $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
-            $allConfigs = $extensionConfiguration->getAll();
-
-            foreach ($allConfigs as $extKey => $config) {
-                if (!is_array($config)) {
-                    continue;
-                }
-
-                $this->scanConfigArray($config, "extension:{$extKey}");
-            }
-        } catch (\Exception) {
-            // Silently fail if extension configuration is not accessible
-        }
-    }
-
-    /**
-     * Scan LocalConfiguration for potential secrets.
-     */
-    public function scanLocalConfiguration(): void
-    {
-        if (!isset($GLOBALS['TYPO3_CONF_VARS'])) {
-            return;
-        }
-
-        // Check MAIL configuration
-        $mailConfig = $GLOBALS['TYPO3_CONF_VARS']['MAIL'] ?? [];
-        if (!empty($mailConfig['transport_smtp_password'])) {
-            $value = $mailConfig['transport_smtp_password'];
-            if (!$this->looksLikeVaultIdentifier($value)) {
-                $this->detectedSecrets['config:MAIL.transport_smtp_password'] = [
-                    'source' => 'LocalConfiguration',
-                    'path' => 'MAIL.transport_smtp_password',
-                    'severity' => 'high',
-                    'patterns' => [],
-                ];
-            }
-        }
-
-        // Check SYS encryptionKey if it looks weak
-        $encryptionKey = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] ?? '';
-        if (!empty($encryptionKey) && strlen($encryptionKey) < 32) {
-            $this->detectedSecrets['config:SYS.encryptionKey'] = [
-                'source' => 'LocalConfiguration',
-                'path' => 'SYS.encryptionKey',
-                'severity' => 'medium',
-                'message' => 'Encryption key appears too short (< 32 characters)',
-                'patterns' => [],
-            ];
-        }
-
-        // Check for extensions storing secrets in SYS configuration
-        $this->scanConfigArray(
-            $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] ?? [],
-            'config:EXTENSIONS',
-        );
-    }
-
-    /**
      * Recursively scan a configuration array for secret keys.
      *
      * @param array<string, mixed> $config Configuration array
@@ -328,12 +358,12 @@ final class SecretDetectionService implements SingletonInterface
     private function scanConfigArray(array $config, string $prefix): void
     {
         foreach ($config as $key => $value) {
-            if (is_array($value)) {
+            if (\is_array($value)) {
                 $this->scanConfigArray($value, "{$prefix}.{$key}");
                 continue;
             }
 
-            if (!is_string($value) || $value === '') {
+            if (!\is_string($value) || $value === '') {
                 continue;
             }
 
@@ -426,16 +456,12 @@ final class SecretDetectionService implements SingletonInterface
     private function looksEncrypted(string $value): bool
     {
         // Check for base64-encoded encrypted data (typically > 50 chars, high entropy)
-        if (strlen($value) > 50 && preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
+        if (\strlen($value) > 50 && preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
             return true;
         }
 
         // Check for hex-encoded data
-        if (strlen($value) > 50 && preg_match('/^[0-9a-f]+$/i', $value)) {
-            return true;
-        }
-
-        return false;
+        return (bool) (\strlen($value) > 50 && preg_match('/^[0-9a-f]+$/i', $value));
     }
 
     /**
@@ -457,6 +483,7 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @param string $name Column or config key name
      * @param array<string> $patterns Detected value patterns
+     *
      * @return string 'critical', 'high', 'medium', 'low'
      */
     private function calculateSeverity(string $name, array $patterns): string
@@ -483,35 +510,5 @@ final class SecretDetectionService implements SingletonInterface
         }
 
         return 'low';
-    }
-
-    /**
-     * Get detected secrets grouped by severity.
-     *
-     * @return array<string, array<string, array<string, mixed>>>
-     */
-    public function getDetectedSecretsBySeverity(): array
-    {
-        $grouped = [
-            'critical' => [],
-            'high' => [],
-            'medium' => [],
-            'low' => [],
-        ];
-
-        foreach ($this->detectedSecrets as $key => $secret) {
-            $severity = $secret['severity'] ?? 'low';
-            $grouped[$severity][$key] = $secret;
-        }
-
-        return $grouped;
-    }
-
-    /**
-     * Get total count of detected secrets.
-     */
-    public function getDetectedSecretsCount(): int
-    {
-        return count($this->detectedSecrets);
     }
 }

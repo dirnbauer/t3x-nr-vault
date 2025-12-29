@@ -72,36 +72,36 @@ final class VaultScanCommand extends Command
             )
             ->setHelp(
                 <<<'HELP'
-The <info>%command.name%</info> command scans your TYPO3 installation for potential
-plaintext secrets that should be migrated to the vault.
+                The <info>%command.name%</info> command scans your TYPO3 installation for potential
+                plaintext secrets that should be migrated to the vault.
 
-<comment>Scan all sources:</comment>
-  <info>%command.full_name%</info>
+                <comment>Scan all sources:</comment>
+                  <info>%command.full_name%</info>
 
-<comment>Output as JSON:</comment>
-  <info>%command.full_name% --format=json</info>
+                <comment>Output as JSON:</comment>
+                  <info>%command.full_name% --format=json</info>
 
-<comment>Exclude specific tables:</comment>
-  <info>%command.full_name% --exclude=tx_myext_cache,tx_temp_*</info>
+                <comment>Exclude specific tables:</comment>
+                  <info>%command.full_name% --exclude=tx_myext_cache,tx_temp_*</info>
 
-<comment>Only show high severity and above:</comment>
-  <info>%command.full_name% --severity=high</info>
+                <comment>Only show high severity and above:</comment>
+                  <info>%command.full_name% --severity=high</info>
 
-<comment>Scan only database:</comment>
-  <info>%command.full_name% --database-only</info>
+                <comment>Scan only database:</comment>
+                  <info>%command.full_name% --database-only</info>
 
-The command detects:
-- Database columns with secret-like names (password, api_key, token, etc.)
-- Known API key patterns (Stripe, AWS, GitHub, Slack, etc.)
-- Extension configuration secrets
-- LocalConfiguration secrets (SMTP password, etc.)
+                The command detects:
+                - Database columns with secret-like names (password, api_key, token, etc.)
+                - Known API key patterns (Stripe, AWS, GitHub, Slack, etc.)
+                - Extension configuration secrets
+                - LocalConfiguration secrets (SMTP password, etc.)
 
-Severity levels:
-- <error>critical</error>: Known API key pattern detected
-- <comment>high</comment>: Password or private key fields
-- <info>medium</info>: Token or API key fields
-- low: Other potential secrets
-HELP,
+                Severity levels:
+                - <error>critical</error>: Known API key pattern detected
+                - <comment>high</comment>: Password or private key fields
+                - <info>medium</info>: Token or API key fields
+                - low: Other potential secrets
+                HELP,
             );
     }
 
@@ -119,6 +119,7 @@ HELP,
 
         if ($databaseOnly && $configOnly) {
             $io->error('Cannot use both --database-only and --config-only');
+
             return Command::FAILURE;
         }
 
@@ -142,6 +143,7 @@ HELP,
 
         if ($totalCount === 0) {
             $io->success('No potential plaintext secrets detected.');
+
             return Command::SUCCESS;
         }
 
@@ -149,11 +151,9 @@ HELP,
             case 'json':
                 $this->outputJson($output, $filteredSecrets);
                 break;
-
             case 'summary':
                 $this->outputSummary($io, $secrets, $minSeverity);
                 break;
-
             default:
                 $this->outputTable($io, $filteredSecrets);
         }
@@ -180,6 +180,7 @@ HELP,
      * Filter secrets by minimum severity.
      *
      * @param array<string, array<string, array<string, mixed>>> $secrets
+     *
      * @return array<string, array<string, array<string, mixed>>>
      */
     private function filterBySeverity(array $secrets, string $minSeverity): array
@@ -206,7 +207,7 @@ HELP,
     {
         $count = 0;
         foreach ($secrets as $items) {
-            $count += count($items);
+            $count += \count($items);
         }
 
         return $count;
@@ -219,7 +220,7 @@ HELP,
      */
     private function outputJson(OutputInterface $output, array $secrets): void
     {
-        $output->writeln((string)json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        $output->writeln((string) json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -233,14 +234,14 @@ HELP,
 
         $rows = [];
         foreach (['critical', 'high', 'medium', 'low'] as $severity) {
-            $count = count($secrets[$severity] ?? []);
+            $count = \count($secrets[$severity] ?? []);
             $label = match ($severity) {
                 'critical' => '<error>Critical</error>',
                 'high' => '<comment>High</comment>',
                 'medium' => '<info>Medium</info>',
                 default => 'Low',
             };
-            $rows[] = [$label, (string)$count];
+            $rows[] = [$label, (string) $count];
         }
 
         $io->table(['Severity', 'Count'], $rows);
@@ -266,7 +267,7 @@ HELP,
                 default => 'LOW',
             };
 
-            $io->section(\sprintf('%s Severity (%d)', $severityLabel, count($items)));
+            $io->section(\sprintf('%s Severity (%d)', $severityLabel, \count($items)));
 
             $table = new Table($io);
             $table->setHeaders(['Location', 'Details', 'Patterns']);

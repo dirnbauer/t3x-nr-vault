@@ -41,13 +41,14 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class VaultFieldPermissionService implements SingletonInterface
 {
     public const PERMISSION_REVEAL = 'reveal';
+
     public const PERMISSION_COPY = 'copy';
+
     public const PERMISSION_EDIT = 'edit';
+
     public const PERMISSION_READ_ONLY = 'readOnly';
 
-    /**
-     * @var array<string, bool>
-     */
+    /** @var array<string, bool> */
     private array $permissionCache = [];
 
     /**

@@ -65,7 +65,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -99,7 +99,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -142,7 +142,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -206,7 +206,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 default => null,
             });
@@ -227,7 +227,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -257,7 +257,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -289,7 +289,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -320,7 +320,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,
@@ -369,7 +369,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth1/client-id' => 'client-1',
                 'oauth1/client-secret' => 'secret-1',
                 'oauth2/client-id' => 'client-2',
@@ -411,7 +411,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willReturnCallback(fn(string $id) => match ($id) {
+            ->willReturnCallback(fn (string $id) => match ($id) {
                 'oauth/client-id' => 'my-client-id',
                 'oauth/client-secret' => 'my-client-secret',
                 default => null,

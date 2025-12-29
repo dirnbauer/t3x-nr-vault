@@ -55,6 +55,6 @@ final readonly class OAuthToken
         $now = new DateTimeImmutable();
         $diff = $this->expiresAt->getTimestamp() - $now->getTimestamp();
 
-        return \max(0, $diff);
+        return max(0, $diff);
     }
 }

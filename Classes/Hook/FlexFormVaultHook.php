@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Hook;
 
+use Exception;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
@@ -228,7 +229,7 @@ final class FlexFormVaultHook
             );
 
             return $flexFormTools->parseDataStructureByIdentifier($dataStructureIdentifier);
-        } catch (\Exception) {
+        } catch (Exception) {
             return null;
         }
     }

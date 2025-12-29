@@ -19,7 +19,9 @@ use TYPO3\CMS\Core\Site\Entity\Site;
 final class SiteConfigurationVaultProcessorTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;
+
     private LoggerInterface&MockObject $logger;
+
     private SiteConfigurationVaultProcessor $processor;
 
     protected function setUp(): void

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Database\Connection;
@@ -22,7 +23,9 @@ use TYPO3\CMS\Core\Database\Schema\SchemaManager;
 final class VaultMigrateFieldCommandTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;
+
     private ConnectionPool&MockObject $connectionPool;
+
     private CommandTester $commandTester;
 
     protected function setUp(): void
@@ -194,7 +197,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         $schemaManager = $this->createMock(SchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
         $schemaManager->method('listTableColumns')->willReturn([
-            $field => new \stdClass(),
+            $field => new stdClass(),
         ]);
 
         $connection = $this->createMock(Connection::class);

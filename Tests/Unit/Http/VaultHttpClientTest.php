@@ -339,9 +339,10 @@ final class VaultHttpClientTest extends TestCase
                 'API request',
                 null,
                 null,
-                self::callback(fn(array $meta) => $meta['method'] === 'GET'
+                self::callback(
+                    fn (array $meta) => $meta['method'] === 'GET'
                         && $meta['host'] === 'api.example.com'
-                        && $meta['status_code'] === 200
+                        && $meta['status_code'] === 200,
                 ),
             );
 
@@ -375,7 +376,7 @@ final class VaultHttpClientTest extends TestCase
                 self::anything(),
                 null,
                 null,
-                self::callback(fn(array $meta) => $meta['status_code'] === 0),
+                self::callback(fn (array $meta) => $meta['status_code'] === 0),
             );
 
         $this->expectException(VaultException::class);

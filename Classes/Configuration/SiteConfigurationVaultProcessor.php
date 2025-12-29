@@ -6,7 +6,7 @@ namespace Netresearch\NrVault\Configuration;
 
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
-use TYPO3\CMS\Core\Configuration\Loader\YamlFileLoader;
+use Throwable;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -50,6 +50,7 @@ final class SiteConfigurationVaultProcessor
      * Process site configuration and resolve vault references.
      *
      * @param array<string, mixed> $configuration
+     *
      * @return array<string, mixed>
      */
     public function processConfiguration(array $configuration, ?Site $site = null): array
@@ -106,6 +107,7 @@ final class SiteConfigurationVaultProcessor
 
     /**
      * @param array<string, mixed> $configuration
+     *
      * @return array<string, mixed>
      */
     private function resolveVaultReferences(array $configuration, ?Site $site): array
@@ -137,12 +139,13 @@ final class SiteConfigurationVaultProcessor
         if ($site !== null && !str_contains($identifier, ':')) {
             // Try site-specific identifier first
             $siteIdentifier = \sprintf('site:%s:%s', $site->getIdentifier(), $identifier);
+
             try {
                 $secret = $this->vaultService->retrieve($siteIdentifier);
                 if ($secret !== null) {
                     return $secret;
                 }
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Fall through to global identifier
             }
         }
@@ -151,7 +154,7 @@ final class SiteConfigurationVaultProcessor
             $secret = $this->vaultService->retrieve($identifier);
 
             return $secret ?? $value;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->logger->warning('Failed to resolve vault reference', [
                 'identifier' => $identifier,
                 'site' => $site?->getIdentifier(),

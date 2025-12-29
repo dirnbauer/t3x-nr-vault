@@ -104,6 +104,7 @@ final class VaultFieldHelper
      *
      * @param string $label The field label
      * @param array<string, mixed> $options Additional options
+     *
      * @return array<string, mixed> Complete TCA column definition
      */
     public static function getSecureFieldConfig(string $label, array $options = []): array
@@ -121,6 +122,7 @@ final class VaultFieldHelper
      * Use this in ext_tables.sql generation.
      *
      * @param string $fieldName The field name
+     *
      * @return string SQL column definition
      */
     public static function getSqlDefinition(string $fieldName): string
@@ -135,6 +137,7 @@ final class VaultFieldHelper
      *
      * @param array<string, mixed> $tca Existing TCA configuration
      * @param array<string, array<string, mixed>> $vaultFields Map of field names to options
+     *
      * @return array<string, mixed> Modified TCA with vault fields added
      */
     public static function addVaultFields(array $tca, array $vaultFields): array
@@ -150,6 +153,7 @@ final class VaultFieldHelper
      * Check if a TCA field is configured as a vault field.
      *
      * @param array<string, mixed> $fieldConfig The TCA field configuration
+     *
      * @return bool True if it's a vault field
      */
     public static function isVaultField(array $fieldConfig): bool

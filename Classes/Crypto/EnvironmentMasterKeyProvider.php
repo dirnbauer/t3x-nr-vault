@@ -73,6 +73,7 @@ final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
     private function getEnvVarName(): string
     {
         $source = $this->configuration->getMasterKeySource();
+
         // For env provider, source is the environment variable name
         return $source !== '' ? $source : ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE;
     }

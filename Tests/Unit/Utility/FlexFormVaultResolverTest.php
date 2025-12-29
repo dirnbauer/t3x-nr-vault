@@ -18,10 +18,10 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     {
         // FlexForm format: table__flexfield__sheet__fieldpath__uid
         self::assertTrue(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'tt_content__pi_flexform__settings__apiKey__123'
+            'tt_content__pi_flexform__settings__apiKey__123',
         ));
         self::assertTrue(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'tx_ext__flex__sheet1__field_name__42'
+            'tx_ext__flex__sheet1__field_name__42',
         ));
     }
 
@@ -41,7 +41,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
         // Too many parts
         self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'too__many__parts__in__this__identifier'
+            'too__many__parts__in__this__identifier',
         ));
     }
 
@@ -53,7 +53,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
             'pi_flexform',
             'settings',
             'apiKey',
-            123
+            123,
         );
 
         self::assertSame('tt_content__pi_flexform__settings__apiKey__123', $identifier);
@@ -68,7 +68,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
             'pi_flexform',
             'settings',
             'nested.field/name',
-            123
+            123,
         );
 
         self::assertSame('tt_content__pi_flexform__settings__nested_field_name__123', $identifier);
@@ -78,7 +78,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     public function parseIdentifierReturnsCorrectComponents(): void
     {
         $result = FlexFormVaultResolver::parseIdentifier(
-            'tt_content__pi_flexform__settings__apiKey__123'
+            'tt_content__pi_flexform__settings__apiKey__123',
         );
 
         self::assertIsArray($result);

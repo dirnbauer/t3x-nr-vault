@@ -30,9 +30,10 @@ final class VaultFieldResolver
      * @param array<string, mixed> $data Record data potentially containing vault identifiers
      * @param array<string> $fields Field names to check and resolve
      * @param bool $throwOnError If true, throws exception on vault errors; if false, sets field to null
-     * @return array<string, mixed> Data with vault identifiers replaced by actual values
      *
      * @throws VaultException If throwOnError is true and vault retrieval fails
+     *
+     * @return array<string, mixed> Data with vault identifiers replaced by actual values
      */
     public static function resolveFields(array $data, array $fields, bool $throwOnError = false): array
     {
@@ -73,9 +74,10 @@ final class VaultFieldResolver
      * Resolve a single vault identifier to its secret value.
      *
      * @param string $identifier The vault identifier
-     * @return string|null The secret value, or null if not found
      *
      * @throws VaultException On vault errors (if identifier is valid but retrieval fails)
+     *
+     * @return string|null The secret value, or null if not found
      */
     public static function resolve(string $identifier): ?string
     {
@@ -99,6 +101,7 @@ final class VaultFieldResolver
      *
      * @param string $table The TCA table name
      * @param array<string, mixed> $record The record data
+     *
      * @return array<string, mixed> Record with vault fields resolved
      */
     public static function resolveRecord(string $table, array $record): array
@@ -118,6 +121,7 @@ final class VaultFieldResolver
      * Vault identifiers follow the pattern: {table}__{field}__{uid}
      *
      * @param mixed $value The value to check
+     *
      * @return bool True if the value appears to be a vault identifier
      */
     public static function isVaultIdentifier(mixed $value): bool
@@ -136,6 +140,7 @@ final class VaultFieldResolver
      * @param string $table Table name
      * @param string $field Field name
      * @param int $uid Record UID
+     *
      * @return string The vault identifier
      */
     public static function buildIdentifier(string $table, string $field, int $uid): string
@@ -147,6 +152,7 @@ final class VaultFieldResolver
      * Parse a vault identifier into its components.
      *
      * @param string $identifier The vault identifier
+     *
      * @return array{table: string, field: string, uid: int}|null Parsed components or null if invalid
      */
     public static function parseIdentifier(string $identifier): ?array
@@ -171,6 +177,7 @@ final class VaultFieldResolver
      * Get list of vault field names for a table from TCA.
      *
      * @param string $table The table name
+     *
      * @return array<string> Field names that use vaultSecret renderType
      */
     public static function getVaultFieldsForTable(string $table): array
@@ -192,6 +199,7 @@ final class VaultFieldResolver
      * Check if a table has any vault fields configured.
      *
      * @param string $table The table name
+     *
      * @return bool True if the table has vault fields
      */
     public static function hasVaultFields(string $table): bool

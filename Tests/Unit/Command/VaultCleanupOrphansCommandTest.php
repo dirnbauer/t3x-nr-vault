@@ -24,7 +24,9 @@ use TYPO3\CMS\Core\Database\Schema\SchemaManager;
 final class VaultCleanupOrphansCommandTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;
+
     private ConnectionPool&MockObject $connectionPool;
+
     private CommandTester $commandTester;
 
     protected function setUp(): void

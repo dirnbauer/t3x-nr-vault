@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Command;
 
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PDO;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -189,7 +190,7 @@ final class VaultCleanupOrphansCommand extends Command
 
         if (!empty($errors)) {
             $io->section('Errors');
-            foreach (array_slice($errors, 0, 10) as $error) {
+            foreach (\array_slice($errors, 0, 10) as $error) {
                 $io->text('<error>✗</error> ' . $error);
             }
         }
@@ -286,7 +287,7 @@ final class VaultCleanupOrphansCommand extends Command
             ->count('*')
             ->from($table)
             ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, \PDO::PARAM_INT)),
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, PDO::PARAM_INT)),
             )
             ->executeQuery()
             ->fetchOne();
@@ -300,7 +301,7 @@ final class VaultCleanupOrphansCommand extends Command
     private function showOrphanTable(SymfonyStyle $io, array $orphans): void
     {
         $rows = [];
-        foreach (array_slice($orphans, 0, 20) as $orphan) {
+        foreach (\array_slice($orphans, 0, 20) as $orphan) {
             $rows[] = [
                 $orphan['identifier'],
                 $orphan['table'],

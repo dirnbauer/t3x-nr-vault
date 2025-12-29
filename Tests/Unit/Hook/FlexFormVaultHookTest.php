@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Hook;
 
+use Exception;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\FlexFormVaultHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -113,7 +114,7 @@ final class FlexFormVaultHookTest extends UnitTestCase
 
         $this->flexFormTools
             ->method('getDataStructureIdentifier')
-            ->willThrowException(new \Exception('No data structure'));
+            ->willThrowException(new Exception('No data structure'));
 
         $fieldArray = [
             'pi_flexform' => [

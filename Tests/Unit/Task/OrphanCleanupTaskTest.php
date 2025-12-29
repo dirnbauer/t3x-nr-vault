@@ -24,7 +24,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 final class OrphanCleanupTaskTest extends TestCase
 {
     private VaultServiceInterface&\PHPUnit\Framework\MockObject\MockObject $vaultService;
+
     private ConnectionPool&\PHPUnit\Framework\MockObject\MockObject $connectionPool;
+
     private LoggerInterface&\PHPUnit\Framework\MockObject\MockObject $logger;
 
     protected function setUp(): void

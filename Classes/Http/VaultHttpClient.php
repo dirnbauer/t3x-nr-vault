@@ -53,9 +53,6 @@ final class VaultHttpClient implements VaultHttpClientInterface
         ]);
     }
 
-    /**
-     * @inheritDoc
-     */
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         $authSecret = $options['auth_secret'] ?? null;
@@ -188,6 +185,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
      * Extract Guzzle-compatible options from vault options.
      *
      * @param array<string, mixed> $options
+     *
      * @return array<string, mixed>
      */
     private function extractGuzzleOptions(array $options): array
@@ -245,6 +243,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
      *
      * @param array<string, mixed> $guzzleOptions
      * @param array<string, mixed> $options
+     *
      * @return array<string, mixed>
      */
     private function injectAuthentication(
@@ -266,26 +265,21 @@ final class VaultHttpClient implements VaultHttpClientInterface
             case SecretPlacement::Bearer:
                 $guzzleOptions['headers']['Authorization'] = 'Bearer ' . $secret;
                 break;
-
             case SecretPlacement::BasicAuth:
                 // Secret is expected to be "username:password" format
-                $guzzleOptions['headers']['Authorization'] = 'Basic ' . \base64_encode($secret);
+                $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($secret);
                 break;
-
             case SecretPlacement::Header:
                 $headerName = $options['auth_header'] ?? 'X-API-Key';
                 $guzzleOptions['headers'][$headerName] = $secret;
                 break;
-
             case SecretPlacement::ApiKey:
                 $guzzleOptions['headers']['X-API-Key'] = $secret;
                 break;
-
             case SecretPlacement::QueryParam:
                 $paramName = $options['auth_query_param'] ?? 'api_key';
                 $guzzleOptions['query'][$paramName] = $secret;
                 break;
-
             case SecretPlacement::BodyField:
                 $fieldName = $options['auth_body_field'] ?? 'api_key';
                 if (isset($guzzleOptions['json'])) {
@@ -296,7 +290,6 @@ final class VaultHttpClient implements VaultHttpClientInterface
                     $guzzleOptions['form_params'] = [$fieldName => $secret];
                 }
                 break;
-
             case SecretPlacement::OAuth2:
                 // OAuth2 is handled separately via injectOAuthAuthentication
                 break;
@@ -312,6 +305,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
      * Inject OAuth 2.0 authentication.
      *
      * @param array<string, mixed> $guzzleOptions
+     *
      * @return array<string, mixed>
      */
     private function injectOAuthAuthentication(array $guzzleOptions, OAuthConfig $config): array
@@ -332,6 +326,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
      *
      * @param array<string, mixed> $guzzleOptions
      * @param array<string, mixed> $options
+     *
      * @return array<string, mixed>
      */
     private function injectBasicAuthFromSecrets(array $guzzleOptions, array $options): array
@@ -355,7 +350,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         }
 
         $guzzleOptions['headers'] ??= [];
-        $guzzleOptions['headers']['Authorization'] = 'Basic ' . \base64_encode($username . ':' . $password);
+        $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($username . ':' . $password);
 
         // Clear from memory
         sodium_memzero($username);
@@ -379,7 +374,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         string $reason,
     ): void {
         // Parse URL to get host (don't log full URL for security)
-        $parsedUrl = \parse_url($url);
+        $parsedUrl = parse_url($url);
         $host = $parsedUrl['host'] ?? 'unknown';
         $path = $parsedUrl['path'] ?? '/';
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Controller;
 
 use Doctrine\DBAL\Exception as DbalException;
+use Exception;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -175,7 +176,7 @@ final class MigrationController
     {
         $parsedBody = $request->getParsedBody();
         $migrations = $parsedBody['migrations'] ?? [];
-        $clearOriginals = (bool)($parsedBody['clearOriginals'] ?? false);
+        $clearOriginals = (bool) ($parsedBody['clearOriginals'] ?? false);
 
         if (empty($migrations)) {
             $this->addFlashMessage(
@@ -205,7 +206,7 @@ final class MigrationController
                 $results[] = $result;
                 $totalMigrated += $result['migrated'];
                 $totalFailed += $result['failed'];
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $results[] = [
                     'table' => $table,
                     'column' => $column,
@@ -268,7 +269,7 @@ final class MigrationController
             'totalFailed' => $totalFailed,
             'clearOriginals' => $clearOriginals,
             'scanUri' => $this->buildUri('scan'),
-            'secretsUri' => (string)$this->uriBuilder->buildUriFromRoute('admin_vault_secrets'),
+            'secretsUri' => (string) $this->uriBuilder->buildUriFromRoute('admin_vault_secrets'),
         ]);
 
         return $moduleTemplate->renderResponse('Migration/Verify');
@@ -302,8 +303,8 @@ final class MigrationController
                 ->fetchAllAssociative();
 
             foreach ($rows as $row) {
-                $uid = (int)$row['uid'];
-                $value = (string)$row[$column];
+                $uid = (int) $row['uid'];
+                $value = (string) $row[$column];
 
                 // Skip if already looks like a vault identifier
                 if ($this->looksLikeVaultIdentifier($value)) {
@@ -312,7 +313,7 @@ final class MigrationController
                 }
 
                 // Generate identifier from pattern
-                $identifier = str_replace('{uid}', (string)$uid, $identifierPattern);
+                $identifier = str_replace('{uid}', (string) $uid, $identifierPattern);
 
                 try {
                     // Store in vault
@@ -335,7 +336,7 @@ final class MigrationController
 
                     // Clear original if requested (update already done above with identifier)
                     // The column now contains the vault identifier, not the original value
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     ++$failed;
                 }
             }
@@ -373,7 +374,7 @@ final class MigrationController
      */
     private function buildUri(string $action): string
     {
-        return (string)$this->uriBuilder->buildUriFromRoute(
+        return (string) $this->uriBuilder->buildUriFromRoute(
             self::MODULE_NAME,
             ['action' => $action],
         );

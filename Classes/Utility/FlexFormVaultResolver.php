@@ -32,6 +32,7 @@ final class FlexFormVaultResolver
      * @param array<string, mixed> $settings FlexForm settings array
      * @param array<string> $fields Field names to resolve
      * @param bool $throwOnError Throw exception on vault errors
+     *
      * @return array<string, mixed> Settings with vault identifiers resolved
      */
     public static function resolveSettings(array $settings, array $fields, bool $throwOnError = false): array
@@ -76,6 +77,7 @@ final class FlexFormVaultResolver
      * without needing to specify field names.
      *
      * @param array<string, mixed> $settings FlexForm settings array
+     *
      * @return array<string, mixed> Settings with all vault identifiers resolved
      */
     public static function resolveAll(array $settings): array
@@ -90,6 +92,7 @@ final class FlexFormVaultResolver
      * {table}__{flexfield}__{sheet}__{fieldpath}__{uid}
      *
      * @param mixed $value Value to check
+     *
      * @return bool True if it's a FlexForm vault identifier
      */
     public static function isFlexFormVaultIdentifier(mixed $value): bool
@@ -109,6 +112,7 @@ final class FlexFormVaultResolver
      * @param string $sheet Sheet name
      * @param string $fieldPath Field path within sheet
      * @param int $uid Record UID
+     *
      * @return string The vault identifier
      */
     public static function buildIdentifier(
@@ -127,6 +131,7 @@ final class FlexFormVaultResolver
      * Parse a FlexForm vault identifier.
      *
      * @param string $identifier The vault identifier
+     *
      * @return array{table: string, flexField: string, sheet: string, fieldPath: string, uid: int}|null
      */
     public static function parseIdentifier(string $identifier): ?array

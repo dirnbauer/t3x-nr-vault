@@ -94,6 +94,6 @@ final readonly class OAuthConfig
      */
     public function getScopesString(): string
     {
-        return \implode(' ', $this->scopes);
+        return implode(' ', $this->scopes);
     }
 }

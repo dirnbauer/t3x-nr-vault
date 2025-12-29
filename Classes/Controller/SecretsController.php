@@ -16,13 +16,13 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 
@@ -124,7 +124,7 @@ final class SecretsController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title')
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
         );
 
         return $moduleTemplate->renderResponse('Secrets/List');
@@ -151,7 +151,7 @@ final class SecretsController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create.title')
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create.title'),
         );
 
         return $moduleTemplate->renderResponse('Secrets/Create');
@@ -214,7 +214,7 @@ final class SecretsController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $identifier
+            . $identifier,
         );
 
         return $moduleTemplate->renderResponse('Secrets/View');
@@ -301,7 +301,7 @@ final class SecretsController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.edit.title')
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.edit.title'),
         );
 
         return $moduleTemplate->renderResponse('Secrets/Edit');
@@ -516,47 +516,10 @@ final class SecretsController
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
             . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.rotate.title')
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.rotate.title'),
         );
 
         return $moduleTemplate->renderResponse('Secrets/Rotate');
-    }
-
-    /**
-     * Execute secret rotation.
-     */
-    private function doRotate(ServerRequestInterface $request, string $identifier): ResponseInterface
-    {
-        $body = $request->getParsedBody();
-        $newSecret = (string) ($body['secret'] ?? '');
-        $reason = trim((string) ($body['reason'] ?? ''));
-
-        if ($newSecret === '') {
-            $this->addFlashMessage('New secret value is required', ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.rotate', ['identifier' => $identifier]),
-            );
-        }
-
-        try {
-            $this->vaultService->rotate($identifier, $newSecret, $reason);
-
-            $this->addFlashMessage(
-                $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.rotate.success'),
-                ContextualFeedbackSeverity::OK,
-            );
-        } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
-        } catch (AccessDeniedException) {
-            $this->addFlashMessage('Access denied', ContextualFeedbackSeverity::ERROR);
-        } catch (Exception $e) {
-            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
-        }
-
-        return new RedirectResponse(
-            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        );
     }
 
     /**
@@ -671,6 +634,43 @@ final class SecretsController
         );
     }
 
+    /**
+     * Execute secret rotation.
+     */
+    private function doRotate(ServerRequestInterface $request, string $identifier): ResponseInterface
+    {
+        $body = $request->getParsedBody();
+        $newSecret = (string) ($body['secret'] ?? '');
+        $reason = trim((string) ($body['reason'] ?? ''));
+
+        if ($newSecret === '') {
+            $this->addFlashMessage('New secret value is required', ContextualFeedbackSeverity::ERROR);
+
+            return new RedirectResponse(
+                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.rotate', ['identifier' => $identifier]),
+            );
+        }
+
+        try {
+            $this->vaultService->rotate($identifier, $newSecret, $reason);
+
+            $this->addFlashMessage(
+                $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.rotate.success'),
+                ContextualFeedbackSeverity::OK,
+            );
+        } catch (SecretNotFoundException) {
+            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
+        } catch (AccessDeniedException) {
+            $this->addFlashMessage('Access denied', ContextualFeedbackSeverity::ERROR);
+        } catch (Exception $e) {
+            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
+        }
+
+        return new RedirectResponse(
+            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        );
+    }
+
     private function addDocHeaderButtons(\TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate): void
     {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
@@ -719,6 +719,7 @@ final class SecretsController
      * Build a cache of user IDs to usernames.
      *
      * @param array<array{owner_uid: int}> $secrets
+     *
      * @return array<int, string>
      */
     private function getUsernameCache(array $secrets): array
@@ -777,6 +778,7 @@ final class SecretsController
      * Get group names by group IDs.
      *
      * @param array<int> $groupIds
+     *
      * @return array<string>
      */
     private function getGroupNames(array $groupIds): array
@@ -866,6 +868,7 @@ final class SecretsController
      *
      * @param array<array{owner_uid: int}> $secrets
      * @param array<int, string> $userCache
+     *
      * @return array<array{uid: int, name: string}>
      */
     private function getOwnerOptions(array $secrets, array $userCache): array
@@ -878,7 +881,7 @@ final class SecretsController
                 'name' => $userCache[$uid] ?? 'User #' . $uid,
             ];
         }
-        usort($options, static fn(array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+        usort($options, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return $options;
     }

@@ -211,7 +211,7 @@ final class VaultMigrateFieldCommand extends Command
 
         if (!empty($errors)) {
             $io->section('Errors');
-            foreach (array_slice($errors, 0, 10) as $error) {
+            foreach (\array_slice($errors, 0, 10) as $error) {
                 $io->text('<error>✗</error> ' . $error);
             }
             if (\count($errors) > 10) {
@@ -311,7 +311,7 @@ final class VaultMigrateFieldCommand extends Command
         string $uidField,
     ): void {
         $rows = [];
-        foreach (array_slice($records, 0, 20) as $record) {
+        foreach (\array_slice($records, 0, 20) as $record) {
             $uid = $record[$uidField];
             $value = $record[$field];
             $identifier = VaultFieldResolver::buildIdentifier($table, $field, (int) $uid);

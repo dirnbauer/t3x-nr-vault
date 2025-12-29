@@ -10,12 +10,14 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 #[CoversClass(SecretDetectionService::class)]
 final class SecretDetectionServiceTest extends TestCase
 {
     private ConnectionPool&MockObject $connectionPool;
+
     private SecretDetectionService $service;
 
     protected function setUp(): void
@@ -58,7 +60,7 @@ final class SecretDetectionServiceTest extends TestCase
     public function detectsSecretColumnNames(string $columnName, bool $shouldDetect): void
     {
         // Use reflection to test private method
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('isSecretColumn');
 
         $result = $method->invoke($this->service, $columnName);
@@ -104,7 +106,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('valuePatternProvider')]
     public function detectsKnownApiKeyPatterns(string $value, ?string $expectedPattern): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('detectValuePattern');
 
         $result = $method->invoke($this->service, $value);
@@ -146,7 +148,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('vaultIdentifierProvider')]
     public function detectsVaultIdentifiers(string $value, bool $isVaultIdentifier): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('looksLikeVaultIdentifier');
 
         $result = $method->invoke($this->service, $value);
@@ -172,7 +174,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('encryptedValueProvider')]
     public function detectsEncryptedValues(string $value, bool $looksEncrypted): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('looksEncrypted');
 
         $result = $method->invoke($this->service, $value);
@@ -198,7 +200,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('severityProvider')]
     public function calculatesSeverityCorrectly(string $name, array $patterns, string $expectedSeverity): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateSeverity');
 
         $result = $method->invoke($this->service, $name, $patterns);
@@ -227,7 +229,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('configKeyProvider')]
     public function detectsSecretConfigKeys(string $key, bool $isSecret): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('isSecretConfigKey');
 
         $result = $method->invoke($this->service, $key);
@@ -260,7 +262,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('tableExclusionProvider')]
     public function excludesTablesCorrectly(string $tableName, array $patterns, bool $shouldExclude): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('isTableExcluded');
 
         $result = $method->invoke($this->service, $tableName, $patterns);

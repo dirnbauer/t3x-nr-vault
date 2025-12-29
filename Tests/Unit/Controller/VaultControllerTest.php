@@ -47,7 +47,7 @@ final class VaultControllerTest extends TestCase
             self::assertStringContainsString(
                 'id="' . $label . '"',
                 $xliffContent,
-                "Missing required language label: $label"
+                "Missing required language label: $label",
             );
         }
     }
@@ -65,14 +65,14 @@ final class VaultControllerTest extends TestCase
         self::assertStringContainsString(
             'EXT:nr_vault/Resources/Public/Css/backend.css',
             $layoutContent,
-            'Layout should use EXT: syntax for CSS paths'
+            'Layout should use EXT: syntax for CSS paths',
         );
 
         // Should NOT use f:uri.resource for paths
         self::assertStringNotContainsString(
             'f:uri.resource',
             $layoutContent,
-            'Layout should not use f:uri.resource (not available in non-Extbase context)'
+            'Layout should not use f:uri.resource (not available in non-Extbase context)',
         );
     }
 
@@ -89,20 +89,20 @@ final class VaultControllerTest extends TestCase
         self::assertStringNotContainsString(
             'Icon::SIZE_SMALL',
             $controllerContent,
-            'Controller should not use deprecated Icon::SIZE_SMALL'
+            'Controller should not use deprecated Icon::SIZE_SMALL',
         );
 
         self::assertStringNotContainsString(
             'Icon::SIZE_DEFAULT',
             $controllerContent,
-            'Controller should not use deprecated Icon::SIZE_DEFAULT'
+            'Controller should not use deprecated Icon::SIZE_DEFAULT',
         );
 
         // Should use IconSize enum
         self::assertStringContainsString(
             'IconSize::SMALL',
             $controllerContent,
-            'Controller should use IconSize::SMALL enum'
+            'Controller should use IconSize::SMALL enum',
         );
     }
 
@@ -119,7 +119,7 @@ final class VaultControllerTest extends TestCase
         self::assertStringContainsString(
             'use TYPO3\CMS\Core\Imaging\IconSize;',
             $controllerContent,
-            'Controller should import IconSize class'
+            'Controller should import IconSize class',
         );
     }
 }

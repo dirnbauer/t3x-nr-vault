@@ -6,7 +6,6 @@ namespace Netresearch\NrVault\Tests\Functional\Service;
 
 use Netresearch\NrVault\Adapter\LocalEncryptionAdapter;
 use Netresearch\NrVault\Audit\AuditLogService;
-use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionService;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;

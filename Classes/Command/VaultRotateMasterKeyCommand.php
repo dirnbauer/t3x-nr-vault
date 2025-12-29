@@ -15,6 +15,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
@@ -223,18 +224,18 @@ final class VaultRotateMasterKeyCommand extends Command
                 $io->table(
                     ['Identifier', 'Error'],
                     array_map(
-                        static fn(array $f): array => [$f['identifier'], $f['error']],
+                        static fn (array $f): array => [$f['identifier'], $f['error']],
                         $failedSecrets,
                     ),
                 );
                 sodium_memzero($oldKey);
-            sodium_memzero($newKey);
+                sodium_memzero($newKey);
 
                 return Command::FAILURE;
             }
 
             $connection->commit();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $connection->rollBack();
             $io->error('Unexpected error during rotation: ' . $e->getMessage());
             sodium_memzero($oldKey);
@@ -256,7 +257,7 @@ final class VaultRotateMasterKeyCommand extends Command
         ]);
 
         sodium_memzero($oldKey);
-            sodium_memzero($newKey);
+        sodium_memzero($newKey);
 
         return Command::SUCCESS;
     }

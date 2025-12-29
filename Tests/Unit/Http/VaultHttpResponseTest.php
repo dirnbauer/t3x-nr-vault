@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Http;
 
+use JsonException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\VaultHttpResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -204,7 +205,7 @@ final class VaultHttpResponseTest extends TestCase
 
         $response = new VaultHttpResponse($psrResponse);
 
-        $this->expectException(\JsonException::class);
+        $this->expectException(JsonException::class);
         $response->json();
     }
 

@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Configuration\Event\SiteConfigurationLoadedEvent;
 final class SiteConfigurationVaultListenerTest extends TestCase
 {
     private SiteConfigurationVaultProcessor&MockObject $processor;
+
     private SiteConfigurationVaultListener $listener;
 
     protected function setUp(): void
