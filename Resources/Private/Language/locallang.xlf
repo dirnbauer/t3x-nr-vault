@@ -24,6 +24,20 @@
             <trans-unit id="error.master_key_unavailable">
                 <source>Master key unavailable</source>
             </trans-unit>
+
+            <!-- Scheduler Task: Orphan Cleanup -->
+            <trans-unit id="task.orphanCleanup.title">
+                <source>Vault Orphan Cleanup</source>
+            </trans-unit>
+            <trans-unit id="task.orphanCleanup.description">
+                <source>Removes vault secrets whose source TCA records have been deleted. Helps maintain vault hygiene and prevent accumulation of unused encrypted data.</source>
+            </trans-unit>
+            <trans-unit id="task.orphanCleanup.retentionDays">
+                <source>Retention days (keep orphans for N days before deletion)</source>
+            </trans-unit>
+            <trans-unit id="task.orphanCleanup.tableFilter">
+                <source>Table filter (optional, only check specific table)</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>
