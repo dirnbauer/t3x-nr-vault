@@ -364,6 +364,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 'last_read_at' => $secret->getLastReadAt(),
                 'description' => $secret->getDescription(),
                 'version' => $secret->getVersion(),
+                'hidden' => $secret->isHidden(),
             ];
         }
 

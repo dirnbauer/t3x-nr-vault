@@ -41,6 +41,33 @@
     gap: 0.5rem;
 }
 
+/* Filter bar - TYPO3 backend style */
+.vault-filter-bar {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--bs-light, #f8f9fa);
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+}
+
+.vault-filter-bar .form-control,
+.vault-filter-bar .form-select {
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.vault-filter-bar .input-group-text {
+    background: var(--bs-white, #fff);
+    border-right: 0;
+}
+
+.vault-filter-bar .input-group .form-control {
+    border-left: 0;
+}
+
+.vault-filter-bar .btn {
+    font-size: 0.875rem;
+}
+
 .vault-filters {
     margin-bottom: 1rem;
     padding: 1rem;
@@ -142,6 +169,37 @@
 /* Pagination */
 .vault-module .pagination {
     margin-top: 1rem;
+}
+
+/* Audit log styling */
+.vault-audit-filter {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--bs-light, #f8f9fa);
+    border-radius: 0.25rem;
+}
+
+.vault-date-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--nr-text);
+    margin: 1.5rem 0 0.5rem 0;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--nr-primary);
+}
+
+.vault-date-header:first-of-type {
+    margin-top: 0;
+}
+
+.vault-actor {
+    display: inline-flex;
+    align-items: center;
+}
+
+.vault-hash {
+    font-family: monospace;
+    font-size: 0.75rem;
 }
 
 /* Hash chain verification result */
