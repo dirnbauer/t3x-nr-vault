@@ -35,7 +35,7 @@ final class DataHandlerHook
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['type'] ?? '';
+            $renderType = $fieldConfig['config']['renderType'] ?? '';
 
             // Check if this is a vault secret field
             if ($renderType !== 'vaultSecret') {
@@ -164,7 +164,7 @@ final class DataHandlerHook
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['type'] ?? '';
+            $renderType = $fieldConfig['config']['renderType'] ?? '';
 
             if ($renderType !== 'vaultSecret') {
                 continue;
@@ -217,7 +217,7 @@ final class DataHandlerHook
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['type'] ?? '';
+            $renderType = $fieldConfig['config']['renderType'] ?? '';
 
             if ($renderType !== 'vaultSecret') {
                 continue;
