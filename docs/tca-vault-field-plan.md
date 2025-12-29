@@ -296,12 +296,12 @@ vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key
 - [x] Developer documentation (Documentation/Developer/TcaIntegration.rst)
 - [x] Unit tests for all new components
 
-### Phase 3: Advanced Features (IN PROGRESS)
+### Phase 3: Advanced Features (COMPLETED)
 - [x] Orphan cleanup scheduler task
 - [x] Migration CLI command (`vault:migrate-field`)
 - [x] Orphan cleanup CLI command (`vault:cleanup-orphans`)
-- [ ] TSconfig for field-level permissions
-- [ ] Site configuration vault integration
+- [x] TSconfig for field-level permissions (`VaultFieldPermissionService`)
+- [x] Site configuration vault integration (`SiteConfigurationVaultProcessor`)
 
 ## File Summary
 
@@ -326,3 +326,9 @@ vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key
 | `Tests/Unit/Command/VaultCleanupOrphansCommandTest.php` | Done | Command unit tests |
 | `Tests/Unit/Task/OrphanCleanupTaskTest.php` | Done | Task unit tests |
 | `Tests/Unit/Task/OrphanCleanupTaskAdditionalFieldProviderTest.php` | Done | Task field provider tests |
+| `Classes/Service/VaultFieldPermissionService.php` | Done | TSconfig-based field permissions |
+| `Classes/Configuration/SiteConfigurationVaultProcessor.php` | Done | Site config vault integration |
+| `Classes/EventListener/SiteConfigurationVaultListener.php` | Done | Auto-resolve vault refs in site config |
+| `Tests/Unit/Service/VaultFieldPermissionServiceTest.php` | Done | Permission service tests |
+| `Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php` | Done | Site config processor tests |
+| `Tests/Unit/EventListener/SiteConfigurationVaultListenerTest.php` | Done | Event listener tests |
