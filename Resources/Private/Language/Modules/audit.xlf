@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="EXT:nr_vault/Resources/Private/Language/Modules/audit.xlf" product-name="nr_vault">
+        <header/>
+        <body>
+            <trans-unit id="title">
+                <source>Audit Log</source>
+            </trans-unit>
+            <trans-unit id="description">
+                <source>Audit log</source>
+            </trans-unit>
+            <trans-unit id="short_description">
+                <source>View and export the complete audit trail of all secret access.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

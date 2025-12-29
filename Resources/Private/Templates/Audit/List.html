@@ -1,0 +1,165 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+
+<f:layout name="Module" />
+
+<f:section name="Before">
+    <f:be.pageRenderer includeCssFiles="{0: 'EXT:nr_vault/Resources/Public/Css/backend.css'}" />
+</f:section>
+
+<f:section name="Content">
+    <div class="vault-module" role="main" aria-label="Vault Audit Log">
+        <!-- Filter Bar - System Log Style -->
+        <div class="vault-audit-filter">
+            <form method="get" action="{moduleUri}" role="search" aria-label="Filter audit log">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="filter-secret" class="form-label">Secret</label>
+                        <input type="text" id="filter-secret" name="secretIdentifier" value="{filters._form.secretIdentifier}" class="form-control" placeholder="Secret identifier" />
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filter-action" class="form-label">Action</label>
+                        <select id="filter-action" name="filterAction" class="form-select">
+                            <option value="">[all]</option>
+                            <f:for each="{actions}" as="actionType">
+                                <option value="{actionType}"{f:if(condition: '{filters._form.action} == \'{actionType}\'', then: ' selected')}>{actionType}</option>
+                            </f:for>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filter-success" class="form-label">Status</label>
+                        <select id="filter-success" name="success" class="form-select">
+                            <option value="">[all]</option>
+                            <option value="1"{f:if(condition: '{filters._form.success} == \'1\'', then: ' selected')}>Success</option>
+                            <option value="0"{f:if(condition: '{filters._form.success} == \'0\'', then: ' selected')}>Failed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filter-since" class="form-label">From</label>
+                        <input type="date" id="filter-since" name="since" value="{filters._form.since}" class="form-control" />
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filter-until" class="form-label">To</label>
+                        <input type="date" id="filter-until" name="until" value="{filters._form.until}" class="form-control" />
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="submit" class="btn btn-default me-1">Filter</button>
+                        <a href="{moduleUri}" class="btn btn-default">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Stats -->
+        <div class="vault-stats mb-3" role="status" aria-live="polite">
+            <span class="badge badge-info">{totalCount} entries</span>
+            <span class="badge badge-secondary">Page {currentPage} of {totalPages}</span>
+        </div>
+
+        <f:if condition="{entries}">
+            <f:then>
+                <!-- Group entries by date -->
+                <f:for each="{groupedEntries}" as="dateGroup" key="date">
+                    <h4 class="vault-date-header">{date}</h4>
+                    <div class="table-fit mb-4" role="region" aria-label="Audit log entries for {date}">
+                        <table class="table table-hover" aria-describedby="audit-table-{date}">
+                            <caption id="audit-table-{date}" class="visually-hidden">Audit log entries for {date}</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col" style="width: 100px;">Time</th>
+                                    <th scope="col">Secret</th>
+                                    <th scope="col" style="width: 100px;">Action</th>
+                                    <th scope="col" style="width: 80px;">Status</th>
+                                    <th scope="col">Actor</th>
+                                    <th scope="col" style="width: 130px;">IP Address</th>
+                                    <th scope="col">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <f:for each="{dateGroup}" as="entry">
+                                    <tr class="{f:if(condition: entry.success, else: 'table-warning')}">
+                                        <td>
+                                            <f:if condition="{entry.success}">
+                                                <f:else><span class="text-warning me-1"><core:icon identifier="actions-exclamation-triangle" size="small" /></span></f:else>
+                                            </f:if>
+                                            {entry.time}
+                                        </td>
+                                        <td><code>{entry.secretIdentifier}</code></td>
+                                        <td>
+                                            <span class="badge badge-{entry.actionBadgeClass}">{entry.action}</span>
+                                        </td>
+                                        <td>
+                                            <f:if condition="{entry.success}">
+                                                <f:then><core:icon identifier="actions-check" size="small" /></f:then>
+                                                <f:else><span class="text-danger"><core:icon identifier="actions-close" size="small" /></span></f:else>
+                                            </f:if>
+                                        </td>
+                                        <td>
+                                            <span class="vault-actor">
+                                                <span class="me-1"><core:icon identifier="avatar-default" size="small" /></span>
+                                                {entry.actorUsername}
+                                            </span>
+                                            <small class="text-muted">({entry.actorType})</small>
+                                        </td>
+                                        <td><small>{entry.ipAddress}</small></td>
+                                        <td>
+                                            <f:if condition="{entry.errorMessage}">
+                                                <small class="text-danger">{entry.errorMessage}</small>
+                                            </f:if>
+                                            <f:if condition="{entry.reason}">
+                                                <small class="text-muted">{entry.reason}</small>
+                                            </f:if>
+                                            <small class="vault-hash text-muted" title="{entry.entryHash}">{entry.entryHashShort}</small>
+                                        </td>
+                                    </tr>
+                                </f:for>
+                            </tbody>
+                        </table>
+                    </div>
+                </f:for>
+
+                <f:if condition="{totalPages} > 1">
+                    <nav aria-label="Audit log pagination">
+                        <ul class="pagination pagination-sm">
+                            <f:if condition="{currentPage} > 1">
+                                <li class="page-item">
+                                    <a class="page-link" href="{moduleUri}&amp;page=1" aria-label="Go to first page">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="{moduleUri}&amp;page={currentPage - 1}" aria-label="Go to previous page">Previous</a>
+                                </li>
+                            </f:if>
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{currentPage}</span>
+                            </li>
+                            <f:if condition="{currentPage} < {totalPages}">
+                                <li class="page-item">
+                                    <a class="page-link" href="{moduleUri}&amp;page={currentPage + 1}" aria-label="Go to next page">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="{moduleUri}&amp;page={totalPages}" aria-label="Go to last page">Last</a>
+                                </li>
+                            </f:if>
+                        </ul>
+                    </nav>
+                </f:if>
+            </f:then>
+            <f:else>
+                <div class="callout callout-info" role="alert" aria-live="polite">
+                    <div class="media">
+                        <div class="media-left" aria-hidden="true">
+                            <core:icon identifier="actions-info" size="small" />
+                        </div>
+                        <div class="media-body">
+                            <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.empty" />
+                        </div>
+                    </div>
+                </div>
+            </f:else>
+        </f:if>
+    </div>
+</f:section>
+
+</html>

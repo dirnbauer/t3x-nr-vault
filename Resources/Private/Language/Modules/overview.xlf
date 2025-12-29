@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="EXT:nr_vault/Resources/Private/Language/Modules/overview.xlf" product-name="nr_vault">
+        <header/>
+        <body>
+            <trans-unit id="title">
+                <source>Vault</source>
+            </trans-unit>
+            <trans-unit id="description">
+                <source>Secrets management for TYPO3</source>
+            </trans-unit>
+            <trans-unit id="short_description">
+                <source>Securely store and manage application secrets with encryption, access control, and audit logging.</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>
