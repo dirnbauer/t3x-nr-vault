@@ -1105,12 +1105,12 @@ DON'T:
 
 **Goal:** Secure API calls without secret exposure
 
-- [x] VaultHttpClient implementation (bearer, basic, header, query auth)
+- [x] VaultHttpClient implementation (bearer, basic, header, query, body_field, api_key auth)
 - [x] Audit logging for HTTP calls
 - [x] Integration with VaultService for credential retrieval
-- [ ] SecretPlacement enum (formal abstraction - currently inline strings)
-- [ ] VaultHttpResponse wrapper (currently returns PSR-7 ResponseInterface)
-- [ ] OAuth support with automatic token refresh
+- [x] SecretPlacement enum (Bearer, BasicAuth, Header, QueryParam, BodyField, OAuth2, ApiKey)
+- [x] VaultHttpResponse wrapper with convenience methods (isSuccessful, json, jsonGet, throwIfError)
+- [x] OAuth 2.0 support with automatic token refresh (OAuthConfig, OAuthToken, OAuthTokenManager)
 
 **Deliverable:** Make authenticated API calls without exposing secrets
 
