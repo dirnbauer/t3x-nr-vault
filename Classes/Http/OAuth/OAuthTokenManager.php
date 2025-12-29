@@ -1,12 +1,22 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http\OAuth;
 
+use DateTimeImmutable;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use JsonException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -102,6 +112,7 @@ final class OAuthTokenManager
         $clientSecret = $this->vaultService->retrieve($config->clientSecretSecret);
         if ($clientSecret === null) {
             sodium_memzero($clientId);
+
             throw new SecretNotFoundException($config->clientSecretSecret);
         }
 
@@ -123,13 +134,14 @@ final class OAuthTokenManager
             if ($refreshToken === null) {
                 sodium_memzero($clientId);
                 sodium_memzero($clientSecret);
+
                 throw new SecretNotFoundException($config->refreshTokenSecret);
             }
             $params['refresh_token'] = $refreshToken;
         }
 
         // Add any additional parameters
-        $params = array_merge($params, $config->additionalParams);
+        $params = \array_merge($params, $config->additionalParams);
 
         try {
             $response = $this->httpClient->request('POST', $config->tokenEndpoint, [
@@ -154,14 +166,14 @@ final class OAuthTokenManager
                 ));
             }
 
-            $body = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $body = \json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
             if (!isset($body['access_token'])) {
                 throw new VaultException('OAuth response missing access_token');
             }
 
             $expiresIn = $body['expires_in'] ?? 3600;
-            $expiresAt = new \DateTimeImmutable('+' . $expiresIn . ' seconds');
+            $expiresAt = new DateTimeImmutable('+' . $expiresIn . ' seconds');
 
             // Store new refresh token if provided
             if (isset($body['refresh_token']) && $config->refreshTokenSecret !== null) {
@@ -198,7 +210,7 @@ final class OAuthTokenManager
                 0,
                 $e,
             );
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             throw new VaultException(
                 'Invalid JSON response from OAuth server',
                 0,
@@ -212,7 +224,7 @@ final class OAuthTokenManager
      */
     private function getCacheKey(OAuthConfig $config): string
     {
-        return md5(implode(':', [
+        return \md5(\implode(':', [
             $config->tokenEndpoint,
             $config->clientIdSecret,
             $config->grantType,

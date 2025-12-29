@@ -1,8 +1,18 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http\OAuth;
+
+use DateTimeImmutable;
 
 /**
  * Represents an OAuth 2.0 access token.
@@ -12,7 +22,7 @@ final readonly class OAuthToken
     public function __construct(
         public string $accessToken,
         public string $tokenType,
-        public \DateTimeImmutable $expiresAt,
+        public DateTimeImmutable $expiresAt,
         public ?string $scope = null,
     ) {}
 
@@ -23,7 +33,7 @@ final readonly class OAuthToken
      */
     public function isExpired(int $buffer = 0): bool
     {
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $expiryWithBuffer = $this->expiresAt->modify("-{$buffer} seconds");
 
         return $now >= $expiryWithBuffer;
@@ -42,9 +52,9 @@ final readonly class OAuthToken
      */
     public function getExpiresIn(): int
     {
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $diff = $this->expiresAt->getTimestamp() - $now->getTimestamp();
 
-        return max(0, $diff);
+        return \max(0, $diff);
     }
 }

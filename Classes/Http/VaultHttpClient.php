@@ -1,5 +1,13 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http;
@@ -30,6 +38,7 @@ use Psr\Http\Message\ResponseInterface;
 final class VaultHttpClient implements VaultHttpClientInterface
 {
     private ClientInterface $client;
+
     private ?OAuthTokenManager $oauthManager = null;
 
     public function __construct(
@@ -67,18 +76,16 @@ final class VaultHttpClient implements VaultHttpClientInterface
         if ($placement === SecretPlacement::OAuth2 && $oauthConfig instanceof OAuthConfig) {
             $guzzleOptions = $this->injectOAuthAuthentication($guzzleOptions, $oauthConfig);
             $authSecret = 'oauth2:' . $oauthConfig->clientIdSecret;
-        }
-        // Inject authentication from vault
-        elseif ($authSecret !== null && $placement !== null) {
+        } elseif ($authSecret !== null && $placement !== null) {
+            // Inject authentication from vault
             $guzzleOptions = $this->injectAuthentication(
                 $guzzleOptions,
                 $authSecret,
                 $placement,
                 $options,
             );
-        }
-        // Legacy: Basic auth with separate username/password secrets
-        elseif (isset($options['auth_username_secret'])) {
+        } elseif (isset($options['auth_username_secret'])) {
+            // Legacy: Basic auth with separate username/password secrets
             $guzzleOptions = $this->injectBasicAuthFromSecrets($guzzleOptions, $options);
             $authSecret = $options['auth_username_secret'];
         }
@@ -262,7 +269,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
 
             case SecretPlacement::BasicAuth:
                 // Secret is expected to be "username:password" format
-                $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($secret);
+                $guzzleOptions['headers']['Authorization'] = 'Basic ' . \base64_encode($secret);
                 break;
 
             case SecretPlacement::Header:
@@ -348,7 +355,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         }
 
         $guzzleOptions['headers'] ??= [];
-        $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($username . ':' . $password);
+        $guzzleOptions['headers']['Authorization'] = 'Basic ' . \base64_encode($username . ':' . $password);
 
         // Clear from memory
         sodium_memzero($username);
@@ -372,7 +379,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         string $reason,
     ): void {
         // Parse URL to get host (don't log full URL for security)
-        $parsedUrl = parse_url($url);
+        $parsedUrl = \parse_url($url);
         $host = $parsedUrl['host'] ?? 'unknown';
         $path = $parsedUrl['path'] ?? '/';
 

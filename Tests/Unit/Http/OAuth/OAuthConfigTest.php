@@ -1,5 +1,13 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
@@ -8,6 +16,7 @@ use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 #[CoversClass(OAuthConfig::class)]
 final class OAuthConfigTest extends TestCase
@@ -118,7 +127,7 @@ final class OAuthConfigTest extends TestCase
     #[Test]
     public function configIsReadonly(): void
     {
-        $reflection = new \ReflectionClass(OAuthConfig::class);
+        $reflection = new ReflectionClass(OAuthConfig::class);
 
         self::assertTrue($reflection->isReadOnly());
     }

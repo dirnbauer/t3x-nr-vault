@@ -1,13 +1,23 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
 
+use DateTimeImmutable;
 use Netresearch\NrVault\Http\OAuth\OAuthToken;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
 #[CoversClass(OAuthToken::class)]
 final class OAuthTokenTest extends TestCase
@@ -15,7 +25,7 @@ final class OAuthTokenTest extends TestCase
     #[Test]
     public function constructorSetsAllProperties(): void
     {
-        $expiresAt = new \DateTimeImmutable('+1 hour');
+        $expiresAt = new DateTimeImmutable('+1 hour');
 
         $token = new OAuthToken(
             accessToken: 'test-access-token',
@@ -36,7 +46,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'test-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('+1 hour'),
+            expiresAt: new DateTimeImmutable('+1 hour'),
         );
 
         self::assertNull($token->scope);
@@ -48,7 +58,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'test-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('+1 hour'),
+            expiresAt: new DateTimeImmutable('+1 hour'),
         );
 
         self::assertFalse($token->isExpired());
@@ -60,7 +70,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'test-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('-1 minute'),
+            expiresAt: new DateTimeImmutable('-1 minute'),
         );
 
         self::assertTrue($token->isExpired());
@@ -73,7 +83,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'test-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('+30 seconds'),
+            expiresAt: new DateTimeImmutable('+30 seconds'),
         );
 
         // Without buffer, not expired
@@ -89,7 +99,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'my-access-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('+1 hour'),
+            expiresAt: new DateTimeImmutable('+1 hour'),
         );
 
         self::assertSame('Bearer my-access-token', $token->getAuthorizationHeader());
@@ -101,7 +111,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'my-token',
             tokenType: 'MAC',
-            expiresAt: new \DateTimeImmutable('+1 hour'),
+            expiresAt: new DateTimeImmutable('+1 hour'),
         );
 
         self::assertSame('MAC my-token', $token->getAuthorizationHeader());
@@ -113,7 +123,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'test-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('+3600 seconds'),
+            expiresAt: new DateTimeImmutable('+3600 seconds'),
         );
 
         $expiresIn = $token->getExpiresIn();
@@ -129,7 +139,7 @@ final class OAuthTokenTest extends TestCase
         $token = new OAuthToken(
             accessToken: 'test-token',
             tokenType: 'Bearer',
-            expiresAt: new \DateTimeImmutable('-1 hour'),
+            expiresAt: new DateTimeImmutable('-1 hour'),
         );
 
         self::assertSame(0, $token->getExpiresIn());
@@ -138,7 +148,7 @@ final class OAuthTokenTest extends TestCase
     #[Test]
     public function tokenIsReadonly(): void
     {
-        $reflection = new \ReflectionClass(OAuthToken::class);
+        $reflection = new ReflectionClass(OAuthToken::class);
 
         self::assertTrue($reflection->isReadOnly());
     }

@@ -1,9 +1,19 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http;
 
+use JsonException;
+use Netresearch\NrVault\Exception\VaultException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
@@ -13,18 +23,11 @@ use Psr\Http\Message\StreamInterface;
  * Provides a developer-friendly API for handling HTTP responses
  * while maintaining full PSR-7 compatibility.
  */
-final readonly class VaultHttpResponse
+final class VaultHttpResponse
 {
-    /**
-     * Cached decoded JSON body.
-     */
-    private ?array $jsonCache;
-
     public function __construct(
-        private ResponseInterface $response,
-    ) {
-        $this->jsonCache = null;
-    }
+        private readonly ResponseInterface $response,
+    ) {}
 
     /**
      * Get the underlying PSR-7 response.
@@ -103,7 +106,7 @@ final readonly class VaultHttpResponse
      */
     public function getBody(): string
     {
-        return (string)$this->response->getBody();
+        return (string) $this->response->getBody();
     }
 
     /**
@@ -119,7 +122,8 @@ final readonly class VaultHttpResponse
      *
      * @param bool $associative When true, returns associative arrays instead of objects
      * @return array<string, mixed>|object|null
-     * @throws \JsonException If JSON is invalid
+     *
+     * @throws JsonException If JSON is invalid
      */
     public function json(bool $associative = true): array|object|null
     {
@@ -129,7 +133,7 @@ final readonly class VaultHttpResponse
             return $associative ? [] : null;
         }
 
-        return json_decode($body, $associative, 512, JSON_THROW_ON_ERROR);
+        return \json_decode($body, $associative, 512, JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -142,19 +146,19 @@ final readonly class VaultHttpResponse
     {
         try {
             $data = $this->json(true);
-        } catch (\JsonException) {
+        } catch (JsonException) {
             return $default;
         }
 
-        if (!is_array($data)) {
+        if (!\is_array($data)) {
             return $default;
         }
 
-        $keys = explode('.', $key);
+        $keys = \explode('.', $key);
         $value = $data;
 
         foreach ($keys as $segment) {
-            if (!is_array($value) || !array_key_exists($segment, $value)) {
+            if (!\is_array($value) || !\array_key_exists($segment, $value)) {
                 return $default;
             }
             $value = $value[$segment];
@@ -217,9 +221,9 @@ final readonly class VaultHttpResponse
         }
 
         // Strip parameters like charset
-        $parts = explode(';', $contentType);
+        $parts = \explode(';', $contentType);
 
-        return trim($parts[0]);
+        return \trim($parts[0]);
     }
 
     /**
@@ -231,7 +235,7 @@ final readonly class VaultHttpResponse
 
         return $contentType !== null && (
             $contentType === 'application/json'
-            || str_ends_with($contentType, '+json')
+            || \str_ends_with($contentType, '+json')
         );
     }
 
@@ -242,18 +246,18 @@ final readonly class VaultHttpResponse
     {
         $length = $this->getHeader('Content-Length');
 
-        return $length !== null ? (int)$length : null;
+        return $length !== null ? (int) $length : null;
     }
 
     /**
      * Throw an exception if the response indicates an error.
      *
-     * @throws \Netresearch\NrVault\Exception\VaultException
+     * @throws VaultException
      */
     public function throwIfError(): self
     {
         if ($this->isError()) {
-            throw new \Netresearch\NrVault\Exception\VaultException(
+            throw new VaultException(
                 \sprintf(
                     'HTTP request failed with status %d: %s',
                     $this->getStatusCode(),
