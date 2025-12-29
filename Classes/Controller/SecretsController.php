@@ -32,7 +32,7 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 #[AsController]
 final class SecretsController
 {
-    private const MODULE_NAME = 'system_vault_secrets';
+    private const MODULE_NAME = 'admin_vault_secrets';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,

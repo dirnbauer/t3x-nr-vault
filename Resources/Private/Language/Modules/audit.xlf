@@ -7,10 +7,10 @@
                 <source>Audit Log</source>
             </trans-unit>
             <trans-unit id="description">
-                <source>Audit log</source>
+                <source>Tamper-evident audit log</source>
             </trans-unit>
             <trans-unit id="short_description">
-                <source>View and export the complete audit trail of all secret access.</source>
+                <source>View, filter, and export the complete audit trail with hash chain verification. All operations are logged with actor, timestamp, and cryptographic proof.</source>
             </trans-unit>
         </body>
     </file>

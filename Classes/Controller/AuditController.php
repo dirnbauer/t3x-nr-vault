@@ -28,7 +28,7 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 #[AsController]
 final class AuditController
 {
-    private const MODULE_NAME = 'system_vault_audit';
+    private const MODULE_NAME = 'admin_vault_audit';
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,

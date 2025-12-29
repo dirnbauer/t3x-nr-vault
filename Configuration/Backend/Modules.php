@@ -17,12 +17,12 @@ use Netresearch\NrVault\Controller\SecretsController;
  */
 return [
     // Parent module - shows submodule overview
-    'system_vault' => [
-        'parent' => 'system',
-        'position' => ['after' => 'system_log'],
+    'admin_vault' => [
+        'parent' => 'admin',
+        'position' => ['after' => 'admin_sites'],
         'access' => 'admin',
         'workspaces' => 'live',
-        'path' => '/module/system/vault',
+        'path' => '/module/admin/vault',
         'labels' => 'nr_vault.modules.overview',
         'iconIdentifier' => 'module-vault',
         'appearance' => [
@@ -32,11 +32,11 @@ return [
     ],
 
     // Secrets submodule
-    'system_vault_secrets' => [
-        'parent' => 'system_vault',
+    'admin_vault_secrets' => [
+        'parent' => 'admin_vault',
         'access' => 'admin',
         'workspaces' => 'live',
-        'path' => '/module/system/vault/secrets',
+        'path' => '/module/admin/vault/secrets',
         'labels' => 'nr_vault.modules.secrets',
         'routes' => [
             '_default' => [
@@ -77,11 +77,11 @@ return [
     ],
 
     // Audit submodule
-    'system_vault_audit' => [
-        'parent' => 'system_vault',
+    'admin_vault_audit' => [
+        'parent' => 'admin_vault',
         'access' => 'admin',
         'workspaces' => 'live',
-        'path' => '/module/system/vault/audit',
+        'path' => '/module/admin/vault/audit',
         'labels' => 'nr_vault.modules.audit',
         'routes' => [
             '_default' => [
