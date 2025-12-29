@@ -40,7 +40,7 @@
         "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "phpat/phpat": "^0.12.1",
-        "infection/infection": "^0.29"
+        "infection/infection": "^0.29 || ^0.32"
     },
     "autoload": {
         "psr-4": {
