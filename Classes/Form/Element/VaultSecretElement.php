@@ -123,13 +123,13 @@ final class VaultSecretElement extends AbstractFormElement
         $html[] = '<input ' . GeneralUtility::implodeAttributes($attributes, true) . ' />';
 
         // Toggle visibility button
-        $html[] = '<button type="button" class="btn btn-default t3js-vault-toggle-visibility" title="Toggle visibility">';
+        $html[] = '<button type="button" class="btn btn-secondary t3js-vault-toggle-visibility" title="Toggle visibility">';
         $html[] = '<span class="t3js-icon icon icon-size-small icon-state-default icon-actions-eye"></span>';
         $html[] = '</button>';
 
         // Clear button if value exists
         if ($hasValue) {
-            $html[] = '<button type="button" class="btn btn-default t3js-vault-clear" title="Clear secret">';
+            $html[] = '<button type="button" class="btn btn-secondary t3js-vault-clear" title="Clear secret">';
             $html[] = '<span class="t3js-icon icon icon-size-small icon-state-default icon-actions-delete"></span>';
             $html[] = '</button>';
         }

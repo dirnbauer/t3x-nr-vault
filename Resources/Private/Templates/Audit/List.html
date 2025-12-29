@@ -13,12 +13,12 @@
     <div class="vault-module" role="main" aria-label="Vault Audit Log">
         <!-- Filter Bar - TYPO3 Backend Style -->
         <form method="get" action="{moduleUri}" role="search" aria-label="Filter audit log">
-            <div class="form-row mb-3">
-                <div class="form-group col-md-3">
+            <div class="form-row">
+                <div class="form-group">
                     <label for="filter-secret" class="form-label">Secret</label>
                     <input type="text" id="filter-secret" name="secretIdentifier" value="{filters._form.secretIdentifier}" class="form-control" placeholder="Secret identifier" />
                 </div>
-                <div class="form-group col-md-2">
+                <div class="form-group">
                     <label for="filter-action" class="form-label">Action</label>
                     <select id="filter-action" name="filterAction" class="form-select">
                         <option value="">[all]</option>
@@ -27,7 +27,7 @@
                         </f:for>
                     </select>
                 </div>
-                <div class="form-group col-md-2">
+                <div class="form-group">
                     <label for="filter-success" class="form-label">Status</label>
                     <select id="filter-success" name="success" class="form-select">
                         <option value="">[all]</option>
@@ -35,25 +35,25 @@
                         <option value="0"{f:if(condition: '{filters._form.success} == \'0\'', then: ' selected')}>Failed</option>
                     </select>
                 </div>
-                <div class="form-group col-md-2">
+                <div class="form-group">
                     <label for="filter-since" class="form-label">From</label>
                     <input type="date" id="filter-since" name="since" value="{filters._form.since}" class="form-control" />
                 </div>
-                <div class="form-group col-md-2">
+                <div class="form-group">
                     <label for="filter-until" class="form-label">To</label>
                     <input type="date" id="filter-until" name="until" value="{filters._form.until}" class="form-control" />
                 </div>
-                <div class="form-group col-md-1 d-flex align-items-end">
-                    <button type="submit" class="btn btn-default me-1">Filter</button>
-                    <a href="{moduleUri}" class="btn btn-default">Reset</a>
+                <div class="form-group d-flex align-items-end">
+                    <button type="submit" class="btn btn-secondary">Filter</button>
+                    <a href="{moduleUri}" class="btn btn-link">Reset</a>
                 </div>
             </div>
         </form>
 
         <!-- Stats -->
         <div class="vault-stats mb-3" role="status" aria-live="polite">
-            <span class="badge badge-info">{totalCount} entries</span>
-            <span class="badge badge-secondary">Page {currentPage} of {totalPages}</span>
+            <span class="badge text-bg-info">{totalCount} entries</span>
+            <span class="badge text-bg-secondary">Page {currentPage} of {totalPages}</span>
         </div>
 
         <f:if condition="{entries}">
@@ -86,7 +86,7 @@
                                         </td>
                                         <td><code>{entry.secretIdentifier}</code></td>
                                         <td>
-                                            <span class="badge badge-{entry.actionBadgeClass}">{entry.action}</span>
+                                            <span class="badge text-bg-{entry.actionBadgeClass}">{entry.action}</span>
                                         </td>
                                         <td>
                                             <f:if condition="{entry.success}">
