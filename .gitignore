@@ -35,3 +35,4 @@ playwright-report/
 test-results/
 playwright/.cache/
 .Build/infection/
+composer.phar

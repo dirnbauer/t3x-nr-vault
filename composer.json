@@ -36,6 +36,7 @@
     },
     "require-dev": {
         "typo3/testing-framework": "^9.0",
+        "typo3/cms-scheduler": "^14.0",
         "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "phpat/phpat": "^0.12.1",
