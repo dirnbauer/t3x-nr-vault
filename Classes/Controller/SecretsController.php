@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Controller;
 
 use DateTimeImmutable;
 use Exception;
+use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
@@ -41,6 +42,7 @@ final class SecretsController
         private readonly UriBuilder $uriBuilder,
         private readonly FlashMessageService $flashMessageService,
         private readonly ConnectionPool $connectionPool,
+        private readonly AuditLogServiceInterface $auditLogService,
     ) {}
 
     /**
@@ -591,6 +593,7 @@ final class SecretsController
 
             // Toggle the hidden state
             $newState = $current['hidden'] ? 0 : 1;
+            $action = $newState ? 'disable' : 'enable';
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
             $queryBuilder
                 ->update('tx_nrvault_secret')
@@ -601,14 +604,28 @@ final class SecretsController
                 )
                 ->executeStatement();
 
+            // Log the enable/disable action to audit log
+            $this->auditLogService->log(
+                $identifier,
+                'update',
+                true,
+                null,
+                $action === 'disable' ? 'Secret disabled' : 'Secret enabled',
+                null,
+                null,
+                ['action' => $action, 'hidden' => $newState],
+            );
+
             $message = $newState
                 ? $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.disabled.success')
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.enabled.success');
 
             $this->addFlashMessage($message, ContextualFeedbackSeverity::OK);
         } catch (SecretNotFoundException) {
+            $this->auditLogService->log($identifier, 'update', false, 'Secret not found');
             $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
         } catch (Exception $e) {
+            $this->auditLogService->log($identifier, 'update', false, $e->getMessage());
             $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
         }
 
