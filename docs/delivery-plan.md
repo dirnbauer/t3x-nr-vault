@@ -1123,7 +1123,7 @@ DON'T:
 - [x] Comprehensive RST documentation (Introduction, Installation, Configuration, Usage, Developer, Security)
 - [x] TCA integration documentation
 - [x] Security architecture documentation
-- [ ] Secret detection service (auto-scan for plaintext secrets)
+- [x] Secret detection service (SecretDetectionService + vault:scan CLI)
 - [ ] Migration wizard (backend UI)
 
 **Deliverable:** Ready for production use
