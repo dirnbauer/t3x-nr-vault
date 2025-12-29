@@ -28,3 +28,9 @@ Tests/Build/.phpunit.cache/
 .ddev/.v14-data/
 .ddev.bak/
 Documentation-GENERATED-temp/
+
+# E2E Testing (Playwright)
+node_modules/
+playwright-report/
+test-results/
+playwright/.cache/
