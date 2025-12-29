@@ -1,0 +1,400 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Controller;
+
+use Doctrine\DBAL\Exception as DbalException;
+use Netresearch\NrVault\Service\SecretDetectionService;
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Attribute\AsController;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\RedirectResponse;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
+
+/**
+ * Backend module controller for secret migration wizard.
+ *
+ * Provides a wizard interface for migrating plaintext secrets to the vault:
+ * 1. Scan - Detect plaintext secrets in database and configuration
+ * 2. Review - Review detected secrets and select which to migrate
+ * 3. Configure - Set migration options (identifier pattern, ownership)
+ * 4. Execute - Perform the migration
+ * 5. Verify - Confirm migration success
+ */
+#[AsController]
+final class MigrationController
+{
+    private const MODULE_NAME = 'admin_vault_migration';
+
+    public function __construct(
+        private readonly ModuleTemplateFactory $moduleTemplateFactory,
+        private readonly IconFactory $iconFactory,
+        private readonly SecretDetectionService $detectionService,
+        private readonly VaultServiceInterface $vaultService,
+        private readonly ConnectionPool $connectionPool,
+        private readonly UriBuilder $uriBuilder,
+        private readonly FlashMessageService $flashMessageService,
+    ) {}
+
+    /**
+     * Step 1: Scan for plaintext secrets (default action).
+     */
+    public function scanAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->makeDocHeaderModuleMenu();
+
+        // Perform the scan
+        $secrets = $this->detectionService->scan();
+        $groupedSecrets = $this->detectionService->getDetectedSecretsBySeverity();
+        $totalCount = $this->detectionService->getDetectedSecretsCount();
+
+        // Count by source
+        $databaseCount = 0;
+        $configCount = 0;
+        foreach ($secrets as $secret) {
+            if (($secret['source'] ?? '') === 'database') {
+                ++$databaseCount;
+            } else {
+                ++$configCount;
+            }
+        }
+
+        $moduleTemplate->assignMultiple([
+            'secrets' => $secrets,
+            'groupedSecrets' => $groupedSecrets,
+            'totalCount' => $totalCount,
+            'databaseCount' => $databaseCount,
+            'configCount' => $configCount,
+            'reviewUri' => $this->buildUri('review'),
+        ]);
+
+        return $moduleTemplate->renderResponse('Migration/Scan');
+    }
+
+    /**
+     * Step 2: Review detected secrets and select which to migrate.
+     */
+    public function reviewAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->makeDocHeaderModuleMenu();
+
+        $queryParams = $request->getQueryParams();
+        $sourceFilter = $queryParams['source'] ?? 'all';
+        $severityFilter = $queryParams['severity'] ?? 'all';
+
+        // Get previously scanned secrets
+        $secrets = $this->detectionService->scan();
+
+        // Filter secrets
+        $filteredSecrets = [];
+        foreach ($secrets as $key => $secret) {
+            if ($sourceFilter !== 'all' && ($secret['source'] ?? '') !== $sourceFilter) {
+                continue;
+            }
+            if ($severityFilter !== 'all' && ($secret['severity'] ?? '') !== $severityFilter) {
+                continue;
+            }
+
+            // Only database secrets can be migrated via wizard
+            if (($secret['source'] ?? '') === 'database') {
+                $filteredSecrets[$key] = $secret;
+            }
+        }
+
+        $moduleTemplate->assignMultiple([
+            'secrets' => $filteredSecrets,
+            'sourceFilter' => $sourceFilter,
+            'severityFilter' => $severityFilter,
+            'configureUri' => $this->buildUri('configure'),
+            'scanUri' => $this->buildUri('scan'),
+        ]);
+
+        return $moduleTemplate->renderResponse('Migration/Review');
+    }
+
+    /**
+     * Step 3: Configure migration options.
+     */
+    public function configureAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->makeDocHeaderModuleMenu();
+
+        $parsedBody = $request->getParsedBody();
+        $selectedSecrets = $parsedBody['selected'] ?? [];
+
+        if (empty($selectedSecrets)) {
+            $this->addFlashMessage(
+                'No secrets selected for migration.',
+                'Selection Required',
+                ContextualFeedbackSeverity::WARNING,
+            );
+
+            return new RedirectResponse($this->buildUri('review'));
+        }
+
+        // Parse selected secrets (format: "table.column")
+        $migrations = [];
+        foreach ($selectedSecrets as $key) {
+            if (preg_match('/^database:([^.]+)\.([^.]+)$/', $key, $matches)) {
+                $table = $matches[1];
+                $column = $matches[2];
+                $migrations[] = [
+                    'key' => $key,
+                    'table' => $table,
+                    'column' => $column,
+                    'identifierPattern' => "{$table}__{$column}__{{uid}}",
+                ];
+            }
+        }
+
+        $moduleTemplate->assignMultiple([
+            'migrations' => $migrations,
+            'executeUri' => $this->buildUri('execute'),
+            'reviewUri' => $this->buildUri('review'),
+        ]);
+
+        return $moduleTemplate->renderResponse('Migration/Configure');
+    }
+
+    /**
+     * Step 4: Execute the migration.
+     */
+    public function executeAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $parsedBody = $request->getParsedBody();
+        $migrations = $parsedBody['migrations'] ?? [];
+        $clearOriginals = (bool)($parsedBody['clearOriginals'] ?? false);
+
+        if (empty($migrations)) {
+            $this->addFlashMessage(
+                'No migrations configured.',
+                'Configuration Required',
+                ContextualFeedbackSeverity::ERROR,
+            );
+
+            return new RedirectResponse($this->buildUri('scan'));
+        }
+
+        $results = [];
+        $totalMigrated = 0;
+        $totalFailed = 0;
+
+        foreach ($migrations as $migration) {
+            $table = $migration['table'] ?? '';
+            $column = $migration['column'] ?? '';
+            $identifierPattern = $migration['identifierPattern'] ?? '';
+
+            if (empty($table) || empty($column) || empty($identifierPattern)) {
+                continue;
+            }
+
+            try {
+                $result = $this->migrateColumn($table, $column, $identifierPattern, $clearOriginals);
+                $results[] = $result;
+                $totalMigrated += $result['migrated'];
+                $totalFailed += $result['failed'];
+            } catch (\Exception $e) {
+                $results[] = [
+                    'table' => $table,
+                    'column' => $column,
+                    'migrated' => 0,
+                    'failed' => 0,
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        // Store results in session for verify step
+        $GLOBALS['BE_USER']->setAndSaveSessionData('vault_migration_results', [
+            'results' => $results,
+            'totalMigrated' => $totalMigrated,
+            'totalFailed' => $totalFailed,
+            'clearOriginals' => $clearOriginals,
+        ]);
+
+        return new RedirectResponse($this->buildUri('verify'));
+    }
+
+    /**
+     * Step 5: Verify migration results.
+     */
+    public function verifyAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->makeDocHeaderModuleMenu();
+
+        // Get results from session
+        $sessionData = $GLOBALS['BE_USER']->getSessionData('vault_migration_results') ?? [];
+
+        $results = $sessionData['results'] ?? [];
+        $totalMigrated = $sessionData['totalMigrated'] ?? 0;
+        $totalFailed = $sessionData['totalFailed'] ?? 0;
+        $clearOriginals = $sessionData['clearOriginals'] ?? false;
+
+        // Clear session data
+        $GLOBALS['BE_USER']->setAndSaveSessionData('vault_migration_results', null);
+
+        if ($totalMigrated > 0) {
+            $this->addFlashMessage(
+                \sprintf('Successfully migrated %d secret(s) to the vault.', $totalMigrated),
+                'Migration Complete',
+                ContextualFeedbackSeverity::OK,
+            );
+        }
+
+        if ($totalFailed > 0) {
+            $this->addFlashMessage(
+                \sprintf('%d secret(s) failed to migrate.', $totalFailed),
+                'Migration Errors',
+                ContextualFeedbackSeverity::WARNING,
+            );
+        }
+
+        $moduleTemplate->assignMultiple([
+            'results' => $results,
+            'totalMigrated' => $totalMigrated,
+            'totalFailed' => $totalFailed,
+            'clearOriginals' => $clearOriginals,
+            'scanUri' => $this->buildUri('scan'),
+            'secretsUri' => (string)$this->uriBuilder->buildUriFromRoute('admin_vault_secrets'),
+        ]);
+
+        return $moduleTemplate->renderResponse('Migration/Verify');
+    }
+
+    /**
+     * Migrate a single database column to the vault.
+     *
+     * @return array{table: string, column: string, migrated: int, failed: int, skipped: int, error?: string}
+     */
+    private function migrateColumn(
+        string $table,
+        string $column,
+        string $identifierPattern,
+        bool $clearOriginals,
+    ): array {
+        $migrated = 0;
+        $failed = 0;
+        $skipped = 0;
+
+        try {
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+            $rows = $queryBuilder
+                ->select('uid', $column)
+                ->from($table)
+                ->where(
+                    $queryBuilder->expr()->isNotNull($column),
+                    $queryBuilder->expr()->neq($column, $queryBuilder->createNamedParameter('')),
+                )
+                ->executeQuery()
+                ->fetchAllAssociative();
+
+            foreach ($rows as $row) {
+                $uid = (int)$row['uid'];
+                $value = (string)$row[$column];
+
+                // Skip if already looks like a vault identifier
+                if ($this->looksLikeVaultIdentifier($value)) {
+                    ++$skipped;
+                    continue;
+                }
+
+                // Generate identifier from pattern
+                $identifier = str_replace('{uid}', (string)$uid, $identifierPattern);
+
+                try {
+                    // Store in vault
+                    $this->vaultService->store($identifier, $value, [
+                        'source' => 'migration',
+                        'originalTable' => $table,
+                        'originalColumn' => $column,
+                        'originalUid' => $uid,
+                    ]);
+
+                    // Update database with vault identifier
+                    $updateBuilder = $this->connectionPool->getQueryBuilderForTable($table);
+                    $updateBuilder
+                        ->update($table)
+                        ->set($column, $identifier)
+                        ->where($updateBuilder->expr()->eq('uid', $uid))
+                        ->executeStatement();
+
+                    ++$migrated;
+
+                    // Clear original if requested (update already done above with identifier)
+                    // The column now contains the vault identifier, not the original value
+                } catch (\Exception $e) {
+                    ++$failed;
+                }
+            }
+        } catch (DbalException $e) {
+            return [
+                'table' => $table,
+                'column' => $column,
+                'migrated' => 0,
+                'failed' => 0,
+                'skipped' => 0,
+                'error' => $e->getMessage(),
+            ];
+        }
+
+        return [
+            'table' => $table,
+            'column' => $column,
+            'migrated' => $migrated,
+            'failed' => $failed,
+            'skipped' => $skipped,
+        ];
+    }
+
+    /**
+     * Check if a value looks like a vault identifier.
+     */
+    private function looksLikeVaultIdentifier(string $value): bool
+    {
+        return preg_match('/^[a-z][a-z0-9_]+__[a-z][a-z0-9_]+__\d+$/i', $value) === 1
+            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
+    }
+
+    /**
+     * Build a URI for a migration action.
+     */
+    private function buildUri(string $action): string
+    {
+        return (string)$this->uriBuilder->buildUriFromRoute(
+            self::MODULE_NAME,
+            ['action' => $action],
+        );
+    }
+
+    /**
+     * Add a flash message.
+     */
+    private function addFlashMessage(
+        string $message,
+        string $title,
+        ContextualFeedbackSeverity $severity,
+    ): void {
+        $flashMessage = new FlashMessage($message, $title, $severity, true);
+        $this->flashMessageService
+            ->getMessageQueueByIdentifier()
+            ->addMessage($flashMessage);
+    }
+
+    private function getLanguageService(): LanguageService
+    {
+        return $GLOBALS['LANG'];
+    }
+}

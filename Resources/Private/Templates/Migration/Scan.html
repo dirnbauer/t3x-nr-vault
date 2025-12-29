@@ -1,0 +1,138 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+
+<f:layout name="Module" />
+
+<f:section name="Before">
+    <f:be.pageRenderer includeCssFiles="{0: 'EXT:nr_vault/Resources/Public/Css/backend.css'}" />
+</f:section>
+
+<f:section name="Content">
+    <div class="vault-module" role="main" aria-label="Secret Migration Wizard">
+        <!-- Wizard Progress -->
+        <div class="wizard-progress mb-4">
+            <div class="d-flex justify-content-between">
+                <div class="wizard-step active">
+                    <span class="badge bg-primary">1</span> Scan
+                </div>
+                <div class="wizard-step">
+                    <span class="badge bg-secondary">2</span> Review
+                </div>
+                <div class="wizard-step">
+                    <span class="badge bg-secondary">3</span> Configure
+                </div>
+                <div class="wizard-step">
+                    <span class="badge bg-secondary">4</span> Execute
+                </div>
+                <div class="wizard-step">
+                    <span class="badge bg-secondary">5</span> Verify
+                </div>
+            </div>
+        </div>
+
+        <h2>Step 1: Scan for Plaintext Secrets</h2>
+        <p class="text-muted mb-4">
+            The system has scanned your TYPO3 installation for potential plaintext secrets that should be migrated to the vault.
+        </p>
+
+        <f:if condition="{totalCount}">
+            <f:then>
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card text-bg-warning">
+                            <div class="card-body">
+                                <h5 class="card-title">{totalCount}</h5>
+                                <p class="card-text">Potential secrets detected</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{databaseCount}</h5>
+                                <p class="card-text">In database columns</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{configCount}</h5>
+                                <p class="card-text">In configuration</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Severity Breakdown -->
+                <h3>Secrets by Severity</h3>
+                <f:for each="{groupedSecrets}" as="items" key="severity">
+                    <f:if condition="{items}">
+                        <div class="mb-3">
+                            <h4>
+                                <f:switch expression="{severity}">
+                                    <f:case value="critical">
+                                        <span class="badge bg-danger">Critical</span>
+                                    </f:case>
+                                    <f:case value="high">
+                                        <span class="badge bg-warning text-dark">High</span>
+                                    </f:case>
+                                    <f:case value="medium">
+                                        <span class="badge bg-info">Medium</span>
+                                    </f:case>
+                                    <f:defaultCase>
+                                        <span class="badge bg-secondary">Low</span>
+                                    </f:defaultCase>
+                                </f:switch>
+                                ({f:count(subject: items)} found)
+                            </h4>
+                            <ul class="list-group">
+                                <f:for each="{items}" as="item" key="itemKey">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <code>{itemKey}</code>
+                                            <f:if condition="{item.patterns}">
+                                                <br>
+                                                <small class="text-muted">
+                                                    Patterns: <f:for each="{item.patterns}" as="pattern" iteration="patternIter">{pattern}<f:if condition="!{patternIter.isLast}">, </f:if></f:for>
+                                                </small>
+                                            </f:if>
+                                        </div>
+                                        <f:if condition="{item.source} == 'database'">
+                                            <span class="badge bg-primary">{item.count} records</span>
+                                        </f:if>
+                                    </li>
+                                </f:for>
+                            </ul>
+                        </div>
+                    </f:if>
+                </f:for>
+
+                <!-- Actions -->
+                <div class="mt-4">
+                    <a href="{reviewUri}" class="btn btn-primary">
+                        <core:icon identifier="actions-arrow-right" size="small" />
+                        Continue to Review
+                    </a>
+                </div>
+            </f:then>
+            <f:else>
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">
+                        <core:icon identifier="actions-check" size="small" />
+                        No Plaintext Secrets Detected
+                    </h4>
+                    <p class="mb-0">
+                        Great! No potential plaintext secrets were found in your database or configuration.
+                        Your sensitive data appears to be properly protected.
+                    </p>
+                </div>
+            </f:else>
+        </f:if>
+    </div>
+</f:section>
+
+</html>

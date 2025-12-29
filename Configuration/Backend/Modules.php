@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Netresearch\NrVault\Controller\AuditController;
+use Netresearch\NrVault\Controller\MigrationController;
 use Netresearch\NrVault\Controller\SecretsController;
 
 /**
@@ -92,6 +93,37 @@ return [
             ],
             'verifyChain' => [
                 'target' => AuditController::class . '::verifyChainAction',
+            ],
+        ],
+    ],
+
+    // Migration wizard submodule
+    'admin_vault_migration' => [
+        'parent' => 'admin_vault',
+        'access' => 'admin',
+        'workspaces' => 'live',
+        'path' => '/module/admin/vault/migration',
+        'labels' => 'nr_vault.modules.migration',
+        'routes' => [
+            '_default' => [
+                'target' => MigrationController::class . '::scanAction',
+            ],
+            'scan' => [
+                'target' => MigrationController::class . '::scanAction',
+            ],
+            'review' => [
+                'target' => MigrationController::class . '::reviewAction',
+            ],
+            'configure' => [
+                'target' => MigrationController::class . '::configureAction',
+                'methods' => ['POST'],
+            ],
+            'execute' => [
+                'target' => MigrationController::class . '::executeAction',
+                'methods' => ['POST'],
+            ],
+            'verify' => [
+                'target' => MigrationController::class . '::verifyAction',
             ],
         ],
     ],

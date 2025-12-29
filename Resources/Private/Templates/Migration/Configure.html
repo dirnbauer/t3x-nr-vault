@@ -1,0 +1,122 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+
+<f:layout name="Module" />
+
+<f:section name="Before">
+    <f:be.pageRenderer includeCssFiles="{0: 'EXT:nr_vault/Resources/Public/Css/backend.css'}" />
+</f:section>
+
+<f:section name="Content">
+    <div class="vault-module" role="main" aria-label="Secret Migration Wizard - Configure">
+        <!-- Wizard Progress -->
+        <div class="wizard-progress mb-4">
+            <div class="d-flex justify-content-between">
+                <div class="wizard-step completed">
+                    <span class="badge bg-success">1</span> Scan
+                </div>
+                <div class="wizard-step completed">
+                    <span class="badge bg-success">2</span> Review
+                </div>
+                <div class="wizard-step active">
+                    <span class="badge bg-primary">3</span> Configure
+                </div>
+                <div class="wizard-step">
+                    <span class="badge bg-secondary">4</span> Execute
+                </div>
+                <div class="wizard-step">
+                    <span class="badge bg-secondary">5</span> Verify
+                </div>
+            </div>
+        </div>
+
+        <h2>Step 3: Configure Migration</h2>
+        <p class="text-muted mb-4">
+            Review the migration settings for each selected secret. The identifier pattern determines how secrets will be stored in the vault.
+        </p>
+
+        <form method="post" action="{executeUri}">
+            <div class="alert alert-warning" role="alert">
+                <core:icon identifier="actions-exclamation-triangle" size="small" />
+                <strong>Warning:</strong> This will modify your database. Make sure you have a backup before proceeding.
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Table</th>
+                            <th>Column</th>
+                            <th>Identifier Pattern</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <f:for each="{migrations}" as="migration" iteration="iter">
+                            <tr>
+                                <td>
+                                    <code>{migration.table}</code>
+                                    <input type="hidden"
+                                           name="migrations[{iter.index}][table]"
+                                           value="{migration.table}" />
+                                </td>
+                                <td>
+                                    <code>{migration.column}</code>
+                                    <input type="hidden"
+                                           name="migrations[{iter.index}][column]"
+                                           value="{migration.column}" />
+                                </td>
+                                <td>
+                                    <input type="text"
+                                           class="form-control"
+                                           name="migrations[{iter.index}][identifierPattern]"
+                                           value="{migration.identifierPattern}"
+                                           required />
+                                    <small class="text-muted">
+                                        Use <code>{literal}{{uid}}{/literal}</code> as placeholder for record UID
+                                    </small>
+                                </td>
+                            </tr>
+                        </f:for>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Migration Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check">
+                        <input type="checkbox"
+                               class="form-check-input"
+                               id="clearOriginals"
+                               name="clearOriginals"
+                               value="1" />
+                        <label class="form-check-label" for="clearOriginals">
+                            Replace original values with vault identifiers
+                        </label>
+                        <div class="form-text">
+                            When enabled, the original plaintext values in the database will be replaced with vault identifiers.
+                            This is the recommended approach for production environments.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{reviewUri}" class="btn btn-secondary">
+                    <core:icon identifier="actions-arrow-left" size="small" />
+                    Back to Review
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <core:icon identifier="actions-bolt" size="small" />
+                    Execute Migration
+                </button>
+            </div>
+        </form>
+    </div>
+</f:section>
+
+</html>
