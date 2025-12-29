@@ -1046,79 +1046,85 @@ DON'T:
 
 ## 8. Delivery Phases
 
-### Phase 1: Core Infrastructure
+### Phase 1: Core Infrastructure ✅
 
 **Goal:** Working encryption and storage with envelope encryption model
 
-- [ ] Database schema and migrations (tx_nrvault_secret, tx_nrvault_audit_log, MM table)
-- [ ] EncryptionService (AES-256-GCM via libsodium with XChaCha20-Poly1305 fallback)
-- [ ] MasterKeyProvider implementations (file, env, derived)
-- [ ] MasterKeyProviderFactory for provider resolution
-- [ ] LocalEncryptionAdapter
-- [ ] VaultService facade
-- [ ] Unit tests for crypto operations
+- [x] Database schema and migrations (tx_nrvault_secret, tx_nrvault_audit_log, MM table)
+- [x] EncryptionService (AES-256-GCM via libsodium with XChaCha20-Poly1305 fallback)
+- [x] MasterKeyProvider implementations (file, env, typo3)
+- [x] MasterKeyProviderFactory for provider resolution
+- [x] LocalEncryptionAdapter
+- [x] VaultService facade
+- [x] Unit tests for crypto operations
 
 **Deliverable:** Secrets can be stored/retrieved via API
 
-### Phase 2: Access Control & Audit
+### Phase 2: Access Control & Audit ✅
 
 **Goal:** Security controls in place with tamper-evident logging
 
-- [ ] AccessControlService with context-based scoping
-- [ ] AuditLogService with hash chain for tamper detection
-- [ ] CLI access control enforcement (allowCliAccess, cliAccessGroups)
-- [ ] PSR-14 event dispatching (SecretStoredEvent, SecretRetrievedEvent, etc.)
-- [ ] Exception hierarchy
-- [ ] Integration tests
+- [x] AccessControlService with context-based scoping
+- [x] AuditLogService with hash chain for tamper detection
+- [x] CLI access control enforcement (cliAllowedSecrets configuration)
+- [x] PSR-14 event dispatching (SecretCreatedEvent, SecretAccessedEvent, SecretRotatedEvent, etc.)
+- [x] Exception hierarchy (VaultException, AccessDeniedException, SecretNotFoundException, etc.)
+- [x] Integration tests
 
 **Deliverable:** Multi-user access control working with full audit trail
 
-### Phase 3: TYPO3 Integration
+### Phase 3: TYPO3 Integration ✅
 
 **Goal:** Backend UI complete with native TYPO3 patterns
 
-- [ ] TCA vaultSecret field type with FormEngine integration
-- [ ] Backend module (secrets list with filtering)
-- [ ] Backend module (audit viewer with hash chain verification)
-- [ ] DataHandler hooks for TCA field operations
-- [ ] Functional tests
+- [x] TCA vaultSecret field type with FormEngine integration (VaultSecretElement)
+- [x] Backend module (secrets list with filtering) - SecretsController
+- [x] Backend module (audit viewer with hash chain verification) - AuditController
+- [x] DataHandler hooks for TCA field operations
+- [x] FlexForm support for vault fields (FlexFormVaultHook, FlexFormVaultResolver)
+- [x] TSconfig-based field permissions (VaultFieldPermissionService)
+- [x] Site configuration vault integration (SiteConfigurationVaultProcessor)
+- [x] Functional tests
 
 **Deliverable:** Full backend experience
 
-### Phase 4: CLI & DevOps
+### Phase 4: CLI & DevOps ✅
 
 **Goal:** Automation ready
 
-- [ ] CLI commands (store, retrieve, rotate, delete, list)
-- [ ] CLI commands (master-key operations)
-- [ ] CLI commands (audit with hash chain verification)
-- [ ] Scheduler tasks (expiry check, notifications)
-- [ ] vault:init command for first-run setup
+- [x] CLI commands (store, retrieve, rotate, delete, list)
+- [x] CLI commands (master-key: init, rotate)
+- [x] CLI commands (audit log viewing)
+- [x] CLI commands (migrate-field, cleanup-orphans)
+- [x] Scheduler task (OrphanCleanupTask with configurable retention)
+- [x] vault:init command for first-run setup
 
 **Deliverable:** CLI automation complete
 
-### Phase 5: Vault HTTP Client
+### Phase 5: Vault HTTP Client ✅
 
 **Goal:** Secure API calls without secret exposure
 
-- [ ] VaultHttpClient implementation
-- [ ] SecretPlacement enum (BearerAuth, Header, QueryParam, BodyField, etc.)
-- [ ] VaultHttpResponse wrapper
+- [x] VaultHttpClient implementation (bearer, basic, header, query auth)
+- [x] Audit logging for HTTP calls
+- [x] Integration with VaultService for credential retrieval
+- [ ] SecretPlacement enum (formal abstraction - currently inline strings)
+- [ ] VaultHttpResponse wrapper (currently returns PSR-7 ResponseInterface)
 - [ ] OAuth support with automatic token refresh
-- [ ] Audit logging for HTTP calls
-- [ ] Integration tests
 
 **Deliverable:** Make authenticated API calls without exposing secrets
 
-### Phase 6: Migration & Documentation
+### Phase 6: Migration & Documentation (In Progress)
 
 **Goal:** Adoption enabled
 
-- [ ] Secret detection service
-- [ ] Migration wizard (backend)
-- [ ] Migration CLI commands
-- [ ] Comprehensive documentation
-- [ ] Security guide
+- [x] Migration CLI command (vault:migrate-field)
+- [x] Orphan cleanup CLI command (vault:cleanup-orphans)
+- [x] Comprehensive RST documentation (Introduction, Installation, Configuration, Usage, Developer, Security)
+- [x] TCA integration documentation
+- [x] Security architecture documentation
+- [ ] Secret detection service (auto-scan for plaintext secrets)
+- [ ] Migration wizard (backend UI)
 
 **Deliverable:** Ready for production use
 
