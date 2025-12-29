@@ -22,6 +22,12 @@
         <testsuite name="Functional">
             <directory>../Functional</directory>
         </testsuite>
+        <testsuite name="Fuzz">
+            <directory>../Fuzz</directory>
+        </testsuite>
+        <testsuite name="Architecture">
+            <directory>../Architecture</directory>
+        </testsuite>
     </testsuites>
 
     <source>
