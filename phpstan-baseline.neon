@@ -427,6 +427,42 @@ parameters:
 			path: Classes/Command/VaultAuditCommand.php
 
 		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 2
+			path: Classes/Command/VaultCleanupOrphansCommand.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Command\VaultCleanupOrphansCommand::getTcaSecrets() return type has no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Command/VaultCleanupOrphansCommand.php
+
+		-
+			rawMessage: 'Parameter #1 $tableFilter of method Netresearch\NrVault\Command\VaultCleanupOrphansCommand::getTcaSecrets() expects string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultCleanupOrphansCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $length of function array_chunk expects int<1, max>, int given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultCleanupOrphansCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $type of method TYPO3\CMS\Core\Database\Query\QueryBuilder::createNamedParameter() expects Doctrine\DBAL\ArrayParameterType|Doctrine\DBAL\ParameterType|Doctrine\DBAL\Types\Type|string, int given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultCleanupOrphansCommand.php
+
+		-
+			rawMessage: 'Parameter #2 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultCleanupOrphansCommand.php
+
+		-
 			rawMessage: 'Offset ''last_read_at'' does not exist on array{identifier: string, description: string, owner: int, groups: array<int>, context: string, version: int, createdAt: int, updatedAt: int, ...}.'
 			identifier: offsetAccess.notFound
 			count: 1
@@ -583,6 +619,138 @@ parameters:
 			path: Classes/Command/VaultListCommand.php
 
 		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 4
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #1 $table of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::clearSourceField() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #1 $table of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::fieldExists() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #1 $table of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::getRecordsToMigrate() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #1 $table of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::tableExists() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #1 $table of static method Netresearch\NrVault\Utility\VaultFieldResolver::buildIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $field of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::clearSourceField() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $field of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::fieldExists() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $field of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::getRecordsToMigrate() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $field of static method Netresearch\NrVault\Utility\VaultFieldResolver::buildIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $length of function array_chunk expects int<1, max>, int given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $secret of method Netresearch\NrVault\Service\VaultServiceInterface::store() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #2 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 5
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #3 $table of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::showDryRunResults() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #3 $uidField of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::clearSourceField() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #3 $uidField of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::getRecordsToMigrate() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #3 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #4 $field of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::showDryRunResults() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #4 $whereClause of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::getRecordsToMigrate() expects string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #5 $force of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::getRecordsToMigrate() expects bool, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: 'Parameter #5 $uidField of method Netresearch\NrVault\Command\VaultMigrateFieldCommand::showDryRunResults() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
+			rawMessage: Possibly invalid array key type mixed.
+			identifier: offsetAccess.invalidOffset
+			count: 2
+			path: Classes/Command/VaultMigrateFieldCommand.php
+
+		-
 			rawMessage: 'Parameter #1 $filename of function chmod expects string, mixed given.'
 			identifier: argument.type
 			count: 1
@@ -659,6 +827,48 @@ parameters:
 			identifier: identical.alwaysFalse
 			count: 1
 			path: Classes/Command/VaultRotateCommand.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Command\VaultScanCommand::formatDetails() should return string but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $array of function implode expects array, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $minSeverity of method Netresearch\NrVault\Command\VaultScanCommand::filterBySeverity() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
+
+		-
+			rawMessage: 'Parameter #2 $string of function explode expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
+
+		-
+			rawMessage: 'Parameter #2 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
+
+		-
+			rawMessage: 'Parameter #3 $minSeverity of method Netresearch\NrVault\Command\VaultScanCommand::outputSummary() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
+
+		-
+			rawMessage: 'Parameter #3 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Command/VaultScanCommand.php
 
 		-
 			rawMessage: 'Method Netresearch\NrVault\Command\VaultStoreCommand::getSecretValue() should return string|null but returns mixed.'
@@ -775,136 +985,478 @@ parameters:
 			path: Classes/Configuration/ExtensionConfiguration.php
 
 		-
+			rawMessage: 'Parameter #1 $configuration of method Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor::resolveVaultReferences() expects array<string, mixed>, array<mixed, mixed> given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Configuration/SiteConfigurationVaultProcessor.php
+
+		-
 			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\JsonResponse from outside its root namespace TYPO3.'
 			identifier: method.internalClass
-			count: 3
-			path: Classes/Controller/VaultController.php
+			count: 1
+			path: Classes/Controller/AuditController.php
+
+		-
+			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\RedirectResponse from outside its root namespace TYPO3.'
+			identifier: method.internalClass
+			count: 1
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\Response from outside its root namespace TYPO3.'
 			identifier: method.internalClass
 			count: 2
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Call to method getBody() of internal class TYPO3\CMS\Core\Http\Message from outside its root namespace TYPO3.'
 			identifier: method.internalClass
 			count: 2
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Call to method withHeader() of internal class TYPO3\CMS\Core\Http\Message from outside its root namespace TYPO3.'
 			identifier: method.internalClass
 			count: 4
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: Cannot access offset 'context' on mixed.
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Cannot call method isAdmin() on mixed.'
 			identifier: method.nonObject
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: Cannot cast mixed to int.
 			identifier: cast.int
-			count: 2
-			path: Classes/Controller/VaultController.php
+			count: 3
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\JsonResponse.
 			identifier: new.internalClass
-			count: 3
-			path: Classes/Controller/VaultController.php
+			count: 1
+			path: Classes/Controller/AuditController.php
+
+		-
+			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\RedirectResponse.
+			identifier: new.internalClass
+			count: 1
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\Response.
 			identifier: new.internalClass
 			count: 2
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\VaultController::buildModuleUri() has parameter $additionalParams with no value type specified in iterable type array.'
+			rawMessage: 'Method Netresearch\NrVault\Controller\AuditController::buildAuditFilters() has parameter $queryParams with no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\VaultController::exportAsCsv() has parameter $data with no value type specified in iterable type array.'
+			rawMessage: 'Method Netresearch\NrVault\Controller\AuditController::buildAuditFilters() return type has no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\VaultController::getLanguageService() should return TYPO3\CMS\Core\Localization\LanguageService but returns mixed.'
+			rawMessage: 'Method Netresearch\NrVault\Controller\AuditController::exportAsCsv() has parameter $data with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Controller/AuditController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\AuditController::getLanguageService() should return TYPO3\CMS\Core\Localization\LanguageService but returns mixed.'
 			identifier: return.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $array of function array_keys expects array, mixed given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $datetime of class DateTimeImmutable constructor expects string, mixed given.'
 			identifier: argument.type
-			count: 4
-			path: Classes/Controller/VaultController.php
+			count: 2
+			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: 'Parameter #1 $filters of method Netresearch\NrVault\Audit\AuditLogServiceInterface::query() expects array{secretIdentifier?: string, action?: string, actorUid?: int, since?: DateTimeInterface, until?: DateTimeInterface, success?: bool}, array{}|array{secretIdentifier?: mixed, action?: mixed, actorUid?: int, success?: bool, since?: DateTimeImmutable, until?: DateTimeImmutable} given.'
+			rawMessage: 'Parameter #1 $filters of method Netresearch\NrVault\Audit\AuditLogServiceInterface::query() expects array{secretIdentifier?: string, action?: string, actorUid?: int, since?: DateTimeInterface, until?: DateTimeInterface, success?: bool}, array given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $stream of function fclose expects resource, resource|false given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $stream of function fputcsv expects resource, resource|false given.'
 			identifier: argument.type
 			count: 2
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $stream of function fwrite expects resource, resource|false given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $stream of function rewind expects resource, resource|false given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #1 $stream of function stream_get_contents expects resource, resource|false given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
 			rawMessage: 'Parameter #2 $fields of function fputcsv expects array<int|string, bool|float|int|string|null>, mixed given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: 'Property Netresearch\NrVault\Controller\VaultController::$accessControlService is never read, only written.'
+			rawMessage: 'Argument of an invalid type mixed supplied for foreach, only iterables are supported.'
+			identifier: foreach.nonIterable
+			count: 2
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\RedirectResponse from outside its root namespace TYPO3.'
+			identifier: method.internalClass
+			count: 3
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'clearOriginals' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'clearOriginals' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'column' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'identifierPattern' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'migrations' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'results' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'selected' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'table' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'totalFailed' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot access offset 'totalMigrated' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Cannot call method getSessionData() on mixed.'
+			identifier: method.nonObject
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Cannot call method setAndSaveSessionData() on mixed.'
+			identifier: method.nonObject
+			count: 2
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Cannot cast mixed to string.
+			identifier: cast.string
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\RedirectResponse.
+			identifier: new.internalClass
+			count: 3
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\MigrationController::getLanguageService() is unused.'
+			identifier: method.unused
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\MigrationController::getLanguageService() should return TYPO3\CMS\Core\Localization\LanguageService but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Parameter #1 $table of method Netresearch\NrVault\Controller\MigrationController::migrateColumn() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Parameter #2 $column of method Netresearch\NrVault\Controller\MigrationController::migrateColumn() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Parameter #2 $subject of function preg_match expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Parameter #2 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 2
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Parameter #3 $identifierPattern of method Netresearch\NrVault\Controller\MigrationController::migrateColumn() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Property Netresearch\NrVault\Controller\MigrationController::$iconFactory is never read, only written.'
 			identifier: property.onlyWritten
 			count: 1
-			path: Classes/Controller/VaultController.php
+			path: Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\JsonResponse from outside its root namespace TYPO3.'
+			identifier: method.internalClass
+			count: 4
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\RedirectResponse from outside its root namespace TYPO3.'
+			identifier: method.internalClass
+			count: 18
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'context' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'description' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'expiresAt' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'groups' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'identifier' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 3
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'metadata' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'owner' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'pid' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'reason' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'secret' on array|object.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access offset 'uid' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot access property $user on mixed.
+			identifier: property.nonObject
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Cannot call method isAdmin() on mixed.'
+			identifier: method.nonObject
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 8
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Cannot cast mixed to string.
+			identifier: cast.string
+			count: 20
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Dead catch - Netresearch\NrVault\Exception\SecretNotFoundException is never thrown in the try block.
+			identifier: catch.neverThrown
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\JsonResponse.
+			identifier: new.internalClass
+			count: 4
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\RedirectResponse.
+			identifier: new.internalClass
+			count: 18
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getBackendGroups() should return array<array{uid: int, title: string}> but returns list<array{uid: int, title: mixed}>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getBackendUsers() should return array<array{uid: int, username: string, realName: string}> but returns list<array{uid: int, username: mixed, realName: mixed}>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getGroupNames() should return array<string> but returns list<mixed>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getLanguageService() should return TYPO3\CMS\Core\Localization\LanguageService but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getUsernameByUid() should return string but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getUsernameCache() should return array<int, string> but returns array<int, mixed>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Parameter #1 $callback of function array_map expects (callable(mixed): mixed)|null, ''intval'' given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Parameter #1 $datetime of class DateTimeImmutable constructor expects string, mixed given.'
+			identifier: argument.type
+			count: 2
+			path: Classes/Controller/SecretsController.php
+
+		-
+			rawMessage: 'Parameter #1 $json of function json_decode expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: 'Parameter #1 $length of function random_bytes expects int<1, max>, int given.'
@@ -935,6 +1487,18 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: Classes/Domain/Repository/SecretRepository.php
+
+		-
+			rawMessage: 'Parameter #1 $configuration of method Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor::processConfiguration() expects array<string, mixed>, array given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/EventListener/SiteConfigurationVaultListener.php
+
+		-
+			rawMessage: 'Parameter #1 $configuration of method Netresearch\NrVault\EventListener\SiteConfigurationVaultListener::containsVaultReferences() expects array<string, mixed>, array given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/EventListener/SiteConfigurationVaultListener.php
 
 		-
 			rawMessage: Cannot access an offset on mixed.
@@ -1063,7 +1627,19 @@ parameters:
 			path: Classes/Form/Element/VaultSecretElement.php
 
 		-
+			rawMessage: 'Parameter #1 $table of method Netresearch\NrVault\Service\VaultFieldPermissionService::getPermissions() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Form/Element/VaultSecretElement.php
+
+		-
 			rawMessage: 'Parameter #2 $field of method Netresearch\NrVault\Form\Element\VaultSecretElement::buildVaultIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Form/Element/VaultSecretElement.php
+
+		-
+			rawMessage: 'Parameter #2 $field of method Netresearch\NrVault\Service\VaultFieldPermissionService::getPermissions() expects string, mixed given.'
 			identifier: argument.type
 			count: 1
 			path: Classes/Form/Element/VaultSecretElement.php
@@ -1123,7 +1699,7 @@ parameters:
 			path: Classes/Hook/DataHandlerHook.php
 
 		-
-			rawMessage: Cannot access offset 'type' on mixed.
+			rawMessage: Cannot access offset 'renderType' on mixed.
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 3
 			path: Classes/Hook/DataHandlerHook.php
@@ -1225,15 +1801,327 @@ parameters:
 			path: Classes/Hook/DataHandlerHook.php
 
 		-
-			rawMessage: Cannot access offset 'Authorization' on mixed.
+			rawMessage: 'Argument of an invalid type mixed supplied for foreach, only iterables are supported.'
+			identifier: foreach.nonIterable
+			count: 4
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Binary operation "." between 'Vault error for…' and mixed results in an error.
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Call to internal method TYPO3\CMS\Core\DataHandling\DataHandler::log() from outside its root namespace TYPO3.'
+			identifier: method.internal
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access an offset on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'columns' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'config' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'el' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'lDEF' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'renderType' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'type' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset 'vDEF' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset int|string on mixed.
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 3
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset mixed on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot access offset string on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Cannot cast mixed to string.
+			identifier: cast.string
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormDataStructure() has parameter $data with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormDataStructure() has parameter $fieldConfig with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormDataStructure() return type has no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormElementConfig() has parameter $sheetConfig with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormElementConfig() return type has no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormElementConfig() should return array but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::processDatamap_afterDatabaseOperations() has parameter $fieldArray with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::processDatamap_preProcessFieldArray() has parameter $fieldArray with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::processFlexFormData() has parameter $data with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::processFlexFormData() has parameter $flexFieldConfig with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Hook\FlexFormVaultHook::storeFlexFormSecret() has parameter $secretData with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #1 $secretData of method Netresearch\NrVault\Hook\FlexFormVaultHook::storeFlexFormSecret() expects array, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #1 $sheetConfig of method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormElementConfig() expects array, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #2 $fieldPath of method Netresearch\NrVault\Hook\FlexFormVaultHook::getFlexFormElementConfig() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #2 $flexField of method Netresearch\NrVault\Hook\FlexFormVaultHook::buildFlexFormVaultIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #2 $newSecret of method Netresearch\NrVault\Service\VaultServiceInterface::rotate() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #2 $secret of method Netresearch\NrVault\Service\VaultServiceInterface::store() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #3 $sheet of method Netresearch\NrVault\Hook\FlexFormVaultHook::buildFlexFormVaultIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #4 $_ of method TYPO3\CMS\Core\DataHandling\DataHandler::log() expects null, int given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #4 $fieldPath of method Netresearch\NrVault\Hook\FlexFormVaultHook::buildFlexFormVaultIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #4 $flexFieldName of method Netresearch\NrVault\Hook\FlexFormVaultHook::processFlexFormData() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: 'Parameter #5 $flexFieldConfig of method Netresearch\NrVault\Hook\FlexFormVaultHook::processFlexFormData() expects array, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Possibly invalid array key type mixed.
+			identifier: offsetAccess.invalidOffset
+			count: 3
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Property Netresearch\NrVault\Hook\FlexFormVaultHook::$pendingFlexSecrets type has no value type specified in iterable type array.
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Hook/FlexFormVaultHook.php
+
+		-
+			rawMessage: Binary operation "." between '+' and mixed results in an error.
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: Cannot access offset 'access_token' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: Cannot access offset 'expires_in' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: Cannot access offset 'refresh_token' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: Cannot access offset 'scope' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: Cannot access offset 'token_type' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 2
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: 'Parameter #2 $secret of method Netresearch\NrVault\Service\VaultServiceInterface::store() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: 'Parameter $accessToken of class Netresearch\NrVault\Http\OAuth\OAuthToken constructor expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: 'Parameter $scope of class Netresearch\NrVault\Http\OAuth\OAuthToken constructor expects string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: 'Parameter $tokenType of class Netresearch\NrVault\Http\OAuth\OAuthToken constructor expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/OAuth/OAuthTokenManager.php
+
+		-
+			rawMessage: Binary operation "." between 'oauth2:' and mixed results in an error.
+			identifier: binaryOp.invalid
+			count: 1
+			path: Classes/Http/VaultHttpClient.php
+
+		-
+			rawMessage: Cannot access offset 'Authorization' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 4
+			path: Classes/Http/VaultHttpClient.php
+
+		-
+			rawMessage: Cannot access offset 'X-API-Key' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
 			path: Classes/Http/VaultHttpClient.php
 
 		-
 			rawMessage: Cannot access offset mixed on mixed.
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 4
 			path: Classes/Http/VaultHttpClient.php
 
 		-
@@ -1243,55 +2131,7 @@ parameters:
 			path: Classes/Http/VaultHttpClient.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::extractGuzzleOptions() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::extractGuzzleOptions() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::get() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::injectAuthentication() has parameter $guzzleOptions with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::injectAuthentication() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::injectAuthentication() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::injectBasicAuthFromSecrets() has parameter $guzzleOptions with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::injectBasicAuthFromSecrets() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::injectBasicAuthFromSecrets() return type has no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/Http/VaultHttpClient.php
@@ -1339,6 +2179,18 @@ parameters:
 			path: Classes/Http/VaultHttpClient.php
 
 		-
+			rawMessage: 'Parameter #3 $options of method Netresearch\NrVault\Http\VaultHttpClient::request() expects array{auth_secret?: string, auth_type?: ''basic''|''bearer''|''header''|''query'', auth_header?: string, auth_query_param?: string, auth_username_secret?: string, headers?: array<string, string>, query?: array<string, mixed>, body?: array|string, ...}, array<string, mixed> given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Http/VaultHttpClient.php
+
+		-
+			rawMessage: Possibly invalid array key type mixed.
+			identifier: array.invalidKey
+			count: 1
+			path: Classes/Http/VaultHttpClient.php
+
+		-
 			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClientInterface::delete() has parameter $options with no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
@@ -1375,6 +2227,18 @@ parameters:
 			path: Classes/Http/VaultHttpClientInterface.php
 
 		-
+			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpResponse::getHeaders() should return array<string, array<string>> but returns array<array<string>>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Http/VaultHttpResponse.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpResponse::json() should return array<string, mixed>|object|null but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Http/VaultHttpResponse.php
+
+		-
 			rawMessage: Access to internal property TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::$user from outside its root namespace TYPO3.
 			identifier: property.internal
 			count: 3
@@ -1409,6 +2273,168 @@ parameters:
 			identifier: nullCoalesce.property
 			count: 1
 			path: Classes/Security/AccessControlService.php
+
+		-
+			rawMessage: 'Argument of an invalid type mixed supplied for foreach, only iterables are supported.'
+			identifier: foreach.nonIterable
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Call to an undefined method Doctrine\DBAL\Types\Type::getName().'
+			identifier: method.notFound
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Call to an undefined method TYPO3\CMS\Core\Configuration\ExtensionConfiguration::getAll().'
+			identifier: method.notFound
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Call to method getName() of internal class Doctrine\DBAL\Schema\AbstractAsset<Doctrine\DBAL\Schema\Name\UnqualifiedName> from outside its root namespace Doctrine.'
+			identifier: method.internalClass
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot access offset 'EXTENSIONS' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot access offset 'MAIL' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot access offset 'SYS' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot access offset 'encryptionKey' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot access offset 'transport_smtp_password' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot cast mixed to string.
+			identifier: cast.string
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Service\SecretDetectionService::getDetectedSecretsBySeverity() should return array<string, array<string, array<string, mixed>>> but returns array<array<string, array<string, mixed>>>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Parameter #1 $config of method Netresearch\NrVault\Service\SecretDetectionService::scanConfigArray() expects array<string, mixed>, array<mixed, mixed> given.'
+			identifier: argument.type
+			count: 2
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Parameter #1 $config of method Netresearch\NrVault\Service\SecretDetectionService::scanConfigArray() expects array<string, mixed>, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Parameter #1 $string of function strlen expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Parameter #1 $value of method Netresearch\NrVault\Service\SecretDetectionService::looksLikeVaultIdentifier() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: 'Part $extKey (mixed) of encapsed string cannot be cast to string.'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Possibly invalid array key type mixed.
+			identifier: offsetAccess.invalidOffset
+			count: 1
+			path: Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: Cannot access offset 'permissions.' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: Cannot access offset 'uid' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: Cannot access offset non-falsy-string on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: Cannot access offset string on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: Cannot access property $user on mixed.
+			identifier: property.nonObject
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: 'Cannot call method isAdmin() on mixed.'
+			identifier: method.nonObject
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Service\VaultFieldPermissionService::getVaultTsConfig() should return array<string, mixed> but returns mixed.'
+			identifier: return.type
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: 'Parameter #4 $backendUser of method Netresearch\NrVault\Service\VaultFieldPermissionService::checkPermission() expects TYPO3\CMS\Core\Authentication\BackendUserAuthentication, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
+
+		-
+			rawMessage: 'Parameter #5 ...$values of function sprintf expects bool|float|int|string|null, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Service/VaultFieldPermissionService.php
 
 		-
 			rawMessage: Cannot cast mixed to int.
@@ -1453,6 +2479,144 @@ parameters:
 			path: Classes/Service/VaultServiceInterface.php
 
 		-
+			rawMessage: Cannot access offset 'renderType' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/TCA/VaultFieldHelper.php
+
+		-
+			rawMessage: Cannot access offset string on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/TCA/VaultFieldHelper.php
+
+		-
+			rawMessage: 'Parameter #1 $options of static method Netresearch\NrVault\TCA\VaultFieldHelper::getFieldConfig() expects array{label?: string, description?: string, size?: int, required?: bool, placeholder?: string, displayCond?: string, l10n_mode?: string, exclude?: bool}, array<string, mixed> given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/TCA/VaultFieldHelper.php
+
+		-
+			rawMessage: 'Parameter #1 $options of static method Netresearch\NrVault\TCA\VaultFieldHelper::getFieldConfig() expects array{label?: string, description?: string, size?: int, required?: bool, placeholder?: string, displayCond?: string, l10n_mode?: string, exclude?: bool}, non-empty-array<string, mixed> given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/TCA/VaultFieldHelper.php
+
+		-
+			rawMessage: 'Parameter #2 $type of method TYPO3\CMS\Core\Database\Query\QueryBuilder::createNamedParameter() expects Doctrine\DBAL\ArrayParameterType|Doctrine\DBAL\ParameterType|Doctrine\DBAL\Types\Type|string, int given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Task/OrphanCleanupTask.php
+
+		-
+			rawMessage: Access to constant ADD on an unknown class TYPO3\CMS\Scheduler\Task\Enumeration\Action.
+			identifier: class.notFound
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: Access to undefined constant TYPO3\CMS\Core\Messaging\FlashMessage::ERROR.
+			identifier: classConstant.notFound
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Call to method getCurrentAction() of internal class TYPO3\CMS\Scheduler\Controller\SchedulerModuleController from outside its root namespace TYPO3.'
+			identifier: method.internalClass
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: Cannot cast mixed to int.
+			identifier: cast.int
+			count: 3
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Task\OrphanCleanupTaskAdditionalFieldProvider::getAdditionalFields() has parameter $taskInfo with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Task\OrphanCleanupTaskAdditionalFieldProvider::getAdditionalFields() return type has no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Task\OrphanCleanupTaskAdditionalFieldProvider::saveAdditionalFields() has parameter $submittedData with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Task\OrphanCleanupTaskAdditionalFieldProvider::validateAdditionalFields() has parameter $submittedData with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Parameter #1 $string of function htmlspecialchars expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Parameter #1 $string of function trim expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Parameter #2 $severity of method TYPO3\CMS\Scheduler\AbstractAdditionalFieldProvider::addMessage() expects TYPO3\CMS\Core\Type\ContextualFeedbackSeverity, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Parameter $schedulerModule of method Netresearch\NrVault\Task\OrphanCleanupTaskAdditionalFieldProvider::getAdditionalFields() has typehint with internal class TYPO3\CMS\Scheduler\Controller\SchedulerModuleController.'
+			identifier: parameter.internalClass
+			count: 2
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: 'Parameter $schedulerModule of method Netresearch\NrVault\Task\OrphanCleanupTaskAdditionalFieldProvider::validateAdditionalFields() has typehint with internal class TYPO3\CMS\Scheduler\Controller\SchedulerModuleController.'
+			identifier: parameter.internalClass
+			count: 2
+			path: Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php
+
+		-
+			rawMessage: Dead catch - Netresearch\NrVault\Exception\SecretNotFoundException is never thrown in the try block.
+			identifier: catch.neverThrown
+			count: 2
+			path: Classes/Utility/FlexFormVaultResolver.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Utility\FlexFormVaultResolver::resolveAll() should return array<string, mixed> but returns array.'
+			identifier: return.type
+			count: 1
+			path: Classes/Utility/FlexFormVaultResolver.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Utility\FlexFormVaultResolver::resolveRecursive() has parameter $data with no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Utility/FlexFormVaultResolver.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Utility\FlexFormVaultResolver::resolveRecursive() return type has no value type specified in iterable type array.'
+			identifier: missingType.iterableValue
+			count: 1
+			path: Classes/Utility/FlexFormVaultResolver.php
+
+		-
+			rawMessage: 'Parameter #1 $identifier of method Netresearch\NrVault\Service\VaultServiceInterface::retrieve() expects string, mixed given.'
+			identifier: argument.type
+			count: 2
+			path: Classes/Utility/FlexFormVaultResolver.php
+
+		-
 			rawMessage: Offset 0 might not exist on non-empty-string|null.
 			identifier: offsetAccess.notFound
 			count: 1
@@ -1469,3 +2633,51 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: Classes/Utility/IdentifierValidator.php
+
+		-
+			rawMessage: 'Argument of an invalid type mixed supplied for foreach, only iterables are supported.'
+			identifier: foreach.nonIterable
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: Cannot access offset 'columns' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: Cannot access offset 'config' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: Cannot access offset 'renderType' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: Cannot access offset string on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: Dead catch - Netresearch\NrVault\Exception\SecretNotFoundException is never thrown in the try block.
+			identifier: catch.neverThrown
+			count: 2
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: 'Method Netresearch\NrVault\Utility\VaultFieldResolver::getVaultFieldsForTable() should return array<string> but returns list<mixed>.'
+			identifier: return.type
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
+
+		-
+			rawMessage: 'Parameter #1 $identifier of method Netresearch\NrVault\Service\VaultServiceInterface::retrieve() expects string, mixed given.'
+			identifier: argument.type
+			count: 1
+			path: Classes/Utility/VaultFieldResolver.php
