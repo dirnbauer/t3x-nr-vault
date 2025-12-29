@@ -296,9 +296,10 @@ vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key
 - [x] Developer documentation (Documentation/Developer/TcaIntegration.rst)
 - [x] Unit tests for all new components
 
-### Phase 3: Advanced Features (FUTURE)
-- [ ] Orphan cleanup scheduler task
-- [ ] Migration CLI command
+### Phase 3: Advanced Features (IN PROGRESS)
+- [x] Orphan cleanup scheduler task
+- [x] Migration CLI command (`vault:migrate-field`)
+- [x] Orphan cleanup CLI command (`vault:cleanup-orphans`)
 - [ ] TSconfig for field-level permissions
 - [ ] Site configuration vault integration
 
@@ -312,8 +313,16 @@ vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key
 | `Classes/Utility/VaultFieldResolver.php` | Done | Secret retrieval utility |
 | `Classes/Utility/FlexFormVaultResolver.php` | Done | FlexForm secret retrieval |
 | `Classes/TCA/VaultFieldHelper.php` | Done | TCA configuration helper |
+| `Classes/Command/VaultMigrateFieldCommand.php` | Done | Migration CLI command |
+| `Classes/Command/VaultCleanupOrphansCommand.php` | Done | Orphan cleanup CLI command |
+| `Classes/Task/OrphanCleanupTask.php` | Done | Scheduler task for orphan cleanup |
+| `Classes/Task/OrphanCleanupTaskAdditionalFieldProvider.php` | Done | Scheduler task configuration |
 | `ext_localconf.php` | Done | Element and hook registration |
 | `Documentation/Developer/TcaIntegration.rst` | Done | Developer docs |
 | `Tests/Unit/Utility/VaultFieldResolverTest.php` | Done | Unit tests |
 | `Tests/Unit/Utility/FlexFormVaultResolverTest.php` | Done | Unit tests |
 | `Tests/Unit/TCA/VaultFieldHelperTest.php` | Done | Unit tests |
+| `Tests/Unit/Command/VaultMigrateFieldCommandTest.php` | Done | Command unit tests |
+| `Tests/Unit/Command/VaultCleanupOrphansCommandTest.php` | Done | Command unit tests |
+| `Tests/Unit/Task/OrphanCleanupTaskTest.php` | Done | Task unit tests |
+| `Tests/Unit/Task/OrphanCleanupTaskAdditionalFieldProviderTest.php` | Done | Task field provider tests |
