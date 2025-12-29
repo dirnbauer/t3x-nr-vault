@@ -4,25 +4,27 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Task;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Task\OrphanCleanupTask;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
-use TYPO3\CMS\Core\Database\Schema\SchemaManager;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(OrphanCleanupTask::class)]
-final class OrphanCleanupTaskTest extends TestCase
+final class OrphanCleanupTaskTest extends UnitTestCase
 {
+    protected bool $resetSingletonInstances = true;
+
     private VaultServiceInterface&\PHPUnit\Framework\MockObject\MockObject $vaultService;
 
     private ConnectionPool&\PHPUnit\Framework\MockObject\MockObject $connectionPool;
@@ -43,7 +45,7 @@ final class OrphanCleanupTaskTest extends TestCase
 
         GeneralUtility::addInstance(VaultServiceInterface::class, $this->vaultService);
         GeneralUtility::addInstance(ConnectionPool::class, $this->connectionPool);
-        GeneralUtility::addInstance(LogManager::class, $logManager);
+        GeneralUtility::setSingletonInstance(LogManager::class, $logManager);
     }
 
     protected function tearDown(): void
@@ -278,7 +280,7 @@ final class OrphanCleanupTaskTest extends TestCase
 
     private function mockRecordExists(string $table, int $uid, bool $exists): void
     {
-        $schemaManager = $this->createMock(SchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
 
         $connection = $this->createMock(Connection::class);
@@ -302,7 +304,7 @@ final class OrphanCleanupTaskTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('getRestrictions')->willReturn($restrictions);
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturnArgument(0);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
         $queryBuilder->method('executeQuery')->willReturn($result);
 
         $this->connectionPool

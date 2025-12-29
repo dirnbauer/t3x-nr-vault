@@ -6,8 +6,8 @@ namespace Netresearch\NrVault\Task;
 
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use PDO;
 use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
@@ -158,7 +158,7 @@ final class OrphanCleanupTask extends AbstractTask
             ->count('*')
             ->from($table)
             ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, PDO::PARAM_INT)),
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)),
             )
             ->executeQuery()
             ->fetchOne();

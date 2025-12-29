@@ -4,14 +4,32 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Utility;
 
+use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 final class VaultFieldResolverTest extends UnitTestCase
 {
     protected bool $resetSingletonInstances = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Register mock VaultService for tests that call resolveFields
+        $vaultServiceMock = $this->createMock(VaultServiceInterface::class);
+        $vaultServiceMock->method('retrieve')->willReturn(null);
+        GeneralUtility::addInstance(VaultServiceInterface::class, $vaultServiceMock);
+    }
+
+    protected function tearDown(): void
+    {
+        GeneralUtility::purgeInstances();
+        parent::tearDown();
+    }
 
     #[Test]
     public function isVaultIdentifierReturnsTrueForValidIdentifier(): void

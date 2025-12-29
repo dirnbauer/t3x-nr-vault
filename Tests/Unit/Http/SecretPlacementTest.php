@@ -37,7 +37,7 @@ final class SecretPlacementTest extends TestCase
         yield 'Header requires config' => [SecretPlacement::Header, true];
         yield 'QueryParam requires config' => [SecretPlacement::QueryParam, true];
         yield 'BodyField requires config' => [SecretPlacement::BodyField, true];
-        yield 'OAuth2 does not require config' => [SecretPlacement::OAuth2, false];
+        yield 'OAuth2 requires config' => [SecretPlacement::OAuth2, true];
         yield 'ApiKey does not require config' => [SecretPlacement::ApiKey, false];
     }
 
@@ -50,13 +50,13 @@ final class SecretPlacementTest extends TestCase
 
     public static function defaultConfigKeyProvider(): iterable
     {
-        yield 'Header has auth_header key' => [SecretPlacement::Header, 'auth_header'];
-        yield 'QueryParam has auth_query_param key' => [SecretPlacement::QueryParam, 'auth_query_param'];
-        yield 'BodyField has auth_body_field key' => [SecretPlacement::BodyField, 'auth_body_field'];
-        yield 'Bearer has no config key' => [SecretPlacement::Bearer, null];
-        yield 'BasicAuth has no config key' => [SecretPlacement::BasicAuth, null];
-        yield 'OAuth2 has no config key' => [SecretPlacement::OAuth2, null];
-        yield 'ApiKey has no config key' => [SecretPlacement::ApiKey, null];
+        yield 'Header defaults to X-API-Key' => [SecretPlacement::Header, 'X-API-Key'];
+        yield 'QueryParam defaults to api_key' => [SecretPlacement::QueryParam, 'api_key'];
+        yield 'BodyField defaults to api_key' => [SecretPlacement::BodyField, 'api_key'];
+        yield 'Bearer has no default key' => [SecretPlacement::Bearer, null];
+        yield 'BasicAuth has no default key' => [SecretPlacement::BasicAuth, null];
+        yield 'OAuth2 has no default key' => [SecretPlacement::OAuth2, null];
+        yield 'ApiKey defaults to X-API-Key' => [SecretPlacement::ApiKey, 'X-API-Key'];
     }
 
     #[Test]

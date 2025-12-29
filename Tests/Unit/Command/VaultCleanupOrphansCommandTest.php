@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Command;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Command\VaultCleanupOrphansCommand;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -18,7 +19,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
-use TYPO3\CMS\Core\Database\Schema\SchemaManager;
 
 #[CoversClass(VaultCleanupOrphansCommand::class)]
 final class VaultCleanupOrphansCommandTest extends TestCase
@@ -284,7 +284,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
 
     private function mockRecordExists(string $table, int $uid, bool $exists): void
     {
-        $schemaManager = $this->createMock(SchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
 
         $connection = $this->createMock(Connection::class);
@@ -308,7 +308,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('getRestrictions')->willReturn($restrictions);
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturnArgument(0);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
         $queryBuilder->method('executeQuery')->willReturn($result);
 
         $this->connectionPool
@@ -318,7 +318,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
 
     private function mockRecordDoesNotExist(): void
     {
-        $schemaManager = $this->createMock(SchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
 
         $connection = $this->createMock(Connection::class);
@@ -342,7 +342,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('getRestrictions')->willReturn($restrictions);
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturnArgument(0);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
         $queryBuilder->method('executeQuery')->willReturn($result);
 
         $this->connectionPool

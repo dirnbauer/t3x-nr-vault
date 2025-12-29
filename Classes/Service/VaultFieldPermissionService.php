@@ -68,7 +68,9 @@ final class VaultFieldPermissionService implements SingletonInterface
 
         // Admins always have full access
         if ($backendUser->isAdmin()) {
-            return true;
+            // For readOnly permission, admins should NOT be read-only (return false)
+            // For all other permissions, admins have full access (return true)
+            return $permission !== self::PERMISSION_READ_ONLY;
         }
 
         $cacheKey = \sprintf('%s:%s:%s:%d', $table, $field, $permission, $backendUser->user['uid'] ?? 0);

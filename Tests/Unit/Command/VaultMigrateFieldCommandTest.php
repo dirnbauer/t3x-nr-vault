@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Command;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Command\VaultMigrateFieldCommand;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -17,7 +18,6 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Database\Schema\SchemaManager;
 
 #[CoversClass(VaultMigrateFieldCommand::class)]
 final class VaultMigrateFieldCommandTest extends TestCase
@@ -60,7 +60,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     #[Test]
     public function failsWhenTableDoesNotExist(): void
     {
-        $schemaManager = $this->createMock(SchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->with(['nonexistent_table'])->willReturn(false);
 
         $connection = $this->createMock(Connection::class);
@@ -83,7 +83,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     #[Test]
     public function failsWhenFieldDoesNotExist(): void
     {
-        $schemaManager = $this->createMock(SchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->with(['tx_myext_settings'])->willReturn(true);
         $schemaManager->method('listTableColumns')->with('tx_myext_settings')->willReturn([]);
 
@@ -194,7 +194,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
 
     private function mockTableAndFieldExist(string $table, string $field): void
     {
-        $schemaManager = $this->createMock(SchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
         $schemaManager->method('listTableColumns')->willReturn([
             $field => new stdClass(),
@@ -228,7 +228,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('andWhere')->willReturnSelf();
         $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturnArgument(0);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
         $queryBuilder->method('executeQuery')->willReturn($result);
 
         $this->connectionPool

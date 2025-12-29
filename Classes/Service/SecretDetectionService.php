@@ -427,7 +427,9 @@ final class SecretDetectionService implements SingletonInterface
     {
         foreach ($excludePatterns as $pattern) {
             if (str_contains($pattern, '*')) {
-                $regex = '/^' . str_replace('*', '.*', preg_quote($pattern, '/')) . '$/';
+                // Quote all special chars first, then replace escaped \* with .*
+                $quotedPattern = preg_quote($pattern, '/');
+                $regex = '/^' . str_replace('\\*', '.*', $quotedPattern) . '$/';
                 if (preg_match($regex, $tableName)) {
                     return true;
                 }

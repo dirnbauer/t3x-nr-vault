@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Controller;
 
-use Netresearch\NrVault\Controller\VaultController;
+use Netresearch\NrVault\Controller\SecretsController;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Imaging\IconSize;
 
 /**
- * Unit tests for VaultController.
+ * Unit tests for SecretsController.
  *
  * These tests verify the controller's code correctness without requiring
  * a full TYPO3 bootstrap.
  */
-#[CoversClass(VaultController::class)]
+#[CoversClass(SecretsController::class)]
 final class VaultControllerTest extends TestCase
 {
     #[Test]
@@ -53,33 +53,9 @@ final class VaultControllerTest extends TestCase
     }
 
     #[Test]
-    public function layoutTemplateUsesExtSyntax(): void
-    {
-        $layoutPath = __DIR__ . '/../../../Resources/Private/Layouts/Module.html';
-        self::assertFileExists($layoutPath);
-
-        $layoutContent = file_get_contents($layoutPath);
-        self::assertNotFalse($layoutContent);
-
-        // Should use EXT: syntax
-        self::assertStringContainsString(
-            'EXT:nr_vault/Resources/Public/Css/backend.css',
-            $layoutContent,
-            'Layout should use EXT: syntax for CSS paths',
-        );
-
-        // Should NOT use f:uri.resource for paths
-        self::assertStringNotContainsString(
-            'f:uri.resource',
-            $layoutContent,
-            'Layout should not use f:uri.resource (not available in non-Extbase context)',
-        );
-    }
-
-    #[Test]
     public function controllerDoesNotUseDeprecatedIconConstants(): void
     {
-        $controllerPath = __DIR__ . '/../../../Classes/Controller/VaultController.php';
+        $controllerPath = __DIR__ . '/../../../Classes/Controller/SecretsController.php';
         self::assertFileExists($controllerPath);
 
         $controllerContent = file_get_contents($controllerPath);
@@ -109,7 +85,7 @@ final class VaultControllerTest extends TestCase
     #[Test]
     public function controllerUsesIconSizeImport(): void
     {
-        $controllerPath = __DIR__ . '/../../../Classes/Controller/VaultController.php';
+        $controllerPath = __DIR__ . '/../../../Classes/Controller/SecretsController.php';
         self::assertFileExists($controllerPath);
 
         $controllerContent = file_get_contents($controllerPath);

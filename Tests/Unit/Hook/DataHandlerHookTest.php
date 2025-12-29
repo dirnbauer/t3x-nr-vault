@@ -439,7 +439,7 @@ final class DataHandlerHookTest extends UnitTestCase
 
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(null);
+            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException('Secret not found'));
 
         $this->vaultService
             ->expects(self::never())

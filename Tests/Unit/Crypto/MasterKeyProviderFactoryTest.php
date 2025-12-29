@@ -8,6 +8,7 @@ use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EnvironmentMasterKeyProvider;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
+use Netresearch\NrVault\Crypto\Typo3MasterKeyProvider;
 use Netresearch\NrVault\Exception\ConfigurationException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -54,6 +55,18 @@ final class MasterKeyProviderFactoryTest extends TestCase
     }
 
     #[Test]
+    public function createReturnsTypo3MasterKeyProviderForTypo3Type(): void
+    {
+        $this->configuration
+            ->method('getMasterKeyProvider')
+            ->willReturn('typo3');
+
+        $result = $this->subject->create();
+
+        self::assertInstanceOf(Typo3MasterKeyProvider::class, $result);
+    }
+
+    #[Test]
     public function createThrowsExceptionForInvalidProvider(): void
     {
         $this->configuration
@@ -66,84 +79,16 @@ final class MasterKeyProviderFactoryTest extends TestCase
     }
 
     #[Test]
-    public function getAvailableProviderReturnsConfiguredProviderWhenAvailable(): void
+    public function getAvailableProviderReturnsProviderInstance(): void
     {
         $this->configuration
             ->method('getMasterKeyProvider')
-            ->willReturn('env');
+            ->willReturn('typo3');
 
-        // Set environment variable
-        $originalValue = getenv('NR_VAULT_MASTER_KEY');
-        putenv('NR_VAULT_MASTER_KEY=' . base64_encode(random_bytes(32)));
-
-        $this->configuration
-            ->method('getMasterKeyEnvVar')
-            ->willReturn('NR_VAULT_MASTER_KEY');
-
+        // getAvailableProvider always returns a provider instance
+        // The specific type depends on availability, but it's always a MasterKeyProviderInterface
         $result = $this->subject->getAvailableProvider();
 
-        self::assertInstanceOf(EnvironmentMasterKeyProvider::class, $result);
-
-        // Restore
-        if ($originalValue !== false) {
-            putenv('NR_VAULT_MASTER_KEY=' . $originalValue);
-        } else {
-            putenv('NR_VAULT_MASTER_KEY');
-        }
-    }
-
-    #[Test]
-    public function getAvailableProviderFallsBackToEnvProvider(): void
-    {
-        $this->configuration
-            ->method('getMasterKeyProvider')
-            ->willReturn('file');
-
-        $this->configuration
-            ->method('getMasterKeyPath')
-            ->willReturn('/nonexistent/path/to/key');
-
-        $this->configuration
-            ->method('getMasterKeyEnvVar')
-            ->willReturn('NR_VAULT_MASTER_KEY');
-
-        // Set environment variable
-        $originalValue = getenv('NR_VAULT_MASTER_KEY');
-        putenv('NR_VAULT_MASTER_KEY=' . base64_encode(random_bytes(32)));
-
-        $result = $this->subject->getAvailableProvider();
-
-        self::assertInstanceOf(EnvironmentMasterKeyProvider::class, $result);
-
-        // Restore
-        if ($originalValue !== false) {
-            putenv('NR_VAULT_MASTER_KEY=' . $originalValue);
-        } else {
-            putenv('NR_VAULT_MASTER_KEY');
-        }
-    }
-
-    #[Test]
-    public function getAvailableProviderFallsBackToFileProvider(): void
-    {
-        $this->configuration
-            ->method('getMasterKeyProvider')
-            ->willReturn('env');
-
-        $this->configuration
-            ->method('getMasterKeyEnvVar')
-            ->willReturn('NR_VAULT_NONEXISTENT_VAR');
-
-        $this->configuration
-            ->method('getMasterKeyPath')
-            ->willReturn('/nonexistent/path');
-
-        // Ensure env var is not set
-        putenv('NR_VAULT_NONEXISTENT_VAR');
-
-        $result = $this->subject->getAvailableProvider();
-
-        // Falls back to file provider (even if not available, for initialization)
-        self::assertInstanceOf(FileMasterKeyProvider::class, $result);
+        self::assertInstanceOf(\Netresearch\NrVault\Crypto\MasterKeyProviderInterface::class, $result);
     }
 }

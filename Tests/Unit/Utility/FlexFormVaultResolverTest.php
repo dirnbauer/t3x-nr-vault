@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Utility;
 
+use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 final class FlexFormVaultResolverTest extends UnitTestCase
@@ -101,6 +103,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     #[Test]
     public function resolveSettingsPreservesNonVaultFields(): void
     {
+        $this->registerVaultServiceMock();
         $settings = [
             'title' => 'Test Title',
             'limit' => 10,
@@ -115,6 +118,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     #[Test]
     public function resolveSettingsSkipsMissingFields(): void
     {
+        $this->registerVaultServiceMock();
         $settings = [
             'title' => 'Test',
         ];
@@ -151,5 +155,12 @@ final class FlexFormVaultResolverTest extends UnitTestCase
             'six parts (extra)' => ['a__b__c__d__e__f', false],
             'non-numeric uid' => ['a__b__c__d__abc', false],
         ];
+    }
+
+    private function registerVaultServiceMock(): void
+    {
+        // Register mock VaultService for resolveSettings tests
+        $vaultService = $this->createMock(VaultServiceInterface::class);
+        GeneralUtility::addInstance(VaultServiceInterface::class, $vaultService);
     }
 }

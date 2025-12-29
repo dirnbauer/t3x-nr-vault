@@ -10,6 +10,8 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 final class VaultFieldHelperTest extends UnitTestCase
 {
+    protected bool $resetSingletonInstances = true;
+
     #[Test]
     public function getFieldConfigReturnsBasicConfig(): void
     {
