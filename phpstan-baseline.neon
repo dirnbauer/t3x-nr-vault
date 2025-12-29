@@ -775,12 +775,6 @@ parameters:
 			path: Classes/Configuration/ExtensionConfiguration.php
 
 		-
-			rawMessage: Access to undefined constant TYPO3\CMS\Core\Imaging\Icon::SIZE_SMALL.
-			identifier: classConstant.notFound
-			count: 5
-			path: Classes/Controller/VaultController.php
-
-		-
 			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\JsonResponse from outside its root namespace TYPO3.'
 			identifier: method.internalClass
 			count: 3
@@ -904,12 +898,6 @@ parameters:
 			rawMessage: 'Parameter #2 $fields of function fputcsv expects array<int|string, bool|float|int|string|null>, mixed given.'
 			identifier: argument.type
 			count: 1
-			path: Classes/Controller/VaultController.php
-
-		-
-			rawMessage: 'Parameter #2 $size of method TYPO3\CMS\Core\Imaging\IconFactory::getIcon() expects TYPO3\CMS\Core\Imaging\IconSize, mixed given.'
-			identifier: argument.type
-			count: 5
 			path: Classes/Controller/VaultController.php
 
 		-
