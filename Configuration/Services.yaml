@@ -94,6 +94,22 @@ services:
     tags:
       - name: console.command
 
+  Netresearch\NrVault\Command\VaultMigrateFieldCommand:
+    tags:
+      - name: console.command
+
+  Netresearch\NrVault\Command\VaultCleanupOrphansCommand:
+    tags:
+      - name: console.command
+
+  # Site configuration vault processor
+  Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor:
+    public: true
+
+  # Vault field permission service
+  Netresearch\NrVault\Service\VaultFieldPermissionService:
+    public: true
+
   # HTTP Client
   Netresearch\NrVault\Http\VaultHttpClientInterface:
     alias: Netresearch\NrVault\Http\VaultHttpClient
