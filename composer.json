@@ -38,7 +38,8 @@
         "typo3/testing-framework": "^9.0",
         "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
-        "phpat/phpat": "^0.12.1"
+        "phpat/phpat": "^0.12.1",
+        "infection/infection": "^0.29"
     },
     "autoload": {
         "psr-4": {
@@ -55,7 +56,8 @@
         "bin-dir": ".Build/bin",
         "allow-plugins": {
             "typo3/class-alias-loader": true,
-            "typo3/cms-composer-installers": true
+            "typo3/cms-composer-installers": true,
+            "infection/extension-installer": true
         }
     },
     "extra": {
@@ -64,9 +66,20 @@
         }
     },
     "scripts": {
-        "test": "phpunit -c Tests/phpunit.xml",
+        "test": "phpunit -c Tests/Build/phpunit.xml",
+        "test:unit": "phpunit -c Tests/Build/phpunit.xml --testsuite Unit",
+        "test:functional": "phpunit -c Tests/Build/phpunit.xml --testsuite Functional",
+        "test:fuzz": "phpunit -c Tests/Build/phpunit.xml --testsuite Fuzz",
+        "test:architecture": "phpunit -c Tests/Build/phpunit.xml --testsuite Architecture",
+        "test:mutation": "infection --configuration=infection.json5 --threads=4",
         "lint": "php-cs-fixer fix --dry-run --diff",
         "fix": "php-cs-fixer fix",
-        "stan": "phpstan analyse Classes Tests"
+        "stan": "phpstan analyse Classes Tests",
+        "ci": [
+            "@test:unit",
+            "@test:fuzz",
+            "@stan",
+            "@lint"
+        ]
     }
 }

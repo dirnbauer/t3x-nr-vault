@@ -1,0 +1,37 @@
+{
+    "$schema": "https://raw.githubusercontent.com/infection/infection/0.29.0/resources/schema.json",
+    "source": {
+        "directories": [
+            "Classes"
+        ],
+        "excludes": [
+            "Exception",
+            "DependencyInjection"
+        ]
+    },
+    "logs": {
+        "text": ".Build/infection/infection.log",
+        "html": ".Build/infection/infection.html",
+        "json": ".Build/infection/infection.json",
+        "badge": {
+            "branch": "main"
+        }
+    },
+    "tmpDir": ".Build/infection/tmp",
+    "phpUnit": {
+        "configDir": "Tests/Build",
+        "customPath": ".Build/bin/phpunit"
+    },
+    "testFramework": "phpunit",
+    "testFrameworkOptions": "--testsuite=Unit",
+    "mutators": {
+        "@default": true,
+        // Disable mutators that don't make sense for this codebase
+        "CastString": false,
+        "UnwrapArrayMerge": false
+    },
+    "minMsi": 70,
+    "minCoveredMsi": 80,
+    // Focus on TCA integration classes for mutation testing
+    "filter": "Classes/Utility/,Classes/TCA/,Classes/Hook/"
+}
