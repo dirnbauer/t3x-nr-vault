@@ -1,0 +1,176 @@
+import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from '../fixtures/auth';
+
+/**
+ * Accessibility tests for Vault backend modules.
+ *
+ * Uses axe-core to validate WCAG 2.1 AA compliance.
+ * Tests verify that backend modules are accessible to users
+ * with assistive technologies.
+ */
+test.describe('Vault Module Accessibility', () => {
+  test.describe('Secrets Module', () => {
+    test('secrets list page has no critical accessibility violations', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/secrets');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+
+      // Log violations for debugging
+      if (results.violations.length > 0) {
+        console.log('Accessibility violations:', JSON.stringify(results.violations, null, 2));
+      }
+
+      // No critical or serious violations
+      const criticalViolations = results.violations.filter(
+        v => v.impact === 'critical' || v.impact === 'serious'
+      );
+      expect(criticalViolations).toHaveLength(0);
+    });
+
+    test('create secret form has proper labels and structure', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/secrets/create');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        // Focus on form-related rules
+        .include('.module-body')
+        .analyze();
+
+      const formViolations = results.violations.filter(
+        v => v.id.includes('label') || v.id.includes('form')
+      );
+      expect(formViolations).toHaveLength(0);
+    });
+  });
+
+  test.describe('Audit Module', () => {
+    test('audit log page has no critical accessibility violations', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/audit');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+
+      const criticalViolations = results.violations.filter(
+        v => v.impact === 'critical' || v.impact === 'serious'
+      );
+      expect(criticalViolations).toHaveLength(0);
+    });
+
+    test('audit table has proper data table structure', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/audit');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        // Focus on table-related rules
+        .include('table')
+        .analyze();
+
+      const tableViolations = results.violations.filter(
+        v => v.id.includes('table') || v.id.includes('th')
+      );
+      expect(tableViolations).toHaveLength(0);
+    });
+  });
+
+  test.describe('Migration Module', () => {
+    test('migration wizard has no critical accessibility violations', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/migration');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .analyze();
+
+      const criticalViolations = results.violations.filter(
+        v => v.impact === 'critical' || v.impact === 'serious'
+      );
+      expect(criticalViolations).toHaveLength(0);
+    });
+  });
+
+  test.describe('Parent Module', () => {
+    test('submodule overview has proper heading hierarchy', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze();
+
+      // Check for heading-order violations
+      const headingViolations = results.violations.filter(
+        v => v.id === 'heading-order'
+      );
+      expect(headingViolations).toHaveLength(0);
+    });
+
+    test('navigation elements are accessible', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze();
+
+      // Check for link and navigation violations
+      const navViolations = results.violations.filter(
+        v => v.id.includes('link') || v.id.includes('navigation')
+      );
+      expect(navViolations).toHaveLength(0);
+    });
+  });
+
+  test.describe('Color Contrast', () => {
+    test('secrets module has sufficient color contrast', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/secrets');
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2aa'])
+        .analyze();
+
+      const contrastViolations = results.violations.filter(
+        v => v.id === 'color-contrast'
+      );
+
+      // Log any contrast issues for fixing
+      if (contrastViolations.length > 0) {
+        console.log('Color contrast violations:', JSON.stringify(contrastViolations, null, 2));
+      }
+
+      // Allow minor contrast issues in TYPO3 core UI, but flag extension-specific ones
+      const extensionContrastIssues = contrastViolations.filter(v =>
+        v.nodes.some(n => n.html.includes('vault') || n.html.includes('secret'))
+      );
+      expect(extensionContrastIssues).toHaveLength(0);
+    });
+  });
+
+  test.describe('Keyboard Navigation', () => {
+    test('secrets list is navigable by keyboard', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/secrets');
+      await page.waitForLoadState('networkidle');
+
+      // Tab through interactive elements
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Tab');
+
+      // Verify focus is visible and on an interactive element
+      const focusedElement = await page.evaluate(() => {
+        const el = document.activeElement;
+        return el ? el.tagName.toLowerCase() : null;
+      });
+
+      // Should be on a focusable element (link, button, input, etc.)
+      expect(['a', 'button', 'input', 'select', 'textarea']).toContain(focusedElement);
+    });
+  });
+});
