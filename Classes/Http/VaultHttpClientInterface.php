@@ -17,22 +17,22 @@ interface VaultHttpClientInterface
     /**
      * Make an HTTP request with vault-provided authentication.
      *
+     * Options:
+     * - auth_secret: Secret identifier for authentication
+     * - placement: SecretPlacement enum for auth type (Bearer, BasicAuth, Header, etc.)
+     * - auth_header: Custom header name (for Header placement)
+     * - auth_query_param: Query param name (for QueryParam placement)
+     * - auth_body_field: Body field name (for BodyField placement)
+     * - auth_username_secret: Username secret (for BasicAuth with separate secrets)
+     * - oauth_config: OAuthConfig for OAuth2 placement
+     * - headers, query, body, json: Standard HTTP request options
+     * - timeout: Request timeout in seconds
+     * - verify_ssl: SSL verification (default: true)
+     * - reason: Audit log reason
+     *
      * @param string $method HTTP method (GET, POST, PUT, DELETE, etc.)
      * @param string $url Request URL
-     * @param array{
-     *     auth_secret?: string,
-     *     auth_type?: 'basic'|'bearer'|'header'|'query',
-     *     auth_header?: string,
-     *     auth_query_param?: string,
-     *     auth_username_secret?: string,
-     *     headers?: array<string, string>,
-     *     query?: array<string, mixed>,
-     *     body?: string|array,
-     *     json?: array,
-     *     timeout?: int,
-     *     verify_ssl?: bool,
-     *     reason?: string
-     * } $options Request options
+     * @param array<string, mixed> $options Request options
      *
      * @throws \Netresearch\NrVault\Exception\VaultException If secret retrieval fails
      * @throws \Psr\Http\Client\ClientExceptionInterface If request fails

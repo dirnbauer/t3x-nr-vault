@@ -15,8 +15,7 @@ namespace Netresearch\NrVault\Http;
 /**
  * Defines how a secret should be placed in an HTTP request.
  *
- * This enum provides type-safe options for secret injection,
- * replacing string-based auth_type values.
+ * This enum provides type-safe options for secret injection.
  */
 enum SecretPlacement: string
 {

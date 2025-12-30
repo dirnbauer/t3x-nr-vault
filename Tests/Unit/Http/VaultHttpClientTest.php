@@ -516,39 +516,6 @@ final class VaultHttpClientTest extends TestCase
         self::assertSame($customManager, $this->subject->getOAuthManager());
     }
 
-    #[Test]
-    public function requestWithStringAuthTypeUsesBackwardsCompatibility(): void
-    {
-        $this->vaultService
-            ->method('retrieve')
-            ->with('api/token')
-            ->willReturn('my-token');
-
-        $capturedOptions = null;
-        $response = $this->createSuccessfulResponse();
-
-        $this->httpClient
-            ->expects(self::once())
-            ->method('request')
-            ->with('GET', 'https://api.example.com/data', self::callback(
-                function (array $options) use (&$capturedOptions) {
-                    $capturedOptions = $options;
-
-                    return true;
-                },
-            ))
-            ->willReturn($response);
-
-        // Using string auth_type instead of SecretPlacement enum
-        $this->subject->request('GET', 'https://api.example.com/data', [
-            'auth_secret' => 'api/token',
-            'auth_type' => 'bearer',
-        ]);
-
-        self::assertArrayHasKey('headers', $capturedOptions);
-        self::assertSame('Bearer my-token', $capturedOptions['headers']['Authorization']);
-    }
-
     private function createSuccessfulResponse(int $statusCode = 200): ResponseInterface&MockObject
     {
         $stream = $this->createMock(StreamInterface::class);

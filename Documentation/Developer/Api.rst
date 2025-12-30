@@ -155,10 +155,6 @@ without exposing them to your code. Secrets are specified via options.
 Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The HTTP client supports two authentication approaches:
-
-**Using SecretPlacement enum (recommended):**
-
 placement
    Authentication placement using :php:`SecretPlacement` enum:
 
@@ -170,31 +166,23 @@ placement
    - :php:`SecretPlacement::OAuth2` - OAuth 2.0 with automatic token refresh
    - :php:`SecretPlacement::ApiKey` - X-API-Key header (shorthand)
 
-**Using string auth_type (backwards compatible):**
-
-auth_type
-   Authentication type as string: ``bearer``, ``basic``, ``header``, ``query``,
-   ``body_field``, ``oauth2``, or ``api_key``
-
-**Common options:**
-
 auth_secret
    Secret identifier for authentication
 
 auth_header
-   Custom header name (for ``header`` type, default: ``X-API-Key``)
+   Custom header name (for :php:`SecretPlacement::Header`, default: ``X-API-Key``)
 
 auth_query_param
-   Query parameter name (for ``query`` type, default: ``api_key``)
+   Query parameter name (for :php:`SecretPlacement::QueryParam`, default: ``api_key``)
 
 auth_body_field
-   Body field name (for ``body_field`` type, default: ``api_key``)
+   Body field name (for :php:`SecretPlacement::BodyField`, default: ``api_key``)
 
 auth_username_secret
-   Separate username secret (for ``basic`` type)
+   Separate username secret (for :php:`SecretPlacement::BasicAuth`)
 
 oauth_config
-   :php:`OAuthConfig` instance (for ``oauth2`` type)
+   :php:`OAuthConfig` instance (for :php:`SecretPlacement::OAuth2`)
 
 reason
    Reason for access (logged in audit)
@@ -203,22 +191,12 @@ reason
 
    use Netresearch\NrVault\Http\SecretPlacement;
 
-   // Bearer authentication (using enum - recommended)
+   // Bearer authentication
    $response = $this->vault->http()->post(
        'https://api.stripe.com/v1/charges',
        [
            'auth_secret' => 'stripe_api_key',
            'placement' => SecretPlacement::Bearer,
-           'json' => $payload,
-       ]
-   );
-
-   // Bearer authentication (using string - backwards compatible)
-   $response = $this->vault->http()->post(
-       'https://api.stripe.com/v1/charges',
-       [
-           'auth_secret' => 'stripe_api_key',
-           'auth_type' => 'bearer',
            'json' => $payload,
        ]
    );

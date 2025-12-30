@@ -56,15 +56,9 @@ final class VaultHttpClient implements VaultHttpClientInterface
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {
         $authSecret = $options['auth_secret'] ?? null;
-        $authType = $options['auth_type'] ?? null;
         $placement = $options['placement'] ?? null;
         $oauthConfig = $options['oauth_config'] ?? null;
         $reason = $options['reason'] ?? 'HTTP API call';
-
-        // Convert string auth_type to SecretPlacement enum for backwards compatibility
-        if ($placement === null && $authType !== null) {
-            $placement = SecretPlacement::tryFrom($authType);
-        }
 
         // Remove vault-specific options before passing to Guzzle
         $guzzleOptions = $this->extractGuzzleOptions($options);
@@ -193,7 +187,6 @@ final class VaultHttpClient implements VaultHttpClientInterface
         // Keys that are vault-specific, not Guzzle options
         $vaultKeys = [
             'auth_secret',
-            'auth_type',
             'auth_header',
             'auth_query_param',
             'auth_body_field',
