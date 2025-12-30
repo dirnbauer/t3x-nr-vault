@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Service;
 
 use Doctrine\DBAL\Exception as DbalException;
+use Doctrine\DBAL\Types\BlobType;
+use Doctrine\DBAL\Types\StringType;
+use Doctrine\DBAL\Types\TextType;
 use Exception;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -257,10 +260,12 @@ final class SecretDetectionService implements SingletonInterface
 
             foreach ($columns as $column) {
                 $columnName = $column->getName();
-                $columnType = $column->getType()->getName();
+                $columnType = $column->getType();
 
-                // Only check string-type columns
-                if (!\in_array($columnType, ['string', 'text', 'blob'], true)) {
+                // Only check string-type columns (DBAL 4.x removed Type::getName())
+                if (!($columnType instanceof StringType)
+                    && !($columnType instanceof TextType)
+                    && !($columnType instanceof BlobType)) {
                     continue;
                 }
 
