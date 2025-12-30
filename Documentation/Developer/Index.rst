@@ -243,9 +243,11 @@ VaultService
 
    Main facade for vault operations.
 
-   .. php:method:: retrieve(string $identifier): ?string
+   .. php:method:: retrieve(string $identifier)
 
       Retrieve a decrypted secret value.
+
+      :returntype: string|null
 
    .. php:method:: store(string $identifier, string $secret, array $options = []): void
 
@@ -263,9 +265,11 @@ VaultService
 
       Rotate a secret with a new value.
 
-   .. php:method:: list(?string $pattern = null): array
+   .. php:method:: list(string $pattern = null): array
 
       List accessible secrets.
+
+      :param string|null $pattern: Optional filter pattern
 
    .. php:method:: getMetadata(string $identifier): array
 

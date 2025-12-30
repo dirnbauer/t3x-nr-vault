@@ -314,3 +314,173 @@ Example
    vendor/bin/typo3 vault:rotate-master-key \
      --old-key=/path/to/old.key \
      --dry-run
+
+.. _command-scan:
+
+vault:scan
+==========
+
+Scan for potential plaintext secrets in database and configuration.
+
+.. code-block:: bash
+
+   vendor/bin/typo3 vault:scan [options]
+
+Options
+-------
+
+--format, -f
+   Output format: table (default), json, or summary
+
+--exclude, -e
+   Comma-separated list of tables to exclude (supports wildcards)
+
+--severity, -s
+   Minimum severity to report: critical, high, medium, low (default: low)
+
+--database-only
+   Only scan database tables
+
+--config-only
+   Only scan configuration files
+
+The command detects:
+
+- Database columns with secret-like names (password, api_key, token, etc.)
+- Known API key patterns (Stripe, AWS, GitHub, Slack, etc.)
+- Extension configuration secrets
+- LocalConfiguration secrets (SMTP password, etc.)
+
+Severity levels:
+
+critical
+   Known API key pattern detected (Stripe, AWS, etc.)
+
+high
+   Password or private key column with non-empty value
+
+medium
+   Token or API key column with suspicious value
+
+low
+   Secret-like column name detected
+
+Example
+-------
+
+.. code-block:: bash
+
+   # Scan all sources
+   vendor/bin/typo3 vault:scan
+
+   # Output as JSON for CI/CD
+   vendor/bin/typo3 vault:scan --format=json
+
+   # Exclude cache tables
+   vendor/bin/typo3 vault:scan --exclude=cache_*,cf_*
+
+   # Only show critical issues
+   vendor/bin/typo3 vault:scan --severity=critical
+
+.. _command-migrate-field:
+
+vault:migrate-field
+===================
+
+Migrate existing plaintext database field values to vault storage.
+
+.. code-block:: bash
+
+   vendor/bin/typo3 vault:migrate-field <table> <field> [options]
+
+Arguments
+---------
+
+table
+   Database table name (e.g., tx_myext_settings)
+
+field
+   Field name containing plaintext values to migrate
+
+Options
+-------
+
+--dry-run
+   Show what would be migrated without making changes
+
+--batch-size, -b
+   Number of records to process per batch (default: 100)
+
+--where, -w
+   Additional WHERE clause to filter records (e.g., "pid=1")
+
+--force, -f
+   Migrate even if field already contains vault identifiers
+
+--clear-source
+   Clear the source field after migration (set to empty string)
+
+--uid-field
+   Name of the UID field (default: uid)
+
+.. attention::
+
+   Always backup your database before running migrations.
+
+Example
+-------
+
+.. code-block:: bash
+
+   # Preview migration
+   vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key --dry-run
+
+   # Migrate with specific records
+   vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key --where="pid=1"
+
+   # Migrate and clear source field
+   vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key --clear-source
+
+.. _command-cleanup-orphans:
+
+vault:cleanup-orphans
+=====================
+
+Clean up orphaned vault secrets from deleted TCA records.
+
+When records with vault-backed fields are deleted, the corresponding vault
+secrets may become orphaned. This command identifies and removes such orphaned
+secrets.
+
+.. code-block:: bash
+
+   vendor/bin/typo3 vault:cleanup-orphans [options]
+
+Options
+-------
+
+--dry-run
+   Show what would be deleted without making changes
+
+--retention-days, -r
+   Only delete orphans older than this many days (default: 0)
+
+--table, -t
+   Only check secrets for this specific table
+
+--batch-size, -b
+   Number of secrets to check per batch (default: 100)
+
+Example
+-------
+
+.. code-block:: bash
+
+   # Preview orphan cleanup
+   vendor/bin/typo3 vault:cleanup-orphans --dry-run
+
+   # Only clean up orphans older than 30 days
+   vendor/bin/typo3 vault:cleanup-orphans --retention-days=30
+
+   # Clean up orphans for specific table only
+   vendor/bin/typo3 vault:cleanup-orphans --table=tx_myext_settings

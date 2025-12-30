@@ -63,7 +63,7 @@ The main service for interacting with the vault.
       :param string $newSecret: The new secret value
       :param string $reason: Optional reason for rotation (logged)
 
-   .. php:method:: list(?string $pattern = null): array
+   .. php:method:: list(string $pattern = null): array
 
       List accessible secrets.
 
@@ -155,11 +155,31 @@ without exposing them to your code. Secrets are specified via options.
 Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~
 
-auth_secret
-   Secret identifier for authentication
+The HTTP client supports two authentication approaches:
+
+**Using SecretPlacement enum (recommended):**
+
+placement
+   Authentication placement using :php:`SecretPlacement` enum:
+
+   - :php:`SecretPlacement::Bearer` - Bearer token in Authorization header
+   - :php:`SecretPlacement::BasicAuth` - HTTP Basic Authentication
+   - :php:`SecretPlacement::Header` - Custom header value
+   - :php:`SecretPlacement::QueryParam` - Query parameter
+   - :php:`SecretPlacement::BodyField` - Field in request body
+   - :php:`SecretPlacement::OAuth2` - OAuth 2.0 with automatic token refresh
+   - :php:`SecretPlacement::ApiKey` - X-API-Key header (shorthand)
+
+**Using string auth_type (backwards compatible):**
 
 auth_type
-   Authentication type: ``bearer``, ``basic``, ``header``, or ``query``
+   Authentication type as string: ``bearer``, ``basic``, ``header``, ``query``,
+   ``body_field``, ``oauth2``, or ``api_key``
+
+**Common options:**
+
+auth_secret
+   Secret identifier for authentication
 
 auth_header
    Custom header name (for ``header`` type, default: ``X-API-Key``)
@@ -167,15 +187,33 @@ auth_header
 auth_query_param
    Query parameter name (for ``query`` type, default: ``api_key``)
 
+auth_body_field
+   Body field name (for ``body_field`` type, default: ``api_key``)
+
 auth_username_secret
    Separate username secret (for ``basic`` type)
+
+oauth_config
+   :php:`OAuthConfig` instance (for ``oauth2`` type)
 
 reason
    Reason for access (logged in audit)
 
 .. code-block:: php
 
-   // Bearer authentication
+   use Netresearch\NrVault\Http\SecretPlacement;
+
+   // Bearer authentication (using enum - recommended)
+   $response = $this->vault->http()->post(
+       'https://api.stripe.com/v1/charges',
+       [
+           'auth_secret' => 'stripe_api_key',
+           'placement' => SecretPlacement::Bearer,
+           'json' => $payload,
+       ]
+   );
+
+   // Bearer authentication (using string - backwards compatible)
    $response = $this->vault->http()->post(
        'https://api.stripe.com/v1/charges',
        [
@@ -190,7 +228,7 @@ reason
        'https://api.example.com/data',
        [
            'auth_secret' => 'api_token',
-           'auth_type' => 'header',
+           'placement' => SecretPlacement::Header,
            'auth_header' => 'X-API-Key',
        ]
    );
@@ -201,7 +239,7 @@ reason
        [
            'auth_username_secret' => 'service_username',
            'auth_secret' => 'service_password',
-           'auth_type' => 'basic',
+           'placement' => SecretPlacement::BasicAuth,
            'reason' => 'Fetching secure data',
        ]
    );
