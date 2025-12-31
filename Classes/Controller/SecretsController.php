@@ -61,12 +61,12 @@ final class SecretsController
 
         $this->addDocHeaderButtons($moduleTemplate);
 
-        // Get filter parameters
-        $queryParams = $request->getQueryParams();
+        // Get filter parameters from POST body (filter form uses POST to avoid iframe issues)
+        $body = $request->getParsedBody() ?? [];
         $filters = [
-            'identifier' => trim((string) ($queryParams['identifier'] ?? '')),
-            'status' => (string) ($queryParams['status'] ?? ''),
-            'owner' => (int) ($queryParams['owner'] ?? 0),
+            'identifier' => trim((string) ($body['identifier'] ?? '')),
+            'status' => (string) ($body['status'] ?? ''),
+            'owner' => (int) ($body['owner'] ?? 0),
         ];
 
         $secrets = $this->vaultService->list();
@@ -353,6 +353,9 @@ final class SecretsController
             // Context
             $updateData['context'] = trim((string) ($body['context'] ?? ''));
 
+            // Frontend accessible
+            $updateData['frontend_accessible'] = !empty($body['frontendAccessible']);
+
             // Expires at
             if (!empty($body['expiresAt'])) {
                 try {
@@ -420,6 +423,10 @@ final class SecretsController
 
         if (!empty($body['context'])) {
             $options['context'] = trim((string) $body['context']);
+        }
+
+        if (!empty($body['frontendAccessible'])) {
+            $options['frontendAccessible'] = true;
         }
 
         if (!empty($body['expiresAt'])) {
@@ -683,6 +690,8 @@ final class SecretsController
             ->setShowLabelText(true)
             ->setIcon($this->iconFactory->getIcon('actions-add', IconSize::SMALL));
         $buttonBar->addButton($createButton, \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT, 1);
+
+        // Note: Reload button is automatically added by TYPO3's DocHeaderComponent
     }
 
     private function addBackButton(\TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate): void
@@ -914,6 +923,10 @@ final class SecretsController
 
         if (\array_key_exists('context', $data)) {
             $updateFields['context'] = $data['context'];
+        }
+
+        if (\array_key_exists('frontend_accessible', $data)) {
+            $updateFields['frontend_accessible'] = $data['frontend_accessible'] ? 1 : 0;
         }
 
         if (\array_key_exists('expires_at', $data)) {

@@ -139,6 +139,12 @@
             <trans-unit id="secrets.context.help">
                 <source>Optional context for permission scoping (e.g., production, staging)</source>
             </trans-unit>
+            <trans-unit id="secrets.frontendAccessible">
+                <source>Frontend Accessible</source>
+            </trans-unit>
+            <trans-unit id="secrets.frontendAccessible.help">
+                <source>Allow this secret to be resolved in TypoScript and other frontend contexts. Only enable for non-sensitive data like API endpoints or public keys.</source>
+            </trans-unit>
             <trans-unit id="secrets.expiresAt">
                 <source>Expires At</source>
             </trans-unit>
@@ -196,8 +202,11 @@
             <trans-unit id="secrets.rotate.title">
                 <source>Rotate Secret</source>
             </trans-unit>
+            <trans-unit id="secrets.rotate.warning.title">
+                <source>Warning</source>
+            </trans-unit>
             <trans-unit id="secrets.rotate.warning">
-                <source>Warning: Rotating a secret will replace its current value. Applications using the old secret value will no longer work.</source>
+                <source>Rotating a secret will replace its current value. Applications using the old secret value will no longer work.</source>
             </trans-unit>
             <trans-unit id="secrets.rotate.current">
                 <source>Current Secret Information</source>
@@ -225,6 +234,9 @@
             </trans-unit>
 
             <!-- View secret -->
+            <trans-unit id="secrets.view">
+                <source>View Secret</source>
+            </trans-unit>
             <trans-unit id="secrets.details">
                 <source>Secret Details</source>
             </trans-unit>
@@ -308,6 +320,23 @@
             </trans-unit>
             <trans-unit id="audit.verification_errors">
                 <source>Verification Errors</source>
+            </trans-unit>
+
+            <!-- Migration wizard -->
+            <trans-unit id="migration.title">
+                <source>Secret Migration Wizard</source>
+            </trans-unit>
+            <trans-unit id="migration.scan">
+                <source>Scan</source>
+            </trans-unit>
+            <trans-unit id="migration.review">
+                <source>Review</source>
+            </trans-unit>
+            <trans-unit id="migration.configure">
+                <source>Configure</source>
+            </trans-unit>
+            <trans-unit id="migration.verify">
+                <source>Verify</source>
             </trans-unit>
 
             <!-- Action labels (for DocHeader buttons) -->
