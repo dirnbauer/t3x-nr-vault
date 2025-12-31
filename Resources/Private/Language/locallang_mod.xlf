@@ -67,6 +67,12 @@
             <trans-unit id="overview.usage.php">
                 <source>In PHP Code:</source>
             </trans-unit>
+            <trans-unit id="overview.usage.typoscript">
+                <source>In TypoScript (requires frontend_accessible flag):</source>
+            </trans-unit>
+            <trans-unit id="overview.usage.typoscript.warning">
+                <source>Secrets used in TypoScript must have the "Frontend Accessible" flag enabled. Always disable caching for content containing vault references to prevent secrets from being stored in page cache.</source>
+            </trans-unit>
 
             <!-- Secrets list -->
             <trans-unit id="secrets.title">

@@ -89,6 +89,19 @@
             <h6 class="mt-3"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.php" /></h6>
             <pre class="bg-light p-3 rounded"><code>$vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
 $secret = $vaultService->retrieve('my-api-key');</code></pre>
+
+            <h6 class="mt-3"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.typoscript" /></h6>
+            <pre class="bg-light p-3 rounded"><code>page.headerData.10 = TEXT
+page.headerData.10.value = &lt;meta name="api-key" content="%vault(my-api-key)%"&gt;
+
+# Important: Disable caching for content with vault references
+lib.apiAuth = TEXT
+lib.apiAuth.value = Bearer %vault(auth_token)%
+lib.apiAuth.stdWrap.cache.disable = 1</code></pre>
+            <div class="alert alert-warning mt-2">
+                <core:icon identifier="actions-exclamation-triangle" size="small" />
+                <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.typoscript.warning" />
+            </div>
         </div>
     </div>
 </f:section>
