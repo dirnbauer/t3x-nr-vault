@@ -1,55 +1,29 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
       xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
       data-namespace-typo3-fluid="true">
 
 <f:layout name="Module" />
 
-<f:section name="Before">
-    <f:be.pageRenderer includeCssFiles="{0: 'EXT:nr_vault/Resources/Public/Css/backend.css'}" />
-</f:section>
-
 <f:section name="Content">
-    <div class="vault-module" role="main" aria-label="Hash Chain Verification">
+    <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verify_chain" /></h1>
+
         <f:if condition="{valid}">
             <f:then>
-                <div class="callout callout-success" role="alert">
-                    <div class="media">
-                        <div class="media-left" aria-hidden="true">
-                            <core:icon identifier="actions-check" size="small" />
-                        </div>
-                        <div class="media-body">
-                            <h4 class="callout-title">
-                                <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid" />
-                            </h4>
-                            <p class="callout-body">
-                                The audit log hash chain has been verified successfully. No tampering or modifications have been detected.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')}" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::OK')}">
+                    The audit log hash chain has been verified successfully. No tampering or modifications have been detected.
+                </f:be.infobox>
             </f:then>
             <f:else>
-                <div class="callout callout-danger" role="alert">
-                    <div class="media">
-                        <div class="media-left" aria-hidden="true">
-                            <core:icon identifier="actions-exclamation-triangle" size="small" />
-                        </div>
-                        <div class="media-body">
-                            <h4 class="callout-title">
-                                <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid" />
-                            </h4>
-                            <p class="callout-body">
-                                Hash chain verification failed. The audit log may have been tampered with.
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid')}" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::ERROR')}">
+                    Hash chain verification failed. The audit log may have been tampered with.
+                </f:be.infobox>
 
                 <f:if condition="{errors}">
-                    <div class="card mt-4">
+                    <div class="card card-size-medium mt-4">
                         <div class="card-header">
-                            <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verification_errors" />
+                            <div class="card-header-body">
+                                <h2 class="card-title"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verification_errors" /></h2>
+                            </div>
                         </div>
                         <div class="card-body">
                             <ul class="list-group">
@@ -67,11 +41,10 @@
         </f:if>
 
         <div class="form-actions mt-4">
-            <a href="{backUri}" class="btn btn-secondary">
+            <f:be.link route="admin_vault_audit" class="btn btn-default">
                 <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.back" />
-            </a>
+            </f:be.link>
         </div>
-    </div>
 </f:section>
 
 </html>
