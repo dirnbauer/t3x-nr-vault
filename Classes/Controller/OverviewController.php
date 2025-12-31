@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
-use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageService;
 
 /**
  * Backend module controller for vault overview/dashboard.
- *
- * Shows summary statistics and quick links to submodules.
  */
 #[AsController]
 final class OverviewController
@@ -23,7 +21,7 @@ final class OverviewController
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly VaultServiceInterface $vaultService,
+        private readonly ConnectionPool $connectionPool,
     ) {}
 
     /**
@@ -76,16 +74,34 @@ final class OverviewController
     private function getVaultStatistics(): array
     {
         try {
-            $secrets = $this->vaultService->list();
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
 
-            $totalSecrets = \count($secrets);
-            $activeSecrets = \count(array_filter($secrets, static fn($s) => !($s['hidden'] ?? false)));
-            $disabledSecrets = $totalSecrets - $activeSecrets;
+            // Count total secrets
+            $totalResult = $queryBuilder
+                ->count('uid')
+                ->from('tx_nrvault_secret')
+                ->where($queryBuilder->expr()->eq('deleted', 0))
+                ->executeQuery()
+                ->fetchOne();
+            $totalSecrets = \is_numeric($totalResult) ? (int) $totalResult : 0;
+
+            // Count active secrets
+            $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
+            $activeResult = $queryBuilder
+                ->count('uid')
+                ->from('tx_nrvault_secret')
+                ->where(
+                    $queryBuilder->expr()->eq('deleted', 0),
+                    $queryBuilder->expr()->eq('hidden', 0),
+                )
+                ->executeQuery()
+                ->fetchOne();
+            $activeSecrets = \is_numeric($activeResult) ? (int) $activeResult : 0;
 
             return [
                 'totalSecrets' => $totalSecrets,
                 'activeSecrets' => $activeSecrets,
-                'disabledSecrets' => $disabledSecrets,
+                'disabledSecrets' => $totalSecrets - $activeSecrets,
             ];
         } catch (\Exception) {
             return [
@@ -98,6 +114,9 @@ final class OverviewController
 
     private function getLanguageService(): LanguageService
     {
-        return $GLOBALS['LANG'];
+        /** @var LanguageService $languageService */
+        $languageService = $GLOBALS['LANG'];
+
+        return $languageService;
     }
 }
