@@ -112,8 +112,43 @@
                         <br><small class="text-muted">Inject <code>VaultServiceInterface</code> via constructor</small>
                     </td>
                 </tr>
+                <tr>
+                    <td><strong>CLI</strong></td>
+                    <td>
+                        <code>bin/typo3 vault:store my_key "secret_value"</code>
+                        <br><code>bin/typo3 vault:retrieve my_key</code>
+                        <br><code>bin/typo3 vault:list</code>
+                    </td>
+                </tr>
             </tbody>
         </table>
+    </div>
+
+    <!-- CLI Commands Reference -->
+    <h2>CLI Commands</h2>
+    <div class="table-fit mb-4">
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>Command</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><code>vault:init</code></td><td>Initialize vault and generate master key</td></tr>
+                <tr><td><code>vault:store</code></td><td>Store a new secret</td></tr>
+                <tr><td><code>vault:retrieve</code></td><td>Retrieve a secret value</td></tr>
+                <tr><td><code>vault:list</code></td><td>List all secrets</td></tr>
+                <tr><td><code>vault:rotate</code></td><td>Rotate a secret's value</td></tr>
+                <tr><td><code>vault:delete</code></td><td>Delete a secret</td></tr>
+                <tr><td><code>vault:audit</code></td><td>View audit log entries</td></tr>
+                <tr><td><code>vault:scan</code></td><td>Scan for plaintext secrets in database</td></tr>
+                <tr><td><code>vault:migrate-field</code></td><td>Migrate a database field to vault</td></tr>
+                <tr><td><code>vault:rotate-master-key</code></td><td>Rotate the master encryption key</td></tr>
+                <tr><td><code>vault:cleanup-orphans</code></td><td>Remove orphaned secrets</td></tr>
+            </tbody>
+        </table>
+        <small class="text-muted">Run <code>bin/typo3 vault:&lt;command&gt; --help</code> for detailed usage.</small>
     </div>
 
     <!-- Security Features -->
