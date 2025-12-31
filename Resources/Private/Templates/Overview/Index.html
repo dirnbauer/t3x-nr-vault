@@ -11,11 +11,11 @@
     </p>
 
     <!-- Statistics Cards -->
-    <div class="card-container mb-4">
+    <div class="card-container mb-4" role="group" aria-label="Vault statistics">
         <div class="card card-size-fixed-small">
             <div class="card-header">
                 <div class="card-header-body">
-                    <h2 class="card-title">{stats.totalSecrets}</h2>
+                    <span class="card-title" aria-label="{stats.totalSecrets} total secrets">{stats.totalSecrets}</span>
                     <span class="card-subtitle">Total Secrets</span>
                 </div>
             </div>
@@ -23,7 +23,7 @@
         <div class="card card-size-fixed-small">
             <div class="card-header">
                 <div class="card-header-body">
-                    <h2 class="card-title text-success">{stats.activeSecrets}</h2>
+                    <span class="card-title text-success" aria-label="{stats.activeSecrets} active secrets">{stats.activeSecrets}</span>
                     <span class="card-subtitle">Active</span>
                 </div>
             </div>
@@ -31,7 +31,7 @@
         <div class="card card-size-fixed-small">
             <div class="card-header">
                 <div class="card-header-body">
-                    <h2 class="card-title text-secondary">{stats.disabledSecrets}</h2>
+                    <span class="card-title text-secondary" aria-label="{stats.disabledSecrets} disabled secrets">{stats.disabledSecrets}</span>
                     <span class="card-subtitle">Disabled</span>
                 </div>
             </div>
@@ -40,7 +40,7 @@
 
     <!-- Submodule Navigation Cards -->
     <h2>Modules</h2>
-    <div class="card-container mb-5">
+    <nav class="card-container mb-5" aria-label="Vault submodules">
         <f:for each="{submodules}" as="submodule">
             <div class="card card-size-fixed-small card-has-hover">
                 <f:be.link route="{submodule.route}" class="card-link">
@@ -49,32 +49,32 @@
                             <core:icon identifier="{submodule.icon}" size="medium" />
                         </div>
                         <div class="card-header-body">
-                            <h2 class="card-title">{submodule.title}</h2>
+                            <h3 class="card-title">{submodule.title}</h3>
                             <span class="card-subtitle">{submodule.description}</span>
                         </div>
                     </div>
                 </f:be.link>
             </div>
         </f:for>
-    </div>
+    </nav>
 
     <!-- Quick Start Guide -->
     <h2>Quick Start</h2>
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card mb-3">
+    <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">Store a Secret</h3>
                     <p class="card-text">Navigate to <strong>Secrets</strong> and click the <code>+</code> button in the header to create a new secret. Provide an identifier (e.g., <code>stripe_api_key</code>) and the secret value.</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">Use in Configuration</h3>
                     <p class="card-text">Reference secrets in your TYPO3 configuration using the vault syntax:</p>
-                    <pre class="bg-dark text-light p-2 rounded"><code>%vault(stripe_api_key)%</code></pre>
+                    <pre class="bg-body-tertiary p-2 rounded mb-0"><code class="text-body">%vault(stripe_api_key)%</code></pre>
                 </div>
             </div>
         </div>
@@ -82,30 +82,30 @@
 
     <!-- Usage Examples -->
     <h2>When to Use What</h2>
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card mb-3 h-100">
+    <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-x-content-site-config" size="small" />
                         Site-Specific API Keys
                     </h3>
                     <p class="card-text small">Payment gateways, external services, or any secret that differs per site. Resolved at runtime from <code>config/sites/*/config.yaml</code>.</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>settings:
+                    <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">settings:
   stripeKey: '%vault(stripe_api_key)%'
   mailchimpKey: '%vault(mailchimp_key)%'</code></pre>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3 h-100">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-database" size="small" />
                         Per-Record Credentials
                     </h3>
                     <p class="card-text small">Let editors manage secrets per record (e.g., per-integration or per-client settings). Values encrypted automatically via TCA.</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>'api_key' => [
+                    <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">'api_key' => [
     'label' => 'Client API Key',
     'config' => [
         'type' => 'input',
@@ -115,15 +115,15 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3 h-100">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-text-php" size="small" />
                         Extension Services
                     </h3>
                     <p class="card-text small">When your extension needs secrets programmatically - API clients, payment processors, external integrations.</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>public function __construct(
+                    <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">public function __construct(
     private readonly VaultServiceInterface $vault,
 ) {}
 
@@ -135,15 +135,15 @@ public function callExternalApi(): Response
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3 h-100">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-terminal" size="small" />
                         Deployment &amp; CI/CD
                     </h3>
                     <p class="card-text small">Automate secret provisioning in deployment pipelines, or manage secrets via scripts without backend access.</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code># In deployment script
+                    <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body"># In deployment script
 bin/typo3 vault:store smtp_password "$SMTP_PASS"
 bin/typo3 vault:store api_key "$API_KEY"
 
@@ -152,29 +152,29 @@ bin/typo3 vault:rotate api_key "$NEW_KEY"</code></pre>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3 h-100">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-text-typoscript" size="small" />
                         Frontend Rendering <small class="text-warning">(use sparingly)</small>
                     </h3>
                     <p class="card-text small">When secrets must appear in rendered output (e.g., JS API keys). Requires <code>frontend_accessible</code> flag and cache disabled.</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>lib.mapsKey = TEXT
+                    <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">lib.mapsKey = TEXT
 lib.mapsKey.value = %vault(google_maps_key)%
 lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card mb-3 h-100">
+        <div class="col">
+            <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-cog" size="small" />
                         TCA Helper API
                     </h3>
                     <p class="card-text small">Shorthand for common vault field patterns with sensible defaults (exclude: true, l10n_mode: exclude).</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>use Netresearch\NrVault\TCA\VaultFieldHelper;
+                    <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">use Netresearch\NrVault\TCA\VaultFieldHelper;
 
 'api_key' => VaultFieldHelper::getSecureFieldConfig(
     'API Key',
@@ -251,14 +251,12 @@ lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
     </div>
 
     <!-- Documentation Link -->
-    <div class="alert alert-info">
-        <core:icon identifier="actions-info" size="small" />
-        <strong>Documentation:</strong>
+    <f:be.infobox title="Documentation" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
         For detailed information, see the
         <a href="https://docs.typo3.org/p/netresearch/nr-vault/main/en-us/" target="_blank" rel="noopener">
             extension documentation
         </a>.
-    </div>
+    </f:be.infobox>
 </f:section>
 
 </html>

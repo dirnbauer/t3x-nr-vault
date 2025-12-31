@@ -19,7 +19,10 @@
                     <select id="filter-action" name="filterAction" class="form-select">
                         <option value="">[all]</option>
                         <f:for each="{actions}" as="actionType">
-                            <option value="{actionType}"{f:if(condition: '{filters._form.action} == \'{actionType}\'', then: ' selected')}>{actionType}</option>
+                            <f:if condition="{filters._form.action} == '{actionType}'">
+                                <f:then><option value="{actionType}" selected>{actionType}</option></f:then>
+                                <f:else><option value="{actionType}">{actionType}</option></f:else>
+                            </f:if>
                         </f:for>
                     </select>
                 </div>
@@ -27,8 +30,14 @@
                     <label for="filter-success" class="form-label">Status</label>
                     <select id="filter-success" name="success" class="form-select">
                         <option value="">[all]</option>
-                        <option value="1"{f:if(condition: '{filters._form.success} == \'1\'', then: ' selected')}>Success</option>
-                        <option value="0"{f:if(condition: '{filters._form.success} == \'0\'', then: ' selected')}>Failed</option>
+                        <f:if condition="{filters._form.success} == '1'">
+                            <f:then><option value="1" selected>Success</option></f:then>
+                            <f:else><option value="1">Success</option></f:else>
+                        </f:if>
+                        <f:if condition="{filters._form.success} == '0'">
+                            <f:then><option value="0" selected>Failed</option></f:then>
+                            <f:else><option value="0">Failed</option></f:else>
+                        </f:if>
                     </select>
                 </div>
                 <div class="form-group">
@@ -39,7 +48,7 @@
                     <label for="filter-until" class="form-label">To</label>
                     <input type="date" id="filter-until" name="until" value="{filters._form.until}" class="form-control" />
                 </div>
-                <div class="form-group">
+                <div class="form-group align-self-end">
                     <button type="submit" class="btn btn-default" name="operation" value="filter">
                         <core:icon identifier="actions-filter" size="small" />
                         Filter
@@ -125,14 +134,14 @@
                             <f:if condition="{currentPage} > 1">
                                 <f:then>
                                     <li class="page-item">
-                                        <f:be.link route="admin_vault_audit" parameters="{page: 1}" title="First" class="page-link">
+                                        <a href="{pagination.first}" title="First" class="page-link">
                                             <core:icon identifier="actions-view-paging-first" />
-                                        </f:be.link>
+                                        </a>
                                     </li>
                                     <li class="page-item">
-                                        <f:be.link route="admin_vault_audit" parameters="{page: currentPage - 1}" title="Previous" class="page-link">
+                                        <a href="{pagination.prev}" title="Previous" class="page-link">
                                             <core:icon identifier="actions-view-paging-previous" />
-                                        </f:be.link>
+                                        </a>
                                     </li>
                                 </f:then>
                                 <f:else>
@@ -150,14 +159,14 @@
                             <f:if condition="{currentPage} < {totalPages}">
                                 <f:then>
                                     <li class="page-item">
-                                        <f:be.link route="admin_vault_audit" parameters="{page: currentPage + 1}" title="Next" class="page-link">
+                                        <a href="{pagination.next}" title="Next" class="page-link">
                                             <core:icon identifier="actions-view-paging-next" />
-                                        </f:be.link>
+                                        </a>
                                     </li>
                                     <li class="page-item">
-                                        <f:be.link route="admin_vault_audit" parameters="{page: totalPages}" title="Last" class="page-link">
+                                        <a href="{pagination.last}" title="Last" class="page-link">
                                             <core:icon identifier="actions-view-paging-last" />
-                                        </f:be.link>
+                                        </a>
                                     </li>
                                 </f:then>
                                 <f:else>
@@ -170,9 +179,9 @@
                                 </f:else>
                             </f:if>
                             <li class="page-item">
-                                <f:be.link route="admin_vault_audit" parameters="{page: currentPage}" title="Refresh" class="page-link">
+                                <a href="{pagination.current}" title="Refresh" class="page-link">
                                     <core:icon identifier="actions-refresh" />
-                                </f:be.link>
+                                </a>
                             </li>
                         </ul>
                     </nav>

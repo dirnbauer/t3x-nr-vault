@@ -17,6 +17,7 @@ use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconSize;
@@ -142,10 +143,16 @@ final class SecretsController
 
         $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
 
+        // Get all backend users and groups for selectors
+        $backendUsers = $this->getBackendUsers();
+        $backendGroups = $this->getBackendGroups();
+
         $moduleTemplate->assignMultiple([
             'storeUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.store'),
             'backUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             'currentUserId' => $GLOBALS['BE_USER']->user['uid'] ?? 0,
+            'backendUsers' => $backendUsers,
+            'backendGroups' => $backendGroups,
         ]);
 
         $moduleTemplate->setTitle(
@@ -531,13 +538,19 @@ final class SecretsController
 
     /**
      * Toggle secret enabled/disabled state.
+     *
+     * Supports both AJAX (returns JSON) and regular form submissions (redirects).
      */
     public function toggleAction(ServerRequestInterface $request): ResponseInterface
     {
         $body = $request->getParsedBody();
         $identifier = (string) ($body['identifier'] ?? '');
+        $isAjax = $this->isAjaxRequest($request);
 
         if ($identifier === '') {
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'error' => 'No secret identifier provided'], 400);
+            }
             $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
 
             return new RedirectResponse(
@@ -590,18 +603,43 @@ final class SecretsController
                 ? $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.disabled.success')
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.enabled.success');
 
+            if ($isAjax) {
+                return new JsonResponse([
+                    'success' => true,
+                    'hidden' => (bool) $newState,
+                    'message' => $message,
+                ]);
+            }
+
             $this->addFlashMessage($message, ContextualFeedbackSeverity::OK);
         } catch (SecretNotFoundException) {
             $this->auditLogService->log($identifier, 'update', false, 'Secret not found');
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'error' => 'Secret not found: ' . $identifier], 404);
+            }
             $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
         } catch (Exception $e) {
             $this->auditLogService->log($identifier, 'update', false, $e->getMessage());
+            if ($isAjax) {
+                return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+            }
             $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
         }
 
         return new RedirectResponse(
             (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         );
+    }
+
+    /**
+     * Check if the request is an AJAX request.
+     */
+    private function isAjaxRequest(ServerRequestInterface $request): bool
+    {
+        $acceptHeader = $request->getHeaderLine('Accept');
+
+        return str_contains($acceptHeader, 'application/json')
+            || $request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest';
     }
 
     /**

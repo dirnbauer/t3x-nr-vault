@@ -99,6 +99,23 @@ final class AuditController
 
         $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
 
+        // Build pagination URLs with filter parameters preserved
+        $baseFilterParams = array_filter([
+            'secretIdentifier' => $filters['_form']['secretIdentifier'] ?? '',
+            'filterAction' => $filters['_form']['action'] ?? '',
+            'success' => $filters['_form']['success'] ?? '',
+            'since' => $filters['_form']['since'] ?? '',
+            'until' => $filters['_form']['until'] ?? '',
+        ], static fn($v) => $v !== '');
+
+        $pagination = [
+            'first' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => 1])),
+            'prev' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => max(1, $page - 1)])),
+            'current' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => $page])),
+            'next' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => min($totalPages, $page + 1)])),
+            'last' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => $totalPages])),
+        ];
+
         $moduleTemplate->assignMultiple([
             'entries' => $formattedEntries,
             'groupedEntries' => $groupedEntries,
@@ -106,6 +123,7 @@ final class AuditController
             'currentPage' => $page,
             'totalPages' => $totalPages,
             'filters' => $filters,
+            'pagination' => $pagination,
             'isAdmin' => $this->isAdmin(),
             'actions' => ['create', 'read', 'update', 'delete', 'rotate', 'access_denied', 'http_call'],
         ]);
