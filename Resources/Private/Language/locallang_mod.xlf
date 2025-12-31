@@ -27,6 +27,47 @@
                 <source>View and export secret access audit logs</source>
             </trans-unit>
 
+            <!-- Overview -->
+            <trans-unit id="overview.title">
+                <source>Vault Overview</source>
+            </trans-unit>
+            <trans-unit id="overview.description">
+                <source>Securely manage encrypted secrets for your TYPO3 installation.</source>
+            </trans-unit>
+            <trans-unit id="overview.secrets">
+                <source>Secrets</source>
+            </trans-unit>
+            <trans-unit id="overview.audit_entries">
+                <source>Audit Entries</source>
+            </trans-unit>
+            <trans-unit id="overview.manage_secrets">
+                <source>Manage Secrets</source>
+            </trans-unit>
+            <trans-unit id="overview.view_audit">
+                <source>View Audit Log</source>
+            </trans-unit>
+            <trans-unit id="overview.quick_actions">
+                <source>Quick Actions</source>
+            </trans-unit>
+            <trans-unit id="overview.create_secret">
+                <source>Create Secret</source>
+            </trans-unit>
+            <trans-unit id="overview.migration_wizard">
+                <source>Migration Wizard</source>
+            </trans-unit>
+            <trans-unit id="overview.verify_chain">
+                <source>Verify Audit Chain</source>
+            </trans-unit>
+            <trans-unit id="overview.usage">
+                <source>Usage Examples</source>
+            </trans-unit>
+            <trans-unit id="overview.usage.site_config">
+                <source>In Site Configuration (config/sites/*/config.yaml):</source>
+            </trans-unit>
+            <trans-unit id="overview.usage.php">
+                <source>In PHP Code:</source>
+            </trans-unit>
+
             <!-- Secrets list -->
             <trans-unit id="secrets.title">
                 <source>Secrets</source>
