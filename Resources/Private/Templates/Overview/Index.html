@@ -5,104 +5,165 @@
 <f:layout name="Module" />
 
 <f:section name="Content">
-    <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.title" /></h1>
-
-    <p class="lead mb-4">
-        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.description" />
+    <h1>Vault - Secrets Management</h1>
+    <p class="text-body-secondary mb-4">
+        Secure storage and management for sensitive configuration data.
     </p>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <core:icon identifier="actions-lock" size="small" />
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.secrets" />
-                    </h5>
-                    <p class="card-text display-4">{totalSecrets}</p>
-                    <a href="{f:be.uri(route: 'admin_vault_secrets')}" class="btn btn-primary">
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.manage_secrets" />
-                    </a>
+    <div class="card-container mb-4">
+        <div class="card card-size-fixed-small">
+            <div class="card-header">
+                <div class="card-header-body">
+                    <h2 class="card-title">{stats.totalSecrets}</h2>
+                    <span class="card-subtitle">Total Secrets</span>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <core:icon identifier="actions-document-history-open" size="small" />
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.audit_entries" />
-                    </h5>
-                    <p class="card-text display-4">{recentAuditCount}</p>
-                    <a href="{f:be.uri(route: 'admin_vault_audit')}" class="btn btn-secondary">
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.view_audit" />
-                    </a>
+        <div class="card card-size-fixed-small">
+            <div class="card-header">
+                <div class="card-header-body">
+                    <h2 class="card-title text-success">{stats.activeSecrets}</h2>
+                    <span class="card-subtitle">Active</span>
+                </div>
+            </div>
+        </div>
+        <div class="card card-size-fixed-small">
+            <div class="card-header">
+                <div class="card-header-body">
+                    <h2 class="card-title text-secondary">{stats.disabledSecrets}</h2>
+                    <span class="card-subtitle">Disabled</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Links -->
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.quick_actions" />
-            </h5>
+    <!-- Submodule Navigation Cards -->
+    <h2>Modules</h2>
+    <div class="card-container mb-5">
+        <f:for each="{submodules}" as="submodule">
+            <div class="card card-size-fixed-small card-has-hover">
+                <f:be.link route="{submodule.route}" class="card-link">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <core:icon identifier="{submodule.icon}" size="medium" />
+                        </div>
+                        <div class="card-header-body">
+                            <h2 class="card-title">{submodule.title}</h2>
+                            <span class="card-subtitle">{submodule.description}</span>
+                        </div>
+                    </div>
+                </f:be.link>
+            </div>
+        </f:for>
+    </div>
+
+    <!-- Quick Start Guide -->
+    <h2>Quick Start</h2>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">Store a Secret</h3>
+                    <p class="card-text">Navigate to <strong>Secrets</strong> and click the <code>+</code> button in the header to create a new secret. Provide an identifier (e.g., <code>stripe_api_key</code>) and the secret value.</p>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-4">
-                    <a href="{f:be.uri(route: 'admin_vault_secrets', parameters: '{action: \'create\'}')}" class="btn btn-outline-primary w-100 mb-2">
-                        <core:icon identifier="actions-plus" size="small" />
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.create_secret" />
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <a href="{f:be.uri(route: 'admin_vault_migration')}" class="btn btn-outline-secondary w-100 mb-2">
-                        <core:icon identifier="actions-database" size="small" />
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.migration_wizard" />
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <a href="{f:be.uri(route: 'admin_vault_audit', parameters: '{action: \'verifyChain\'}')}" class="btn btn-outline-info w-100 mb-2">
-                        <core:icon identifier="actions-shield-check" size="small" />
-                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.verify_chain" />
-                    </a>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">Use in Configuration</h3>
+                    <p class="card-text">Reference secrets in your TYPO3 configuration using the vault syntax:</p>
+                    <pre class="bg-dark text-light p-2 rounded"><code>%vault(stripe_api_key)%</code></pre>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Usage Examples -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <h5 class="mb-0">
-                <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage" />
-            </h5>
-        </div>
-        <div class="card-body">
-            <h6><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.site_config" /></h6>
-            <pre class="bg-light p-3 rounded"><code>settings:
-  apiKey: '%vault(my-api-key)%'</code></pre>
+    <h2>Usage Examples</h2>
+    <div class="table-fit mb-4">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Context</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>LocalConfiguration.php</strong></td>
+                    <td><code>'transport_smtp_password' => '%vault(smtp_password)%'</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Extension Configuration</strong></td>
+                    <td><code>'apiKey' => '%vault(payment_gateway_key)%'</code></td>
+                </tr>
+                <tr>
+                    <td><strong>Site Configuration</strong></td>
+                    <td><code>apiSecret: '%vault(site_api_secret)%'</code></td>
+                </tr>
+                <tr>
+                    <td><strong>TypoScript</strong></td>
+                    <td>
+                        <code>lib.auth.value = Bearer %vault(auth_token)%</code>
+                        <br><small class="text-warning">Requires <code>frontend_accessible</code> flag + cache disabled</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>PHP Code (via DI)</strong></td>
+                    <td><code>$this->vaultService->retrieve('my_api_key')</code></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-            <h6 class="mt-3"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.php" /></h6>
-            <pre class="bg-light p-3 rounded"><code>$vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-$secret = $vaultService->retrieve('my-api-key');</code></pre>
-
-            <h6 class="mt-3"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.typoscript" /></h6>
-            <pre class="bg-light p-3 rounded"><code>page.headerData.10 = TEXT
-page.headerData.10.value = &lt;meta name="api-key" content="%vault(my-api-key)%"&gt;
-
-# Important: Disable caching for content with vault references
-lib.apiAuth = TEXT
-lib.apiAuth.value = Bearer %vault(auth_token)%
-lib.apiAuth.stdWrap.cache.disable = 1</code></pre>
-            <div class="alert alert-warning mt-2">
-                <core:icon identifier="actions-exclamation-triangle" size="small" />
-                <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.typoscript.warning" />
+    <!-- Security Features -->
+    <h2>Security Features</h2>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-lock" size="small" />
+                        Envelope Encryption
+                    </h3>
+                    <p class="card-text small">Each secret is encrypted with its own unique Data Encryption Key (DEK), which is then encrypted with the master key.</p>
+                </div>
             </div>
         </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-shield" size="small" />
+                        Access Control
+                    </h3>
+                    <p class="card-text small">Secrets can be restricted to specific backend users or groups. Every access is logged in the audit trail.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-document-history-open" size="small" />
+                        Audit Logging
+                    </h3>
+                    <p class="card-text small">Tamper-evident audit chain records all secret operations with cryptographic integrity verification.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documentation Link -->
+    <div class="alert alert-info">
+        <core:icon identifier="actions-info" size="small" />
+        <strong>Documentation:</strong>
+        For detailed information, see the
+        <a href="https://docs.typo3.org/p/netresearch/nr-vault/main/en-us/" target="_blank" rel="noopener">
+            extension documentation
+        </a>.
     </div>
 </f:section>
 
