@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
     backupGlobals="true"
-    bootstrap="../bootstrap.php"
+    bootstrap="FunctionalTestsBootstrap.php"
     cacheDirectory=".phpunit.cache"
     colors="true"
     displayDetailsOnIncompleteTests="true"
@@ -16,14 +16,9 @@
     failOnWarning="true"
 >
     <testsuites>
-        <testsuite name="Unit">
-            <directory>../Unit</directory>
+        <testsuite name="Functional">
+            <directory>../Functional</directory>
         </testsuite>
-        <testsuite name="Fuzz">
-            <directory>../Fuzz</directory>
-        </testsuite>
-        <!-- Functional tests require TYPO3 bootstrap - run via 'composer test:functional' -->
-        <!-- Architecture tests use PHPat and are run via 'composer phpat' -->
     </testsuites>
 
     <source>

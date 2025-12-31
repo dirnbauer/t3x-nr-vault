@@ -195,11 +195,21 @@ final class SecretDetectionServiceTest extends TestCase
     public static function encryptedValueProvider(): array
     {
         return [
+            // Password hashes (should be detected as "encrypted"/secured)
+            'bcrypt hash $2y$' => ['$2y$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234', true],
+            'bcrypt hash $2a$' => ['$2a$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234', true],
+            'bcrypt hash $2b$' => ['$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234', true],
+            'argon2i hash' => ['$argon2i$v=19$m=65536,t=4,p=1$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG', true],
+            'argon2id hash' => ['$argon2id$v=19$m=65536,t=4,p=1$c29tZXNhbHQ$GpZ3sK6WLbDpeYfZ8bLz', true],
+            // Encrypted data
             'long base64' => [str_repeat('YWJjZGVm', 10), true],
             'long hex' => [str_repeat('a1b2c3d4', 15), true],
+            // Plaintext (should NOT be detected as encrypted)
             'short string' => ['abc123', false],
             'regular text' => ['Hello, World!', false],
             'mixed characters' => ['abc-123_def.ghi', false],
+            'plaintext password' => ['MySecretPassword123!', false],
+            'short hash-like' => ['$2y$10$short', false],
         ];
     }
 
@@ -249,17 +259,26 @@ final class SecretDetectionServiceTest extends TestCase
      */
     public static function configKeyProvider(): array
     {
-        // Note: isSecretConfigKey uses substring matching against EXT_CONFIG_SECRET_KEYS
-        // Keys with underscores won't match camelCase patterns (api_key != apikey)
+        // Note: isSecretConfigKey uses regex suffix matching to avoid false positives
         return [
+            // Should match (suffix patterns)
             'apiKey' => ['apiKey', true],
             'stripeApiKey' => ['stripeApiKey', true],
             'password' => ['password', true],
             'smtpPassword' => ['smtpPassword', true],
             'clientSecret' => ['clientSecret', true],
+            'apiSecret' => ['apiSecret', true],
             'accessToken' => ['accessToken', true],
-            // Non-secrets (including underscore variants that don't match camelCase)
-            'API_KEY' => ['API_KEY', false],
+            'authToken' => ['authToken', true],
+            'token' => ['token', true],              // standalone "token" (e.g., hashicorp.token)
+            'privateKey' => ['privateKey', true],
+            'encryptionKey' => ['encryptionKey', true],
+            'userCredential' => ['userCredential', true],
+            // Should NOT match (false positives avoided)
+            'secretPrefix' => ['secretPrefix', false],  // "secret" at start, not end
+            'tokenizer' => ['tokenizer', false],        // "token" not at end
+            'passwordReset' => ['passwordReset', false], // "password" not at end
+            'API_KEY' => ['API_KEY', false],            // underscore variant
             'username' => ['username', false],
             'email' => ['email', false],
             'baseUrl' => ['baseUrl', false],
@@ -277,6 +296,17 @@ final class SecretDetectionServiceTest extends TestCase
         $result = $method->invoke($this->service, $tableName, $patterns);
 
         self::assertSame($shouldExclude, $result);
+    }
+
+    #[Test]
+    public function excludedColumnsContainsPasswordHashColumns(): void
+    {
+        $reflection = new ReflectionClass(SecretDetectionService::class);
+        $constant = $reflection->getConstant('EXCLUDED_COLUMNS');
+
+        self::assertIsArray($constant);
+        self::assertContains('be_users.password', $constant, 'be_users.password should be excluded (contains hashes)');
+        self::assertContains('fe_users.password', $constant, 'fe_users.password should be excluded (contains hashes)');
     }
 
     /**

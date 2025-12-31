@@ -19,11 +19,6 @@
         <testsuite name="Unit">
             <directory>../Unit</directory>
         </testsuite>
-        <testsuite name="Fuzz">
-            <directory>../Fuzz</directory>
-        </testsuite>
-        <!-- Functional tests require TYPO3 bootstrap - run via 'composer test:functional' -->
-        <!-- Architecture tests use PHPat and are run via 'composer phpat' -->
     </testsuites>
 
     <source>

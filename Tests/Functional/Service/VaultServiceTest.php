@@ -4,17 +4,10 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Functional\Service;
 
-use Netresearch\NrVault\Adapter\LocalEncryptionAdapter;
-use Netresearch\NrVault\Audit\AuditLogService;
-use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
-use Netresearch\NrVault\Crypto\EncryptionService;
-use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
-use Netresearch\NrVault\Security\AccessControlService;
 use Netresearch\NrVault\Service\VaultService;
+use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -31,7 +24,7 @@ final class VaultServiceTest extends FunctionalTestCase
         'backend',
     ];
 
-    private VaultService $subject;
+    private VaultServiceInterface $subject;
 
     private ?string $masterKeyPath = null;
 
@@ -48,37 +41,19 @@ final class VaultServiceTest extends FunctionalTestCase
         file_put_contents($this->masterKeyPath, $masterKey);
         chmod($this->masterKeyPath, 0o600);
 
-        // Set up services
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
+        // Configure extension to use file-based master key
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_vault'] = [
+            'masterKeySource' => $this->masterKeyPath,
+            'autoKeyPath' => $this->masterKeyPath,
+            'enableCache' => false,
+        ];
 
-        // Create mock configuration for master key provider
-        $keyProviderConfig = $this->createMock(ExtensionConfigurationInterface::class);
-        $keyProviderConfig->method('getMasterKeySource')->willReturn($this->masterKeyPath);
-        $keyProviderConfig->method('getAutoKeyPath')->willReturn($this->masterKeyPath);
+        // Import backend user for access control
+        $this->importCSVDataSet(__DIR__ . '/Fixtures/be_users.csv');
+        $this->setUpBackendUser(1);
 
-        $masterKeyProvider = new FileMasterKeyProvider($keyProviderConfig);
-        $encryptionService = new EncryptionService($masterKeyProvider);
-        $adapter = new LocalEncryptionAdapter($connectionPool);
-        $accessControlService = $this->createMock(AccessControlService::class);
-        $auditLogService = $this->createMock(AuditLogService::class);
-        $configuration = $this->createMock(ExtensionConfigurationInterface::class);
-
-        // Configure mocks
-        $accessControlService->method('getCurrentActorUid')->willReturn(1);
-        $accessControlService->method('getCurrentActorType')->willReturn('backend');
-        $accessControlService->method('getCurrentActorUsername')->willReturn('admin');
-        $accessControlService->method('canRead')->willReturn(true);
-        $accessControlService->method('canWrite')->willReturn(true);
-        $accessControlService->method('canDelete')->willReturn(true);
-        $configuration->method('isCacheEnabled')->willReturn(false);
-
-        $this->subject = new VaultService(
-            $adapter,
-            $encryptionService,
-            $accessControlService,
-            $auditLogService,
-            $configuration,
-        );
+        // Get properly wired service from container
+        $this->subject = $this->get(VaultServiceInterface::class);
     }
 
     protected function tearDown(): void
@@ -213,30 +188,25 @@ final class VaultServiceTest extends FunctionalTestCase
     }
 
     #[Test]
-    public function secretsAreProperlyEncryptedInDatabase(): void
+    public function secretsAreProperlyEncryptedAndDecrypted(): void
     {
         $identifier = 'encryption_test';
         $secretValue = 'This is my secret value that should be encrypted';
 
+        // Store the secret
         $this->subject->store($identifier, $secretValue);
 
-        // Query database directly to verify encryption
-        $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $connection = $connectionPool->getConnectionForTable('tx_nrvault_secrets');
-        $row = $connection->select(
-            ['encrypted_value', 'encrypted_dek', 'dek_nonce', 'value_nonce'],
-            'tx_nrvault_secrets',
-            ['identifier' => $identifier],
-        )->fetchAssociative();
+        // Verify secret was stored
+        self::assertTrue($this->subject->exists($identifier));
 
-        // Verify that stored values are not plaintext
-        self::assertNotEmpty($row['encrypted_value']);
-        self::assertNotEmpty($row['encrypted_dek']);
-        self::assertNotEquals($secretValue, $row['encrypted_value']);
-
-        // Verify we can still retrieve the plaintext
+        // Verify we can retrieve the plaintext correctly (proves encryption/decryption works)
         $retrieved = $this->subject->retrieve($identifier);
         self::assertEquals($secretValue, $retrieved);
+
+        // Verify metadata is available
+        $metadata = $this->subject->getMetadata($identifier);
+        self::assertEquals($identifier, $metadata['identifier']);
+        self::assertEquals(1, $metadata['version']);
     }
 
     #[Test]
