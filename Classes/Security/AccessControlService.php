@@ -162,6 +162,12 @@ final class AccessControlService implements AccessControlServiceInterface
             return true;
         }
 
+        // Frontend access for secrets explicitly marked as frontend_accessible
+        // This allows TypoScript and other frontend contexts to resolve vault placeholders
+        if ($secret->isFrontendAccessible()) {
+            return true;
+        }
+
         // No backend user and not CLI
         return false;
     }

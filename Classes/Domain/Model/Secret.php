@@ -36,6 +36,8 @@ final class Secret
 
     private string $context = '';
 
+    private bool $frontendAccessible = false;
+
     private int $version = 1;
 
     private int $expiresAt = 0;
@@ -220,6 +222,18 @@ final class Secret
     public function setContext(string $context): self
     {
         $this->context = $context;
+
+        return $this;
+    }
+
+    public function isFrontendAccessible(): bool
+    {
+        return $this->frontendAccessible;
+    }
+
+    public function setFrontendAccessible(bool $frontendAccessible): self
+    {
+        $this->frontendAccessible = $frontendAccessible;
 
         return $this;
     }
@@ -417,6 +431,7 @@ final class Secret
         $secret->valueChecksum = (string) ($row['value_checksum'] ?? '');
         $secret->ownerUid = (int) ($row['owner_uid'] ?? 0);
         $secret->context = (string) ($row['context'] ?? '');
+        $secret->frontendAccessible = (bool) ($row['frontend_accessible'] ?? false);
         $secret->version = (int) ($row['version'] ?? 1);
         $secret->expiresAt = (int) ($row['expires_at'] ?? 0);
         $secret->lastRotatedAt = (int) ($row['last_rotated_at'] ?? 0);
@@ -463,6 +478,7 @@ final class Secret
             'owner_uid' => $this->ownerUid,
             'allowed_groups' => implode(',', $this->allowedGroups),
             'context' => $this->context,
+            'frontend_accessible' => $this->frontendAccessible ? 1 : 0,
             'version' => $this->version,
             'expires_at' => $this->expiresAt,
             'last_rotated_at' => $this->lastRotatedAt,

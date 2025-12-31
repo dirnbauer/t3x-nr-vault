@@ -110,6 +110,10 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 $secretEntity->setExpiresAt((int) $expiresAt);
             }
 
+            if (isset($options['frontendAccessible'])) {
+                $secretEntity->setFrontendAccessible((bool) $options['frontendAccessible']);
+            }
+
             // Check if updating existing
             $existing = $this->adapter->retrieve($identifier);
             $isNew = $existing === null;
@@ -389,14 +393,18 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             'identifier' => $secret->getIdentifier(),
             'description' => $secret->getDescription(),
             'owner' => $secret->getOwnerUid(),
+            'owner_uid' => $secret->getOwnerUid(),
             'groups' => $secret->getAllowedGroups(),
             'context' => $secret->getContext(),
+            'frontend_accessible' => $secret->isFrontendAccessible(),
             'version' => $secret->getVersion(),
             'createdAt' => $secret->getCrdate(),
             'updatedAt' => $secret->getTstamp(),
             'expiresAt' => $secret->getExpiresAt() ?: null,
+            'expires_at' => $secret->getExpiresAt() ?: null,
             'lastRotatedAt' => $secret->getLastRotatedAt() ?: null,
             'metadata' => $secret->getMetadata(),
+            'pid' => $secret->getPid(),
         ];
     }
 

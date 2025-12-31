@@ -23,6 +23,7 @@ CREATE TABLE tx_nrvault_secret (
     owner_uid int(11) unsigned DEFAULT 0 NOT NULL,
     allowed_groups text,
     context varchar(50) DEFAULT '' NOT NULL,
+    frontend_accessible tinyint(1) unsigned DEFAULT 0 NOT NULL,
 
     -- Versioning and lifecycle
     version int(11) unsigned DEFAULT 1 NOT NULL,
