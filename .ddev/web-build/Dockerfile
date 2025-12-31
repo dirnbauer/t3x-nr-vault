@@ -1,6 +1,11 @@
 ARG BASE_IMAGE
 FROM $BASE_IMAGE
 
+# Upgrade PHP to latest patch version (get PHP 8.5.1 before DDEV updates)
+RUN apt-get update && \
+    apt-get dist-upgrade -y && \
+    rm -rf /var/lib/apt/lists/*
+
 ENV EXTENSION_KEY "nr_vault"
 ENV DDEV_SITENAME "nr-vault"
 ENV GITHUB_URL "https://github.com/netresearch/t3x-nr-vault"
