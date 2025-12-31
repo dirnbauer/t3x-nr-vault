@@ -1,138 +1,173 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
       xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
       data-namespace-typo3-fluid="true">
 
 <f:layout name="Module" />
 
 <f:section name="Before">
-    <f:be.pageRenderer includeCssFiles="{0: 'EXT:nr_vault/Resources/Public/Css/backend.css'}" />
+    <f:asset.module identifier="@typo3/backend/element/progress-tracker-element.js"/>
 </f:section>
 
 <f:section name="Content">
-    <div class="vault-module" role="main" aria-label="Secret Migration Wizard">
-        <!-- Wizard Progress -->
-        <div class="wizard-progress mb-4">
-            <div class="d-flex justify-content-between">
-                <div class="wizard-step active">
-                    <span class="badge bg-primary">1</span> Scan
-                </div>
-                <div class="wizard-step">
-                    <span class="badge bg-secondary">2</span> Review
-                </div>
-                <div class="wizard-step">
-                    <span class="badge bg-secondary">3</span> Configure
-                </div>
-                <div class="wizard-step">
-                    <span class="badge bg-secondary">4</span> Execute
-                </div>
-                <div class="wizard-step">
-                    <span class="badge bg-secondary">5</span> Verify
-                </div>
-            </div>
-        </div>
+    <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title" /></h1>
 
-        <h2>Step 1: Scan for Plaintext Secrets</h2>
-        <p class="text-muted mb-4">
+    <!-- TYPO3 v14 native progress tracker -->
+    <div class="mb-4">
+        <typo3-backend-progress-tracker
+            active="0"
+            stages='["Scan","Review","Configure","Execute","Verify"]'>
+        </typo3-backend-progress-tracker>
+    </div>
+
+    <h2>Step 1: Scan for Plaintext Secrets</h2>
+        <p class="text-body-secondary mb-4">
             The system has scanned your TYPO3 installation for potential plaintext secrets that should be migrated to the vault.
         </p>
 
         <f:if condition="{totalCount}">
             <f:then>
-                <!-- Summary Cards -->
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <div class="card text-bg-warning">
-                            <div class="card-body">
-                                <h5 class="card-title">{totalCount}</h5>
-                                <p class="card-text">Potential secrets detected</p>
+                <!-- Summary Cards - TYPO3 v14 native card-container -->
+                <div class="card-container mb-4">
+                    <div class="card card-size-fixed-small">
+                        <div class="card-header">
+                            <div class="card-header-body">
+                                <h2 class="card-title text-warning">{totalCount}</h2>
+                                <span class="card-subtitle">Potential secrets detected</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">{databaseCount}</h5>
-                                <p class="card-text">In database columns</p>
+                    <div class="card card-size-fixed-small">
+                        <div class="card-header">
+                            <div class="card-header-body">
+                                <h2 class="card-title">{databaseCount}</h2>
+                                <span class="card-subtitle">In database columns</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">{configCount}</h5>
-                                <p class="card-text">In configuration</p>
+                    <div class="card card-size-fixed-small">
+                        <div class="card-header">
+                            <div class="card-header-body">
+                                <h2 class="card-title">{configCount}</h2>
+                                <span class="card-subtitle">In configuration</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Severity Breakdown -->
-                <h3>Secrets by Severity</h3>
+                <h2>Secrets by Severity</h2>
                 <f:for each="{groupedSecrets}" as="items" key="severity">
                     <f:if condition="{items}">
                         <div class="mb-3">
-                            <h4>
+                            <h3>
                                 <f:switch expression="{severity}">
                                     <f:case value="critical">
-                                        <span class="badge bg-danger">Critical</span>
+                                        <span class="badge text-bg-danger">Critical</span>
                                     </f:case>
                                     <f:case value="high">
-                                        <span class="badge bg-warning text-dark">High</span>
+                                        <span class="badge text-bg-warning">High</span>
                                     </f:case>
                                     <f:case value="medium">
-                                        <span class="badge bg-info">Medium</span>
+                                        <span class="badge text-bg-info">Medium</span>
                                     </f:case>
                                     <f:defaultCase>
-                                        <span class="badge bg-secondary">Low</span>
+                                        <span class="badge text-bg-secondary">Low</span>
                                     </f:defaultCase>
                                 </f:switch>
                                 ({f:count(subject: items)} found)
-                            </h4>
-                            <ul class="list-group">
-                                <f:for each="{items}" as="item" key="itemKey">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <code>{itemKey}</code>
-                                            <f:if condition="{item.patterns}">
-                                                <br>
-                                                <small class="text-muted">
-                                                    Patterns: <f:for each="{item.patterns}" as="pattern" iteration="patternIter">{pattern}<f:if condition="!{patternIter.isLast}">, </f:if></f:for>
-                                                </small>
-                                            </f:if>
-                                        </div>
-                                        <f:if condition="{item.source} == 'database'">
-                                            <span class="badge bg-primary">{item.count} records</span>
-                                        </f:if>
-                                    </li>
-                                </f:for>
-                            </ul>
+                            </h3>
+                            <div class="table-fit">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Location</th>
+                                            <th scope="col" title="Known API key formats detected (Stripe, AWS, GitHub, etc.)">Patterns</th>
+                                            <th scope="col" title="Number of database records affected">Records</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <f:for each="{items}" as="item" key="itemKey">
+                                            <tr>
+                                                <td><code>{itemKey}</code></td>
+                                                <td>
+                                                    <f:if condition="{item.patterns}">
+                                                        <f:then>
+                                                            <f:for each="{item.patterns}" as="pattern">
+                                                                <span class="badge text-bg-dark">{pattern}</span>
+                                                            </f:for>
+                                                        </f:then>
+                                                        <f:else>
+                                                            <span class="text-body-secondary" title="No known API key format matched - detected by field name">—</span>
+                                                        </f:else>
+                                                    </f:if>
+                                                </td>
+                                                <td>
+                                                    <f:if condition="{item.source} == 'database'">
+                                                        <f:then>
+                                                            <span class="badge text-bg-primary">{item.count} records</span>
+                                                        </f:then>
+                                                        <f:else>
+                                                            <span class="text-body-secondary" title="Configuration secrets are not stored in the database">n/a</span>
+                                                        </f:else>
+                                                    </f:if>
+                                                </td>
+                                            </tr>
+                                        </f:for>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="text-body-secondary small mt-2 mb-0">
+                                <strong>Patterns:</strong> Known API key formats (Stripe, AWS, GitHub, etc.). "—" means detected by field name only.<br>
+                                <strong>Records:</strong> Database records affected. "n/a" for configuration secrets (must be migrated manually).
+                            </p>
                         </div>
                     </f:if>
                 </f:for>
 
                 <!-- Actions -->
-                <div class="mt-4">
-                    <a href="{reviewUri}" class="btn btn-primary">
-                        <core:icon identifier="actions-arrow-right" size="small" />
-                        Continue to Review
-                    </a>
+                <div class="mt-4 d-flex justify-content-between">
+                    <div>
+                        <f:be.link route="admin_vault_migration" class="btn btn-default">
+                            <core:icon identifier="actions-arrow-left" size="small" />
+                            Back
+                        </f:be.link>
+                        <f:be.link route="admin_vault_migration" parameters="{action: 'scan'}" class="btn btn-default ms-2">
+                            <core:icon identifier="actions-refresh" size="small" />
+                            Rescan
+                        </f:be.link>
+                    </div>
+                    <f:if condition="{databaseCount}">
+                        <f:then>
+                            <f:be.link route="admin_vault_migration" parameters="{action: 'review'}" class="btn btn-primary">
+                                Continue to Review ({databaseCount} database secrets)
+                                <core:icon identifier="actions-arrow-right" size="small" />
+                            </f:be.link>
+                        </f:then>
+                        <f:else>
+                            <span></span>
+                        </f:else>
+                    </f:if>
                 </div>
+                <f:if condition="{configCount} && !{databaseCount}">
+                    <f:be.infobox title="No Database Secrets to Migrate" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
+                        Only configuration secrets were detected. These must be migrated manually by updating your configuration
+                        to use <code>%vault(identifier)%</code> references. See the documentation for details.
+                    </f:be.infobox>
+                </f:if>
             </f:then>
             <f:else>
-                <div class="alert alert-success" role="alert">
-                    <h4 class="alert-heading">
-                        <core:icon identifier="actions-check" size="small" />
-                        No Plaintext Secrets Detected
-                    </h4>
-                    <p class="mb-0">
-                        Great! No potential plaintext secrets were found in your database or configuration.
-                        Your sensitive data appears to be properly protected.
-                    </p>
+                <f:be.infobox title="No Plaintext Secrets Detected" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::OK')}">
+                    Great! No potential plaintext secrets were found in your database or configuration.
+                    Your sensitive data appears to be properly protected.
+                </f:be.infobox>
+                <div class="mt-4">
+                    <f:be.link route="admin_vault_migration" class="btn btn-default">
+                        <core:icon identifier="actions-arrow-left" size="small" />
+                        Back
+                    </f:be.link>
                 </div>
             </f:else>
         </f:if>
-    </div>
 </f:section>
 
 </html>

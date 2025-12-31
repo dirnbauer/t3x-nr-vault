@@ -16,6 +16,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -36,6 +37,13 @@ final class MigrationController
 {
     private const MODULE_NAME = 'admin_vault_migration';
 
+    /**
+     * Allowed actions for this controller.
+     *
+     * @var list<string>
+     */
+    private const ALLOWED_ACTIONS = ['index', 'scan', 'review', 'configure', 'execute', 'verify'];
+
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
         private readonly IconFactory $iconFactory,
@@ -47,12 +55,69 @@ final class MigrationController
     ) {}
 
     /**
-     * Step 1: Scan for plaintext secrets (default action).
+     * Main entry point - dispatches to action methods based on ?action= query param.
+     *
+     * This follows the TYPO3 v14 pattern used by core modules (styleguide, reactions, etc.)
      */
-    public function scanAction(ServerRequestInterface $request): ResponseInterface
+    public function handleRequest(ServerRequestInterface $request): ResponseInterface
+    {
+        $queryParams = $request->getQueryParams();
+        $action = $queryParams['action'] ?? 'index';
+
+        // Validate action
+        if (!\in_array($action, self::ALLOWED_ACTIONS, true)) {
+            $action = 'index';
+        }
+
+        return match ($action) {
+            'scan' => $this->scanAction($request),
+            'review' => $this->reviewAction($request),
+            'configure' => $this->configureAction($request),
+            'execute' => $this->executeAction($request),
+            'verify' => $this->verifyAction($request),
+            default => $this->indexAction($request),
+        };
+    }
+
+    /**
+     * Index action - shows intro page with "Start Scan" button.
+     *
+     * The scan is not run automatically to avoid slow page loads.
+     */
+    private function indexAction(ServerRequestInterface $request): ResponseInterface
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
+        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+            routeIdentifier: self::MODULE_NAME,
+            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                . ' - '
+                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title'),
+        );
+
+        $moduleTemplate->setTitle(
+            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+            . ' - '
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title'),
+        );
+
+        return $moduleTemplate->renderResponse('Migration/Index');
+    }
+
+    /**
+     * Step 1: Scan for plaintext secrets (explicitly triggered).
+     */
+    private function scanAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->makeDocHeaderModuleMenu();
+        $this->addBackButton($moduleTemplate, 'index');
+
+        $moduleTemplate->setTitle(
+            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+            . ' - '
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan'),
+        );
 
         // Perform the scan
         $secrets = $this->detectionService->scan();
@@ -76,7 +141,6 @@ final class MigrationController
             'totalCount' => $totalCount,
             'databaseCount' => $databaseCount,
             'configCount' => $configCount,
-            'reviewUri' => $this->buildUri('review'),
         ]);
 
         return $moduleTemplate->renderResponse('Migration/Scan');
@@ -85,10 +149,17 @@ final class MigrationController
     /**
      * Step 2: Review detected secrets and select which to migrate.
      */
-    public function reviewAction(ServerRequestInterface $request): ResponseInterface
+    private function reviewAction(ServerRequestInterface $request): ResponseInterface
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
+        $this->addBackButton($moduleTemplate, 'scan');
+
+        $moduleTemplate->setTitle(
+            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+            . ' - '
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review'),
+        );
 
         $queryParams = $request->getQueryParams();
         $sourceFilter = $queryParams['source'] ?? 'all';
@@ -117,8 +188,6 @@ final class MigrationController
             'secrets' => $filteredSecrets,
             'sourceFilter' => $sourceFilter,
             'severityFilter' => $severityFilter,
-            'configureUri' => $this->buildUri('configure'),
-            'scanUri' => $this->buildUri('scan'),
         ]);
 
         return $moduleTemplate->renderResponse('Migration/Review');
@@ -127,10 +196,17 @@ final class MigrationController
     /**
      * Step 3: Configure migration options.
      */
-    public function configureAction(ServerRequestInterface $request): ResponseInterface
+    private function configureAction(ServerRequestInterface $request): ResponseInterface
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
+        $this->addBackButton($moduleTemplate, 'review');
+
+        $moduleTemplate->setTitle(
+            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+            . ' - '
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.configure'),
+        );
 
         $parsedBody = $request->getParsedBody();
         $selectedSecrets = $parsedBody['selected'] ?? [];
@@ -162,8 +238,6 @@ final class MigrationController
 
         $moduleTemplate->assignMultiple([
             'migrations' => $migrations,
-            'executeUri' => $this->buildUri('execute'),
-            'reviewUri' => $this->buildUri('review'),
         ]);
 
         return $moduleTemplate->renderResponse('Migration/Configure');
@@ -172,7 +246,7 @@ final class MigrationController
     /**
      * Step 4: Execute the migration.
      */
-    public function executeAction(ServerRequestInterface $request): ResponseInterface
+    private function executeAction(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
         $migrations = $parsedBody['migrations'] ?? [];
@@ -231,10 +305,17 @@ final class MigrationController
     /**
      * Step 5: Verify migration results.
      */
-    public function verifyAction(ServerRequestInterface $request): ResponseInterface
+    private function verifyAction(ServerRequestInterface $request): ResponseInterface
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
+        $this->addBackButton($moduleTemplate, 'index');
+
+        $moduleTemplate->setTitle(
+            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+            . ' - '
+            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.verify'),
+        );
 
         // Get results from session
         $sessionData = $GLOBALS['BE_USER']->getSessionData('vault_migration_results') ?? [];
@@ -268,8 +349,6 @@ final class MigrationController
             'totalMigrated' => $totalMigrated,
             'totalFailed' => $totalFailed,
             'clearOriginals' => $clearOriginals,
-            'scanUri' => $this->buildUri('scan'),
-            'secretsUri' => (string) $this->uriBuilder->buildUriFromRoute('admin_vault_secrets'),
         ]);
 
         return $moduleTemplate->renderResponse('Migration/Verify');
@@ -371,12 +450,14 @@ final class MigrationController
 
     /**
      * Build a URI for a migration action.
+     *
+     * Uses query param based routing like TYPO3 core modules (styleguide, reactions).
      */
     private function buildUri(string $action): string
     {
         return (string) $this->uriBuilder->buildUriFromRoute(
             self::MODULE_NAME,
-            ['action' => $action],
+            $action === 'scan' ? [] : ['action' => $action],
         );
     }
 
@@ -397,5 +478,24 @@ final class MigrationController
     private function getLanguageService(): LanguageService
     {
         return $GLOBALS['LANG'];
+    }
+
+    /**
+     * Add a back button to the DocHeader.
+     */
+    private function addBackButton(
+        \TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate,
+        string $targetAction,
+    ): void {
+        $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        $backButton = $buttonBar->makeLinkButton()
+            ->setHref($this->buildUri($targetAction))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
+            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL));
+        $buttonBar->addButton(
+            $backButton,
+            \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT,
+            1,
+        );
     }
 }

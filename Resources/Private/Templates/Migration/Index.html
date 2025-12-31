@@ -1,0 +1,102 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+
+<f:layout name="Module" />
+
+<f:section name="Content">
+    <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title" /></h1>
+
+    <p class="text-body-secondary mb-4">
+        This wizard helps you detect and migrate plaintext secrets from your database and configuration to the secure vault.
+    </p>
+
+    <!-- How it works -->
+    <h2>How it works</h2>
+    <div class="card card-size-medium mb-4">
+        <div class="card-body">
+            <ol class="mb-0">
+                <li class="mb-2">
+                    <strong>Scan</strong> - The system scans your database columns and extension configuration for values that look like secrets (API keys, passwords, tokens).
+                </li>
+                <li class="mb-2">
+                    <strong>Review</strong> - You review the detected secrets and select which ones to migrate.
+                </li>
+                <li class="mb-2">
+                    <strong>Configure</strong> - Set migration options like identifier patterns and ownership.
+                </li>
+                <li class="mb-2">
+                    <strong>Execute</strong> - The selected secrets are encrypted and stored in the vault, and database columns are updated with vault references.
+                </li>
+                <li>
+                    <strong>Verify</strong> - Confirm that the migration completed successfully.
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- What is detected? -->
+    <h2>What is detected?</h2>
+    <div class="card-container mb-4">
+        <div class="card card-size-medium">
+            <div class="card-header">
+                <div class="card-icon">
+                    <core:icon identifier="mimetypes-x-content-table" size="medium" />
+                </div>
+                <div class="card-header-body">
+                    <h3 class="card-title">Database Columns</h3>
+                    <span class="card-subtitle">Columns with names suggesting secrets</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li><code>*password*</code>, <code>*secret*</code></li>
+                    <li><code>*api_key*</code>, <code>*token*</code></li>
+                    <li><code>*credential*</code>, <code>*private_key*</code></li>
+                </ul>
+            </div>
+        </div>
+        <div class="card card-size-medium">
+            <div class="card-header">
+                <div class="card-icon">
+                    <core:icon identifier="actions-search" size="medium" />
+                </div>
+                <div class="card-header-body">
+                    <h3 class="card-title">Known API Key Formats</h3>
+                    <span class="card-subtitle">Values matching patterns for</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>Stripe, AWS, Google API keys</li>
+                    <li>GitHub tokens (PAT, OAuth)</li>
+                    <li>Slack, SendGrid, Twilio tokens</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Important Notes -->
+    <f:be.infobox title="Important Notes" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}">
+        <ul class="mb-0">
+            <li><strong>Backup first</strong> - Always create a database backup before running migrations.</li>
+            <li><strong>Test environment</strong> - Run the scan on a test system first to review what will be detected.</li>
+            <li><strong>False positives</strong> - Not all detected values are actual secrets. Review carefully before migrating.</li>
+            <li><strong>Password hashes</strong> - Hashed passwords (bcrypt, argon2) are automatically excluded as they are already secure.</li>
+        </ul>
+    </f:be.infobox>
+
+    <f:be.infobox title="Configuration Secrets" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
+        Configuration secrets (in <code>LocalConfiguration.php</code> or extension settings) are detected but must be migrated manually.
+        Replace the value with <code>%vault(identifier)%</code> after storing the secret in the vault.
+    </f:be.infobox>
+
+    <div class="mt-4">
+        <f:be.link route="admin_vault_migration" parameters="{action: 'scan'}" class="btn btn-primary btn-lg">
+            <core:icon identifier="actions-search" size="small" />
+            Start Scan
+        </f:be.link>
+    </div>
+</f:section>
+
+</html>

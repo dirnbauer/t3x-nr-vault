@@ -1,55 +1,41 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
       xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
       data-namespace-typo3-fluid="true">
 
 <f:layout name="Module" />
 
 <f:section name="Before">
-    <f:be.pageRenderer includeCssFiles="{0: 'EXT:nr_vault/Resources/Public/Css/backend.css'}" />
+    <f:asset.module identifier="@typo3/backend/element/progress-tracker-element.js"/>
 </f:section>
 
 <f:section name="Content">
-    <div class="vault-module" role="main" aria-label="Secret Migration Wizard - Configure">
-        <!-- Wizard Progress -->
-        <div class="wizard-progress mb-4">
-            <div class="d-flex justify-content-between">
-                <div class="wizard-step completed">
-                    <span class="badge bg-success">1</span> Scan
-                </div>
-                <div class="wizard-step completed">
-                    <span class="badge bg-success">2</span> Review
-                </div>
-                <div class="wizard-step active">
-                    <span class="badge bg-primary">3</span> Configure
-                </div>
-                <div class="wizard-step">
-                    <span class="badge bg-secondary">4</span> Execute
-                </div>
-                <div class="wizard-step">
-                    <span class="badge bg-secondary">5</span> Verify
-                </div>
-            </div>
-        </div>
+    <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title" /></h1>
 
-        <h2>Step 3: Configure Migration</h2>
-        <p class="text-muted mb-4">
+    <!-- TYPO3 v14 native progress tracker -->
+    <div class="mb-4">
+        <typo3-backend-progress-tracker
+            active="2"
+            stages='["Scan","Review","Configure","Execute","Verify"]'>
+        </typo3-backend-progress-tracker>
+    </div>
+
+    <h2>Step 3: Configure Migration</h2>
+        <p class="text-body-secondary mb-4">
             Review the migration settings for each selected secret. The identifier pattern determines how secrets will be stored in the vault.
         </p>
 
-        <form method="post" action="{executeUri}">
-            <div class="alert alert-warning" role="alert">
-                <core:icon identifier="actions-exclamation-triangle" size="small" />
+        <form method="post" action="{f:be.uri(route: 'admin_vault_migration', parameters: '{action: \'execute\'}')}">
+            <f:be.infobox title="Database Modification" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}">
                 <strong>Warning:</strong> This will modify your database. Make sure you have a backup before proceeding.
-            </div>
+            </f:be.infobox>
 
-            <div class="table-responsive">
-                <table class="table table-striped">
+            <div class="table-fit">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th>Table</th>
-                            <th>Column</th>
-                            <th>Identifier Pattern</th>
+                            <th scope="col">Table</th>
+                            <th scope="col">Column</th>
+                            <th scope="col">Identifier Pattern</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,10 +58,11 @@
                                            class="form-control"
                                            name="migrations[{iter.index}][identifierPattern]"
                                            value="{migration.identifierPattern}"
-                                           required />
-                                    <small class="text-muted">
+                                           required
+                                           aria-describedby="pattern-help-{iter.index}" />
+                                    <div id="pattern-help-{iter.index}" class="form-text">
                                         Use <code>{literal}{{uid}}{/literal}</code> as placeholder for record UID
-                                    </small>
+                                    </div>
                                 </td>
                             </tr>
                         </f:for>
@@ -83,9 +70,11 @@
                 </table>
             </div>
 
-            <div class="card mt-4">
+            <div class="card card-size-medium mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Migration Options</h5>
+                    <div class="card-header-body">
+                        <h2 class="card-title">Migration Options</h2>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="form-check">
@@ -93,7 +82,8 @@
                                class="form-check-input"
                                id="clearOriginals"
                                name="clearOriginals"
-                               value="1" />
+                               value="1"
+                               checked />
                         <label class="form-check-label" for="clearOriginals">
                             Replace original values with vault identifiers
                         </label>
@@ -106,17 +96,16 @@
             </div>
 
             <div class="mt-4 d-flex justify-content-between">
-                <a href="{reviewUri}" class="btn btn-secondary">
+                <f:be.link route="admin_vault_migration" parameters="{action: 'review'}" class="btn btn-default">
                     <core:icon identifier="actions-arrow-left" size="small" />
                     Back to Review
-                </a>
+                </f:be.link>
                 <button type="submit" class="btn btn-danger">
                     <core:icon identifier="actions-bolt" size="small" />
                     Execute Migration
                 </button>
             </div>
         </form>
-    </div>
 </f:section>
 
 </html>

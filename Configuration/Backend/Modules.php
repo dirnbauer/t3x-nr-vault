@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Netresearch\NrVault\Controller\AuditController;
 use Netresearch\NrVault\Controller\MigrationController;
+use Netresearch\NrVault\Controller\OverviewController;
 use Netresearch\NrVault\Controller\SecretsController;
 
 /**
@@ -17,7 +18,9 @@ use Netresearch\NrVault\Controller\SecretsController;
  * - 'nr_vault.modules.overview' maps to EXT:nr_vault/Resources/Private/Language/Modules/overview.xlf
  */
 return [
-    // Parent module - shows submodule overview
+    // Parent module - custom overview with usage information
+    // dependsOnSubmodules: true enables the submodule dropdown in DocHeader
+    // showSubmoduleOverview: true prevents redirect to last-used submodule
     'admin_vault' => [
         'parent' => 'admin',
         'position' => ['after' => 'admin_sites'],
@@ -30,6 +33,11 @@ return [
             'dependsOnSubmodules' => true,
         ],
         'showSubmoduleOverview' => true,
+        'routes' => [
+            '_default' => [
+                'target' => OverviewController::class . '::indexAction',
+            ],
+        ],
     ],
 
     // Secrets submodule
@@ -98,6 +106,7 @@ return [
     ],
 
     // Migration wizard submodule
+    // Uses handleRequest pattern like TYPO3 core - dispatches based on ?action= query param
     'admin_vault_migration' => [
         'parent' => 'admin_vault',
         'access' => 'admin',
@@ -106,24 +115,7 @@ return [
         'labels' => 'nr_vault.modules.migration',
         'routes' => [
             '_default' => [
-                'target' => MigrationController::class . '::scanAction',
-            ],
-            'scan' => [
-                'target' => MigrationController::class . '::scanAction',
-            ],
-            'review' => [
-                'target' => MigrationController::class . '::reviewAction',
-            ],
-            'configure' => [
-                'target' => MigrationController::class . '::configureAction',
-                'methods' => ['POST'],
-            ],
-            'execute' => [
-                'target' => MigrationController::class . '::executeAction',
-                'methods' => ['POST'],
-            ],
-            'verify' => [
-                'target' => MigrationController::class . '::verifyAction',
+                'target' => MigrationController::class . '::handleRequest',
             ],
         ],
     ],
