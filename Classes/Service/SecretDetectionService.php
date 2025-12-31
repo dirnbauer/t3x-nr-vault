@@ -22,6 +22,16 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class SecretDetectionService implements SingletonInterface
 {
     /**
+     * Table.column combinations that should be excluded (contain hashes, not secrets).
+     *
+     * @var array<string>
+     */
+    private const EXCLUDED_COLUMNS = [
+        'be_users.password',    // Contains password hashes (bcrypt/argon2)
+        'fe_users.password',    // Contains password hashes (bcrypt/argon2)
+    ];
+
+    /**
      * Column name patterns that typically contain secrets.
      *
      * @var array<string>
@@ -72,23 +82,20 @@ final class SecretDetectionService implements SingletonInterface
     ];
 
     /**
-     * Extension configuration keys that typically contain secrets.
+     * Patterns for extension configuration keys that typically contain secrets.
+     * Uses regex with word boundaries to avoid false positives like "secretPrefix".
      *
      * @var array<string>
      */
-    private const EXT_CONFIG_SECRET_KEYS = [
-        'apiKey',
-        'apiSecret',
-        'password',
-        'token',
-        'secret',
-        'privateKey',
-        'encryptionKey',
-        'authToken',
-        'accessToken',
-        'refreshToken',
-        'clientSecret',
-        'smtpPassword',
+    private const EXT_CONFIG_KEY_PATTERNS = [
+        '/password$/i',           // ends with "password" (smtpPassword, dbPassword)
+        '/^password$/i',          // exactly "password"
+        '/secret$/i',             // ends with "secret" (apiSecret, clientSecret) - NOT "secretPrefix"
+        '/token$/i',              // ends with "token" (accessToken, authToken)
+        '/apiKey$/i',             // ends with "apiKey"
+        '/privateKey$/i',         // ends with "privateKey"
+        '/encryptionKey$/i',      // ends with "encryptionKey"
+        '/credential/i',          // contains "credential"
     ];
 
     /** @var array<string, array<string, mixed>> */
@@ -206,11 +213,8 @@ final class SecretDetectionService implements SingletonInterface
             ];
         }
 
-        // Check for extensions storing secrets in SYS configuration
-        $this->scanConfigArray(
-            $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] ?? [],
-            'config:EXTENSIONS',
-        );
+        // Note: Extension configuration is already scanned in scanExtensionConfiguration()
+        // which properly applies EXCLUDED_EXTENSIONS filter. Do not duplicate here.
     }
 
     /**
@@ -261,6 +265,11 @@ final class SecretDetectionService implements SingletonInterface
                 if (!($columnType instanceof StringType)
                     && !($columnType instanceof TextType)
                     && !($columnType instanceof BlobType)) {
+                    continue;
+                }
+
+                // Skip known hash columns (e.g., be_users.password, fe_users.password)
+                if (\in_array("{$tableName}.{$columnName}", self::EXCLUDED_COLUMNS, true)) {
                     continue;
                 }
 
@@ -403,13 +412,12 @@ final class SecretDetectionService implements SingletonInterface
 
     /**
      * Check if a config key matches secret patterns.
+     * Uses regex to match suffixes/patterns, avoiding false positives like "secretPrefix".
      */
     private function isSecretConfigKey(string $key): bool
     {
-        $lowerKey = strtolower($key);
-
-        foreach (self::EXT_CONFIG_SECRET_KEYS as $secretKey) {
-            if (str_contains($lowerKey, strtolower($secretKey))) {
+        foreach (self::EXT_CONFIG_KEY_PATTERNS as $pattern) {
+            if (preg_match($pattern, $key)) {
                 return true;
             }
         }
@@ -453,10 +461,20 @@ final class SecretDetectionService implements SingletonInterface
     }
 
     /**
-     * Check if a value looks already encrypted.
+     * Check if a value looks already encrypted or is a password hash.
      */
     private function looksEncrypted(string $value): bool
     {
+        // Check for bcrypt hash ($2y$, $2a$, $2b$)
+        if (preg_match('/^\$2[yab]\$[0-9]{2}\$[.\/A-Za-z0-9]{53}$/', $value)) {
+            return true;
+        }
+
+        // Check for Argon2 hash ($argon2i$, $argon2id$)
+        if (str_starts_with($value, '$argon2i$') || str_starts_with($value, '$argon2id$')) {
+            return true;
+        }
+
         // Check for base64-encoded encrypted data (typically > 50 chars, high entropy)
         if (\strlen($value) > 50 && preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
             return true;
