@@ -26,6 +26,7 @@ final readonly class SiteConfigurationVaultListener
 
     public function __invoke(SiteConfigurationLoadedEvent $event): void
     {
+        /** @var array<string, mixed> $configuration */
         $configuration = $event->getConfiguration();
 
         // Only process if there might be vault references
