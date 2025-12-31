@@ -81,65 +81,32 @@
     </div>
 
     <!-- Usage Examples -->
-    <h2>Usage Examples</h2>
+    <h2>When to Use What</h2>
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card mb-3">
+            <div class="card mb-3 h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-x-content-site-config" size="small" />
-                        Site Configuration
+                        Site-Specific API Keys
                     </h3>
-                    <p class="card-text small text-muted">In <code>config/sites/*/config.yaml</code></p>
+                    <p class="card-text small">Payment gateways, external services, or any secret that differs per site. Resolved at runtime from <code>config/sites/*/config.yaml</code>.</p>
                     <pre class="bg-dark text-light p-3 rounded"><code>settings:
-  apiKey: '%vault(stripe_api_key)%'
-  webhookSecret: '%vault(stripe_webhook)%'</code></pre>
+  stripeKey: '%vault(stripe_api_key)%'
+  mailchimpKey: '%vault(mailchimp_key)%'</code></pre>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h3 class="card-title h5">
-                        <core:icon identifier="mimetypes-text-typoscript" size="small" />
-                        TypoScript
-                    </h3>
-                    <p class="card-text small text-warning">Requires <code>frontend_accessible</code> flag + cache disabled</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>lib.apiAuth = TEXT
-lib.apiAuth.value = Bearer %vault(auth_token)%
-lib.apiAuth.stdWrap.cache.disable = 1</code></pre>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h3 class="card-title h5">
-                        <core:icon identifier="mimetypes-text-php" size="small" />
-                        PHP Code
-                    </h3>
-                    <p class="card-text small text-muted">Inject <code>VaultServiceInterface</code> via constructor</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>public function __construct(
-    private readonly VaultServiceInterface $vault,
-) {}
-
-public function getApiKey(): string
-{
-    return $this->vault->retrieve('my_api_key');
-}</code></pre>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card mb-3">
+            <div class="card mb-3 h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-database" size="small" />
-                        TCA Field
+                        Per-Record Credentials
                     </h3>
-                    <p class="card-text small text-muted">Use <code>renderType => 'vaultSecret'</code> in TCA</p>
+                    <p class="card-text small">Let editors manage secrets per record (e.g., per-integration or per-client settings). Values encrypted automatically via TCA.</p>
                     <pre class="bg-dark text-light p-3 rounded"><code>'api_key' => [
-    'label' => 'API Key',
+    'label' => 'Client API Key',
     'config' => [
         'type' => 'input',
         'renderType' => 'vaultSecret',
@@ -149,34 +116,70 @@ public function getApiKey(): string
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card mb-3">
+            <div class="card mb-3 h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
-                        <core:icon identifier="actions-terminal" size="small" />
-                        CLI
+                        <core:icon identifier="mimetypes-text-php" size="small" />
+                        Extension Services
                     </h3>
-                    <p class="card-text small text-muted">Command-line secret management</p>
-                    <pre class="bg-dark text-light p-3 rounded"><code>bin/typo3 vault:store my_key "secret_value"
-bin/typo3 vault:retrieve my_key
-bin/typo3 vault:list
-bin/typo3 vault:rotate my_key "new_value"</code></pre>
+                    <p class="card-text small">When your extension needs secrets programmatically - API clients, payment processors, external integrations.</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>public function __construct(
+    private readonly VaultServiceInterface $vault,
+) {}
+
+public function callExternalApi(): Response
+{
+    $apiKey = $this->vault->retrieve('ext_api_key');
+    // use $apiKey...
+}</code></pre>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card mb-3">
+            <div class="card mb-3 h-100">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-terminal" size="small" />
+                        Deployment &amp; CI/CD
+                    </h3>
+                    <p class="card-text small">Automate secret provisioning in deployment pipelines, or manage secrets via scripts without backend access.</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code># In deployment script
+bin/typo3 vault:store smtp_password "$SMTP_PASS"
+bin/typo3 vault:store api_key "$API_KEY"
+
+# Rotate on schedule
+bin/typo3 vault:rotate api_key "$NEW_KEY"</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3 h-100">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="mimetypes-text-typoscript" size="small" />
+                        Frontend Rendering <small class="text-warning">(use sparingly)</small>
+                    </h3>
+                    <p class="card-text small">When secrets must appear in rendered output (e.g., JS API keys). Requires <code>frontend_accessible</code> flag and cache disabled.</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>lib.mapsKey = TEXT
+lib.mapsKey.value = %vault(google_maps_key)%
+lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3 h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-cog" size="small" />
-                        TCA Helper
+                        TCA Helper API
                     </h3>
-                    <p class="card-text small text-muted">Convenience API for vault TCA fields</p>
+                    <p class="card-text small">Shorthand for common vault field patterns with sensible defaults (exclude: true, l10n_mode: exclude).</p>
                     <pre class="bg-dark text-light p-3 rounded"><code>use Netresearch\NrVault\TCA\VaultFieldHelper;
 
-'api_key' => VaultFieldHelper::getFieldConfig([
-    'label' => 'API Key',
-    'required' => true,
-]),</code></pre>
+'api_key' => VaultFieldHelper::getSecureFieldConfig(
+    'API Key',
+    ['required' => true]
+),</code></pre>
                 </div>
             </div>
         </div>
