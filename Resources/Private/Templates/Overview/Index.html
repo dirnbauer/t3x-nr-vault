@@ -82,46 +82,104 @@
 
     <!-- Usage Examples -->
     <h2>Usage Examples</h2>
-    <div class="table-fit mb-4">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Context</th>
-                    <th>Example</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Site Configuration</strong></td>
-                    <td>
-                        <code>apiSecret: '%vault(site_api_secret)%'</code>
-                        <br><small class="text-muted">In <code>config/sites/*/config.yaml</code></small>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>TypoScript</strong></td>
-                    <td>
-                        <code>lib.auth.value = Bearer %vault(auth_token)%</code>
-                        <br><small class="text-warning">Requires <code>frontend_accessible</code> flag + cache disabled</small>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>PHP Code</strong></td>
-                    <td>
-                        <code>$this->vaultService->retrieve('my_api_key')</code>
-                        <br><small class="text-muted">Inject <code>VaultServiceInterface</code> via constructor</small>
-                    </td>
-                </tr>
-                <tr>
-                    <td><strong>CLI</strong></td>
-                    <td>
-                        <code>bin/typo3 vault:store my_key "secret_value"</code>
-                        <br><code>bin/typo3 vault:retrieve my_key</code>
-                        <br><code>bin/typo3 vault:list</code>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="mimetypes-x-content-site-config" size="small" />
+                        Site Configuration
+                    </h3>
+                    <p class="card-text small text-muted">In <code>config/sites/*/config.yaml</code></p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>settings:
+  apiKey: '%vault(stripe_api_key)%'
+  webhookSecret: '%vault(stripe_webhook)%'</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="mimetypes-text-typoscript" size="small" />
+                        TypoScript
+                    </h3>
+                    <p class="card-text small text-warning">Requires <code>frontend_accessible</code> flag + cache disabled</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>lib.apiAuth = TEXT
+lib.apiAuth.value = Bearer %vault(auth_token)%
+lib.apiAuth.stdWrap.cache.disable = 1</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="mimetypes-text-php" size="small" />
+                        PHP Code
+                    </h3>
+                    <p class="card-text small text-muted">Inject <code>VaultServiceInterface</code> via constructor</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>public function __construct(
+    private readonly VaultServiceInterface $vault,
+) {}
+
+public function getApiKey(): string
+{
+    return $this->vault->retrieve('my_api_key');
+}</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-database" size="small" />
+                        TCA Field
+                    </h3>
+                    <p class="card-text small text-muted">Use <code>renderType => 'vaultSecret'</code> in TCA</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>'api_key' => [
+    'label' => 'API Key',
+    'config' => [
+        'type' => 'input',
+        'renderType' => 'vaultSecret',
+    ],
+],</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-terminal" size="small" />
+                        CLI
+                    </h3>
+                    <p class="card-text small text-muted">Command-line secret management</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>bin/typo3 vault:store my_key "secret_value"
+bin/typo3 vault:retrieve my_key
+bin/typo3 vault:list
+bin/typo3 vault:rotate my_key "new_value"</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3 class="card-title h5">
+                        <core:icon identifier="actions-cog" size="small" />
+                        TCA Helper
+                    </h3>
+                    <p class="card-text small text-muted">Convenience API for vault TCA fields</p>
+                    <pre class="bg-dark text-light p-3 rounded"><code>use Netresearch\NrVault\TCA\VaultFieldHelper;
+
+'api_key' => VaultFieldHelper::getFieldConfig([
+    'label' => 'API Key',
+    'required' => true,
+]),</code></pre>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- CLI Commands Reference -->
