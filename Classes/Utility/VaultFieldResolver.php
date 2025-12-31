@@ -166,10 +166,23 @@ final class VaultFieldResolver
             return null;
         }
 
+        // Validate UID is within integer range to prevent overflow warnings
+        $uidString = $parts[2];
+        $maxIntString = (string) PHP_INT_MAX;
+        $maxLen = \strlen($maxIntString);
+        $uidLen = \strlen($uidString);
+        if ($uidString === ''
+            || !\ctype_digit($uidString)
+            || $uidLen > $maxLen
+            || ($uidLen === $maxLen && \strcmp($uidString, $maxIntString) > 0)
+        ) {
+            return null;
+        }
+
         return [
             'table' => $parts[0],
             'field' => $parts[1],
-            'uid' => (int) $parts[2],
+            'uid' => (int) $uidString,
         ];
     }
 

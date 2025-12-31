@@ -54,11 +54,16 @@ final class AuditController
 
         $this->addDocHeaderButtons($moduleTemplate);
 
+        // Get filter parameters from POST body (filter form uses POST to avoid iframe issues)
+        $body = $request->getParsedBody();
+        $bodyArray = \is_array($body) ? $body : [];
         $queryParams = $request->getQueryParams();
 
-        $filters = $this->buildAuditFilters($queryParams);
+        // Merge POST body with query params (POST takes precedence for filters)
+        $filterParams = array_merge($queryParams, $bodyArray);
+        $filters = $this->buildAuditFilters($filterParams);
 
-        $page = max(1, (int) ($queryParams['page'] ?? 1));
+        $page = max(1, (int) ($filterParams['page'] ?? 1));
         $limit = 50;
         $offset = ($page - 1) * $limit;
 
@@ -103,10 +108,6 @@ final class AuditController
             'filters' => $filters,
             'isAdmin' => $this->isAdmin(),
             'actions' => ['create', 'read', 'update', 'delete', 'rotate', 'access_denied', 'http_call'],
-            'moduleUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            'exportJsonUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.export', ['format' => 'json']),
-            'exportCsvUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.export', ['format' => 'csv']),
-            'verifyChainUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.verifyChain'),
         ]);
 
         $moduleTemplate->setTitle(
@@ -149,7 +150,6 @@ final class AuditController
             'message' => $result['valid']
                 ? $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid'),
-            'backUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         ]);
 
         $moduleTemplate->setTitle(
@@ -292,6 +292,8 @@ final class AuditController
                 ->setIcon($this->iconFactory->getIcon('actions-document-export-csv', IconSize::SMALL));
             $buttonBar->addButton($exportCsvButton, ButtonBar::BUTTON_POSITION_LEFT, 3);
         }
+
+        // Note: Reload button is automatically added by TYPO3's DocHeaderComponent
     }
 
     private function getActionBadgeClass(string $action): string
