@@ -92,16 +92,11 @@
             </thead>
             <tbody>
                 <tr>
-                    <td><strong>LocalConfiguration.php</strong></td>
-                    <td><code>'transport_smtp_password' => '%vault(smtp_password)%'</code></td>
-                </tr>
-                <tr>
-                    <td><strong>Extension Configuration</strong></td>
-                    <td><code>'apiKey' => '%vault(payment_gateway_key)%'</code></td>
-                </tr>
-                <tr>
                     <td><strong>Site Configuration</strong></td>
-                    <td><code>apiSecret: '%vault(site_api_secret)%'</code></td>
+                    <td>
+                        <code>apiSecret: '%vault(site_api_secret)%'</code>
+                        <br><small class="text-muted">In <code>config/sites/*/config.yaml</code></small>
+                    </td>
                 </tr>
                 <tr>
                     <td><strong>TypoScript</strong></td>
@@ -111,8 +106,11 @@
                     </td>
                 </tr>
                 <tr>
-                    <td><strong>PHP Code (via DI)</strong></td>
-                    <td><code>$this->vaultService->retrieve('my_api_key')</code></td>
+                    <td><strong>PHP Code</strong></td>
+                    <td>
+                        <code>$this->vaultService->retrieve('my_api_key')</code>
+                        <br><small class="text-muted">Inject <code>VaultServiceInterface</code> via constructor</small>
+                    </td>
                 </tr>
             </tbody>
         </table>
