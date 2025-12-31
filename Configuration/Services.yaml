@@ -52,7 +52,17 @@ services:
     public: true
 
   # Controllers
-  Netresearch\NrVault\Controller\VaultController:
+  Netresearch\NrVault\Controller\OverviewController:
+    public: true
+    tags:
+      - name: backend.controller
+
+  Netresearch\NrVault\Controller\SecretsController:
+    public: true
+    tags:
+      - name: backend.controller
+
+  Netresearch\NrVault\Controller\AuditController:
     public: true
     tags:
       - name: backend.controller
@@ -117,6 +127,10 @@ services:
 
   # Site configuration vault processor
   Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor:
+    public: true
+
+  Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessorInterface:
+    alias: Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor
     public: true
 
   # Vault field permission service

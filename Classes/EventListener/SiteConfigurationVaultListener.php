@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\EventListener;
 
-use Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor;
+use Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessorInterface;
 use TYPO3\CMS\Core\Attribute\AsEventListener;
 use TYPO3\CMS\Core\Configuration\Event\SiteConfigurationLoadedEvent;
 
@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Configuration\Event\SiteConfigurationLoadedEvent;
 final readonly class SiteConfigurationVaultListener
 {
     public function __construct(
-        private SiteConfigurationVaultProcessor $processor,
+        private SiteConfigurationVaultProcessorInterface $processor,
     ) {}
 
     public function __invoke(SiteConfigurationLoadedEvent $event): void

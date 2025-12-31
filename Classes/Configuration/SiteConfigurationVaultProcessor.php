@@ -37,7 +37,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *     $config = $processor->processConfiguration($site->getConfiguration(), $site);
  *     $apiKey = $config['settings']['payment']['apiKey']; // Resolved secret value
  */
-final class SiteConfigurationVaultProcessor
+final class SiteConfigurationVaultProcessor implements SiteConfigurationVaultProcessorInterface
 {
     private const VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
 
