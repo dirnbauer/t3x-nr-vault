@@ -127,7 +127,7 @@ final class SecretDetectionServiceTest extends TestCase
         $result = $method->invoke($this->service, $value);
 
         if ($expectedPattern === null) {
-            self::assertNull($result, \sprintf('Value should not match any pattern'));
+            self::assertNull($result, 'Value should not match any pattern');
         } else {
             self::assertSame($expectedPattern, $result, \sprintf(
                 'Value should be detected as "%s"',
@@ -143,19 +143,19 @@ final class SecretDetectionServiceTest extends TestCase
     {
         // Note: Using runtime-constructed values to avoid triggering GitHub's secret scanner
         // Values are assembled from parts so they don't appear as complete secrets in source
-        $stripePrefix = 'sk_' . 'live_';
-        $stripeTestPrefix = 'sk_' . 'test_';
-        $stripePubPrefix = 'pk_' . 'live_';
+        $stripePrefix = 'sk_live_';
+        $stripeTestPrefix = 'sk_test_';
+        $stripePubPrefix = 'pk_live_';
         $fakeSuffix = '0123456789ABCDEFGHIJKLMNOP'; // 26 chars, meets 24+ requirement
 
         return [
             'Stripe live key' => [$stripePrefix . $fakeSuffix, 'Stripe live key'],
             'Stripe test key' => [$stripeTestPrefix . $fakeSuffix, 'Stripe test key'],
             'Stripe publishable live' => [$stripePubPrefix . $fakeSuffix, 'Stripe publishable live'],
-            'AWS access key' => ['AKIA' . 'EXAMPLEFAKEKEY12', 'AWS Access Key'],
-            'GitHub PAT' => ['ghp_' . 'FAKE000000000000000000000000000000AB', 'GitHub Personal Access Token'],
-            'GitHub OAuth' => ['gho_' . 'FAKE000000000000000000000000000000AB', 'GitHub OAuth Token'],
-            'Google API Key' => ['AIza' . 'FAKEEXAMPLEKEYNOTREAL000000000000ab', 'Google API Key'],
+            'AWS access key' => ['AKIAEXAMPLEFAKEKEY12', 'AWS Access Key'],
+            'GitHub PAT' => ['ghp_FAKE000000000000000000000000000000AB', 'GitHub Personal Access Token'],
+            'GitHub OAuth' => ['gho_FAKE000000000000000000000000000000AB', 'GitHub OAuth Token'],
+            'Google API Key' => ['AIzaFAKEEXAMPLEKEYNOTREAL000000000000ab', 'Google API Key'],
             // Non-matches
             'regular string' => ['just a regular value', null],
             'short token' => ['abc123', null],

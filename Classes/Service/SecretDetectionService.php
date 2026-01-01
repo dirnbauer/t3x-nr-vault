@@ -28,7 +28,7 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @var array<string>
      */
-    private const EXCLUDED_COLUMNS = [
+    private const array EXCLUDED_COLUMNS = [
         'be_users.password',    // Contains password hashes (bcrypt/argon2)
         'fe_users.password',    // Contains password hashes (bcrypt/argon2)
     ];
@@ -38,7 +38,7 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @var array<string>
      */
-    private const COLUMN_NAME_PATTERNS = [
+    private const array COLUMN_NAME_PATTERNS = [
         '/password$/i',
         '/^password/i',
         '/api[_-]?key$/i',
@@ -62,7 +62,7 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @var array<string, string>
      */
-    private const VALUE_PATTERNS = [
+    private const array VALUE_PATTERNS = [
         'Stripe live key' => '/^sk_live_[a-zA-Z0-9]{24,}$/',
         'Stripe test key' => '/^sk_test_[a-zA-Z0-9]{24,}$/',
         'Stripe publishable live' => '/^pk_live_[a-zA-Z0-9]{24,}$/',
@@ -72,11 +72,11 @@ final class SecretDetectionService implements SingletonInterface
         'GitHub OAuth Token' => '/^gho_[a-zA-Z0-9]{36}$/',
         'GitHub App Token' => '/^ghu_[a-zA-Z0-9]{36}$/',
         'GitHub Refresh Token' => '/^ghr_[a-zA-Z0-9]{36}$/',
-        'Slack Bot Token' => '/^xoxb-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24}$/',
-        'Slack User Token' => '/^xoxp-[0-9]{10,13}-[0-9]{10,13}-[a-zA-Z0-9]{24}$/',
-        'Slack App Token' => '/^xapp-[0-9]-[A-Z0-9]+-[0-9]+-[a-z0-9]+$/',
+        'Slack Bot Token' => '/^xoxb-\d{10,13}-\d{10,13}-[a-zA-Z0-9]{24}$/',
+        'Slack User Token' => '/^xoxp-\d{10,13}-\d{10,13}-[a-zA-Z0-9]{24}$/',
+        'Slack App Token' => '/^xapp-\d-[A-Z0-9]+-\d+-[a-z0-9]+$/',
         'Google API Key' => '/^AIza[0-9A-Za-z_-]{35}$/',
-        'Mailchimp API Key' => '/^[a-f0-9]{32}-us[0-9]{1,2}$/',
+        'Mailchimp API Key' => '/^[a-f0-9]{32}-us\d{1,2}$/',
         'SendGrid API Key' => '/^SG\.[a-zA-Z0-9_-]{22}\.[a-zA-Z0-9_-]{43}$/',
         'Twilio Auth Token' => '/^[a-f0-9]{32}$/',
         'PayPal Client Secret' => '/^E[A-Za-z0-9_-]{50,80}$/',
@@ -89,7 +89,7 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @var array<string>
      */
-    private const EXT_CONFIG_KEY_PATTERNS = [
+    private const array EXT_CONFIG_KEY_PATTERNS = [
         '/password$/i',           // ends with "password" (smtpPassword, dbPassword)
         '/^password$/i',          // exactly "password"
         '/secret$/i',             // ends with "secret" (apiSecret, clientSecret) - NOT "secretPrefix"
@@ -208,7 +208,7 @@ final class SecretDetectionService implements SingletonInterface
 
         // Check SYS encryptionKey if it looks weak
         $encryptionKey = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] ?? '';
-        if (!empty($encryptionKey) && \strlen($encryptionKey) < 32) {
+        if (!empty($encryptionKey) && \strlen((string) $encryptionKey) < 32) {
             $this->detectedSecrets['config:SYS.encryptionKey'] = [
                 'source' => 'LocalConfiguration',
                 'path' => 'SYS.encryptionKey',
@@ -376,8 +376,10 @@ final class SecretDetectionService implements SingletonInterface
                 $this->scanConfigArray($value, "{$prefix}.{$key}");
                 continue;
             }
-
-            if (!\is_string($value) || $value === '') {
+            if (!\is_string($value)) {
+                continue;
+            }
+            if ($value === '') {
                 continue;
             }
 
@@ -406,13 +408,7 @@ final class SecretDetectionService implements SingletonInterface
      */
     private function isSecretColumn(string $columnName): bool
     {
-        foreach (self::COLUMN_NAME_PATTERNS as $pattern) {
-            if (preg_match($pattern, $columnName)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(self::COLUMN_NAME_PATTERNS, fn($pattern): int|false => preg_match($pattern, $columnName));
     }
 
     /**
@@ -421,13 +417,7 @@ final class SecretDetectionService implements SingletonInterface
      */
     private function isSecretConfigKey(string $key): bool
     {
-        foreach (self::EXT_CONFIG_KEY_PATTERNS as $pattern) {
-            if (preg_match($pattern, $key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(self::EXT_CONFIG_KEY_PATTERNS, fn($pattern): int|false => preg_match($pattern, $key));
     }
 
     /**
@@ -471,7 +461,7 @@ final class SecretDetectionService implements SingletonInterface
     private function looksEncrypted(string $value): bool
     {
         // Check for bcrypt hash ($2y$, $2a$, $2b$)
-        if (preg_match('/^\$2[yab]\$[0-9]{2}\$[.\/A-Za-z0-9]{53}$/', $value)) {
+        if (preg_match('/^\$2[yab]\$\d{2}\$[.\/A-Za-z0-9]{53}$/', $value)) {
             return true;
         }
 
@@ -486,7 +476,7 @@ final class SecretDetectionService implements SingletonInterface
         }
 
         // Check for hex-encoded data
-        return (bool) (\strlen($value) > 50 && preg_match('/^[0-9a-f]+$/i', $value));
+        return \strlen($value) > 50 && preg_match('/^[0-9a-f]+$/i', $value);
     }
 
     /**
@@ -516,7 +506,7 @@ final class SecretDetectionService implements SingletonInterface
         $nameLower = strtolower($name);
 
         // Critical: Known API key patterns detected
-        if (!empty($patterns)) {
+        if ($patterns !== []) {
             return 'critical';
         }
 

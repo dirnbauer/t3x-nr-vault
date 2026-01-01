@@ -68,22 +68,17 @@ final class VaultListCommand extends Command
                 $secrets = \array_slice($secrets, 0, $limit);
             }
 
-            if (empty($secrets)) {
+            if ($secrets === []) {
                 $io->info('No secrets found');
 
                 return Command::SUCCESS;
             }
 
-            switch ($format) {
-                case 'json':
-                    $output->writeln(json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
-                    break;
-                case 'csv':
-                    $this->outputCsv($output, $secrets);
-                    break;
-                default:
-                    $this->outputTable($io, $secrets);
-            }
+            match ($format) {
+                'json' => $output->writeln(json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
+                'csv' => $this->outputCsv($output, $secrets),
+                default => $this->outputTable($io, $secrets),
+            };
 
             return Command::SUCCESS;
         } catch (VaultException $e) {

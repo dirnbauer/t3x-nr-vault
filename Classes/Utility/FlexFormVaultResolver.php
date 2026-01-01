@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FlexFormVaultResolver
 {
-    private const VAULT_FLEXFORM_PATTERN = '/^[a-z0-9_]+__[a-z0-9_]+__[a-z0-9_]+__[a-z0-9_]+__\d+$/i';
+    private const string VAULT_FLEXFORM_PATTERN = '/^[a-z0-9_]+__[a-z0-9_]+__[a-z0-9_]+__[a-z0-9_]+__\d+$/i';
 
     /**
      * Resolve vault identifiers in FlexForm settings.

@@ -22,7 +22,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class VaultFieldResolver
 {
-    private const VAULT_IDENTIFIER_PATTERN = '/^[a-z0-9_]+__[a-z0-9_]+__\d+$/i';
+    private const string VAULT_IDENTIFIER_PATTERN = '/^[a-z0-9_]+__[a-z0-9_]+__\d+$/i';
 
     /**
      * Resolve vault identifiers in an array to their actual secret values.

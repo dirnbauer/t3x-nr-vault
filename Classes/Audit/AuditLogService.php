@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
 
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use TYPO3\CMS\Core\Database\Connection;
@@ -21,13 +22,13 @@ use TYPO3\CMS\Core\Http\ServerRequest;
 /**
  * Audit log service with tamper-evident hash chain.
  */
-final class AuditLogService implements AuditLogServiceInterface
+final readonly class AuditLogService implements AuditLogServiceInterface
 {
-    private const TABLE_NAME = 'tx_nrvault_audit_log';
+    private const string TABLE_NAME = 'tx_nrvault_audit_log';
 
     public function __construct(
-        private readonly ConnectionPool $connectionPool,
-        private readonly AccessControlServiceInterface $accessControlService,
+        private ConnectionPool $connectionPool,
+        private AccessControlServiceInterface $accessControlService,
     ) {}
 
     public function log(
@@ -103,7 +104,7 @@ final class AuditLogService implements AuditLogServiceInterface
         $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
 
         return array_map(
-            fn (array $row) => AuditLogEntry::fromDatabaseRow($row),
+            AuditLogEntry::fromDatabaseRow(...),
             $rows,
         );
     }
@@ -124,7 +125,7 @@ final class AuditLogService implements AuditLogServiceInterface
     {
         $entries = $this->query($filters, PHP_INT_MAX, 0);
 
-        return array_map(fn (AuditLogEntry $entry) => $entry->toArray(), $entries);
+        return array_map(fn (AuditLogEntry $entry): array => $entry->toArray(), $entries);
     }
 
     public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array
@@ -174,7 +175,7 @@ final class AuditLogService implements AuditLogServiceInterface
         }
 
         return [
-            'valid' => empty($errors),
+            'valid' => $errors === [],
             'errors' => $errors,
         ];
     }
@@ -213,7 +214,7 @@ final class AuditLogService implements AuditLogServiceInterface
     /**
      * Apply filters to query builder.
      */
-    private function applyFilters($queryBuilder, array $filters): void
+    private function applyFilters(QueryBuilder $queryBuilder, array $filters): void
     {
         if (isset($filters['secretIdentifier'])) {
             $queryBuilder->andWhere(
@@ -273,7 +274,7 @@ final class AuditLogService implements AuditLogServiceInterface
     private function getCurrentUserRole(): string
     {
         $groups = $this->accessControlService->getCurrentUserGroups();
-        if (empty($groups)) {
+        if ($groups === []) {
             return $this->accessControlService->getCurrentActorType();
         }
 
@@ -283,7 +284,7 @@ final class AuditLogService implements AuditLogServiceInterface
     private function getClientIp(): string
     {
         $request = $this->getServerRequest();
-        if ($request === null) {
+        if (!$request instanceof ServerRequest) {
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
@@ -293,13 +294,13 @@ final class AuditLogService implements AuditLogServiceInterface
     private function getUserAgent(): string
     {
         $request = $this->getServerRequest();
-        if ($request === null) {
+        if (!$request instanceof ServerRequest) {
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
         $userAgent = $request->getHeaderLine('User-Agent');
         if (\strlen($userAgent) > 500) {
-            $userAgent = substr($userAgent, 0, 500);
+            return substr($userAgent, 0, 500);
         }
 
         return $userAgent;
@@ -308,7 +309,7 @@ final class AuditLogService implements AuditLogServiceInterface
     private function getRequestId(): string
     {
         $request = $this->getServerRequest();
-        if ($request === null) {
+        if (!$request instanceof ServerRequest) {
             return '';
         }
 

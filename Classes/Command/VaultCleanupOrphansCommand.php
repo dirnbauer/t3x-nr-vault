@@ -120,17 +120,15 @@ final class VaultCleanupOrphansCommand extends Command
                 }
 
                 // Check if record still exists
-                if (!$this->recordExists($parsed['table'], $parsed['uid'])) {
-                    // Only include if older than retention period
-                    if ($createdAt < $retentionCutoff) {
-                        $orphans[] = [
-                            'identifier' => $identifier,
-                            'table' => $parsed['table'],
-                            'field' => $parsed['field'],
-                            'uid' => $parsed['uid'],
-                            'created_at' => $createdAt,
-                        ];
-                    }
+                // Only include if older than retention period
+                if (!$this->recordExists($parsed['table'], $parsed['uid']) && $createdAt < $retentionCutoff) {
+                    $orphans[] = [
+                        'identifier' => $identifier,
+                        'table' => $parsed['table'],
+                        'field' => $parsed['field'],
+                        'uid' => $parsed['uid'],
+                        'created_at' => $createdAt,
+                    ];
                 }
 
                 $progressBar->advance();
@@ -188,7 +186,7 @@ final class VaultCleanupOrphansCommand extends Command
             ['Failed' => $failed],
         );
 
-        if (!empty($errors)) {
+        if ($errors !== []) {
             $io->section('Errors');
             foreach (\array_slice($errors, 0, 10) as $error) {
                 $io->text('<error>✗</error> ' . $error);

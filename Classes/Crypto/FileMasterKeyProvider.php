@@ -11,12 +11,12 @@ use Netresearch\NrVault\Exception\MasterKeyException;
 /**
  * File-based master key provider.
  */
-final class FileMasterKeyProvider implements MasterKeyProviderInterface
+final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
 {
-    private const KEY_LENGTH = 32; // 256 bits
+    private const int KEY_LENGTH = 32; // 256 bits
 
     public function __construct(
-        private readonly ExtensionConfigurationInterface $configuration,
+        private ExtensionConfigurationInterface $configuration,
     ) {}
 
     public function getIdentifier(): string
@@ -88,10 +88,8 @@ final class FileMasterKeyProvider implements MasterKeyProviderInterface
         }
 
         $dir = \dirname($path);
-        if (!is_dir($dir)) {
-            if (!mkdir($dir, 0o700, true) && !is_dir($dir)) {
-                throw MasterKeyException::cannotStore("Cannot create directory: {$dir}");
-            }
+        if (!is_dir($dir) && (!mkdir($dir, 0o700, true) && !is_dir($dir))) {
+            throw MasterKeyException::cannotStore("Cannot create directory: {$dir}");
         }
 
         // Store as base64 for easier handling

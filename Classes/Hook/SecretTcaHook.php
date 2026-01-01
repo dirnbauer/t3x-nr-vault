@@ -20,7 +20,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class SecretTcaHook
 {
-    private const TABLE = 'tx_nrvault_secret';
+    private const string TABLE = 'tx_nrvault_secret';
 
     /**
      * Called before database operations.
@@ -37,22 +37,20 @@ final class SecretTcaHook
         }
 
         // For existing records, prevent identifier changes
-        if (!str_starts_with((string) $id, 'NEW')) {
-            if (isset($fieldArray['identifier'])) {
-                // Get the original identifier
-                $originalRecord = BackendUtility::getRecord(self::TABLE, (int) $id, 'identifier');
-                if ($originalRecord !== null && $fieldArray['identifier'] !== $originalRecord['identifier']) {
-                    // Identifier change attempted - revert to original
-                    $dataHandler->log(
-                        self::TABLE,
-                        (int) $id,
-                        2,
-                        0,
-                        1,
-                        'Vault secret identifier cannot be changed after creation',
-                    );
-                    $fieldArray['identifier'] = $originalRecord['identifier'];
-                }
+        if (!str_starts_with((string) $id, 'NEW') && isset($fieldArray['identifier'])) {
+            // Get the original identifier
+            $originalRecord = BackendUtility::getRecord(self::TABLE, (int) $id, 'identifier');
+            if ($originalRecord !== null && $fieldArray['identifier'] !== $originalRecord['identifier']) {
+                // Identifier change attempted - revert to original
+                $dataHandler->log(
+                    self::TABLE,
+                    (int) $id,
+                    2,
+                    0,
+                    1,
+                    'Vault secret identifier cannot be changed after creation',
+                );
+                $fieldArray['identifier'] = $originalRecord['identifier'];
             }
         }
 
@@ -99,10 +97,6 @@ final class SecretTcaHook
 
         // Determine what changed for audit context
         $changedFields = array_keys($fieldArray);
-        $auditContext = [
-            'source' => 'formengine',
-            'changed_fields' => $changedFields,
-        ];
 
         try {
             $auditService = GeneralUtility::makeInstance(AuditLogServiceInterface::class);
@@ -136,9 +130,6 @@ final class SecretTcaHook
         string $command,
         string $table,
         string|int $id,
-        mixed $value,
-        DataHandler $dataHandler,
-        bool $pasteUpdate,
     ): void {
         if ($table !== self::TABLE || $command !== 'delete') {
             return;
@@ -158,7 +149,7 @@ final class SecretTcaHook
                 null,
                 'Deleted via FormEngine',
             );
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             // Don't fail the delete if audit logging fails
         }
     }

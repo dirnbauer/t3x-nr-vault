@@ -116,7 +116,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
 
             // Check if updating existing
             $existing = $this->adapter->retrieve($identifier);
-            $isNew = $existing === null;
+            $isNew = !$existing instanceof Secret;
 
             if (!$isNew) {
                 $secretEntity->setUid($existing->getUid());
@@ -172,7 +172,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         }
 
         $secret = $this->adapter->retrieve($identifier);
-        if ($secret === null) {
+        if (!$secret instanceof Secret) {
             return null;
         }
 
@@ -236,7 +236,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     public function delete(string $identifier, string $reason = ''): void
     {
         $secret = $this->adapter->retrieve($identifier);
-        if ($secret === null) {
+        if (!$secret instanceof Secret) {
             throw SecretNotFoundException::forIdentifier($identifier);
         }
 
@@ -260,7 +260,6 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             null,
             $reason,
             $hashBefore,
-            null,
         );
 
         // Dispatch PSR-14 event
@@ -277,7 +276,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     public function rotate(string $identifier, string $newSecret, string $reason = ''): void
     {
         $secret = $this->adapter->retrieve($identifier);
-        if ($secret === null) {
+        if (!$secret instanceof Secret) {
             throw SecretNotFoundException::forIdentifier($identifier);
         }
 
@@ -350,7 +349,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         $secrets = [];
         foreach ($identifiers as $identifier) {
             $secret = $this->adapter->retrieve($identifier);
-            if ($secret === null) {
+            if (!$secret instanceof Secret) {
                 continue;
             }
 
@@ -378,7 +377,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     public function getMetadata(string $identifier): array
     {
         $secret = $this->adapter->retrieve($identifier);
-        if ($secret === null) {
+        if (!$secret instanceof Secret) {
             throw SecretNotFoundException::forIdentifier($identifier);
         }
 

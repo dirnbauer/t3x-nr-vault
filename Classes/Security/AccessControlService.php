@@ -19,25 +19,25 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 /**
  * Access control service implementation.
  */
-final class AccessControlService implements AccessControlServiceInterface
+final readonly class AccessControlService implements AccessControlServiceInterface
 {
     public function __construct(
-        private readonly ExtensionConfigurationInterface $configuration,
+        private ExtensionConfigurationInterface $configuration,
     ) {}
 
     public function canRead(Secret $secret): bool
     {
-        return $this->hasAccess($secret, 'read');
+        return $this->hasAccess($secret);
     }
 
     public function canWrite(Secret $secret): bool
     {
-        return $this->hasAccess($secret, 'write');
+        return $this->hasAccess($secret);
     }
 
     public function canDelete(Secret $secret): bool
     {
-        return $this->hasAccess($secret, 'delete');
+        return $this->hasAccess($secret);
     }
 
     public function canCreate(): bool
@@ -45,14 +45,10 @@ final class AccessControlService implements AccessControlServiceInterface
         $backendUser = $this->getBackendUser();
 
         // Backend user takes precedence
-        if ($backendUser !== null) {
+        if ($backendUser instanceof BackendUserAuthentication) {
             // Admin can always create
-            if ($backendUser->isAdmin()) {
-                return true;
-            }
-
             // Any authenticated backend user can create
-            return true;
+            return $backendUser->isAdmin();
         }
 
         // CLI check (only when no backend user)
@@ -67,7 +63,7 @@ final class AccessControlService implements AccessControlServiceInterface
     public function getCurrentActorUid(): int
     {
         $backendUser = $this->getBackendUser();
-        if ($backendUser === null) {
+        if (!$backendUser instanceof BackendUserAuthentication) {
             return 0;
         }
 
@@ -77,7 +73,7 @@ final class AccessControlService implements AccessControlServiceInterface
     public function getCurrentActorType(): string
     {
         $backendUser = $this->getBackendUser();
-        if ($backendUser !== null) {
+        if ($backendUser instanceof BackendUserAuthentication) {
             return 'backend';
         }
 
@@ -85,7 +81,7 @@ final class AccessControlService implements AccessControlServiceInterface
             return 'cli';
         }
 
-        if (\defined('TYPO3_cliMode') && TYPO3_cliMode) {
+        if (\defined('TYPO3_cliMode') && \TYPO3_CLIMODE) {
             return 'cli';
         }
 
@@ -95,7 +91,7 @@ final class AccessControlService implements AccessControlServiceInterface
     public function getCurrentActorUsername(): string
     {
         $backendUser = $this->getBackendUser();
-        if ($backendUser !== null) {
+        if ($backendUser instanceof BackendUserAuthentication) {
             return (string) ($backendUser->user['username'] ?? 'Unknown');
         }
 
@@ -110,13 +106,13 @@ final class AccessControlService implements AccessControlServiceInterface
     public function getCurrentUserGroups(): array
     {
         $backendUser = $this->getBackendUser();
-        if ($backendUser === null) {
+        if (!$backendUser instanceof BackendUserAuthentication) {
             return [];
         }
 
         $groups = $backendUser->userGroupsUID ?? [];
 
-        return array_map('intval', $groups);
+        return array_map(intval(...), $groups);
     }
 
     /**
@@ -135,12 +131,12 @@ final class AccessControlService implements AccessControlServiceInterface
     /**
      * Check access to a secret.
      */
-    private function hasAccess(Secret $secret, string $operation): bool
+    private function hasAccess(Secret $secret): bool
     {
         $backendUser = $this->getBackendUser();
 
         // Backend user takes precedence
-        if ($backendUser !== null) {
+        if ($backendUser instanceof BackendUserAuthentication) {
             return $this->hasBackendUserAccess($backendUser, $secret);
         }
 
@@ -152,24 +148,19 @@ final class AccessControlService implements AccessControlServiceInterface
 
             // Check CLI access groups if configured
             $cliAccessGroups = $this->configuration->getCliAccessGroups();
-            if (!empty($cliAccessGroups)) {
+            if ($cliAccessGroups !== []) {
                 $secretGroups = $secret->getAllowedGroups();
 
-                return !empty(array_intersect($secretGroups, $cliAccessGroups));
+                return array_intersect($secretGroups, $cliAccessGroups) !== [];
             }
 
             // CLI allowed and no group restrictions
             return true;
         }
-
         // Frontend access for secrets explicitly marked as frontend_accessible
         // This allows TypoScript and other frontend contexts to resolve vault placeholders
-        if ($secret->isFrontendAccessible()) {
-            return true;
-        }
-
         // No backend user and not CLI
-        return false;
+        return $secret->isFrontendAccessible();
     }
 
     /**
@@ -195,9 +186,9 @@ final class AccessControlService implements AccessControlServiceInterface
 
         // Group access
         $secretGroups = $secret->getAllowedGroups();
-        if (!empty($secretGroups)) {
+        if ($secretGroups !== []) {
             $userGroups = $this->getCurrentUserGroups();
-            if (!empty(array_intersect($secretGroups, $userGroups))) {
+            if (array_intersect($secretGroups, $userGroups) !== []) {
                 return true;
             }
         }

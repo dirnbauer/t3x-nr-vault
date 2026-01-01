@@ -106,7 +106,7 @@ final class TypoScriptVaultListenerTest extends TestCase
             ->with(
                 'Failed to resolve vault reference in TypoScript',
                 $this->callback(static fn (array $context): bool => $context['identifier'] === 'missing_key'
-                    && str_contains($context['error'], 'Secret not found'))
+                    && str_contains((string) $context['error'], 'Secret not found'))
             );
 
         ($this->listener)($event);
@@ -169,7 +169,7 @@ final class TypoScriptVaultListenerTest extends TestCase
                 if ($identifier === 'good_key') {
                     return 'resolved';
                 }
-                throw new RuntimeException('Not found: ' . $identifier);
+                throw new RuntimeException('Not found: ' . $identifier, 2156755499);
             });
 
         ($this->listener)($event);
@@ -185,12 +185,10 @@ final class TypoScriptVaultListenerTest extends TestCase
     {
         $cObj = $this->createMock(ContentObjectRenderer::class);
 
-        $event = new AfterStdWrapFunctionsExecutedEvent(
+        return new AfterStdWrapFunctionsExecutedEvent(
             content: $content,
             configuration: [],
             contentObjectRenderer: $cObj,
         );
-
-        return $event;
     }
 }

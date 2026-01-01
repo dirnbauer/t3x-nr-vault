@@ -108,7 +108,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     #[Test]
     public function succeedsWithNoRecordsToMigrate(): void
     {
-        $this->mockTableAndFieldExist('tx_myext_settings', 'api_key');
+        $this->mockTableAndFieldExist('api_key');
         $this->mockQueryReturnsRecords('tx_myext_settings', []);
 
         $exitCode = $this->commandTester->execute([
@@ -123,7 +123,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     #[Test]
     public function dryRunShowsRecordsWithoutMigrating(): void
     {
-        $this->mockTableAndFieldExist('tx_myext_settings', 'api_key');
+        $this->mockTableAndFieldExist('api_key');
         $this->mockQueryReturnsRecords('tx_myext_settings', [
             ['uid' => 1, 'api_key' => 'secret123'],
             ['uid' => 2, 'api_key' => 'secret456'],
@@ -146,7 +146,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     #[Test]
     public function migratesRecordsWhenConfirmed(): void
     {
-        $this->mockTableAndFieldExist('tx_myext_settings', 'api_key');
+        $this->mockTableAndFieldExist('api_key');
         $this->mockQueryReturnsRecords('tx_myext_settings', [
             ['uid' => 1, 'api_key' => 'secret123'],
         ]);
@@ -176,7 +176,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     #[Test]
     public function cancelsWhenNotConfirmed(): void
     {
-        $this->mockTableAndFieldExist('tx_myext_settings', 'api_key');
+        $this->mockTableAndFieldExist('api_key');
         $this->mockQueryReturnsRecords('tx_myext_settings', [
             ['uid' => 1, 'api_key' => 'secret123'],
         ]);
@@ -193,7 +193,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         self::assertStringContainsString('cancelled', $this->commandTester->getDisplay());
     }
 
-    private function mockTableAndFieldExist(string $table, string $field): void
+    private function mockTableAndFieldExist(string $field): void
     {
         $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);

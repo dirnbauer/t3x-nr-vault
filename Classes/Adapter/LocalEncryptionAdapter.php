@@ -4,18 +4,16 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Adapter;
 
-use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
 
 /**
  * Local database adapter with envelope encryption.
  */
-final class LocalEncryptionAdapter implements VaultAdapterInterface
+final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
 {
     public function __construct(
-        private readonly SecretRepository $secretRepository,
-        private readonly EncryptionServiceInterface $encryptionService,
+        private SecretRepository $secretRepository,
     ) {}
 
     public function getIdentifier(): string
@@ -42,7 +40,7 @@ final class LocalEncryptionAdapter implements VaultAdapterInterface
     public function delete(string $identifier): void
     {
         $secret = $this->secretRepository->findByIdentifier($identifier);
-        if ($secret !== null) {
+        if ($secret instanceof Secret) {
             $this->secretRepository->delete($secret);
         }
     }
@@ -60,7 +58,7 @@ final class LocalEncryptionAdapter implements VaultAdapterInterface
     public function getMetadata(string $identifier): ?array
     {
         $secret = $this->secretRepository->findByIdentifier($identifier);
-        if ($secret === null) {
+        if (!$secret instanceof Secret) {
             return null;
         }
 
@@ -83,7 +81,7 @@ final class LocalEncryptionAdapter implements VaultAdapterInterface
     public function updateMetadata(string $identifier, array $metadata): void
     {
         $secret = $this->secretRepository->findByIdentifier($identifier);
-        if ($secret === null) {
+        if (!$secret instanceof Secret) {
             return;
         }
 

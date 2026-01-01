@@ -20,20 +20,6 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class VaultSecretElement extends AbstractFormElement
 {
-    private const DEFAULT_FIELD_WIZARDS = [
-        'localizationStateSelector' => [
-            'renderType' => 'localizationStateSelector',
-        ],
-        'otherLanguageContent' => [
-            'renderType' => 'otherLanguageContent',
-            'after' => ['localizationStateSelector'],
-        ],
-        'defaultLanguageDifferences' => [
-            'renderType' => 'defaultLanguageDifferences',
-            'after' => ['otherLanguageContent'],
-        ],
-    ];
-
     public function render(): array
     {
         $resultArray = $this->initializeResultArray();
@@ -42,7 +28,6 @@ final class VaultSecretElement extends AbstractFormElement
         $config = $parameterArray['fieldConf']['config'];
 
         $itemName = $parameterArray['itemFormElName'];
-        $itemValue = $parameterArray['itemFormElValue'];
 
         $fieldId = StringUtility::getUniqueId('formengine-vault-');
         $width = $this->formMaxWidth($config['size'] ?? 30);
@@ -165,10 +150,10 @@ final class VaultSecretElement extends AbstractFormElement
         $html[] = '</div>'; // formengine-field-item
 
         // Hidden field to track vault identifier
-        $html[] = '<input type="hidden" name="' . htmlspecialchars($itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
+        $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
 
         // Hidden field for original checksum (for change detection)
-        $html[] = '<input type="hidden" name="' . htmlspecialchars($itemName) . '[_vault_checksum]" value="' . htmlspecialchars($valueChecksum) . '" />';
+        $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_checksum]" value="' . htmlspecialchars($valueChecksum) . '" />';
 
         $resultArray['html'] = implode(LF, $html);
 

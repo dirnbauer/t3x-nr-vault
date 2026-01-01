@@ -10,10 +10,10 @@ use Netresearch\NrVault\Exception\ConfigurationException;
 /**
  * Factory for creating master key providers.
  */
-final class MasterKeyProviderFactory
+final readonly class MasterKeyProviderFactory
 {
     public function __construct(
-        private readonly ExtensionConfigurationInterface $configuration,
+        private ExtensionConfigurationInterface $configuration,
     ) {}
 
     public function create(): MasterKeyProviderInterface

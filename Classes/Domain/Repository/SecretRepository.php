@@ -11,14 +11,14 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 /**
  * Repository for secret entities.
  */
-final class SecretRepository
+final readonly class SecretRepository
 {
-    private const TABLE_NAME = 'tx_nrvault_secret';
+    private const string TABLE_NAME = 'tx_nrvault_secret';
 
-    private const MM_TABLE_NAME = 'tx_nrvault_secret_begroups_mm';
+    private const string MM_TABLE_NAME = 'tx_nrvault_secret_begroups_mm';
 
     public function __construct(
-        private readonly ConnectionPool $connectionPool,
+        private ConnectionPool $connectionPool,
     ) {}
 
     public function findByIdentifier(string $identifier): ?Secret
@@ -42,7 +42,7 @@ final class SecretRepository
 
         // Load groups from MM table
         $groups = $this->loadGroupsForSecret((int) $row['uid']);
-        if (!empty($groups)) {
+        if ($groups !== []) {
             $secret->setAllowedGroups($groups);
         }
 
@@ -70,7 +70,7 @@ final class SecretRepository
 
         // Load groups from MM table
         $groups = $this->loadGroupsForSecret($uid);
-        if (!empty($groups)) {
+        if ($groups !== []) {
             $secret->setAllowedGroups($groups);
         }
 
@@ -190,7 +190,7 @@ final class SecretRepository
      */
     public function findByGroups(array $groupUids): array
     {
-        if (empty($groupUids)) {
+        if ($groupUids === []) {
             return [];
         }
 
@@ -201,11 +201,11 @@ final class SecretRepository
         $secretUids = $mmQuery
             ->select('DISTINCT uid_local')
             ->from(self::MM_TABLE_NAME)
-            ->where($mmQuery->expr()->in('uid_foreign', array_map('intval', $groupUids)))
+            ->where($mmQuery->expr()->in('uid_foreign', array_map(intval(...), $groupUids)))
             ->executeQuery()
             ->fetchFirstColumn();
 
-        if (empty($secretUids)) {
+        if ($secretUids === []) {
             return [];
         }
 
@@ -214,7 +214,7 @@ final class SecretRepository
             ->select('*')
             ->from(self::TABLE_NAME)
             ->where(
-                $queryBuilder->expr()->in('uid', array_map('intval', $secretUids)),
+                $queryBuilder->expr()->in('uid', array_map(intval(...), $secretUids)),
                 $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
@@ -224,7 +224,7 @@ final class SecretRepository
         foreach ($rows as $row) {
             $secret = Secret::fromDatabaseRow($row);
             $groups = $this->loadGroupsForSecret((int) $row['uid']);
-            if (!empty($groups)) {
+            if ($groups !== []) {
                 $secret->setAllowedGroups($groups);
             }
             $secrets[] = $secret;
@@ -252,7 +252,7 @@ final class SecretRepository
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn ($row) => Secret::fromDatabaseRow($row), $rows);
+        return array_map(Secret::fromDatabaseRow(...), $rows);
     }
 
     /**
@@ -278,7 +278,7 @@ final class SecretRepository
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn ($row) => Secret::fromDatabaseRow($row), $rows);
+        return array_map(Secret::fromDatabaseRow(...), $rows);
     }
 
     /**
@@ -312,7 +312,7 @@ final class SecretRepository
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn ($row) => (int) $row['uid_foreign'], $rows);
+        return array_map(fn (array $row): int => (int) $row['uid_foreign'], $rows);
     }
 
     /**

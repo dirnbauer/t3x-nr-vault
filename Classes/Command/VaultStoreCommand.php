@@ -88,7 +88,7 @@ final class VaultStoreCommand extends Command
         // Add groups to metadata if specified
         $groups = $input->getOption('groups');
         if (!empty($groups)) {
-            $metadata['allowed_groups'] = array_map('intval', $groups);
+            $metadata['allowed_groups'] = array_map(intval(...), $groups);
         }
 
         try {
@@ -152,8 +152,8 @@ final class VaultStoreCommand extends Command
     {
         $metadata = [];
         foreach ($pairs as $pair) {
-            if (str_contains($pair, '=')) {
-                [$key, $value] = explode('=', $pair, 2);
+            if (str_contains((string) $pair, '=')) {
+                [$key, $value] = explode('=', (string) $pair, 2);
                 $metadata[trim($key)] = trim($value);
             }
         }

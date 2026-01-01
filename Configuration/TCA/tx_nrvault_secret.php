@@ -52,8 +52,9 @@ return [
                 'type' => 'input',
                 'size' => 50,
                 'max' => 255,
-                'eval' => 'trim,required,alphanum_x',
+                'eval' => 'trim,alphanum_x',
                 'placeholder' => 'my-api-key',
+                'required' => true,
                 // Identifier is immutable after creation - use readOnly in edit context
             ],
         ],
@@ -206,7 +207,7 @@ return [
     'types' => [
         '0' => [
             'showitem' => '
-                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:general,
+                --div--;core.form.tabs:general,
                     identifier,
                     description,
                 --div--;LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tabs.access,
@@ -224,7 +225,7 @@ return [
                     read_count,
                     last_read_at,
                     adapter,
-                --div--;LLL:EXT:core/Resources/Private/Language/Form/locallang_tabs.xlf:access,
+                --div--;core.form.tabs:access,
                     hidden,
             ',
         ],

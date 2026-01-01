@@ -11,11 +11,11 @@ use Netresearch\NrVault\Exception\ValidationException;
  */
 final class IdentifierValidator
 {
-    private const MIN_LENGTH = 3;
+    private const int MIN_LENGTH = 3;
 
-    private const MAX_LENGTH = 255;
+    private const int MAX_LENGTH = 255;
 
-    private const PATTERN = '/^[a-zA-Z][a-zA-Z0-9_]*$/';
+    private const string PATTERN = '/^[a-zA-Z]\w*$/';
 
     /**
      * Validate a secret identifier.
@@ -85,7 +85,7 @@ final class IdentifierValidator
         $identifier = preg_replace('/_+/', '_', $identifier);
 
         // Trim underscores
-        $identifier = trim($identifier, '_');
+        $identifier = trim((string) $identifier, '_');
 
         // Enforce length limits
         if (\strlen($identifier) < self::MIN_LENGTH) {
@@ -93,7 +93,7 @@ final class IdentifierValidator
         }
 
         if (\strlen($identifier) > self::MAX_LENGTH) {
-            $identifier = substr($identifier, 0, self::MAX_LENGTH);
+            return substr($identifier, 0, self::MAX_LENGTH);
         }
 
         return $identifier;

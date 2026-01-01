@@ -34,20 +34,20 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
  * Backend module controller for secrets management.
  */
 #[AsController]
-final class SecretsController
+final readonly class SecretsController
 {
-    private const MODULE_NAME = 'admin_vault_secrets';
+    private const string MODULE_NAME = 'admin_vault_secrets';
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly IconFactory $iconFactory,
-        private readonly PageRenderer $pageRenderer,
-        private readonly VaultServiceInterface $vaultService,
-        private readonly UriBuilder $uriBuilder,
-        private readonly FlashMessageService $flashMessageService,
-        private readonly ConnectionPool $connectionPool,
-        private readonly AuditLogServiceInterface $auditLogService,
-        private readonly ComponentFactory $componentFactory,
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private IconFactory $iconFactory,
+        private PageRenderer $pageRenderer,
+        private VaultServiceInterface $vaultService,
+        private UriBuilder $uriBuilder,
+        private FlashMessageService $flashMessageService,
+        private ConnectionPool $connectionPool,
+        private AuditLogServiceInterface $auditLogService,
+        private ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -342,9 +342,9 @@ final class SecretsController
             // Groups
             if (isset($body['groups'])) {
                 if (\is_array($body['groups'])) {
-                    $updateData['groups'] = array_map('intval', $body['groups']);
+                    $updateData['groups'] = array_map(intval(...), $body['groups']);
                 } elseif ($body['groups'] !== '') {
-                    $updateData['groups'] = array_map('intval', explode(',', (string) $body['groups']));
+                    $updateData['groups'] = array_map(intval(...), explode(',', (string) $body['groups']));
                 } else {
                     $updateData['groups'] = [];
                 }
@@ -359,7 +359,7 @@ final class SecretsController
             // Expires at
             if (!empty($body['expiresAt'])) {
                 try {
-                    $updateData['expires_at'] = (new DateTimeImmutable($body['expiresAt']))->getTimestamp();
+                    $updateData['expires_at'] = new DateTimeImmutable($body['expiresAt'])->getTimestamp();
                 } catch (Exception) {
                     // Invalid date, ignore
                 }
@@ -409,7 +409,7 @@ final class SecretsController
 
         $options = [];
 
-        if (!empty($description)) {
+        if ($description !== '' && $description !== '0') {
             $options['description'] = $description;
         }
 
@@ -418,7 +418,7 @@ final class SecretsController
         }
 
         if (!empty($body['groups'])) {
-            $options['groups'] = array_map('intval', explode(',', (string) $body['groups']));
+            $options['groups'] = array_map(intval(...), explode(',', (string) $body['groups']));
         }
 
         if (!empty($body['context'])) {
@@ -442,7 +442,7 @@ final class SecretsController
 
         if (!empty($body['metadata'])) {
             try {
-                $metadata = json_decode($body['metadata'], true, 512, JSON_THROW_ON_ERROR);
+                $metadata = json_decode((string) $body['metadata'], true, 512, JSON_THROW_ON_ERROR);
                 if (\is_array($metadata)) {
                     $options['metadata'] = $metadata;
                 }
@@ -564,12 +564,12 @@ final class SecretsController
                 ->fetchAssociative();
 
             if ($current === false) {
-                throw new SecretNotFoundException('Secret not found: ' . $identifier);
+                throw new SecretNotFoundException('Secret not found: ' . $identifier, 7409034110);
             }
 
             // Toggle the hidden state
             $newState = $current['hidden'] ? 0 : 1;
-            $action = $newState ? 'disable' : 'enable';
+            $action = $newState !== 0 ? 'disable' : 'enable';
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
             $queryBuilder
                 ->update('tx_nrvault_secret')
@@ -592,7 +592,7 @@ final class SecretsController
                 ['action' => $action, 'hidden' => $newState],
             );
 
-            $message = $newState
+            $message = $newState !== 0
                 ? $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.disabled.success')
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.enabled.success');
 

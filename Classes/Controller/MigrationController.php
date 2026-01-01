@@ -34,25 +34,25 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
  * 5. Verify - Confirm migration success
  */
 #[AsController]
-final class MigrationController
+final readonly class MigrationController
 {
-    private const MODULE_NAME = 'admin_vault_migration';
+    private const string MODULE_NAME = 'admin_vault_migration';
 
     /**
      * Allowed actions for this controller.
      *
      * @var list<string>
      */
-    private const ALLOWED_ACTIONS = ['index', 'scan', 'review', 'configure', 'execute', 'verify'];
+    private const array ALLOWED_ACTIONS = ['index', 'scan', 'review', 'configure', 'execute', 'verify'];
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly SecretDetectionService $detectionService,
-        private readonly VaultServiceInterface $vaultService,
-        private readonly ConnectionPool $connectionPool,
-        private readonly UriBuilder $uriBuilder,
-        private readonly FlashMessageService $flashMessageService,
-        private readonly ComponentFactory $componentFactory,
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private SecretDetectionService $detectionService,
+        private VaultServiceInterface $vaultService,
+        private ConnectionPool $connectionPool,
+        private UriBuilder $uriBuilder,
+        private FlashMessageService $flashMessageService,
+        private ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -223,7 +223,7 @@ final class MigrationController
         // Parse selected secrets (format: "table.column")
         $migrations = [];
         foreach ($selectedSecrets as $key) {
-            if (preg_match('/^database:([^.]+)\.([^.]+)$/', $key, $matches)) {
+            if (preg_match('/^database:([^.]+)\.([^.]+)$/', (string) $key, $matches)) {
                 $table = $matches[1];
                 $column = $matches[2];
                 $migrations[] = [
@@ -269,13 +269,18 @@ final class MigrationController
             $table = $migration['table'] ?? '';
             $column = $migration['column'] ?? '';
             $identifierPattern = $migration['identifierPattern'] ?? '';
-
-            if (empty($table) || empty($column) || empty($identifierPattern)) {
+            if (empty($table)) {
+                continue;
+            }
+            if (empty($column)) {
+                continue;
+            }
+            if (empty($identifierPattern)) {
                 continue;
             }
 
             try {
-                $result = $this->migrateColumn($table, $column, $identifierPattern, $clearOriginals);
+                $result = $this->migrateColumn($table, $column, $identifierPattern);
                 $results[] = $result;
                 $totalMigrated += $result['migrated'];
                 $totalFailed += $result['failed'];
@@ -362,7 +367,6 @@ final class MigrationController
         string $table,
         string $column,
         string $identifierPattern,
-        bool $clearOriginals,
     ): array {
         $migrated = 0;
         $failed = 0;
@@ -414,7 +418,7 @@ final class MigrationController
 
                     // Clear original if requested (update already done above with identifier)
                     // The column now contains the vault identifier, not the original value
-                } catch (Exception $e) {
+                } catch (Exception) {
                     ++$failed;
                 }
             }

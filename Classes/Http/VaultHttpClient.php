@@ -37,20 +37,14 @@ use Psr\Http\Message\ResponseInterface;
  */
 final class VaultHttpClient implements VaultHttpClientInterface
 {
-    private ClientInterface $client;
-
     private ?OAuthTokenManager $oauthManager = null;
 
-    public function __construct(
-        private readonly VaultServiceInterface $vaultService,
-        private readonly AuditLogServiceInterface $auditLogService,
-        ?ClientInterface $client = null,
-    ) {
-        $this->client = $client ?? new Client([
-            'timeout' => 30,
-            'connect_timeout' => 10,
-            'http_errors' => false,
-        ]);
+    public function __construct(private readonly VaultServiceInterface $vaultService, private readonly AuditLogServiceInterface $auditLogService, private readonly ?ClientInterface $client = new Client([
+        'timeout' => 30,
+        'connect_timeout' => 10,
+        'http_errors' => false,
+    ]))
+    {
     }
 
     public function request(string $method, string $url, array $options = []): ResponseInterface
@@ -160,7 +154,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
      */
     public function getOAuthManager(): OAuthTokenManager
     {
-        if ($this->oauthManager === null) {
+        if (!$this->oauthManager instanceof OAuthTokenManager) {
             $this->oauthManager = new OAuthTokenManager($this->vaultService);
         }
 
@@ -248,7 +242,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         $secret = $this->vaultService->retrieve($secretIdentifier);
 
         if ($secret === null) {
-            throw new SecretNotFoundException($secretIdentifier);
+            throw new SecretNotFoundException($secretIdentifier, 2316228468);
         }
 
         $guzzleOptions['headers'] ??= [];
@@ -329,7 +323,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
 
         $username = $this->vaultService->retrieve($usernameSecret);
         if ($username === null) {
-            throw new SecretNotFoundException($usernameSecret);
+            throw new SecretNotFoundException($usernameSecret, 2800860734);
         }
 
         $password = '';
@@ -338,7 +332,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
             if ($password === null) {
                 sodium_memzero($username);
 
-                throw new SecretNotFoundException($passwordSecret);
+                throw new SecretNotFoundException($passwordSecret, 8041914792);
             }
         }
 

@@ -105,7 +105,7 @@ final class VaultRotateCommand extends Command
             sodium_memzero($newValue);
 
             return Command::SUCCESS;
-        } catch (SecretNotFoundException $e) {
+        } catch (SecretNotFoundException) {
             $io->error(\sprintf('Secret not found: %s', $identifier));
 
             return Command::FAILURE;

@@ -19,7 +19,7 @@ if (!file_exists($autoloadFile)) {
 
 if (!file_exists($autoloadFile)) {
     throw new RuntimeException(
-        'Could not find autoload.php. Please run "composer install" first.',
+        'Could not find autoload.php. Please run "composer install" first.', 5849523198,
     );
 }
 

@@ -98,7 +98,7 @@ final class VaultDeleteCommand extends Command
             $io->success(\sprintf('Secret "%s" deleted successfully', $identifier));
 
             return Command::SUCCESS;
-        } catch (SecretNotFoundException $e) {
+        } catch (SecretNotFoundException) {
             $io->error(\sprintf('Secret not found: %s', $identifier));
 
             return Command::FAILURE;

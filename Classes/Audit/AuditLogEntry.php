@@ -7,28 +7,28 @@ namespace Netresearch\NrVault\Audit;
 /**
  * Represents an audit log entry.
  */
-final class AuditLogEntry
+final readonly class AuditLogEntry
 {
     public function __construct(
-        public readonly int $uid,
-        public readonly string $secretIdentifier,
-        public readonly string $action,
-        public readonly bool $success,
-        public readonly ?string $errorMessage,
-        public readonly ?string $reason,
-        public readonly int $actorUid,
-        public readonly string $actorType,
-        public readonly string $actorUsername,
-        public readonly string $actorRole,
-        public readonly string $ipAddress,
-        public readonly string $userAgent,
-        public readonly string $requestId,
-        public readonly string $previousHash,
-        public readonly string $entryHash,
-        public readonly string $hashBefore,
-        public readonly string $hashAfter,
-        public readonly int $crdate,
-        public readonly array $context,
+        public int $uid,
+        public string $secretIdentifier,
+        public string $action,
+        public bool $success,
+        public ?string $errorMessage,
+        public ?string $reason,
+        public int $actorUid,
+        public string $actorType,
+        public string $actorUsername,
+        public string $actorRole,
+        public string $ipAddress,
+        public string $userAgent,
+        public string $requestId,
+        public string $previousHash,
+        public string $entryHash,
+        public string $hashBefore,
+        public string $hashAfter,
+        public int $crdate,
+        public array $context,
     ) {}
 
     /**

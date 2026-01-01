@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Hook;
 
+use Override;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
@@ -30,6 +31,7 @@ final class DataHandlerHookTest extends UnitTestCase
 
     private DataHandler&MockObject $dataHandler;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -44,6 +46,7 @@ final class DataHandlerHookTest extends UnitTestCase
         GeneralUtility::addInstance(AuditLogServiceInterface::class, $this->auditLogService);
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();
@@ -69,7 +72,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             1,
-            $this->dataHandler,
         );
 
         self::assertSame(['title' => 'Test Title'], $fieldArray);
@@ -101,7 +103,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             1,
-            $this->dataHandler,
         );
 
         // Value should be replaced with placeholder
@@ -128,7 +129,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             1,
-            $this->dataHandler,
         );
 
         self::assertSame('__VAULT__', $fieldArray['api_key']);
@@ -160,7 +160,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             1,
-            $this->dataHandler,
         );
 
         // Empty values with no checksum should be removed entirely
@@ -194,7 +193,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             'NEW123',
-            $this->dataHandler,
         );
 
         // Mock substitution of NEW id
@@ -247,7 +245,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             42,
-            $this->dataHandler,
         );
 
         $this->vaultService
@@ -294,7 +291,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             42,
-            $this->dataHandler,
         );
 
         $this->vaultService
@@ -334,7 +330,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             42,
-            $this->dataHandler,
         );
 
         $this->vaultService
@@ -692,7 +687,6 @@ final class DataHandlerHookTest extends UnitTestCase
             $fieldArray,
             'tx_test',
             42,
-            $this->dataHandler,
         );
 
         // Both vault fields should be replaced

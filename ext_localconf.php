@@ -7,7 +7,7 @@ use Netresearch\NrVault\Hook\DataHandlerHook;
 use Netresearch\NrVault\Hook\FlexFormVaultHook;
 use Netresearch\NrVault\Hook\SecretTcaHook;
 
-defined('TYPO3') or die();
+defined('TYPO3') || die();
 
 (static function (): void {
     // Register vaultSecret form element type

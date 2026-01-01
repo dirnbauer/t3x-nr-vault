@@ -23,10 +23,10 @@ use Psr\Http\Message\StreamInterface;
  * Provides a developer-friendly API for handling HTTP responses
  * while maintaining full PSR-7 compatibility.
  */
-final class VaultHttpResponse
+final readonly class VaultHttpResponse
 {
     public function __construct(
-        private readonly ResponseInterface $response,
+        private ResponseInterface $response,
     ) {}
 
     /**
@@ -88,7 +88,10 @@ final class VaultHttpResponse
      */
     public function isError(): bool
     {
-        return $this->isClientError() || $this->isServerError();
+        if ($this->isClientError()) {
+            return true;
+        }
+        return $this->isServerError();
     }
 
     /**
@@ -265,7 +268,7 @@ final class VaultHttpResponse
                     'HTTP request failed with status %d: %s',
                     $this->getStatusCode(),
                     $this->getReasonPhrase(),
-                ),
+                ), 9782525747,
             );
         }
 

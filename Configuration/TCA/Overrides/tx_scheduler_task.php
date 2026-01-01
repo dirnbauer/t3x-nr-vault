@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Netresearch\NrVault\Task\OrphanCleanupTask;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
-defined('TYPO3') or die();
+defined('TYPO3') || die();
 
 if (\is_array($GLOBALS['TCA'] ?? null) && isset($GLOBALS['TCA']['tx_scheduler_task'])) {
     // Add custom fields for the OrphanCleanupTask

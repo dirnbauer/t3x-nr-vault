@@ -19,11 +19,11 @@ use SodiumException;
 /**
  * Envelope encryption service using AES-256-GCM or XChaCha20-Poly1305.
  */
-final class EncryptionService implements EncryptionServiceInterface
+final readonly class EncryptionService implements EncryptionServiceInterface
 {
     public function __construct(
-        private readonly MasterKeyProviderInterface $masterKeyProvider,
-        private readonly ExtensionConfigurationInterface $configuration,
+        private MasterKeyProviderInterface $masterKeyProvider,
+        private ExtensionConfigurationInterface $configuration,
     ) {}
 
     public function encrypt(string $plaintext, string $identifier): array

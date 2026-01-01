@@ -3,19 +3,37 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
+use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
+use Rector\Set\ValueObject\SetList;
 use Ssch\TYPO3Rector\Set\Typo3LevelSetList;
+use Ssch\TYPO3Rector\Set\Typo3SetList;
 
 return RectorConfig::configure()
     ->withPaths([
         __DIR__ . '/Classes',
         __DIR__ . '/Tests',
+        __DIR__ . '/Configuration',
+    ])
+    ->withRootFiles()
+    ->withPhpSets(php85: true)
+    ->withSets([
+        // PHP code quality
+        SetList::CODE_QUALITY,
+        SetList::DEAD_CODE,
+        SetList::EARLY_RETURN,
+        SetList::TYPE_DECLARATION,
+
+        // TYPO3 specific
+        Typo3LevelSetList::UP_TO_TYPO3_14,
+        Typo3SetList::CODE_QUALITY,
+        Typo3SetList::GENERAL,
     ])
     ->withSkip([
         // Skip vendor and build directories
         __DIR__ . '/.Build',
-    ])
-    ->withSets([
-        // Apply all TYPO3 v14 upgrades
-        Typo3LevelSetList::UP_TO_TYPO3_14,
+        // Override attribute causes issues with TYPO3's AbstractTask
+        AddOverrideAttributeToOverriddenMethodsRector::class => [
+            __DIR__ . '/Classes/Task/OrphanCleanupTask.php',
+        ],
     ])
     ->withImportNames(removeUnusedImports: true);

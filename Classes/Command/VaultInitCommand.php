@@ -102,14 +102,11 @@ final class VaultInitCommand extends Command
             $io->warning('Store this key securely! It cannot be recovered if lost.');
         } else {
             // Ensure directory exists
-            $dir = \dirname($outputFile);
-            if (!is_dir($dir)) {
-                if (!mkdir($dir, 0o700, true)) {
-                    $io->error(\sprintf('Failed to create directory: %s', $dir));
-                    sodium_memzero($masterKey);
-
-                    return Command::FAILURE;
-                }
+            $dir = \dirname((string) $outputFile);
+            if (!is_dir($dir) && !mkdir($dir, 0o700, true)) {
+                $io->error(\sprintf('Failed to create directory: %s', $dir));
+                sodium_memzero($masterKey);
+                return Command::FAILURE;
             }
 
             // Write key to file with restrictive permissions

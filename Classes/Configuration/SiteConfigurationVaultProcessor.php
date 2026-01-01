@@ -36,13 +36,13 @@ use TYPO3\CMS\Core\Site\Entity\Site;
  *     $config = $processor->processConfiguration($site->getConfiguration(), $site);
  *     $apiKey = $config['settings']['payment']['apiKey']; // Resolved secret value
  */
-final class SiteConfigurationVaultProcessor implements SiteConfigurationVaultProcessorInterface
+final readonly class SiteConfigurationVaultProcessor implements SiteConfigurationVaultProcessorInterface
 {
-    private const VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
+    private const string VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
 
     public function __construct(
-        private readonly VaultServiceInterface $vaultService,
-        private readonly LoggerInterface $logger,
+        private VaultServiceInterface $vaultService,
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -135,7 +135,7 @@ final class SiteConfigurationVaultProcessor implements SiteConfigurationVaultPro
         }
 
         // Support site-prefixed identifiers: site:{siteIdentifier}:{secretId}
-        if ($site !== null && !str_contains($identifier, ':')) {
+        if ($site instanceof Site && !str_contains($identifier, ':')) {
             // Try site-specific identifier first
             $siteIdentifier = \sprintf('site:%s:%s', $site->getIdentifier(), $identifier);
 

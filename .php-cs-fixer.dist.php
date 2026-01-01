@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-$finder = PhpCsFixer\Finder::create()
+use PhpCsFixer\Finder;
+use PhpCsFixer\Config;
+
+$finder = Finder::create()
     ->in(__DIR__ . '/Classes')
     ->in(__DIR__ . '/Tests')
     ->ignoreDotFiles(false)
     ->ignoreVCSIgnored(true);
 
-return (new PhpCsFixer\Config())
+return new Config()
     ->setRiskyAllowed(true)
     ->setRules([
         '@PER-CS2.0' => true,

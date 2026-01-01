@@ -14,21 +14,21 @@ use TYPO3\CMS\Core\SingletonInterface;
 final class ExtensionConfiguration implements ExtensionConfigurationInterface, SingletonInterface
 {
     // Default values as constants for maintainability
-    public const DEFAULT_STORAGE_ADAPTER = 'local';
+    public const string DEFAULT_STORAGE_ADAPTER = 'local';
 
-    public const DEFAULT_MASTER_KEY_PROVIDER = 'typo3';
+    public const string DEFAULT_MASTER_KEY_PROVIDER = 'typo3';
 
-    public const DEFAULT_MASTER_KEY_SOURCE = 'NR_VAULT_MASTER_KEY';
+    public const string DEFAULT_MASTER_KEY_SOURCE = 'NR_VAULT_MASTER_KEY';
 
-    public const DEFAULT_AUDIT_LOG_RETENTION = 365;
+    public const int DEFAULT_AUDIT_LOG_RETENTION = 365;
 
-    public const DEFAULT_ALLOW_CLI_ACCESS = false;
+    public const bool DEFAULT_ALLOW_CLI_ACCESS = false;
 
-    public const DEFAULT_CACHE_ENABLED = true;
+    public const bool DEFAULT_CACHE_ENABLED = true;
 
-    public const DEFAULT_PREFER_XCHACHA20 = false;
+    public const bool DEFAULT_PREFER_XCHACHA20 = false;
 
-    private const EXTENSION_KEY = 'nr_vault';
+    private const string EXTENSION_KEY = 'nr_vault';
 
     private array $configuration;
 
@@ -87,10 +87,10 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
     {
         $groups = $this->configuration['cliAccessGroups'] ?? [];
         if (\is_string($groups)) {
-            $groups = array_filter(array_map('intval', explode(',', $groups)));
+            $groups = array_filter(array_map(intval(...), explode(',', $groups)));
         }
 
-        return array_map('intval', (array) $groups);
+        return array_map(intval(...), (array) $groups);
     }
 
     /**

@@ -40,17 +40,11 @@ final class OAuthTokenManager
      */
     private array $tokenCache = [];
 
-    private ClientInterface $httpClient;
-
-    public function __construct(
-        private readonly VaultServiceInterface $vaultService,
-        private readonly ?LoggerInterface $logger = null,
-        ?ClientInterface $httpClient = null,
-    ) {
-        $this->httpClient = $httpClient ?? new Client([
-            'timeout' => 30,
-            'connect_timeout' => 10,
-        ]);
+    public function __construct(private readonly VaultServiceInterface $vaultService, private readonly ?LoggerInterface $logger = null, private readonly ?ClientInterface $httpClient = new Client([
+        'timeout' => 30,
+        'connect_timeout' => 10,
+    ]))
+    {
     }
 
     /**
@@ -88,7 +82,7 @@ final class OAuthTokenManager
      */
     public function clearCache(?OAuthConfig $config = null): void
     {
-        if ($config !== null) {
+        if ($config instanceof OAuthConfig) {
             $cacheKey = $this->getCacheKey($config);
             unset($this->tokenCache[$cacheKey]);
         } else {
@@ -106,14 +100,14 @@ final class OAuthTokenManager
         // Get credentials from vault
         $clientId = $this->vaultService->retrieve($config->clientIdSecret);
         if ($clientId === null) {
-            throw new SecretNotFoundException($config->clientIdSecret);
+            throw new SecretNotFoundException($config->clientIdSecret, 6051576903);
         }
 
         $clientSecret = $this->vaultService->retrieve($config->clientSecretSecret);
         if ($clientSecret === null) {
             sodium_memzero($clientId);
 
-            throw new SecretNotFoundException($config->clientSecretSecret);
+            throw new SecretNotFoundException($config->clientSecretSecret, 4158358265);
         }
 
         // Build token request
@@ -124,7 +118,7 @@ final class OAuthTokenManager
         ];
 
         // Add scopes if specified
-        if (!empty($config->scopes)) {
+        if ($config->scopes !== []) {
             $params['scope'] = $config->getScopesString();
         }
 
@@ -135,7 +129,7 @@ final class OAuthTokenManager
                 sodium_memzero($clientId);
                 sodium_memzero($clientSecret);
 
-                throw new SecretNotFoundException($config->refreshTokenSecret);
+                throw new SecretNotFoundException($config->refreshTokenSecret, 6618787426);
             }
             $params['refresh_token'] = $refreshToken;
         }
@@ -163,13 +157,13 @@ final class OAuthTokenManager
                 throw new VaultException(\sprintf(
                     'OAuth token request failed with status %d',
                     $statusCode,
-                ));
+                ), 2477018617);
             }
 
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
             if (!isset($body['access_token'])) {
-                throw new VaultException('OAuth response missing access_token');
+                throw new VaultException('OAuth response missing access_token', 9878610721);
             }
 
             $expiresIn = $body['expires_in'] ?? 3600;

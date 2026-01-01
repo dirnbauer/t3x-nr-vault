@@ -209,7 +209,7 @@ final class VaultMigrateFieldCommand extends Command
             ['Failed' => $failed],
         );
 
-        if (!empty($errors)) {
+        if ($errors !== []) {
             $io->section('Errors');
             foreach (\array_slice($errors, 0, 10) as $error) {
                 $io->text('<error>✗</error> ' . $error);

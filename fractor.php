@@ -10,10 +10,6 @@ return FractorConfiguration::configure()
         __DIR__ . '/Resources',
         __DIR__ . '/Configuration',
     ])
-    ->withSkip([
-        __DIR__ . '/.Build',
-    ])
     ->withSets([
-        // Apply all TYPO3 v14 upgrades for non-PHP files
         Typo3LevelSetList::UP_TO_TYPO3_14,
     ]);

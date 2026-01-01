@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Functional\Service;
 
+use Override;
 use Netresearch\NrVault\Service\VaultService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -30,6 +31,7 @@ final class VaultServiceTest extends FunctionalTestCase
 
     private bool $setupCompleted = false;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -56,6 +58,7 @@ final class VaultServiceTest extends FunctionalTestCase
         $this->subject = $this->get(VaultServiceInterface::class);
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key (if setUp completed successfully)

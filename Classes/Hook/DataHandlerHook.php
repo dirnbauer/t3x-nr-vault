@@ -18,8 +18,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class DataHandlerHook
 {
-    private array $vaultFieldsConfig = [];
-
     private array $pendingSecrets = [];
 
     /**
@@ -30,7 +28,6 @@ final class DataHandlerHook
         array &$fieldArray,
         string $table,
         string|int $id,
-        DataHandler $dataHandler,
     ): void {
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 

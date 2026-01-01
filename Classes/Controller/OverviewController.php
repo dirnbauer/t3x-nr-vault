@@ -16,13 +16,13 @@ use TYPO3\CMS\Core\Localization\LanguageService;
  * Backend module controller for vault overview/dashboard.
  */
 #[AsController]
-final class OverviewController
+final readonly class OverviewController
 {
-    private const MODULE_NAME = 'admin_vault';
+    private const string MODULE_NAME = 'admin_vault';
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly ConnectionPool $connectionPool,
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private ConnectionPool $connectionPool,
     ) {}
 
     /**

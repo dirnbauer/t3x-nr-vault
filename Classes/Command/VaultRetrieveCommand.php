@@ -67,7 +67,7 @@ final class VaultRetrieveCommand extends Command
             $value = $this->vaultService->retrieve($identifier);
 
             if ($value === null) {
-                throw new SecretNotFoundException($identifier);
+                throw new SecretNotFoundException($identifier, 9236747158);
             }
 
             $outputFile = $input->getOption('output');
@@ -95,7 +95,7 @@ final class VaultRetrieveCommand extends Command
             sodium_memzero($value);
 
             return Command::SUCCESS;
-        } catch (SecretNotFoundException $e) {
+        } catch (SecretNotFoundException) {
             $io->error(\sprintf('Secret not found: %s', $identifier));
 
             return Command::FAILURE;

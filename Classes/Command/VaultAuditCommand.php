@@ -114,7 +114,7 @@ final class VaultAuditCommand extends Command
         try {
             $entries = $this->auditLogService->query($filters, $limit, 0);
 
-            if (empty($entries)) {
+            if ($entries === []) {
                 $io->info('No audit entries found');
 
                 return Command::SUCCESS;
@@ -129,7 +129,7 @@ final class VaultAuditCommand extends Command
             // Output to console
             switch ($format) {
                 case 'json':
-                    $data = array_map(fn ($e) => $e->toArray(), $entries);
+                    $data = array_map(fn ($e): array => $e->toArray(), $entries);
                     $output->writeln(json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
                     break;
                 case 'csv':
@@ -205,7 +205,7 @@ final class VaultAuditCommand extends Command
             $io->table(
                 ['Entry UID', 'Error'],
                 array_map(
-                    fn ($uid, $error) => [$uid, $error],
+                    fn ($uid, $error): array => [$uid, $error],
                     array_keys($result['errors']),
                     array_values($result['errors']),
                 ),
@@ -226,7 +226,7 @@ final class VaultAuditCommand extends Command
                 $entry->success ? '✓' : '✗',
                 $entry->actorUsername,
                 $entry->ipAddress,
-                substr($entry->entryHash, 0, 8) . '...',
+                substr((string) $entry->entryHash, 0, 8) . '...',
             ];
         }
 
@@ -282,18 +282,18 @@ final class VaultAuditCommand extends Command
 
     private function formatCsv(array $data): string
     {
-        if (empty($data)) {
+        if ($data === []) {
             return '';
         }
 
         $output = fopen('php://temp', 'r+');
-        fputcsv($output, array_keys($data[0]));
+        fputcsv($output, array_keys($data[0]), escape: '\\');
 
         foreach ($data as $row) {
             if (isset($row['context']) && \is_array($row['context'])) {
                 $row['context'] = json_encode($row['context']);
             }
-            fputcsv($output, $row);
+            fputcsv($output, $row, escape: '\\');
         }
 
         rewind($output);

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Functional\Hook;
 
+use Override;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -32,7 +32,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[Group('wip')]
 final class TcaIntegrationTest extends FunctionalTestCase
 {
-    private const SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
+    private const string SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
         . 'The TCA hooks work in production; these tests need additional setup for isolated testing.';
 
     protected array $testExtensionsToLoad = [
@@ -47,6 +47,7 @@ final class TcaIntegrationTest extends FunctionalTestCase
 
     private bool $setupCompleted = false;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -73,6 +74,7 @@ final class TcaIntegrationTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key
@@ -228,13 +230,5 @@ final class TcaIntegrationTest extends FunctionalTestCase
                 PRIMARY KEY (uid)
             )
         ');
-    }
-
-    private function getDataHandler(): DataHandler
-    {
-        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-        $dataHandler->bypassAccessCheckForRecords = true;
-
-        return $dataHandler;
     }
 }

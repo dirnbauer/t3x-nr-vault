@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Utility;
 
+use Override;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -15,6 +16,7 @@ final class VaultFieldResolverTest extends UnitTestCase
 {
     protected bool $resetSingletonInstances = true;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -25,6 +27,7 @@ final class VaultFieldResolverTest extends UnitTestCase
         GeneralUtility::addInstance(VaultServiceInterface::class, $vaultServiceMock);
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();

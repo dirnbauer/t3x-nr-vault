@@ -29,7 +29,6 @@ final class FlexFormVaultHook
         array &$fieldArray,
         string $table,
         string|int $id,
-        DataHandler $dataHandler,
     ): void {
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
@@ -38,9 +37,11 @@ final class FlexFormVaultHook
             if (($fieldConfig['config']['type'] ?? '') !== 'flex') {
                 continue;
             }
-
             // Check if this FlexForm field is being saved
-            if (!isset($fieldArray[$fieldName]) || !\is_array($fieldArray[$fieldName])) {
+            if (!isset($fieldArray[$fieldName])) {
+                continue;
+            }
+            if (!\is_array($fieldArray[$fieldName])) {
                 continue;
             }
 

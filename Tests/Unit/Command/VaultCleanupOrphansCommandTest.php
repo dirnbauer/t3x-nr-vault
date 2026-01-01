@@ -98,7 +98,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, true);
+        $this->mockRecordExists(1, true);
 
         $exitCode = $this->commandTester->execute([]);
 
@@ -117,7 +117,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, false);
+        $this->mockRecordExists(1, false);
 
         $exitCode = $this->commandTester->execute([
             '--dry-run' => true,
@@ -283,7 +283,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         self::assertStringContainsString('orphan', strtolower($this->commandTester->getDisplay()));
     }
 
-    private function mockRecordExists(string $table, int $uid, bool $exists): void
+    private function mockRecordExists(int $uid, bool $exists): void
     {
         $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);

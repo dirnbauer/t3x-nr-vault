@@ -209,7 +209,7 @@ final class Secret
      */
     public function setAllowedGroups(array $allowedGroups): self
     {
-        $this->allowedGroups = array_map('intval', $allowedGroups);
+        $this->allowedGroups = array_map(intval(...), $allowedGroups);
 
         return $this;
     }
@@ -454,7 +454,7 @@ final class Secret
         // Parse allowed groups (comma-separated or from MM table)
         if (!empty($row['allowed_groups'])) {
             $groups = (string) $row['allowed_groups'];
-            $secret->allowedGroups = array_filter(array_map('intval', explode(',', $groups)));
+            $secret->allowedGroups = array_filter(array_map(intval(...), explode(',', $groups)));
         }
 
         return $secret;

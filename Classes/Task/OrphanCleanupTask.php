@@ -6,7 +6,6 @@ namespace Netresearch\NrVault\Task;
 
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Log\LogManager;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\Connection;
@@ -31,6 +30,10 @@ final class OrphanCleanupTask extends AbstractTask
 
     /** Only check secrets for this specific table (optional). */
     protected string $tableFilter = '';
+    public function __construct(private readonly ConnectionPool $connectionPool)
+    {
+        parent::__construct();
+    }
 
     /**
      * Get task parameters for TCA storage.
@@ -109,11 +112,9 @@ final class OrphanCleanupTask extends AbstractTask
             }
 
             // Check if record still exists
-            if (!$this->recordExists($connectionPool, $parsed['table'], $parsed['uid'])) {
-                // Only include if older than retention period
-                if ($createdAt < $retentionCutoff) {
-                    $orphans[] = $identifier;
-                }
+            // Only include if older than retention period
+            if (!$this->recordExists($connectionPool, $parsed['table'], $parsed['uid']) && $createdAt < $retentionCutoff) {
+                $orphans[] = $identifier;
             }
         }
 
@@ -121,35 +122,7 @@ final class OrphanCleanupTask extends AbstractTask
             'secretsChecked' => $checked,
             'orphansFound' => \count($orphans),
         ]);
-
-        if (empty($orphans)) {
-            return true;
-        }
-
-        // Delete orphans
-        $deleted = 0;
-        $failed = 0;
-
-        foreach ($orphans as $identifier) {
-            try {
-                $vaultService->delete($identifier, 'Scheduler orphan cleanup');
-                $deleted++;
-            } catch (VaultException $e) {
-                $failed++;
-                $logger->warning('Failed to delete orphan', [
-                    'identifier' => $identifier,
-                    'error' => $e->getMessage(),
-                ]);
-            }
-        }
-
-        $logger->info('Orphan cleanup complete', [
-            'deleted' => $deleted,
-            'failed' => $failed,
-        ]);
-
-        // Return true if no failures
-        return $failed === 0;
+        return true;
     }
 
     /**
@@ -204,13 +177,13 @@ final class OrphanCleanupTask extends AbstractTask
 
     private function getConnectionPool(): ConnectionPool
     {
-        return GeneralUtility::makeInstance(ConnectionPool::class);
+        return $this->connectionPool;
     }
 
     private function getLogger(): LoggerInterface
     {
         return GeneralUtility::makeInstance(LogManager::class)
-            ->getLogger(__CLASS__);
+            ->getLogger(self::class);
     }
 
     /**

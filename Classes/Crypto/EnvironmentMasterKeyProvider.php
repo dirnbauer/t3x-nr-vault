@@ -11,12 +11,12 @@ use Netresearch\NrVault\Exception\MasterKeyException;
 /**
  * Environment variable-based master key provider.
  */
-final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
+final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 {
-    private const KEY_LENGTH = 32; // 256 bits
+    private const int KEY_LENGTH = 32; // 256 bits
 
     public function __construct(
-        private readonly ExtensionConfigurationInterface $configuration,
+        private ExtensionConfigurationInterface $configuration,
     ) {}
 
     public function getIdentifier(): string

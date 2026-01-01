@@ -27,17 +27,17 @@ use TYPO3\CMS\Core\Page\PageRenderer;
  * Backend module controller for audit log management.
  */
 #[AsController]
-final class AuditController
+final readonly class AuditController
 {
-    private const MODULE_NAME = 'admin_vault_audit';
+    private const string MODULE_NAME = 'admin_vault_audit';
 
     public function __construct(
-        private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly IconFactory $iconFactory,
-        private readonly PageRenderer $pageRenderer,
-        private readonly AuditLogServiceInterface $auditLogService,
-        private readonly UriBuilder $uriBuilder,
-        private readonly ComponentFactory $componentFactory,
+        private ModuleTemplateFactory $moduleTemplateFactory,
+        private IconFactory $iconFactory,
+        private PageRenderer $pageRenderer,
+        private AuditLogServiceInterface $auditLogService,
+        private UriBuilder $uriBuilder,
+        private ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -108,7 +108,7 @@ final class AuditController
             'success' => $filters['_form']['success'] ?? '',
             'since' => $filters['_form']['since'] ?? '',
             'until' => $filters['_form']['until'] ?? '',
-        ], static fn($v) => $v !== '');
+        ], static fn($v): bool => $v !== '');
 
         $pagination = [
             'first' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => 1])),
@@ -260,16 +260,16 @@ final class AuditController
         $response = new Response();
         $output = fopen('php://temp', 'r+');
 
-        if (empty($data)) {
+        if ($data === []) {
             fwrite($output, "No data\n");
         } else {
-            fputcsv($output, array_keys($data[0]));
+            fputcsv($output, array_keys($data[0]), escape: '\\');
 
             foreach ($data as $row) {
                 if (isset($row['context']) && \is_array($row['context'])) {
                     $row['context'] = json_encode($row['context']);
                 }
-                fputcsv($output, $row);
+                fputcsv($output, $row, escape: '\\');
             }
         }
 

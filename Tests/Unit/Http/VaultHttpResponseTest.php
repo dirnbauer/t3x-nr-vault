@@ -112,9 +112,9 @@ final class VaultHttpResponseTest extends TestCase
         $success = $this->createMock(ResponseInterface::class);
         $success->method('getStatusCode')->willReturn(200);
 
-        self::assertTrue((new VaultHttpResponse($clientError))->isError());
-        self::assertTrue((new VaultHttpResponse($serverError))->isError());
-        self::assertFalse((new VaultHttpResponse($success))->isError());
+        self::assertTrue(new VaultHttpResponse($clientError)->isError());
+        self::assertTrue(new VaultHttpResponse($serverError)->isError());
+        self::assertFalse(new VaultHttpResponse($success)->isError());
     }
 
     #[Test]
@@ -126,8 +126,8 @@ final class VaultHttpResponseTest extends TestCase
         $success = $this->createMock(ResponseInterface::class);
         $success->method('getStatusCode')->willReturn(200);
 
-        self::assertTrue((new VaultHttpResponse($redirect))->isRedirect());
-        self::assertFalse((new VaultHttpResponse($success))->isRedirect());
+        self::assertTrue(new VaultHttpResponse($redirect)->isRedirect());
+        self::assertFalse(new VaultHttpResponse($success)->isRedirect());
     }
 
     #[Test]
@@ -304,9 +304,9 @@ final class VaultHttpResponseTest extends TestCase
             ->with('Content-Type')
             ->willReturn(['text/html']);
 
-        self::assertTrue((new VaultHttpResponse($jsonResponse))->isJson());
-        self::assertTrue((new VaultHttpResponse($apiResponse))->isJson());
-        self::assertFalse((new VaultHttpResponse($htmlResponse))->isJson());
+        self::assertTrue(new VaultHttpResponse($jsonResponse)->isJson());
+        self::assertTrue(new VaultHttpResponse($apiResponse)->isJson());
+        self::assertFalse(new VaultHttpResponse($htmlResponse)->isJson());
     }
 
     #[Test]

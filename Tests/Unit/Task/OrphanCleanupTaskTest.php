@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Task;
 
+use Override;
 use PHPUnit\Framework\MockObject\MockObject;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
@@ -33,6 +34,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
 
     private LoggerInterface&MockObject $logger;
 
+    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -50,6 +52,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         GeneralUtility::setSingletonInstance(LogManager::class, $logManager);
     }
 
+    #[Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();
@@ -113,7 +116,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, true);
+        $this->mockRecordExists(1, true);
         $this->vaultService->expects($this->never())->method('delete');
 
         $task = new OrphanCleanupTask();
@@ -133,7 +136,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, false);
+        $this->mockRecordExists(1, false);
 
         $this->vaultService
             ->expects($this->once())
@@ -158,7 +161,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, false);
+        $this->mockRecordExists(1, false);
         $this->vaultService->expects($this->never())->method('delete');
 
         $task = new OrphanCleanupTask();
@@ -184,7 +187,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, false);
+        $this->mockRecordExists(1, false);
 
         $this->vaultService
             ->expects($this->once())
@@ -210,7 +213,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, false);
+        $this->mockRecordExists(1, false);
 
         $this->vaultService
             ->method('delete')
@@ -234,7 +237,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ],
         ]);
 
-        $this->mockRecordExists('tx_myext', 1, false);
+        $this->mockRecordExists(1, false);
 
         $this->vaultService
             ->expects($this->once())
@@ -280,7 +283,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         $task->execute();
     }
 
-    private function mockRecordExists(string $table, int $uid, bool $exists): void
+    private function mockRecordExists(int $uid, bool $exists): void
     {
         $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);

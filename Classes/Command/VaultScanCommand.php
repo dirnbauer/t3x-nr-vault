@@ -111,7 +111,7 @@ final class VaultScanCommand extends Command
 
         $format = $input->getOption('format');
         $excludeTables = array_filter(
-            array_map('trim', explode(',', $input->getOption('exclude'))),
+            array_map(trim(...), explode(',', (string) $input->getOption('exclude'))),
         );
         $minSeverity = $input->getOption('severity');
         $databaseOnly = $input->getOption('database-only');
@@ -147,16 +147,11 @@ final class VaultScanCommand extends Command
             return Command::SUCCESS;
         }
 
-        switch ($format) {
-            case 'json':
-                $this->outputJson($output, $filteredSecrets);
-                break;
-            case 'summary':
-                $this->outputSummary($io, $secrets, $minSeverity);
-                break;
-            default:
-                $this->outputTable($io, $filteredSecrets);
-        }
+        match ($format) {
+            'json' => $this->outputJson($output, $filteredSecrets),
+            'summary' => $this->outputSummary($io, $secrets),
+            default => $this->outputTable($io, $filteredSecrets),
+        };
 
         $io->newLine();
         $io->warning(\sprintf(
@@ -220,7 +215,7 @@ final class VaultScanCommand extends Command
      */
     private function outputJson(OutputInterface $output, array $secrets): void
     {
-        $output->writeln((string) json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        $output->writeln(json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -228,7 +223,7 @@ final class VaultScanCommand extends Command
      *
      * @param array<string, array<string, array<string, mixed>>> $secrets
      */
-    private function outputSummary(SymfonyStyle $io, array $secrets, string $minSeverity): void
+    private function outputSummary(SymfonyStyle $io, array $secrets): void
     {
         $io->section('Summary');
 

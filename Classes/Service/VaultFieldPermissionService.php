@@ -40,13 +40,13 @@ use TYPO3\CMS\Core\SingletonInterface;
  */
 final class VaultFieldPermissionService implements SingletonInterface
 {
-    public const PERMISSION_REVEAL = 'reveal';
+    public const string PERMISSION_REVEAL = 'reveal';
 
-    public const PERMISSION_COPY = 'copy';
+    public const string PERMISSION_COPY = 'copy';
 
-    public const PERMISSION_EDIT = 'edit';
+    public const string PERMISSION_EDIT = 'edit';
 
-    public const PERMISSION_READ_ONLY = 'readOnly';
+    public const string PERMISSION_READ_ONLY = 'readOnly';
 
     /** @var array<string, bool> */
     private array $permissionCache = [];
@@ -79,7 +79,7 @@ final class VaultFieldPermissionService implements SingletonInterface
             return $this->permissionCache[$cacheKey];
         }
 
-        $allowed = $this->checkPermission($table, $field, $permission, $backendUser);
+        $allowed = $this->checkPermission($table, $field, $permission);
         $this->permissionCache[$cacheKey] = $allowed;
 
         return $allowed;
@@ -126,9 +126,8 @@ final class VaultFieldPermissionService implements SingletonInterface
         string $table,
         string $field,
         string $permission,
-        BackendUserAuthentication $backendUser,
     ): bool {
-        $tsConfig = $this->getVaultTsConfig($backendUser);
+        $tsConfig = $this->getVaultTsConfig();
 
         // Check field-specific setting: vault.permissions.{table}.{field}.{permission}
         $fieldValue = $this->getNestedValue($tsConfig, [$table, $field, $permission]);
@@ -155,10 +154,9 @@ final class VaultFieldPermissionService implements SingletonInterface
     /**
      * @return array<string, mixed>
      */
-    private function getVaultTsConfig(BackendUserAuthentication $backendUser): array
+    private function getVaultTsConfig(): array
     {
         $pageTsConfig = BackendUtility::getPagesTSconfig(0);
-
         return $pageTsConfig['vault.']['permissions.'] ?? [];
     }
 

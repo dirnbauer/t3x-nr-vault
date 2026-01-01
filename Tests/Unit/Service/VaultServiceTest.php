@@ -88,11 +88,9 @@ final class VaultServiceTest extends TestCase
         $this->adapter
             ->expects(self::once())
             ->method('store')
-            ->with(self::callback(static function (Secret $secret) use ($identifier): bool {
-                return $secret->getIdentifier() === $identifier
-                    && $secret->getEncryptedValue() === 'enc_value'
-                    && $secret->getEncryptedDek() === 'enc_dek';
-            }));
+            ->with(self::callback(static fn(Secret $secret): bool => $secret->getIdentifier() === $identifier
+                && $secret->getEncryptedValue() === 'enc_value'
+                && $secret->getEncryptedDek() === 'enc_dek'));
 
         $this->auditLogService
             ->expects(self::once())
@@ -144,10 +142,8 @@ final class VaultServiceTest extends TestCase
         $this->adapter
             ->expects(self::once())
             ->method('store')
-            ->with(self::callback(static function (Secret $s): bool {
-                return $s->getReadCount() === 1
-                    && $s->getLastReadAt() > 0;
-            }));
+            ->with(self::callback(static fn(Secret $s): bool => $s->getReadCount() === 1
+                && $s->getLastReadAt() > 0));
 
         $result = $this->subject->retrieve($identifier);
 
@@ -297,11 +293,9 @@ final class VaultServiceTest extends TestCase
         $this->adapter
             ->expects(self::once())
             ->method('store')
-            ->with(self::callback(static function (Secret $s): bool {
-                return $s->getVersion() === 2
-                    && $s->getLastRotatedAt() > 0
-                    && $s->getEncryptedValue() === 'new_enc';
-            }));
+            ->with(self::callback(static fn(Secret $s): bool => $s->getVersion() === 2
+                && $s->getLastRotatedAt() > 0
+                && $s->getEncryptedValue() === 'new_enc'));
 
         $this->subject->rotate($identifier, $newSecret, 'Annual rotation');
     }
@@ -388,7 +382,7 @@ final class VaultServiceTest extends TestCase
 
         $this->adapter
             ->method('retrieve')
-            ->willReturnCallback(static fn (string $id) => match ($id) {
+            ->willReturnCallback(static fn (string $id): ?Secret => match ($id) {
                 'secret1' => $secret1,
                 'secret2' => $secret2,
                 default => null,
@@ -396,7 +390,7 @@ final class VaultServiceTest extends TestCase
 
         $this->accessControlService
             ->method('canRead')
-            ->willReturnCallback(static fn (Secret $s) => $s->getIdentifier() !== 'secret2');
+            ->willReturnCallback(static fn (Secret $s): bool => $s->getIdentifier() !== 'secret2');
 
         $result = $this->subject->list();
 

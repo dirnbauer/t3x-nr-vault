@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
+use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
@@ -30,7 +31,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 )]
 final class VaultRotateMasterKeyCommand extends Command
 {
-    private const KEY_LENGTH = 32;
+    private const int KEY_LENGTH = 32;
 
     public function __construct(
         private readonly SecretRepository $secretRepository,
@@ -81,8 +82,8 @@ final class VaultRotateMasterKeyCommand extends Command
         try {
             $oldKeyPath = $input->getOption('old-key');
             $newKeyPath = $input->getOption('new-key');
-            $oldKey = $this->resolveKey(\is_string($oldKeyPath) ? $oldKeyPath : null, 'old');
-            $newKey = $this->resolveKey(\is_string($newKeyPath) ? $newKeyPath : null, 'new');
+            $oldKey = $this->resolveKey(\is_string($oldKeyPath) ? $oldKeyPath : null);
+            $newKey = $this->resolveKey(\is_string($newKeyPath) ? $newKeyPath : null);
         } catch (MasterKeyException $e) {
             $io->error($e->getMessage());
 
@@ -132,7 +133,7 @@ final class VaultRotateMasterKeyCommand extends Command
         $firstIdentifier = $identifiers[0];
         $firstSecret = $this->secretRepository->findByIdentifier($firstIdentifier);
 
-        if ($firstSecret === null) {
+        if (!$firstSecret instanceof Secret) {
             $io->error('Failed to load first secret for verification.');
             sodium_memzero($oldKey);
             sodium_memzero($newKey);
@@ -184,7 +185,7 @@ final class VaultRotateMasterKeyCommand extends Command
         try {
             foreach ($identifiers as $identifier) {
                 $secret = $this->secretRepository->findByIdentifier($identifier);
-                if ($secret === null) {
+                if (!$secret instanceof Secret) {
                     $failedSecrets[] = ['identifier' => $identifier, 'error' => 'Not found'];
                     $io->progressAdvance();
 
@@ -265,7 +266,7 @@ final class VaultRotateMasterKeyCommand extends Command
     /**
      * Resolve a key from file path or fall back to configured provider.
      */
-    private function resolveKey(?string $keyPath, string $keyType): string
+    private function resolveKey(?string $keyPath): string
     {
         if ($keyPath !== null) {
             return $this->loadKeyFromFile($keyPath);
