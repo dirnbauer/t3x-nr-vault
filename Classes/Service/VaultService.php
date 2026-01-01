@@ -390,6 +390,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         }
 
         return [
+            'uid' => $secret->getUid(),
             'identifier' => $secret->getIdentifier(),
             'description' => $secret->getDescription(),
             'owner' => $secret->getOwnerUid(),

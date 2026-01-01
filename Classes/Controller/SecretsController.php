@@ -281,37 +281,26 @@ final class SecretsController
             );
         }
 
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
-        $moduleTemplate->makeDocHeaderModuleMenu();
+        $uid = $metadata['uid'] ?? 0;
+        if ($uid === 0) {
+            $this->addFlashMessage('Secret UID not found', ContextualFeedbackSeverity::ERROR);
 
-        $this->addBackButton($moduleTemplate);
+            return new RedirectResponse(
+                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+            );
+        }
 
-        $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
-
-        // Resolve owner name for display
-        $ownerName = $this->getUsernameByUid($metadata['owner_uid'] ?? 0);
-
-        // Get all backend users for selector
-        $backendUsers = $this->getBackendUsers();
-        $backendGroups = $this->getBackendGroups();
-
-        $moduleTemplate->assignMultiple([
-            'identifier' => $identifier,
-            'metadata' => $metadata,
-            'ownerName' => $ownerName,
-            'backendUsers' => $backendUsers,
-            'backendGroups' => $backendGroups,
-            'updateUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.update', ['identifier' => $identifier]),
-            'backUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        // Redirect to FormEngine for native TYPO3 editing experience
+        $editUrl = $this->uriBuilder->buildUriFromRoute('record_edit', [
+            'edit' => [
+                'tx_nrvault_secret' => [
+                    $uid => 'edit',
+                ],
+            ],
+            'returnUrl' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         ]);
 
-        $moduleTemplate->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-            . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.edit.title'),
-        );
-
-        return $moduleTemplate->renderResponse('Secrets/Edit');
+        return new RedirectResponse((string) $editUrl);
     }
 
     /**
