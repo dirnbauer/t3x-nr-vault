@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Configuration;
 
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**

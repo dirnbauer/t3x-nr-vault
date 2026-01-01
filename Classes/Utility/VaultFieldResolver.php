@@ -172,9 +172,9 @@ final class VaultFieldResolver
         $maxLen = \strlen($maxIntString);
         $uidLen = \strlen($uidString);
         if ($uidString === ''
-            || !\ctype_digit($uidString)
+            || !ctype_digit($uidString)
             || $uidLen > $maxLen
-            || ($uidLen === $maxLen && \strcmp($uidString, $maxIntString) > 0)
+            || ($uidLen === $maxLen && strcmp($uidString, $maxIntString) > 0)
         ) {
             return null;
         }

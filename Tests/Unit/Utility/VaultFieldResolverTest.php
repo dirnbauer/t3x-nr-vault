@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Utility;
 
-use Override;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Utility\GeneralUtility;

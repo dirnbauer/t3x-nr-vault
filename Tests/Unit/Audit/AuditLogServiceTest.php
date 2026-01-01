@@ -69,7 +69,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => $data['action'] === 'create'
+                self::callback(static fn (array $data): bool => $data['action'] === 'create'
                     && $data['secret_identifier'] === 'test_secret'
                     && $data['actor_uid'] === 1
                     && $data['actor_type'] === 'backend'),
@@ -88,7 +88,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => $data['action'] === 'read'
+                self::callback(static fn (array $data): bool => $data['action'] === 'read'
                     && $data['secret_identifier'] === 'api_key'),
             );
 
@@ -105,7 +105,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => $data['action'] === 'delete'
+                self::callback(static fn (array $data): bool => $data['action'] === 'delete'
                     && $data['secret_identifier'] === 'old_secret'),
             );
 
@@ -122,7 +122,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => $data['action'] === 'rotate'
+                self::callback(static fn (array $data): bool => $data['action'] === 'rotate'
                     && $data['secret_identifier'] === 'rotated_secret'),
             );
 
@@ -139,7 +139,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => $data['action'] === 'access_denied'
+                self::callback(static fn (array $data): bool => $data['action'] === 'access_denied'
                     && $data['secret_identifier'] === 'restricted_secret'
                     && $data['success'] === 0),
             );
@@ -161,7 +161,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => isset($data['ip_address'])
+                self::callback(static fn (array $data): bool => isset($data['ip_address'])
                     && isset($data['user_agent'], $data['request_id'])),
             );
 
@@ -217,7 +217,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('insert')
             ->with(
                 'tx_nrvault_audit_log',
-                self::callback(static fn(array $data): bool => $data['previous_hash'] === 'previous_hash_abc123'),
+                self::callback(static fn (array $data): bool => $data['previous_hash'] === 'previous_hash_abc123'),
             );
 
         $this->subject->log('chained_secret', 'create', true, null, 'Testing hash chain');

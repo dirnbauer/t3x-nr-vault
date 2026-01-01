@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
-use TYPO3\CMS\Backend\Template\ModuleTemplate;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use DateTimeImmutable;
 use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
@@ -17,7 +15,9 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\JsonResponse;
@@ -625,17 +625,6 @@ final readonly class SecretsController
     }
 
     /**
-     * Check if the request is an AJAX request.
-     */
-    private function isAjaxRequest(ServerRequestInterface $request): bool
-    {
-        $acceptHeader = $request->getHeaderLine('Accept');
-
-        return str_contains($acceptHeader, 'application/json')
-            || $request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest';
-    }
-
-    /**
      * Delete a secret.
      */
     public function deleteAction(ServerRequestInterface $request): ResponseInterface
@@ -670,6 +659,17 @@ final readonly class SecretsController
         return new RedirectResponse(
             (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         );
+    }
+
+    /**
+     * Check if the request is an AJAX request.
+     */
+    private function isAjaxRequest(ServerRequestInterface $request): bool
+    {
+        $acceptHeader = $request->getHeaderLine('Accept');
+
+        return str_contains($acceptHeader, 'application/json')
+            || $request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest';
     }
 
     /**

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Hook;
 
-use Throwable;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Throwable;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -55,13 +55,13 @@ final class SecretTcaHook
         }
 
         // Handle owner_uid - convert group format to simple uid
-        if (isset($fieldArray['owner_uid']) && is_string($fieldArray['owner_uid'])) {
+        if (isset($fieldArray['owner_uid']) && \is_string($fieldArray['owner_uid'])) {
             // Format from group field: "be_users_123" or just "123"
             $fieldArray['owner_uid'] = $this->extractUidFromGroupValue($fieldArray['owner_uid']);
         }
 
         // Handle pid - convert group format to simple uid
-        if (isset($fieldArray['pid']) && is_string($fieldArray['pid']) && str_contains($fieldArray['pid'], 'pages')) {
+        if (isset($fieldArray['pid']) && \is_string($fieldArray['pid']) && str_contains($fieldArray['pid'], 'pages')) {
             $fieldArray['pid'] = $this->extractUidFromGroupValue($fieldArray['pid']);
         }
     }
@@ -158,6 +158,7 @@ final class SecretTcaHook
      * Extract UID from group field value format.
      *
      * @param string $value Value like "be_users_123" or "123"
+     *
      * @return int The extracted UID
      */
     private function extractUidFromGroupValue(string $value): int

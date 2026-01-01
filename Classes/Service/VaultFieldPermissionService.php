@@ -157,6 +157,7 @@ final class VaultFieldPermissionService implements SingletonInterface
     private function getVaultTsConfig(): array
     {
         $pageTsConfig = BackendUtility::getPagesTSconfig(0);
+
         return $pageTsConfig['vault.']['permissions.'] ?? [];
     }
 

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
-use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EnvironmentMasterKeyProvider;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
+use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Crypto\Typo3MasterKeyProvider;
 use Netresearch\NrVault\Exception\ConfigurationException;
 use PHPUnit\Framework\Attributes\CoversClass;

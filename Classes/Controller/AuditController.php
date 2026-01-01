@@ -108,7 +108,7 @@ final readonly class AuditController
             'success' => $filters['_form']['success'] ?? '',
             'since' => $filters['_form']['since'] ?? '',
             'until' => $filters['_form']['until'] ?? '',
-        ], static fn($v): bool => $v !== '');
+        ], static fn ($v): bool => $v !== '');
 
         $pagination = [
             'first' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => 1])),

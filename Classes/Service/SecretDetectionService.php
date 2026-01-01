@@ -408,7 +408,7 @@ final class SecretDetectionService implements SingletonInterface
      */
     private function isSecretColumn(string $columnName): bool
     {
-        return array_any(self::COLUMN_NAME_PATTERNS, fn($pattern): int|false => preg_match($pattern, $columnName));
+        return array_any(self::COLUMN_NAME_PATTERNS, fn ($pattern): int|false => preg_match($pattern, $columnName));
     }
 
     /**
@@ -417,7 +417,7 @@ final class SecretDetectionService implements SingletonInterface
      */
     private function isSecretConfigKey(string $key): bool
     {
-        return array_any(self::EXT_CONFIG_KEY_PATTERNS, fn($pattern): int|false => preg_match($pattern, $key));
+        return array_any(self::EXT_CONFIG_KEY_PATTERNS, fn ($pattern): int|false => preg_match($pattern, $key));
     }
 
     /**

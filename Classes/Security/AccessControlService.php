@@ -46,9 +46,8 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
 
         // Backend user takes precedence
         if ($backendUser instanceof BackendUserAuthentication) {
-            // Admin can always create
             // Any authenticated backend user can create
-            return $backendUser->isAdmin();
+            return true;
         }
 
         // CLI check (only when no backend user)
@@ -157,6 +156,7 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
             // CLI allowed and no group restrictions
             return true;
         }
+
         // Frontend access for secrets explicitly marked as frontend_accessible
         // This allows TypoScript and other frontend contexts to resolve vault placeholders
         // No backend user and not CLI

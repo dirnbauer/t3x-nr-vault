@@ -91,6 +91,7 @@ final readonly class VaultHttpResponse
         if ($this->isClientError()) {
             return true;
         }
+
         return $this->isServerError();
     }
 
@@ -268,7 +269,8 @@ final readonly class VaultHttpResponse
                     'HTTP request failed with status %d: %s',
                     $this->getStatusCode(),
                     $this->getReasonPhrase(),
-                ), 9782525747,
+                ),
+                9782525747,
             );
         }
 

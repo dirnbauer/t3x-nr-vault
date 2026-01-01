@@ -43,9 +43,7 @@ final class OAuthTokenManager
     public function __construct(private readonly VaultServiceInterface $vaultService, private readonly ?LoggerInterface $logger = null, private readonly ?ClientInterface $httpClient = new Client([
         'timeout' => 30,
         'connect_timeout' => 10,
-    ]))
-    {
-    }
+    ])) {}
 
     /**
      * Get a valid access token for the given OAuth config.

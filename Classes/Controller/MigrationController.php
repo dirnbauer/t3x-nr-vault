@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
-use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use Doctrine\DBAL\Exception as DbalException;
 use Exception;
 use Netresearch\NrVault\Service\SecretDetectionService;
@@ -15,6 +14,7 @@ use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RedirectResponse;

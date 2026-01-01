@@ -12,11 +12,11 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
 
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Http\ServerRequest;
 
 /**

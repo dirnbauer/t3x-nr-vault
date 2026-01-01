@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
-use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
+use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\MasterKeyException;

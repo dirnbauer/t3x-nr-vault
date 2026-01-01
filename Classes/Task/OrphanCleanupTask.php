@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Task;
 
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Log\LogManager;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
 
 /**
@@ -30,8 +31,11 @@ final class OrphanCleanupTask extends AbstractTask
 
     /** Only check secrets for this specific table (optional). */
     protected string $tableFilter = '';
-    public function __construct(private readonly ConnectionPool $connectionPool)
-    {
+
+    public function __construct(
+        private readonly ConnectionPool $connectionPool,
+        private readonly ?VaultServiceInterface $vaultService = null,
+    ) {
         parent::__construct();
     }
 
@@ -58,7 +62,7 @@ final class OrphanCleanupTask extends AbstractTask
     public function setTaskParameters(array $parameters): void
     {
         $retentionDays = $parameters['nr_vault_retention_days'] ?? 7;
-        $this->retentionDays = \is_numeric($retentionDays) ? (int) $retentionDays : 7;
+        $this->retentionDays = is_numeric($retentionDays) ? (int) $retentionDays : 7;
 
         $tableFilter = $parameters['nr_vault_table_filter'] ?? '';
         $this->tableFilter = \is_string($tableFilter) ? trim($tableFilter) : '';
@@ -122,7 +126,38 @@ final class OrphanCleanupTask extends AbstractTask
             'secretsChecked' => $checked,
             'orphansFound' => \count($orphans),
         ]);
-        return true;
+
+        // Delete identified orphans
+        $success = true;
+        foreach ($orphans as $orphanIdentifier) {
+            try {
+                $vaultService->delete($orphanIdentifier, 'Scheduler orphan cleanup');
+                $logger->info('Deleted orphan secret', ['identifier' => $orphanIdentifier]);
+            } catch (Throwable $e) {
+                $logger->error('Failed to delete orphan secret', [
+                    'identifier' => $orphanIdentifier,
+                    'error' => $e->getMessage(),
+                ]);
+                $success = false;
+            }
+        }
+
+        return $success;
+    }
+
+    /**
+     * Return additional information for the scheduler module display.
+     */
+    public function getAdditionalInformation(): string
+    {
+        $info = [];
+        $info[] = \sprintf('Retention: %d days', $this->retentionDays);
+
+        if ($this->tableFilter !== '') {
+            $info[] = \sprintf('Table filter: %s', $this->tableFilter);
+        }
+
+        return implode(', ', $info);
     }
 
     /**
@@ -172,7 +207,7 @@ final class OrphanCleanupTask extends AbstractTask
 
     private function getVaultService(): VaultServiceInterface
     {
-        return GeneralUtility::makeInstance(VaultServiceInterface::class);
+        return $this->vaultService ?? GeneralUtility::makeInstance(VaultServiceInterface::class);
     }
 
     private function getConnectionPool(): ConnectionPool
@@ -184,20 +219,5 @@ final class OrphanCleanupTask extends AbstractTask
     {
         return GeneralUtility::makeInstance(LogManager::class)
             ->getLogger(self::class);
-    }
-
-    /**
-     * Return additional information for the scheduler module display.
-     */
-    public function getAdditionalInformation(): string
-    {
-        $info = [];
-        $info[] = \sprintf('Retention: %d days', $this->retentionDays);
-
-        if ($this->tableFilter !== '') {
-            $info[] = \sprintf('Table filter: %s', $this->tableFilter);
-        }
-
-        return implode(', ', $info);
     }
 }

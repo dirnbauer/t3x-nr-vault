@@ -84,7 +84,7 @@ final readonly class OverviewController
                 ->where($queryBuilder->expr()->eq('deleted', 0))
                 ->executeQuery()
                 ->fetchOne();
-            $totalSecrets = \is_numeric($totalResult) ? (int) $totalResult : 0;
+            $totalSecrets = is_numeric($totalResult) ? (int) $totalResult : 0;
 
             // Count active secrets
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
@@ -97,7 +97,7 @@ final readonly class OverviewController
                 )
                 ->executeQuery()
                 ->fetchOne();
-            $activeSecrets = \is_numeric($activeResult) ? (int) $activeResult : 0;
+            $activeSecrets = is_numeric($activeResult) ? (int) $activeResult : 0;
 
             return [
                 'totalSecrets' => $totalSecrets,

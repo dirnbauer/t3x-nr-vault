@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Task;
 
-use Override;
-use PHPUnit\Framework\MockObject\MockObject;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Task\OrphanCleanupTask;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -62,17 +62,19 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     #[Test]
     public function hasDefaultRetentionDays(): void
     {
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
 
-        self::assertSame(7, $task->retentionDays);
+        $params = $task->getTaskParameters();
+        self::assertSame(7, $params['nr_vault_retention_days']);
     }
 
     #[Test]
     public function hasEmptyDefaultTableFilter(): void
     {
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
 
-        self::assertSame('', $task->tableFilter);
+        $params = $task->getTaskParameters();
+        self::assertSame('', $params['nr_vault_table_filter']);
     }
 
     #[Test]
@@ -80,7 +82,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     {
         $this->vaultService->method('list')->willReturn([]);
 
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -99,7 +101,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
 
         $this->vaultService->expects($this->never())->method('delete');
 
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -119,7 +121,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         $this->mockRecordExists(1, true);
         $this->vaultService->expects($this->never())->method('delete');
 
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -143,8 +145,8 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->method('delete')
             ->with('tx_myext__api_key__1', 'Scheduler orphan cleanup');
 
-        $task = new OrphanCleanupTask();
-        $task->retentionDays = 7;
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $task->setTaskParameters(['nr_vault_retention_days' => 7]);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -164,8 +166,8 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         $this->mockRecordExists(1, false);
         $this->vaultService->expects($this->never())->method('delete');
 
-        $task = new OrphanCleanupTask();
-        $task->retentionDays = 7;
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $task->setTaskParameters(['nr_vault_retention_days' => 7]);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -194,9 +196,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->method('delete')
             ->with('tx_myext__api_key__1', 'Scheduler orphan cleanup');
 
-        $task = new OrphanCleanupTask();
-        $task->retentionDays = 0;
-        $task->tableFilter = 'tx_myext';
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $task->setTaskParameters([
+            'nr_vault_retention_days' => 0,
+            'nr_vault_table_filter' => 'tx_myext',
+        ]);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -219,8 +223,8 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->method('delete')
             ->willThrowException(new VaultException('Delete failed'));
 
-        $task = new OrphanCleanupTask();
-        $task->retentionDays = 0;
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $task->setTaskParameters(['nr_vault_retention_days' => 0]);
         $result = $task->execute();
 
         self::assertFalse($result);
@@ -244,8 +248,8 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->method('delete')
             ->with('tx_myext__api_key__1', 'Scheduler orphan cleanup');
 
-        $task = new OrphanCleanupTask();
-        $task->retentionDays = 0;
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $task->setTaskParameters(['nr_vault_retention_days' => 0]);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -264,7 +268,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
 
         $this->vaultService->expects($this->never())->method('delete');
 
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
         $result = $task->execute();
 
         self::assertTrue($result);
@@ -279,7 +283,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->expects($this->atLeastOnce())
             ->method('info');
 
-        $task = new OrphanCleanupTask();
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
         $task->execute();
     }
 

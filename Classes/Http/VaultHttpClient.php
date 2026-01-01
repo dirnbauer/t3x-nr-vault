@@ -43,9 +43,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         'timeout' => 30,
         'connect_timeout' => 10,
         'http_errors' => false,
-    ]))
-    {
-    }
+    ])) {}
 
     public function request(string $method, string $url, array $options = []): ResponseInterface
     {

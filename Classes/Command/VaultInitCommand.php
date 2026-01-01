@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
-use TYPO3\CMS\Core\Core\Environment;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use TYPO3\CMS\Core\Core\Environment;
 
 /**
  * CLI command to initialize the vault (generate master key).
@@ -106,6 +106,7 @@ final class VaultInitCommand extends Command
             if (!is_dir($dir) && !mkdir($dir, 0o700, true)) {
                 $io->error(\sprintf('Failed to create directory: %s', $dir));
                 sodium_memzero($masterKey);
+
                 return Command::FAILURE;
             }
 

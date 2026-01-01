@@ -88,7 +88,7 @@ final class VaultServiceTest extends TestCase
         $this->adapter
             ->expects(self::once())
             ->method('store')
-            ->with(self::callback(static fn(Secret $secret): bool => $secret->getIdentifier() === $identifier
+            ->with(self::callback(static fn (Secret $secret): bool => $secret->getIdentifier() === $identifier
                 && $secret->getEncryptedValue() === 'enc_value'
                 && $secret->getEncryptedDek() === 'enc_dek'));
 
@@ -142,7 +142,7 @@ final class VaultServiceTest extends TestCase
         $this->adapter
             ->expects(self::once())
             ->method('store')
-            ->with(self::callback(static fn(Secret $s): bool => $s->getReadCount() === 1
+            ->with(self::callback(static fn (Secret $s): bool => $s->getReadCount() === 1
                 && $s->getLastReadAt() > 0));
 
         $result = $this->subject->retrieve($identifier);
@@ -293,7 +293,7 @@ final class VaultServiceTest extends TestCase
         $this->adapter
             ->expects(self::once())
             ->method('store')
-            ->with(self::callback(static fn(Secret $s): bool => $s->getVersion() === 2
+            ->with(self::callback(static fn (Secret $s): bool => $s->getVersion() === 2
                 && $s->getLastRotatedAt() > 0
                 && $s->getEncryptedValue() === 'new_enc'));
 
