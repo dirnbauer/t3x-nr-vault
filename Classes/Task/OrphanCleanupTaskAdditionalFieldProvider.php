@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Task;
 
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Scheduler\AbstractAdditionalFieldProvider;
 use TYPO3\CMS\Scheduler\Controller\SchedulerModuleController;
 use TYPO3\CMS\Scheduler\Task\AbstractTask;
@@ -80,7 +81,7 @@ final class OrphanCleanupTaskAdditionalFieldProvider extends AbstractAdditionalF
         if ($retentionDays < 0 || $retentionDays > 365) {
             $this->addMessage(
                 'Retention days must be between 0 and 365',
-                \TYPO3\CMS\Core\Messaging\FlashMessage::ERROR,
+                ContextualFeedbackSeverity::ERROR,
             );
             $isValid = false;
         }
