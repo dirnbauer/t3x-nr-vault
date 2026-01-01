@@ -33,10 +33,16 @@
                 <source>Removes vault secrets whose source TCA records have been deleted. Helps maintain vault hygiene and prevent accumulation of unused encrypted data.</source>
             </trans-unit>
             <trans-unit id="task.orphanCleanup.retentionDays">
-                <source>Retention days (keep orphans for N days before deletion)</source>
+                <source>Retention days</source>
+            </trans-unit>
+            <trans-unit id="task.orphanCleanup.retentionDays.description">
+                <source>Keep orphans for this many days before deletion. Set to 0 to delete immediately. Default: 7 days.</source>
             </trans-unit>
             <trans-unit id="task.orphanCleanup.tableFilter">
-                <source>Table filter (optional, only check specific table)</source>
+                <source>Table filter</source>
+            </trans-unit>
+            <trans-unit id="task.orphanCleanup.tableFilter.description">
+                <source>Optional: Only check secrets from this specific table. Leave empty to check all tables.</source>
             </trans-unit>
         </body>
     </file>

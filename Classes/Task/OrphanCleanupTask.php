@@ -18,17 +18,48 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
  * TCA records have been deleted. It helps maintain vault hygiene
  * and prevents accumulation of unused encrypted data.
  *
- * Configuration:
- * - retentionDays: Only delete orphans older than this many days (default: 7)
- * - tableFilter: Only check secrets for a specific table (optional)
+ * Configuration (via TCA fields in tx_scheduler_task):
+ * - nr_vault_retention_days: Only delete orphans older than this many days (default: 7)
+ * - nr_vault_table_filter: Only check secrets for a specific table (optional)
+ *
+ * TYPO3 v14: Uses native TCA-based task registration instead of SC_OPTIONS.
  */
 final class OrphanCleanupTask extends AbstractTask
 {
     /** Only delete orphans older than this many days. */
-    public int $retentionDays = 7;
+    protected int $retentionDays = 7;
 
     /** Only check secrets for this specific table (optional). */
-    public string $tableFilter = '';
+    protected string $tableFilter = '';
+
+    /**
+     * Get task parameters for TCA storage.
+     *
+     * Maps internal properties to TCA field names.
+     *
+     * @return array<string, mixed>
+     */
+    public function getTaskParameters(): array
+    {
+        return [
+            'nr_vault_retention_days' => $this->retentionDays,
+            'nr_vault_table_filter' => $this->tableFilter,
+        ];
+    }
+
+    /**
+     * Set task parameters from TCA fields.
+     *
+     * @param array<string, mixed> $parameters
+     */
+    public function setTaskParameters(array $parameters): void
+    {
+        $retentionDays = $parameters['nr_vault_retention_days'] ?? 7;
+        $this->retentionDays = \is_numeric($retentionDays) ? (int) $retentionDays : 7;
+
+        $tableFilter = $parameters['nr_vault_table_filter'] ?? '';
+        $this->tableFilter = \is_string($tableFilter) ? trim($tableFilter) : '';
+    }
 
     public function execute(): bool
     {
@@ -180,5 +211,20 @@ final class OrphanCleanupTask extends AbstractTask
     {
         return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)
             ->getLogger(__CLASS__);
+    }
+
+    /**
+     * Return additional information for the scheduler module display.
+     */
+    public function getAdditionalInformation(): string
+    {
+        $info = [];
+        $info[] = \sprintf('Retention: %d days', $this->retentionDays);
+
+        if ($this->tableFilter !== '') {
+            $info[] = \sprintf('Table filter: %s', $this->tableFilter);
+        }
+
+        return implode(', ', $info);
     }
 }

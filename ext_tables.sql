@@ -114,3 +114,11 @@ CREATE TABLE tx_nrvault_audit_log (
     KEY success (success),
     KEY secret_outcome_time (secret_identifier, success, crdate)
 );
+
+#
+# Extend tx_scheduler_task for OrphanCleanupTask fields
+#
+CREATE TABLE tx_scheduler_task (
+    nr_vault_retention_days int(11) unsigned DEFAULT 7 NOT NULL,
+    nr_vault_table_filter varchar(255) DEFAULT '' NOT NULL
+);
