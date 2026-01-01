@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Command;
 
+use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Command\VaultMigrateFieldCommand;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -213,7 +214,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
      */
     private function mockQueryReturnsRecords(string $table, array $records): void
     {
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAllAssociative')->willReturn($records);
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);

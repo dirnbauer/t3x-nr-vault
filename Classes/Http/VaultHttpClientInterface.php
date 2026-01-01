@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http;
 
+use Netresearch\NrVault\Exception\VaultException;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -34,8 +36,8 @@ interface VaultHttpClientInterface
      * @param string $url Request URL
      * @param array<string, mixed> $options Request options
      *
-     * @throws \Netresearch\NrVault\Exception\VaultException If secret retrieval fails
-     * @throws \Psr\Http\Client\ClientExceptionInterface If request fails
+     * @throws VaultException If secret retrieval fails
+     * @throws ClientExceptionInterface If request fails
      */
     public function request(string $method, string $url, array $options = []): ResponseInterface;
 

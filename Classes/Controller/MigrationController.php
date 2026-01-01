@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use Doctrine\DBAL\Exception as DbalException;
 use Exception;
 use Netresearch\NrVault\Service\SecretDetectionService;
@@ -482,7 +483,7 @@ final class MigrationController
      * Add a back button to the DocHeader.
      */
     private function addBackButton(
-        \TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate,
+        ModuleTemplate $moduleTemplate,
         string $targetAction,
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();

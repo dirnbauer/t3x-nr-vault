@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
+use TYPO3\CMS\Core\Core\Environment;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -73,7 +74,7 @@ final class VaultInitCommand extends Command
             // Only use source if it looks like a path (contains / or \)
             $outputFile = (str_contains($source, '/') || str_contains($source, '\\')) ? $source : '';
             if ($outputFile === '') {
-                $outputFile = \TYPO3\CMS\Core\Core\Environment::getVarPath() . '/vault/master.key';
+                $outputFile = Environment::getVarPath() . '/vault/master.key';
             }
         }
 

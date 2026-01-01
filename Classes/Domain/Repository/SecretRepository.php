@@ -102,7 +102,7 @@ final class SecretRepository
             // Insert new secret
             $data['crdate'] = time();
             $connection->insert(self::TABLE_NAME, $data);
-            $secret->setUid((int) $connection->lastInsertId(self::TABLE_NAME));
+            $secret->setUid((int) $connection->lastInsertId());
         } else {
             // Update existing secret
             $connection->update(

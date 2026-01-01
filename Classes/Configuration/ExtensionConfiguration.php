@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Configuration;
 
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 use TYPO3\CMS\Core\SingletonInterface;
 
@@ -133,6 +134,6 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAutoKeyPath(): string
     {
-        return \TYPO3\CMS\Core\Core\Environment::getVarPath() . '/secrets/vault-master.key';
+        return Environment::getVarPath() . '/secrets/vault-master.key';
     }
 }

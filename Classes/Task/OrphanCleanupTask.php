@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Task;
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Log\LogManager;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
@@ -197,17 +199,17 @@ final class OrphanCleanupTask extends AbstractTask
 
     private function getVaultService(): VaultServiceInterface
     {
-        return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(VaultServiceInterface::class);
+        return GeneralUtility::makeInstance(VaultServiceInterface::class);
     }
 
     private function getConnectionPool(): ConnectionPool
     {
-        return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(ConnectionPool::class);
+        return GeneralUtility::makeInstance(ConnectionPool::class);
     }
 
     private function getLogger(): LoggerInterface
     {
-        return \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)
+        return GeneralUtility::makeInstance(LogManager::class)
             ->getLogger(__CLASS__);
     }
 

@@ -24,7 +24,7 @@ if (!file_exists($autoloadFile)) {
 require_once $autoloadFile;
 
 // Define TYPO3 constants if not already defined
-if (!defined('TYPO3_MODE')) {
+if (!defined('TYPO3')) {
     define('TYPO3_MODE', 'BE');
 }
 

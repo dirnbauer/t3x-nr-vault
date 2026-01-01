@@ -40,7 +40,9 @@
         "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "phpat/phpat": "^0.12.1",
-        "infection/infection": "^0.29 || ^0.32"
+        "infection/infection": "^0.29 || ^0.32",
+        "ssch/typo3-rector": "*",
+        "a9f/typo3-fractor": "*"
     },
     "autoload": {
         "psr-4": {
@@ -58,7 +60,8 @@
         "allow-plugins": {
             "typo3/class-alias-loader": true,
             "typo3/cms-composer-installers": true,
-            "infection/extension-installer": true
+            "infection/extension-installer": true,
+            "a9f/fractor-extension-installer": true
         }
     },
     "extra": {

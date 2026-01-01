@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
+use Exception;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -103,7 +104,7 @@ final class OverviewController
                 'activeSecrets' => $activeSecrets,
                 'disabledSecrets' => $totalSecrets - $activeSecrets,
             ];
-        } catch (\Exception) {
+        } catch (Exception) {
             return [
                 'totalSecrets' => 0,
                 'activeSecrets' => 0,

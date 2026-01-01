@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Hook;
 
+use Throwable;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -114,7 +115,7 @@ final class SecretTcaHook
                 null,
                 'FormEngine edit: ' . implode(', ', $changedFields),
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Don't fail the save if audit logging fails
             $dataHandler->log(
                 self::TABLE,
@@ -157,7 +158,7 @@ final class SecretTcaHook
                 null,
                 'Deleted via FormEngine',
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Don't fail the delete if audit logging fails
         }
     }

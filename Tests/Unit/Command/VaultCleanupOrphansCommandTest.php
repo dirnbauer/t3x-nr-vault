@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Command;
 
+use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Command\VaultCleanupOrphansCommand;
 use Netresearch\NrVault\Exception\VaultException;
@@ -294,7 +295,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
             ->method('getConnectionByName')
             ->willReturn($connection);
 
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchOne')->willReturn($exists ? 1 : 0);
 
         $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
@@ -328,7 +329,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
             ->method('getConnectionByName')
             ->willReturn($connection);
 
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchOne')->willReturn(0);
 
         $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);

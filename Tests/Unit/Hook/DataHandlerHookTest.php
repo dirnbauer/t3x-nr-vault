@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Hook;
 
+use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\DataHandlerHook;
@@ -439,7 +440,7 @@ final class DataHandlerHookTest extends UnitTestCase
 
         $this->vaultService
             ->method('getMetadata')
-            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException('Secret not found'));
+            ->willThrowException(new SecretNotFoundException('Secret not found'));
 
         $this->vaultService
             ->expects(self::never())

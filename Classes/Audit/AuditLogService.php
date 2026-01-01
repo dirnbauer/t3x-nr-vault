@@ -69,7 +69,7 @@ final class AuditLogService implements AuditLogServiceInterface
 
         // Insert to get UID
         $connection->insert(self::TABLE_NAME, $data);
-        $uid = (int) $connection->lastInsertId(self::TABLE_NAME);
+        $uid = (int) $connection->lastInsertId();
 
         // Calculate entry hash
         $entryHash = $this->calculateEntryHash([

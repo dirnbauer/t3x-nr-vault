@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Task;
 
+use PHPUnit\Framework\MockObject\MockObject;
+use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -25,11 +27,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
 {
     protected bool $resetSingletonInstances = true;
 
-    private VaultServiceInterface&\PHPUnit\Framework\MockObject\MockObject $vaultService;
+    private VaultServiceInterface&MockObject $vaultService;
 
-    private ConnectionPool&\PHPUnit\Framework\MockObject\MockObject $connectionPool;
+    private ConnectionPool&MockObject $connectionPool;
 
-    private LoggerInterface&\PHPUnit\Framework\MockObject\MockObject $logger;
+    private LoggerInterface&MockObject $logger;
 
     protected function setUp(): void
     {
@@ -290,7 +292,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->method('getConnectionByName')
             ->willReturn($connection);
 
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchOne')->willReturn($exists ? 1 : 0);
 
         $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);

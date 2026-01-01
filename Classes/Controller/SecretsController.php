@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use DateTimeImmutable;
 use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
@@ -238,22 +240,22 @@ final class SecretsController
         $identifier = (string) ($queryParams['identifier'] ?? '');
 
         if ($identifier === '') {
-            return new \TYPO3\CMS\Core\Http\JsonResponse(['success' => false, 'error' => 'No identifier'], 400);
+            return new JsonResponse(['success' => false, 'error' => 'No identifier'], 400);
         }
 
         try {
             $secret = $this->vaultService->retrieve($identifier);
 
-            return new \TYPO3\CMS\Core\Http\JsonResponse([
+            return new JsonResponse([
                 'success' => true,
                 'secret' => $secret,
             ]);
         } catch (SecretNotFoundException) {
-            return new \TYPO3\CMS\Core\Http\JsonResponse(['success' => false, 'error' => 'Secret not found'], 404);
+            return new JsonResponse(['success' => false, 'error' => 'Secret not found'], 404);
         } catch (AccessDeniedException) {
-            return new \TYPO3\CMS\Core\Http\JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
+            return new JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
         } catch (Exception $e) {
-            return new \TYPO3\CMS\Core\Http\JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -707,7 +709,7 @@ final class SecretsController
         );
     }
 
-    private function addDocHeaderButtons(\TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate): void
+    private function addDocHeaderButtons(ModuleTemplate $moduleTemplate): void
     {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         $lang = $this->getLanguageService();
@@ -718,19 +720,19 @@ final class SecretsController
             ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create'))
             ->setShowLabelText(true)
             ->setIcon($this->iconFactory->getIcon('actions-add', IconSize::SMALL));
-        $buttonBar->addButton($createButton, \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT, 1);
+        $buttonBar->addButton($createButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
         // Note: Reload button is automatically added by TYPO3's DocHeaderComponent
     }
 
-    private function addBackButton(\TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate): void
+    private function addBackButton(ModuleTemplate $moduleTemplate): void
     {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
 
         $backButton = $this->componentFactory->createBackButton(
             (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         );
-        $buttonBar->addButton($backButton, \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT, 1);
+        $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
     }
 
     private function addFlashMessage(string $message, ContextualFeedbackSeverity $severity): void

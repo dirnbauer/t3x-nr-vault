@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
+use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EnvironmentMasterKeyProvider;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
@@ -89,6 +90,6 @@ final class MasterKeyProviderFactoryTest extends TestCase
         // The specific type depends on availability, but it's always a MasterKeyProviderInterface
         $result = $this->subject->getAvailableProvider();
 
-        self::assertInstanceOf(\Netresearch\NrVault\Crypto\MasterKeyProviderInterface::class, $result);
+        self::assertInstanceOf(MasterKeyProviderInterface::class, $result);
     }
 }
