@@ -15,6 +15,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\JsonResponse;
@@ -44,6 +45,7 @@ final class SecretsController
         private readonly FlashMessageService $flashMessageService,
         private readonly ConnectionPool $connectionPool,
         private readonly AuditLogServiceInterface $auditLogService,
+        private readonly ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -711,7 +713,7 @@ final class SecretsController
         $lang = $this->getLanguageService();
 
         // Create Secret button
-        $createButton = $buttonBar->makeLinkButton()
+        $createButton = $this->componentFactory->createLinkButton()
             ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.create'))
             ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create'))
             ->setShowLabelText(true)
@@ -724,12 +726,10 @@ final class SecretsController
     private function addBackButton(\TYPO3\CMS\Backend\Template\ModuleTemplate $moduleTemplate): void
     {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        $lang = $this->getLanguageService();
 
-        $backButton = $buttonBar->makeLinkButton()
-            ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME))
-            ->setTitle($lang->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
-            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL));
+        $backButton = $this->componentFactory->createBackButton(
+            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        );
         $buttonBar->addButton($backButton, \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT, 1);
     }
 

@@ -21,8 +21,6 @@ use TYPO3\CMS\Scheduler\Task\AbstractTask;
  * Configuration (via TCA fields in tx_scheduler_task):
  * - nr_vault_retention_days: Only delete orphans older than this many days (default: 7)
  * - nr_vault_table_filter: Only check secrets for a specific table (optional)
- *
- * TYPO3 v14: Uses native TCA-based task registration instead of SC_OPTIONS.
  */
 final class OrphanCleanupTask extends AbstractTask
 {

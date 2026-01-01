@@ -12,6 +12,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Http\JsonResponse;
@@ -36,6 +37,7 @@ final class AuditController
         private readonly PageRenderer $pageRenderer,
         private readonly AuditLogServiceInterface $auditLogService,
         private readonly UriBuilder $uriBuilder,
+        private readonly ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -152,10 +154,9 @@ final class AuditController
         $moduleTemplate->makeDocHeaderModuleMenu();
 
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        $backButton = $buttonBar->makeLinkButton()
-            ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME))
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
-            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL));
+        $backButton = $this->componentFactory->createBackButton(
+            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        );
         $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
         $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
@@ -290,21 +291,21 @@ final class AuditController
 
         if ($this->isAdmin()) {
             // Verify Chain button
-            $verifyButton = $buttonBar->makeLinkButton()
+            $verifyButton = $this->componentFactory->createLinkButton()
                 ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.verifyChain'))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verify_chain'))
                 ->setIcon($this->iconFactory->getIcon('actions-check', IconSize::SMALL));
             $buttonBar->addButton($verifyButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
             // Export JSON button
-            $exportJsonButton = $buttonBar->makeLinkButton()
+            $exportJsonButton = $this->componentFactory->createLinkButton()
                 ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.export', ['format' => 'json']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.export') . ' JSON')
                 ->setIcon($this->iconFactory->getIcon('actions-download', IconSize::SMALL));
             $buttonBar->addButton($exportJsonButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
 
             // Export CSV button
-            $exportCsvButton = $buttonBar->makeLinkButton()
+            $exportCsvButton = $this->componentFactory->createLinkButton()
                 ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.export', ['format' => 'csv']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.export') . ' CSV')
                 ->setIcon($this->iconFactory->getIcon('actions-document-export-csv', IconSize::SMALL));

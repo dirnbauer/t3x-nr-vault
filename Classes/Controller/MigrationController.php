@@ -12,11 +12,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RedirectResponse;
-use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -46,18 +46,16 @@ final class MigrationController
 
     public function __construct(
         private readonly ModuleTemplateFactory $moduleTemplateFactory,
-        private readonly IconFactory $iconFactory,
         private readonly SecretDetectionService $detectionService,
         private readonly VaultServiceInterface $vaultService,
         private readonly ConnectionPool $connectionPool,
         private readonly UriBuilder $uriBuilder,
         private readonly FlashMessageService $flashMessageService,
+        private readonly ComponentFactory $componentFactory,
     ) {}
 
     /**
      * Main entry point - dispatches to action methods based on ?action= query param.
-     *
-     * This follows the TYPO3 v14 pattern used by core modules (styleguide, reactions, etc.)
      */
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
@@ -488,14 +486,9 @@ final class MigrationController
         string $targetAction,
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        $backButton = $buttonBar->makeLinkButton()
-            ->setHref($this->buildUri($targetAction))
-            ->setTitle($this->getLanguageService()->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.goBack'))
-            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL));
-        $buttonBar->addButton(
-            $backButton,
-            \TYPO3\CMS\Backend\Template\Components\ButtonBar::BUTTON_POSITION_LEFT,
-            1,
+        $backButton = $this->componentFactory->createBackButton(
+            $this->buildUri($targetAction),
         );
+        $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
     }
 }

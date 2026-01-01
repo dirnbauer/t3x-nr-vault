@@ -24,9 +24,6 @@ use TYPO3\CMS\Frontend\ContentObject\Event\AfterStdWrapFunctionsExecutedEvent;
  * - Only secrets marked as `frontend_accessible = 1` can be resolved
  * - Resolved values may be cached - use USER_INT or disable caching for sensitive content
  * - Unresolved placeholders remain visible in output
- *
- * TYPO3 v14 convention: Uses #[AsEventListener] attribute for registration.
- * No Services.yaml configuration needed (autoconfigure: true handles it).
  */
 #[AsEventListener(identifier: 'nr-vault/typoscript-vault')]
 final readonly class TypoScriptVaultListener
