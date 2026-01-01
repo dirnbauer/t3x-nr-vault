@@ -71,7 +71,7 @@
                 <!-- Group entries by date -->
                 <f:for each="{groupedEntries}" as="dateGroup" key="date">
                     <h2 class="h5 mb-3 mt-4">{date}</h2>
-                    <div class="table-fit mb-4" role="region" aria-label="Audit log entries for {date}">
+                    <div class="table-fit mb-4" role="region" aria-label="Audit log entries for {date}" tabindex="0">
                         <table class="table table-striped table-hover" aria-describedby="audit-table-{date}">
                             <caption id="audit-table-{date}" class="visually-hidden">Audit log entries for {date}</caption>
                             <thead>

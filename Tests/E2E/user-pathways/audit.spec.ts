@@ -215,7 +215,8 @@ test.describe('Audit Module User Pathways', () => {
 
       const frame = getModuleFrame(page);
       await expect(frame.locator('text=Oops, an error occurred')).not.toBeVisible();
-      await expect(frame.locator('text=503')).not.toBeVisible();
+      // Check for HTTP error status codes in error message context, not arbitrary text
+      await expect(frame.locator('.callout-danger:has-text("503")')).not.toBeVisible();
     });
   });
 });

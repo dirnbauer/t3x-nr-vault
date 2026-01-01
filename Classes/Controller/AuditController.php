@@ -322,7 +322,7 @@ final readonly class AuditController
             'read' => 'info',
             'update' => 'warning',
             'delete' => 'danger',
-            'rotate' => 'primary',
+            'rotate' => 'info',
             'access_denied' => 'danger',
             default => 'secondary',
         };
