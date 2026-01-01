@@ -76,7 +76,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
                 $options,
             );
         } elseif (isset($options['auth_username_secret'])) {
-            // Legacy: Basic auth with separate username/password secrets
+            // Basic auth with separate username/password secrets
             $guzzleOptions = $this->injectBasicAuthFromSecrets($guzzleOptions, $options);
             $authSecret = $options['auth_username_secret'];
         }
