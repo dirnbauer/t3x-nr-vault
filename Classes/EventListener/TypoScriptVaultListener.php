@@ -13,15 +13,20 @@ use TYPO3\CMS\Frontend\ContentObject\Event\AfterStdWrapFunctionsExecutedEvent;
 /**
  * PSR-14 event listener that resolves %vault(identifier)% placeholders in TypoScript content.
  *
- * This listener fires on AfterStdWrapFunctionsExecutedEvent, which is dispatched
- * after stdWrap functions have been applied to content. This allows vault placeholders
- * to be resolved in any TypoScript content that goes through stdWrap.
+ * Listens to AfterStdWrapFunctionsExecutedEvent to process vault references after
+ * all stdWrap functions have been applied. This allows secrets to be used in
+ * TypoScript configurations like:
+ *
+ *   page.10 = TEXT
+ *   page.10.value = %vault(api_key)%
+ *
+ * Security considerations:
+ * - Only secrets marked as `frontend_accessible = 1` can be resolved
+ * - Resolved values may be cached - use USER_INT or disable caching for sensitive content
+ * - Unresolved placeholders remain visible in output
  *
  * TYPO3 v14 convention: Uses #[AsEventListener] attribute for registration.
  * No Services.yaml configuration needed (autoconfigure: true handles it).
- *
- * IMPORTANT: Only secrets marked as frontend_accessible=1 will be resolved.
- * Content with vault references should disable caching or use USER_INT.
  */
 #[AsEventListener(identifier: 'nr-vault/typoscript-vault')]
 final readonly class TypoScriptVaultListener
@@ -37,8 +42,8 @@ final readonly class TypoScriptVaultListener
     {
         $content = $event->getContent();
 
-        // Quick check - skip if no vault references
-        if (!is_string($content) || !str_contains($content, '%vault(')) {
+        // Quick check - skip if no vault references or not a string
+        if (!\is_string($content) || !str_contains($content, '%vault(')) {
             return;
         }
 
@@ -47,24 +52,30 @@ final readonly class TypoScriptVaultListener
     }
 
     /**
-     * Resolve all vault references in the content.
+     * Replace all vault references in content with their resolved values.
      */
     private function resolveVaultReferences(string $content): string
     {
         return (string) preg_replace_callback(
             self::VAULT_PATTERN,
             fn (array $matches): string => $this->resolveIdentifier($matches[1]) ?? $matches[0],
-            $content
+            $content,
         );
     }
 
     /**
      * Resolve a single vault identifier to its secret value.
      *
-     * Returns null on failure, which causes the original placeholder to be preserved.
+     * Returns null if resolution fails (secret not found, access denied, etc.),
+     * which causes the original placeholder to be preserved.
      */
     private function resolveIdentifier(string $identifier): ?string
     {
+        $identifier = trim($identifier);
+        if ($identifier === '') {
+            return null;
+        }
+
         try {
             return $this->vaultService->retrieve($identifier);
         } catch (Throwable $e) {
