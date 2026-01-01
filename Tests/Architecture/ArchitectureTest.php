@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Architecture;
 
 use PHPat\Selector\Selector;
+use PHPat\Test\Builder\BuildStep;
 use PHPat\Test\PHPat;
-use PHPat\Test\Rule;
 
 /**
  * Architecture tests for nr-vault extension.
@@ -25,7 +25,7 @@ final class ArchitectureTest
     /**
      * Events must be readonly for immutability.
      */
-    public function testEventsMustBeReadonly(): Rule
+    public function testEventsMustBeReadonly(): BuildStep
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Netresearch\NrVault\Event'))
@@ -36,7 +36,7 @@ final class ArchitectureTest
     /**
      * Services must not depend on Controllers.
      */
-    public function testServicesDoNotDependOnControllers(): Rule
+    public function testServicesDoNotDependOnControllers(): BuildStep
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Netresearch\NrVault\Service'))
@@ -48,7 +48,7 @@ final class ArchitectureTest
     /**
      * Domain layer must not depend on infrastructure.
      */
-    public function testDomainDoesNotDependOnInfrastructure(): Rule
+    public function testDomainDoesNotDependOnInfrastructure(): BuildStep
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Netresearch\NrVault\Domain'))
@@ -63,7 +63,7 @@ final class ArchitectureTest
     /**
      * Crypto layer must not depend on HTTP layer.
      */
-    public function testCryptoDoesNotDependOnHttp(): Rule
+    public function testCryptoDoesNotDependOnHttp(): BuildStep
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Netresearch\NrVault\Crypto'))
@@ -78,7 +78,7 @@ final class ArchitectureTest
     /**
      * Exceptions must be final.
      */
-    public function testExceptionsMustBeFinal(): Rule
+    public function testExceptionsMustBeFinal(): BuildStep
     {
         return PHPat::rule()
             ->classes(Selector::inNamespace('Netresearch\NrVault\Exception'))
@@ -89,7 +89,7 @@ final class ArchitectureTest
     /**
      * Services must implement an interface.
      */
-    public function testServicesMustImplementInterface(): Rule
+    public function testServicesMustImplementInterface(): BuildStep
     {
         return PHPat::rule()
             ->classes(
