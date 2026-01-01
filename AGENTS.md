@@ -5,7 +5,13 @@
 ## Precedence
 
 1. This file (root)
-2. `Tests/AGENTS.md` (testing specifics)
+2. Directory-specific AGENTS.md files:
+   - `Classes/AGENTS.md` - Source code patterns
+   - `Configuration/AGENTS.md` - TYPO3 configuration
+   - `Documentation/AGENTS.md` - RST documentation
+   - `Resources/AGENTS.md` - Templates, language, assets
+   - `Tests/AGENTS.md` - Testing patterns
+   - `Tests/E2E/AGENTS.md` - E2E testing specifics
 3. TYPO3 coding standards
 
 ## Project Overview
@@ -63,12 +69,21 @@ Classes/
 ├── Adapter/       # Vault backend adapters (local, external)
 ├── Audit/         # Audit logging service
 ├── Command/       # CLI commands (vault:init, vault:rotate, etc.)
+├── Configuration/ # Extension configuration
 ├── Controller/    # Backend module controllers
 ├── Crypto/        # Encryption/decryption services
-├── Domain/        # Domain models (Secret)
+├── Domain/        # Domain models (Secret, Repository)
+├── Event/         # PSR-14 events
+├── EventListener/ # Event listeners (TypoScript, SiteConfig)
+├── Exception/     # Custom exceptions
+├── Form/          # FormEngine integration (NodeFactory, elements)
+├── Hook/          # TYPO3 hooks
+├── Http/          # HTTP middleware
 ├── Security/      # Access control services
 ├── Service/       # Core VaultService
-└── Task/          # Scheduler tasks
+├── Task/          # Scheduler tasks (TCA-based registration)
+├── TCA/           # TCA field configuration
+└── Utility/       # Helper utilities
 ```
 
 ## Security Requirements
@@ -118,6 +133,29 @@ test: add unit tests for OrphanCleanupTask
 docs: update TCA integration examples
 ```
 
+## CLI Commands
+
+```bash
+# Initialization
+vault:init                  # Initialize vault with master key
+
+# Secret management
+vault:store                 # Store a new secret
+vault:retrieve              # Retrieve a secret by identifier
+vault:delete                # Delete a secret
+vault:list                  # List all secrets (identifiers only)
+vault:rotate                # Rotate a secret value
+
+# Key management
+vault:rotate-master-key     # Rotate the master encryption key
+
+# Maintenance
+vault:cleanup-orphans       # Remove orphaned secrets
+vault:scan                  # Scan for vault placeholder usage
+vault:migrate-field         # Migrate field values to vault
+vault:audit                 # View audit log entries
+```
+
 ## Key Interfaces
 
 ```php
@@ -131,6 +169,14 @@ VaultServiceInterface::delete(string $identifier, ?string $reason): void
 AccessControlServiceInterface::canRead(Secret $secret): bool
 AccessControlServiceInterface::canWrite(Secret $secret): bool
 AccessControlServiceInterface::canCreate(): bool
+
+// Encryption
+EncryptionServiceInterface::encrypt(string $plaintext, string $dataKey): string
+EncryptionServiceInterface::decrypt(string $ciphertext, string $dataKey): string
+MasterKeyProviderInterface::getMasterKey(): string
+
+// Audit logging
+AuditLogServiceInterface::log(string $operation, string $identifier, array $context): void
 ```
 
 ## When Stuck

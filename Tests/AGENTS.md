@@ -2,6 +2,8 @@
 
 > Testing guidelines for nr-vault.
 
+**See also**: `Tests/E2E/AGENTS.md` for E2E-specific patterns.
+
 ## Test Structure
 
 ```
