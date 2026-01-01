@@ -11,12 +11,18 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Package\PackageManager;
 
 #[CoversClass(SecretDetectionService::class)]
 final class SecretDetectionServiceTest extends TestCase
 {
     private ConnectionPool&MockObject $connectionPool;
+
+    private PackageManager&MockObject $packageManager;
+
+    private ExtensionConfiguration&MockObject $extensionConfiguration;
 
     private SecretDetectionService $service;
 
@@ -25,7 +31,14 @@ final class SecretDetectionServiceTest extends TestCase
         parent::setUp();
 
         $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->service = new SecretDetectionService($this->connectionPool);
+        $this->packageManager = $this->createMock(PackageManager::class);
+        $this->extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
+
+        $this->service = new SecretDetectionService(
+            $this->connectionPool,
+            $this->packageManager,
+            $this->extensionConfiguration,
+        );
     }
 
     #[Test]

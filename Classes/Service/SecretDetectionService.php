@@ -9,7 +9,9 @@ use Doctrine\DBAL\Types\BlobType;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\TextType;
 use Exception;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**
@@ -103,6 +105,8 @@ final class SecretDetectionService implements SingletonInterface
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
+        private readonly PackageManager $packageManager,
+        private readonly ExtensionConfiguration $extensionConfiguration,
     ) {}
 
     /**
@@ -162,19 +166,20 @@ final class SecretDetectionService implements SingletonInterface
 
     /**
      * Scan extension configuration for potential secrets.
-     *
-     * Uses GLOBALS directly as ExtensionConfiguration::getAll() was removed in TYPO3 v14.
      */
     public function scanExtensionConfiguration(): void
     {
-        $allConfigs = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] ?? [];
+        foreach ($this->packageManager->getActivePackages() as $package) {
+            $extKey = $package->getPackageKey();
 
-        foreach ($allConfigs as $extKey => $config) {
-            if (!\is_array($config)) {
-                continue;
+            try {
+                $config = $this->extensionConfiguration->get($extKey);
+                if (\is_array($config)) {
+                    $this->scanConfigArray($config, "extension:{$extKey}");
+                }
+            } catch (Exception) {
+                // Extension has no configuration - skip
             }
-
-            $this->scanConfigArray($config, "extension:{$extKey}");
         }
     }
 
