@@ -75,9 +75,9 @@ final readonly class OverviewController
     private function getVaultStatistics(): array
     {
         try {
+            // Count total secrets (including hidden) - remove default restrictions
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
-
-            // Count total secrets
+            $queryBuilder->getRestrictions()->removeAll();
             $totalResult = $queryBuilder
                 ->count('uid')
                 ->from('tx_nrvault_secret')
@@ -86,8 +86,9 @@ final readonly class OverviewController
                 ->fetchOne();
             $totalSecrets = is_numeric($totalResult) ? (int) $totalResult : 0;
 
-            // Count active secrets
+            // Count active secrets (not hidden) - remove default restrictions for explicit control
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
+            $queryBuilder->getRestrictions()->removeAll();
             $activeResult = $queryBuilder
                 ->count('uid')
                 ->from('tx_nrvault_secret')
