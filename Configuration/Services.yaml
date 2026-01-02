@@ -72,6 +72,11 @@ services:
     tags:
       - name: backend.controller
 
+  Netresearch\NrVault\Controller\AjaxController:
+    public: true
+    tags:
+      - name: backend.controller
+
   # DataHandler hook
   Netresearch\NrVault\Hook\DataHandlerHook:
     public: true
