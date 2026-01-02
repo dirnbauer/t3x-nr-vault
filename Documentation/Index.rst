@@ -1,8 +1,10 @@
 .. include:: /Includes.rst.txt
 
-=======
+.. _start:
+
+========
 nr-vault
-=======
+========
 
 :Extension key:
    nr_vault
@@ -34,11 +36,63 @@ and audit logging.
 
 ----
 
-**Table of contents**
+.. card-grid::
+   :columns: 1
+   :columns-md: 2
+   :gap: 4
+   :card-height: 100
+
+   .. card:: :octicon:`book` Introduction
+
+      Learn what nr-vault provides and why you need it for secure secrets
+      management in TYPO3.
+
+      .. card-footer:: :ref:`Read more <introduction>`
+         :button-style: btn btn-primary stretched-link
+
+   .. card:: :octicon:`download` Installation
+
+      Install the extension via Composer and set up your master key for
+      encryption.
+
+      .. card-footer:: :ref:`Read more <installation>`
+         :button-style: btn btn-secondary stretched-link
+
+   .. card:: :octicon:`gear` Configuration
+
+      Configure storage adapters, master key providers, access control,
+      and extension settings.
+
+      .. card-footer:: :ref:`Read more <configuration>`
+         :button-style: btn btn-secondary stretched-link
+
+   .. card:: :octicon:`terminal` Usage
+
+      Manage secrets through the backend module, CLI commands, and PHP API.
+
+      .. card-footer:: :ref:`Read more <usage>`
+         :button-style: btn btn-secondary stretched-link
+
+   .. card:: :octicon:`shield-lock` Security
+
+      Understand the encryption architecture, audit logging, and security
+      best practices.
+
+      .. card-footer:: :ref:`Read more <security>`
+         :button-style: btn btn-secondary stretched-link
+
+   .. card:: :octicon:`code` Developer
+
+      API reference, TCA integration, extending nr-vault with custom adapters,
+      and events.
+
+      .. card-footer:: :ref:`Read more <developer>`
+         :button-style: btn btn-secondary stretched-link
 
 .. toctree::
    :maxdepth: 2
    :titlesonly:
+   :hidden:
 
    Introduction/Index
    Installation/Index

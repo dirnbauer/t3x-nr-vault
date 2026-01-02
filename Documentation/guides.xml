@@ -3,6 +3,7 @@
     xmlns="https://www.phpdoc.org/guides"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="https://www.phpdoc.org/guides vendor/phpdocumentor/guides-cli/resources/schema/guides.xsd"
+    theme="typo3docs"
     links-are-relative="true"
 >
     <project
@@ -15,13 +16,15 @@
     <extension
         class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
         typo3-core-preferred="stable"
-        project-home="https://github.com/netresearch/nr-vault"
+        project-home="https://github.com/netresearch/t3x-nr-vault"
         project-contact="mailto:info@netresearch.de"
-        project-repository="https://github.com/netresearch/nr-vault"
-        project-issues="https://github.com/netresearch/nr-vault/issues"
-        project-discussions=""
+        project-repository="https://github.com/netresearch/t3x-nr-vault"
+        project-issues="https://github.com/netresearch/t3x-nr-vault/issues"
+        edit-on-github="netresearch/t3x-nr-vault"
+        edit-on-github-branch="main"
     />
 
     <inventory id="t3coreapi" url="https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/"/>
     <inventory id="t3tca" url="https://docs.typo3.org/m/typo3/reference-tca/main/en-us/"/>
+    <inventory id="t3tsconfig" url="https://docs.typo3.org/m/typo3/reference-tsconfig/main/en-us/"/>
 </guides>

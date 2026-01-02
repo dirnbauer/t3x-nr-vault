@@ -1,8 +1,12 @@
 .. include:: /Includes.rst.txt
 
+.. _introduction:
+
 ============
 Introduction
 ============
+
+.. _introduction-what-is-nr-vault:
 
 What is nr-vault?
 =================
@@ -17,6 +21,8 @@ nr-vault uses envelope encryption (the same pattern used by AWS KMS and
 Google Cloud KMS) to ensure that even if your database is compromised,
 secrets remain protected.
 
+.. _introduction-problem:
+
 The problem
 ===========
 
@@ -28,19 +34,23 @@ TYPO3 lacks a proper secrets management solution. Current approaches are inadequ
 
    * - Approach
      - Problem
-   * - TCA ``type=password``
-     - Hashes by default (irreversible) or stores plaintext
+   * - TCA :php:`type=password`
+     - Hashes by default (irreversible) or stores plaintext.
    * - Extension configuration
-     - Stored in ``LocalConfiguration.php`` (often in git)
+     - Stored in :file:`LocalConfiguration.php` (often in git).
    * - Environment variables
-     - Not suitable for multi-user, runtime-configurable secrets
+     - Not suitable for multi-user, runtime-configurable secrets.
    * - Database plaintext
-     - No encryption, exposed in backups, SQL injection risk
+     - No encryption, exposed in backups, SQL injection risk.
 
 Every extension that needs to store API keys reinvents this wheel, often insecurely.
 
+.. _introduction-features:
+
 Features
 ========
+
+.. _introduction-features-encryption:
 
 Core encryption
 ---------------
@@ -71,20 +81,22 @@ Secret expiration
    Secrets can be configured to expire at a specific time, after which they
    become inaccessible.
 
+.. _introduction-features-integration:
+
 Integration features
 --------------------
 
 TCA field type
-   Custom ``vaultSecret`` TCA render type that allows any TYPO3 extension
+   Custom :typoscript:`vaultSecret` TCA render type that allows any TYPO3 extension
    to store sensitive data securely. Values are encrypted and stored in the
    vault; only identifiers are kept in your database tables.
 
 Site configuration support
-   Reference secrets in ``config/sites/*/config.yaml`` using the
-   ``%vault(identifier)%`` syntax. Secrets are resolved at runtime.
+   Reference secrets in :file:`config/sites/*/config.yaml` using the
+   :yaml:`%vault(identifier)%` syntax. Secrets are resolved at runtime.
 
 TypoScript integration
-   Use ``%vault(identifier)%`` in TypoScript values. Requires the secret
+   Use :typoscript:`%vault(identifier)%` in TypoScript values. Requires the secret
    to be marked as frontend-accessible.
 
 Vault HTTP Client
@@ -98,28 +110,33 @@ CLI integration
 
 Backend module
    User-friendly backend module for managing secrets through the TYPO3 interface.
+   Access via :guilabel:`Admin Tools > Vault`.
 
 Context-based organization
    Organize secrets by context (e.g., "payment", "email", "api") for easier
    management and scoped access.
 
+.. _introduction-use-cases:
+
 Use cases
 =========
 
--  Storing payment gateway API keys (Stripe, PayPal, etc.)
--  Managing email service credentials (Mailchimp, SendGrid)
--  Securing third-party API tokens
--  Protecting database connection strings for external systems
--  Storing OAuth client secrets with automatic token refresh
--  Managing encryption keys for other systems
--  Per-record credentials in TCA (e.g., per-client API keys)
--  Site-specific configuration secrets in multi-site installations
+-  Storing payment gateway API keys (Stripe, PayPal, etc.).
+-  Managing email service credentials (Mailchimp, SendGrid).
+-  Securing third-party API tokens.
+-  Protecting database connection strings for external systems.
+-  Storing OAuth client secrets with automatic token refresh.
+-  Managing encryption keys for other systems.
+-  Per-record credentials in TCA (e.g., per-client API keys).
+-  Site-specific configuration secrets in multi-site installations.
+
+.. _introduction-requirements:
 
 Requirements
 ============
 
--  TYPO3 v14.0 or higher
--  PHP 8.5 or higher
--  PHP sodium extension (included in PHP 8.5)
--  Composer-based TYPO3 installation
--  AES-NI CPU support recommended (XChaCha20-Poly1305 fallback available)
+-  TYPO3 v14.0 or higher.
+-  PHP 8.5 or higher.
+-  PHP sodium extension (included in PHP 8.5).
+-  Composer-based TYPO3 installation.
+-  AES-NI CPU support recommended (XChaCha20-Poly1305 fallback available).

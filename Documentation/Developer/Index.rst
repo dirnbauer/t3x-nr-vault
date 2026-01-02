@@ -1,5 +1,7 @@
 .. include:: /Includes.rst.txt
 
+.. _developer:
+
 =========
 Developer
 =========
@@ -10,6 +12,8 @@ Developer
    Api
    Commands
    TcaIntegration
+
+.. _developer-architecture:
 
 Architecture overview
 =====================
@@ -31,8 +35,12 @@ Security layer
    :php:`AccessControlService` - Permission checks.
    :php:`AuditLogService` - Operation logging.
 
+.. _developer-extending:
+
 Extending nr-vault
 ==================
+
+.. _developer-custom-adapters:
 
 Custom storage adapters
 -----------------------
@@ -103,6 +111,8 @@ Register in :file:`Services.yaml`:
        - name: nr_vault.adapter
          identifier: custom
 
+.. _developer-custom-key-providers:
+
 Custom master key providers
 ---------------------------
 
@@ -141,6 +151,8 @@ Implement :php:`MasterKeyProviderInterface` for custom key sources:
            return random_bytes(32);
        }
    }
+
+.. _developer-events:
 
 Events
 ======
@@ -183,8 +195,12 @@ Example listener:
        }
    }
 
+.. _developer-testing:
+
 Testing
 =======
+
+.. _developer-testing-setup:
 
 Development setup
 -----------------
@@ -196,6 +212,8 @@ Use DDEV for local development:
    ddev start
    ddev install-v14
    ddev vault-init
+
+.. _developer-testing-running:
 
 Running tests
 -------------
@@ -211,6 +229,8 @@ Running tests
    # With coverage
    ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --coverage-html .Build/coverage
 
+.. _developer-testing-quality:
+
 Code quality
 ------------
 
@@ -222,19 +242,25 @@ Code quality
    # PHPStan
    ddev exec composer stan
 
+.. _developer-contributing:
+
 Contributing
 ============
 
 See :file:`CONTRIBUTING.md` for contribution guidelines.
 
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for your changes
-4. Ensure all tests pass
-5. Submit a pull request
+1. Fork the repository.
+2. Create a feature branch.
+3. Write tests for your changes.
+4. Ensure all tests pass.
+5. Submit a pull request.
+
+.. _developer-api-reference:
 
 API reference
 =============
+
+.. _developer-api-vault-service:
 
 VaultService
 ------------
@@ -269,7 +295,7 @@ VaultService
 
       List accessible secrets.
 
-      :param string|null $pattern: Optional filter pattern
+      :param string|null $pattern: Optional filter pattern.
 
    .. php:method:: getMetadata(string $identifier): array
 
@@ -278,6 +304,8 @@ VaultService
    .. php:method:: http(): VaultHttpClientInterface
 
       Get the Vault HTTP Client.
+
+.. _developer-api-encryption-service:
 
 EncryptionService
 -----------------

@@ -6,13 +6,15 @@
 Configuration
 =============
 
+.. _configuration-extension:
+
 Extension configuration
 =======================
 
 Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuration`.
 
 .. confval:: storageAdapter
-
+   :name: confval-storageadapter
    :type: string
    :Default: local
    :Options: local, hashicorp, aws
@@ -30,7 +32,7 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
       Use AWS Secrets Manager. Requires AWS credentials configuration.
 
 .. confval:: masterKeyProvider
-
+   :name: confval-masterkeyprovider
    :type: string
    :Default: typo3
    :Options: typo3, file, env
@@ -48,25 +50,25 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
       Read from an environment variable.
 
 .. confval:: masterKeySource
-
+   :name: confval-masterkeysource
    :type: string
    :Default: NR_VAULT_MASTER_KEY
 
    Source location for the master key. Interpretation depends on the provider:
 
-   -  **file**: Path to the key file (e.g., ``/secure/path/vault.key``).
-   -  **env**: Environment variable name (e.g., ``NR_VAULT_MASTER_KEY``).
+   -  **file**: Path to the key file (e.g., :file:`/secure/path/vault.key`).
+   -  **env**: Environment variable name (e.g., :samp:`NR_VAULT_MASTER_KEY`).
    -  **typo3**: Not used (key derived from TYPO3's encryption key).
 
 .. confval:: allowCliAccess
-
+   :name: confval-allowcliaccess
    :type: boolean
    :Default: false
 
    Allow CLI commands to access secrets without a backend user session.
 
 .. confval:: cliAccessGroups
-
+   :name: confval-cliaccessgroups
    :type: string
    :Default: empty
 
@@ -74,22 +76,26 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
    Empty means all secrets are accessible when CLI access is enabled.
 
 .. confval:: auditLogRetention
-
+   :name: confval-auditlogretention
    :type: integer
    :Default: 365
 
    Number of days to retain audit log entries. Set to 0 for unlimited retention.
 
 .. confval:: preferXChaCha20
-
+   :name: confval-preferxchacha20
    :type: boolean
    :Default: false
 
    Prefer XChaCha20-Poly1305 over AES-256-GCM. XChaCha20 is recommended
    when hardware AES acceleration is not available.
 
+.. _configuration-master-key-providers:
+
 Master key providers
 ====================
+
+.. _configuration-master-key-typo3:
 
 TYPO3 provider (default)
 ------------------------
@@ -122,6 +128,8 @@ TYPO3 functionality.
    re-encrypted. Use the key rotation command before changing the
    encryption key.
 
+.. _configuration-master-key-file:
+
 File provider
 -------------
 
@@ -135,17 +143,19 @@ Store the master key in a file with restrictive permissions:
 
 Configure in extension settings:
 
--  :confval:`masterKeyProvider`: file
--  :confval:`masterKeySource`: /secure/path/vault-master.key
+-  :confval:`masterKeyProvider <confval-masterkeyprovider>`: file
+-  :confval:`masterKeySource <confval-masterkeysource>`: /secure/path/vault-master.key
 
 .. warning::
 
    The key file must be:
 
-   -  Outside the web root
-   -  Readable only by the web server user
-   -  Not in version control
-   -  Backed up separately from the database
+   -  Outside the web root.
+   -  Readable only by the web server user.
+   -  Not in version control.
+   -  Backed up separately from the database.
+
+.. _configuration-master-key-env:
 
 Environment provider
 --------------------
@@ -158,11 +168,13 @@ Store the master key in an environment variable:
 
 Configure in extension settings:
 
--  :confval:`masterKeyProvider`: env
--  :confval:`masterKeySource`: NR_VAULT_MASTER_KEY
+-  :confval:`masterKeyProvider <confval-masterkeyprovider>`: env
+-  :confval:`masterKeySource <confval-masterkeysource>`: NR_VAULT_MASTER_KEY
 
 This is ideal for containerized deployments where secrets are injected
 via environment variables.
+
+.. _configuration-access-control:
 
 Access control
 ==============
@@ -172,24 +184,28 @@ Access to secrets is controlled by:
 1. **Ownership**: The user who created the secret has full access.
 2. **Group membership**: Secrets can be shared with backend user groups.
 3. **Admin access**: Backend administrators have access to all secrets.
-4. **CLI access**: Configurable via :confval:`allowCliAccess`.
+4. **CLI access**: Configurable via :confval:`allowCliAccess <confval-allowcliaccess>`.
+
+.. _configuration-context:
 
 Context-based scoping
 =====================
 
 Organize secrets by context for easier management:
 
--  :samp:`payment` - Payment gateway credentials
--  :samp:`email` - Email service API keys
--  :samp:`api` - Third-party API tokens
--  :samp:`database` - External database credentials
+-  :samp:`payment` - Payment gateway credentials.
+-  :samp:`email` - Email service API keys.
+-  :samp:`api` - Third-party API tokens.
+-  :samp:`database` - External database credentials.
 
 Contexts are user-defined strings that help organize and filter secrets.
+
+.. _configuration-site:
 
 Site configuration integration
 ==============================
 
-Use the ``%vault(identifier)%`` syntax in site configuration files:
+Use the :yaml:`%vault(identifier)%` syntax in site configuration files:
 
 .. code-block:: yaml
    :caption: config/sites/main/config.yaml
@@ -204,14 +220,16 @@ Secrets are resolved when the site configuration is loaded. This keeps
 sensitive values out of version control while allowing configuration
 through the standard TYPO3 site settings.
 
+.. _configuration-frontend:
+
 Frontend-accessible secrets
 ===========================
 
 By default, secrets cannot be resolved in frontend context (TypoScript).
 To allow a secret to be used in TypoScript:
 
-1. Create the secret with ``frontend_accessible`` metadata
-2. Use the ``%vault(identifier)%`` syntax in TypoScript
+1. Create the secret with :php:`frontend_accessible` metadata.
+2. Use the :typoscript:`%vault(identifier)%` syntax in TypoScript.
 
 .. code-block:: php
 

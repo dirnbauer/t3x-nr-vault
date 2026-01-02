@@ -1,8 +1,12 @@
 .. include:: /Includes.rst.txt
 
+.. _security:
+
 ========
 Security
 ========
+
+.. _security-encryption-architecture:
 
 Encryption architecture
 =======================
@@ -38,6 +42,8 @@ protecting sensitive data.
    DEK2 --> V2 : encrypts
    DEK3 --> V3 : encrypts
 
+.. _security-how-it-works:
+
 How it works
 ------------
 
@@ -53,6 +59,8 @@ How it works
 4. **Decryption**: To read a secret, first decrypt the DEK with the Master Key,
    then use the DEK to decrypt the value.
 
+.. _security-benefits:
+
 Benefits
 --------
 
@@ -61,6 +69,8 @@ Benefits
 -  **Blast radius**: If a DEK is compromised, only one secret is affected.
 -  **Performance**: Bulk operations on secrets don't require the master key
    for each operation.
+
+.. _security-algorithms:
 
 Algorithms
 ==========
@@ -75,21 +85,25 @@ XChaCha20-Poly1305 (optional)
 
 Both algorithms provide:
 
--  256-bit key strength
--  Authenticated encryption (AEAD)
--  Protection against tampering
+-  256-bit key strength.
+-  Authenticated encryption (AEAD).
+-  Protection against tampering.
+
+.. _security-master-key:
 
 Master key security
 ===================
 
 The master key is the root of trust for all secrets.
 
+.. _security-master-key-providers:
+
 Provider security comparison
 ----------------------------
 
 **TYPO3 provider** (default, recommended for most users)
    Security depends on TYPO3's encryption key protection. Suitable for
-   environments where the encryption key is properly secured in settings.php.
+   environments where the encryption key is properly secured in :file:`settings.php`.
    No additional configuration required.
 
 **File provider** (recommended for high-security environments)
@@ -99,6 +113,8 @@ Provider security comparison
 **Environment provider** (recommended for containers)
    Ideal for containerized deployments where secrets are injected at runtime.
    Follows 12-factor app methodology.
+
+.. _security-file-storage:
 
 File storage recommendations
 ----------------------------
@@ -120,17 +136,21 @@ When using the file provider:
    If the master key is compromised, all secrets must be considered compromised.
    Rotate the master key and all secrets immediately.
 
+.. _security-audit-logging:
+
 Audit logging
 =============
 
 All secret operations are logged with:
 
--  Timestamp
--  Action (create, read, update, delete)
--  Actor (user ID, username, type)
--  Secret identifier
--  IP address
--  Result (success/failure)
+-  Timestamp.
+-  Action (create, read, update, delete).
+-  Actor (user ID, username, type).
+-  Secret identifier.
+-  IP address.
+-  Result (success/failure).
+
+.. _security-hash-chain:
 
 Hash chain integrity
 --------------------
@@ -141,6 +161,8 @@ the previous entry. This provides:
 -  **Tamper detection**: Any modification to log entries breaks the chain.
 -  **Completeness**: Deleted entries are detectable.
 -  **Non-repudiation**: Actions cannot be denied after logging.
+
+.. _security-access-control:
 
 Access control
 ==============
@@ -157,6 +179,8 @@ Secret access is controlled at multiple levels:
    CLI access requires explicit configuration and can be restricted
    to specific groups.
 
+.. _security-best-practices:
+
 Security best practices
 =======================
 
@@ -172,6 +196,8 @@ Security best practices
 5. **Monitoring**: Set up alerts for access_denied events.
 
 6. **Backup security**: Encrypt backups and store them securely.
+
+.. _security-reporting-vulnerabilities:
 
 Reporting vulnerabilities
 =========================

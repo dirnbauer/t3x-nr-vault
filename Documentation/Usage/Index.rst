@@ -1,43 +1,51 @@
 .. include:: /Includes.rst.txt
 
+.. _usage:
+
 =====
 Usage
 =====
+
+.. _usage-backend-module:
 
 Backend module
 ==============
 
 Access the vault through the TYPO3 backend:
 
-1. Go to :guilabel:`Admin Tools > Vault`
-2. The overview shows statistics and quick-start examples
-3. Navigate to :guilabel:`Secrets` to manage your secrets
+1. Go to :guilabel:`Admin Tools > Vault`.
+2. The overview shows statistics and quick-start examples.
+3. Navigate to :guilabel:`Secrets` to manage your secrets.
+
+.. _usage-creating-secrets:
 
 Creating secrets
 ----------------
 
-1. Click :guilabel:`Create Secret` (+ button)
+1. Click :guilabel:`Create Secret` (+ button).
 2. Fill in the form:
 
    Identifier
-      Unique identifier for the secret (e.g., ``stripe_api_key``)
+      Unique identifier for the secret (e.g., ``stripe_api_key``).
 
    Value
-      The secret value to encrypt
+      The secret value to encrypt.
 
    Description
-      Optional description for documentation
+      Optional description for documentation.
 
    Context
-      Optional context for organization (e.g., ``payment``)
+      Optional context for organization (e.g., ``payment``).
 
    Allowed groups
-      Backend user groups that can access this secret
+      Backend user groups that can access this secret.
 
    Expiration
-      Optional expiration date after which the secret becomes inaccessible
+      Optional expiration date after which the secret becomes inaccessible.
 
-3. Click :guilabel:`Save`
+3. Click :guilabel:`Save`.
+
+.. _usage-viewing-secrets:
 
 Viewing and editing secrets
 ---------------------------
@@ -49,11 +57,13 @@ Click :guilabel:`Reveal` to temporarily show a secret value.
 
    Revealing a secret creates an audit log entry.
 
+.. _usage-site-configuration:
+
 Site configuration
 ==================
 
 Reference secrets in your site configuration files using the
-``%vault(identifier)%`` syntax:
+:yaml:`%vault(identifier)%` syntax:
 
 .. code-block:: yaml
    :caption: config/sites/mysite/config.yaml
@@ -76,6 +86,8 @@ allowing you to configure them through the familiar site settings.
    your vault storage is performant (the default local adapter caches
    lookups).
 
+.. _usage-typoscript:
+
 TypoScript integration
 ======================
 
@@ -93,10 +105,10 @@ Use vault references in TypoScript for frontend-accessible secrets:
 
    **Security considerations:**
 
-   -  Only secrets marked as ``frontend_accessible`` can be resolved
+   -  Only secrets marked as ``frontend_accessible`` can be resolved.
    -  Resolved values may be cached - use ``cache.disable = 1`` for
-      secrets that should not be cached
-   -  Consider using ``USER_INT`` for content containing secrets
+      secrets that should not be cached.
+   -  Consider using ``USER_INT`` for content containing secrets.
 
 Example with caching disabled:
 
@@ -108,8 +120,12 @@ Example with caching disabled:
      stdWrap.cache.disable = 1
    }
 
+.. _usage-cli-commands:
+
 CLI commands
 ============
+
+.. _usage-cli-vault-init:
 
 vault:init
 ----------
@@ -125,6 +141,8 @@ Initialize the vault and generate a master key:
 
    # Specify custom output location
    vendor/bin/typo3 vault:init --output=/secure/path/vault.key
+
+.. _usage-cli-vault-store:
 
 vault:store
 -----------
@@ -144,6 +162,8 @@ Create or update a secret:
      --expires="+90 days" \
      --groups="1,2"
 
+.. _usage-cli-vault-retrieve:
+
 vault:retrieve
 --------------
 
@@ -155,6 +175,8 @@ Retrieve a secret value:
 
    # Quiet mode for scripting
    API_KEY=$(vendor/bin/typo3 vault:retrieve -q stripe_api_key)
+
+.. _usage-cli-vault-list:
 
 vault:list
 ----------
@@ -171,6 +193,8 @@ List all accessible secrets:
    # JSON output for automation
    vendor/bin/typo3 vault:list --format=json
 
+.. _usage-cli-vault-rotate:
+
 vault:rotate
 ------------
 
@@ -180,6 +204,8 @@ Rotate a secret with a new value:
 
    vendor/bin/typo3 vault:rotate stripe_api_key \
      --reason="Scheduled quarterly rotation"
+
+.. _usage-cli-vault-delete:
 
 vault:delete
 ------------
@@ -191,6 +217,8 @@ Delete a secret:
    vendor/bin/typo3 vault:delete old_api_key \
      --reason="Service deprecated" \
      --force
+
+.. _usage-cli-vault-audit:
 
 vault:audit
 -----------
@@ -207,6 +235,8 @@ View the audit log:
 
    # Export to JSON
    vendor/bin/typo3 vault:audit --format=json > audit.json
+
+.. _usage-cli-vault-rotate-master-key:
 
 vault:rotate-master-key
 -----------------------
@@ -225,6 +255,8 @@ Rotate the master encryption key (re-encrypts all DEKs):
      --old-key=/path/to/old.key \
      --dry-run
 
+.. _usage-cli-vault-scan:
+
 vault:scan
 ----------
 
@@ -240,6 +272,8 @@ Scan for potential plaintext secrets in database:
    # JSON for CI/CD
    vendor/bin/typo3 vault:scan --format=json
 
+.. _usage-cli-vault-migrate-field:
+
 vault:migrate-field
 -------------------
 
@@ -253,6 +287,8 @@ Migrate existing plaintext field values to vault:
    # Execute
    vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key
 
+.. _usage-cli-vault-cleanup-orphans:
+
 vault:cleanup-orphans
 ---------------------
 
@@ -263,8 +299,12 @@ Remove orphaned secrets from deleted records:
    vendor/bin/typo3 vault:cleanup-orphans --dry-run
    vendor/bin/typo3 vault:cleanup-orphans --retention-days=30
 
+.. _usage-php-api:
+
 PHP API
 =======
+
+.. _usage-php-vault-service:
 
 VaultService
 ------------
@@ -287,6 +327,8 @@ Inject the VaultService to access secrets programmatically:
        }
    }
 
+.. _usage-php-storing-secrets:
+
 Storing secrets
 ~~~~~~~~~~~~~~~
 
@@ -303,6 +345,8 @@ Storing secrets
        ],
    );
 
+.. _usage-php-checking-existence:
+
 Checking existence
 ~~~~~~~~~~~~~~~~~~
 
@@ -311,6 +355,8 @@ Checking existence
    if ($this->vaultService->exists('stripe_api_key')) {
        $value = $this->vaultService->retrieve('stripe_api_key');
    }
+
+.. _usage-php-listing-secrets:
 
 Listing secrets
 ~~~~~~~~~~~~~~~
@@ -323,7 +369,9 @@ Listing secrets
    // Filter by pattern
    $paymentSecrets = $this->vaultService->list(pattern: 'payment_*');
 
-Vault HTTP Client
+.. _usage-php-http-client:
+
+Vault HTTP client
 -----------------
 
 Make authenticated API calls without exposing secrets to your code.
@@ -366,6 +414,8 @@ Or access via VaultService:
            'json' => $payload,
        ],
    );
+
+.. _usage-php-authentication-options:
 
 Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~
