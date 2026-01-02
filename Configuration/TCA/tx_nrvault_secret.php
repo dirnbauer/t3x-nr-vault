@@ -59,6 +59,16 @@ return [
             ],
         ],
 
+        'secret_input' => [
+            'label' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.secret_input',
+            'description' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.secret_input.description',
+            'config' => [
+                'type' => 'user',
+                'renderType' => 'vaultSecretInput',
+                'size' => 50,
+            ],
+        ],
+
         'description' => [
             'label' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.description',
             'config' => [
@@ -209,6 +219,7 @@ return [
             'showitem' => '
                 --div--;core.form.tabs:general,
                     identifier,
+                    secret_input,
                     description,
                 --div--;LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tabs.access,
                     owner_uid,

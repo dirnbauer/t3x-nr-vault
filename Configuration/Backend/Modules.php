@@ -51,25 +51,11 @@ return [
             '_default' => [
                 'target' => SecretsController::class . '::listAction',
             ],
-            'view' => [
-                'target' => SecretsController::class . '::viewAction',
-            ],
             'create' => [
                 'target' => SecretsController::class . '::createAction',
             ],
-            'store' => [
-                'target' => SecretsController::class . '::storeAction',
-                'methods' => ['POST'],
-            ],
             'edit' => [
                 'target' => SecretsController::class . '::editAction',
-            ],
-            'update' => [
-                'target' => SecretsController::class . '::updateAction',
-                'methods' => ['POST'],
-            ],
-            'reveal' => [
-                'target' => SecretsController::class . '::revealAction',
             ],
             'toggle' => [
                 'target' => SecretsController::class . '::toggleAction',
@@ -78,9 +64,6 @@ return [
             'delete' => [
                 'target' => SecretsController::class . '::deleteAction',
                 'methods' => ['POST'],
-            ],
-            'rotate' => [
-                'target' => SecretsController::class . '::rotateAction',
             ],
         ],
     ],

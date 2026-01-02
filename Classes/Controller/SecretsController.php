@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Controller;
 
-use DateTimeImmutable;
 use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
-use Netresearch\NrVault\Exception\ValidationException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -118,12 +116,6 @@ final readonly class SecretsController
             'isAdmin' => $this->isAdmin(),
             'filters' => $filters,
             'ownerOptions' => $ownerOptions,
-            'listUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            'viewUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.view'),
-            'editUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.edit'),
-            'toggleUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.toggle'),
-            'deleteUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.delete'),
-            'rotateUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.rotate'),
         ]);
 
         $moduleTemplate->setTitle(
@@ -136,127 +128,21 @@ final readonly class SecretsController
     }
 
     /**
-     * Show create secret form.
+     * Redirect to FormEngine for creating a new secret.
      */
     public function createAction(ServerRequestInterface $request): ResponseInterface
     {
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
-        $moduleTemplate->makeDocHeaderModuleMenu();
-
-        $this->addBackButton($moduleTemplate);
-
-        $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
-
-        // Get all backend users and groups for selectors
-        $backendUsers = $this->getBackendUsers();
-        $backendGroups = $this->getBackendGroups();
-
-        $moduleTemplate->assignMultiple([
-            'storeUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.store'),
-            'backUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            'currentUserId' => $GLOBALS['BE_USER']->user['uid'] ?? 0,
-            'backendUsers' => $backendUsers,
-            'backendGroups' => $backendGroups,
+        // Redirect to FormEngine for native TYPO3 editing experience
+        $editUrl = $this->uriBuilder->buildUriFromRoute('record_edit', [
+            'edit' => [
+                'tx_nrvault_secret' => [
+                    0 => 'new',
+                ],
+            ],
+            'returnUrl' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         ]);
 
-        $moduleTemplate->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-            . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create.title'),
-        );
-
-        return $moduleTemplate->renderResponse('Secrets/Create');
-    }
-
-    /**
-     * View secret details (metadata only, not the secret value).
-     */
-    public function viewAction(ServerRequestInterface $request): ResponseInterface
-    {
-        $queryParams = $request->getQueryParams();
-        $identifier = (string) ($queryParams['identifier'] ?? '');
-
-        if ($identifier === '') {
-            $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            );
-        }
-
-        try {
-            $metadata = $this->vaultService->getMetadata($identifier);
-        } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            );
-        }
-
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
-        $moduleTemplate->makeDocHeaderModuleMenu();
-
-        $this->addBackButton($moduleTemplate);
-
-        $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
-
-        // Resolve owner name
-        $ownerName = $this->getUsernameByUid($metadata['owner_uid'] ?? 0);
-
-        // Resolve group names
-        $groupNames = [];
-        if (!empty($metadata['groups'])) {
-            $groupNames = $this->getGroupNames($metadata['groups']);
-        }
-
-        $moduleTemplate->assignMultiple([
-            'identifier' => $identifier,
-            'metadata' => $metadata,
-            'ownerName' => $ownerName,
-            'groupNames' => $groupNames,
-            'editUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.edit', ['identifier' => $identifier]),
-            'rotateUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.rotate', ['identifier' => $identifier]),
-            'revealUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.reveal'),
-            'deleteUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.delete'),
-            'backUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        ]);
-
-        $moduleTemplate->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-            . ' - '
-            . $identifier,
-        );
-
-        return $moduleTemplate->renderResponse('Secrets/View');
-    }
-
-    /**
-     * Reveal secret value (AJAX endpoint).
-     */
-    public function revealAction(ServerRequestInterface $request): ResponseInterface
-    {
-        $queryParams = $request->getQueryParams();
-        $identifier = (string) ($queryParams['identifier'] ?? '');
-
-        if ($identifier === '') {
-            return new JsonResponse(['success' => false, 'error' => 'No identifier'], 400);
-        }
-
-        try {
-            $secret = $this->vaultService->retrieve($identifier);
-
-            return new JsonResponse([
-                'success' => true,
-                'secret' => $secret,
-            ]);
-        } catch (SecretNotFoundException) {
-            return new JsonResponse(['success' => false, 'error' => 'Secret not found'], 404);
-        } catch (AccessDeniedException) {
-            return new JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
-        } catch (Exception $e) {
-            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
-        }
+        return new RedirectResponse((string) $editUrl);
     }
 
     /**
@@ -308,228 +194,6 @@ final readonly class SecretsController
     }
 
     /**
-     * Update secret metadata.
-     */
-    public function updateAction(ServerRequestInterface $request): ResponseInterface
-    {
-        $queryParams = $request->getQueryParams();
-        $identifier = (string) ($queryParams['identifier'] ?? '');
-        $body = $request->getParsedBody();
-
-        if ($identifier === '') {
-            $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            );
-        }
-
-        try {
-            $metadata = $this->vaultService->getMetadata($identifier);
-
-            // Build update data
-            $updateData = [];
-
-            // Description
-            $description = trim((string) ($body['description'] ?? ''));
-            $updateData['description'] = $description;
-
-            // Owner
-            if (isset($body['owner']) && $body['owner'] !== '') {
-                $updateData['owner_uid'] = (int) $body['owner'];
-            }
-
-            // Groups
-            if (isset($body['groups'])) {
-                if (\is_array($body['groups'])) {
-                    $updateData['groups'] = array_map(intval(...), $body['groups']);
-                } elseif ($body['groups'] !== '') {
-                    $updateData['groups'] = array_map(intval(...), explode(',', (string) $body['groups']));
-                } else {
-                    $updateData['groups'] = [];
-                }
-            }
-
-            // Context
-            $updateData['context'] = trim((string) ($body['context'] ?? ''));
-
-            // Frontend accessible
-            $updateData['frontend_accessible'] = !empty($body['frontendAccessible']);
-
-            // Expires at
-            if (!empty($body['expiresAt'])) {
-                try {
-                    $updateData['expires_at'] = new DateTimeImmutable($body['expiresAt'])->getTimestamp();
-                } catch (Exception) {
-                    // Invalid date, ignore
-                }
-            } else {
-                $updateData['expires_at'] = null;
-            }
-
-            // Scope Page ID
-            if (isset($body['scopePid']) && $body['scopePid'] !== '') {
-                $updateData['scope_pid'] = (int) $body['scopePid'];
-            }
-
-            // Update metadata in database
-            $this->updateSecretMetadata($identifier, $updateData);
-
-            $this->addFlashMessage(
-                $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.edit.success'),
-                ContextualFeedbackSeverity::OK,
-            );
-        } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
-        } catch (AccessDeniedException) {
-            $this->addFlashMessage('Access denied', ContextualFeedbackSeverity::ERROR);
-        } catch (Exception $e) {
-            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.edit', ['identifier' => $identifier]),
-            );
-        }
-
-        return new RedirectResponse(
-            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        );
-    }
-
-    /**
-     * Store a new secret.
-     */
-    public function storeAction(ServerRequestInterface $request): ResponseInterface
-    {
-        $body = $request->getParsedBody();
-
-        $identifier = trim((string) ($body['identifier'] ?? ''));
-        $secret = (string) ($body['secret'] ?? '');
-        $description = trim((string) ($body['description'] ?? ''));
-
-        $options = [];
-
-        if ($description !== '' && $description !== '0') {
-            $options['description'] = $description;
-        }
-
-        if (!empty($body['owner'])) {
-            $options['owner'] = (int) $body['owner'];
-        }
-
-        if (!empty($body['groups'])) {
-            $options['groups'] = array_map(intval(...), explode(',', (string) $body['groups']));
-        }
-
-        if (!empty($body['context'])) {
-            $options['context'] = trim((string) $body['context']);
-        }
-
-        if (!empty($body['frontendAccessible'])) {
-            $options['frontendAccessible'] = true;
-        }
-
-        if (!empty($body['expiresAt'])) {
-            try {
-                $options['expiresAt'] = new DateTimeImmutable($body['expiresAt']);
-            } catch (Exception) {
-            }
-        }
-
-        if (!empty($body['scopePid'])) {
-            $options['scopePid'] = (int) $body['scopePid'];
-        }
-
-        if (!empty($body['metadata'])) {
-            try {
-                $metadata = json_decode((string) $body['metadata'], true, 512, JSON_THROW_ON_ERROR);
-                if (\is_array($metadata)) {
-                    $options['metadata'] = $metadata;
-                }
-            } catch (Exception) {
-            }
-        }
-
-        try {
-            $this->vaultService->store($identifier, $secret, $options);
-
-            $this->addFlashMessage(
-                $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create.success'),
-                ContextualFeedbackSeverity::OK,
-            );
-        } catch (ValidationException $e) {
-            $this->addFlashMessage('Validation error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.create'),
-            );
-        } catch (Exception $e) {
-            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.create'),
-            );
-        }
-
-        return new RedirectResponse(
-            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        );
-    }
-
-    /**
-     * Show rotate secret form.
-     */
-    public function rotateAction(ServerRequestInterface $request): ResponseInterface
-    {
-        $queryParams = $request->getQueryParams();
-        $identifier = (string) ($queryParams['identifier'] ?? '');
-
-        if ($identifier === '') {
-            $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            );
-        }
-
-        if ($request->getMethod() === 'POST') {
-            return $this->doRotate($request, $identifier);
-        }
-
-        $moduleTemplate = $this->moduleTemplateFactory->create($request);
-        $moduleTemplate->makeDocHeaderModuleMenu();
-
-        $this->addBackButton($moduleTemplate);
-
-        $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
-
-        try {
-            $metadata = $this->vaultService->getMetadata($identifier);
-        } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-            );
-        }
-
-        $moduleTemplate->assignMultiple([
-            'identifier' => $identifier,
-            'metadata' => $metadata,
-            'rotateUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.rotate', ['identifier' => $identifier]),
-            'backUri' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        ]);
-
-        $moduleTemplate->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-            . ' - '
-            . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.rotate.title'),
-        );
-
-        return $moduleTemplate->renderResponse('Secrets/Rotate');
-    }
-
-    /**
      * Toggle secret enabled/disabled state.
      *
      * Supports both AJAX (returns JSON) and regular form submissions (redirects).
@@ -552,13 +216,15 @@ final readonly class SecretsController
         }
 
         try {
-            // Get current state
+            // Get current state - remove restrictions to find hidden records
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
+            $queryBuilder->getRestrictions()->removeAll();
             $current = $queryBuilder
                 ->select('hidden')
                 ->from('tx_nrvault_secret')
                 ->where(
                     $queryBuilder->expr()->eq('identifier', $queryBuilder->createNamedParameter($identifier)),
+                    $queryBuilder->expr()->eq('deleted', 0),
                 )
                 ->executeQuery()
                 ->fetchAssociative();
@@ -571,12 +237,14 @@ final readonly class SecretsController
             $newState = $current['hidden'] ? 0 : 1;
             $action = $newState !== 0 ? 'disable' : 'enable';
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
+            $queryBuilder->getRestrictions()->removeAll();
             $queryBuilder
                 ->update('tx_nrvault_secret')
                 ->set('hidden', $newState)
                 ->set('tstamp', time())
                 ->where(
                     $queryBuilder->expr()->eq('identifier', $queryBuilder->createNamedParameter($identifier)),
+                    $queryBuilder->expr()->eq('deleted', 0),
                 )
                 ->executeStatement();
 
@@ -672,43 +340,6 @@ final readonly class SecretsController
             || $request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest';
     }
 
-    /**
-     * Execute secret rotation.
-     */
-    private function doRotate(ServerRequestInterface $request, string $identifier): ResponseInterface
-    {
-        $body = $request->getParsedBody();
-        $newSecret = (string) ($body['secret'] ?? '');
-        $reason = trim((string) ($body['reason'] ?? ''));
-
-        if ($newSecret === '') {
-            $this->addFlashMessage('New secret value is required', ContextualFeedbackSeverity::ERROR);
-
-            return new RedirectResponse(
-                (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.rotate', ['identifier' => $identifier]),
-            );
-        }
-
-        try {
-            $this->vaultService->rotate($identifier, $newSecret, $reason);
-
-            $this->addFlashMessage(
-                $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.rotate.success'),
-                ContextualFeedbackSeverity::OK,
-            );
-        } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
-        } catch (AccessDeniedException) {
-            $this->addFlashMessage('Access denied', ContextualFeedbackSeverity::ERROR);
-        } catch (Exception $e) {
-            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
-        }
-
-        return new RedirectResponse(
-            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        );
-    }
-
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate): void
     {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
@@ -723,16 +354,6 @@ final readonly class SecretsController
         $buttonBar->addButton($createButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
         // Note: Reload button is automatically added by TYPO3's DocHeaderComponent
-    }
-
-    private function addBackButton(ModuleTemplate $moduleTemplate): void
-    {
-        $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-
-        $backButton = $this->componentFactory->createBackButton(
-            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        );
-        $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
     }
 
     private function addFlashMessage(string $message, ContextualFeedbackSeverity $severity): void
@@ -787,121 +408,6 @@ final readonly class SecretsController
     }
 
     /**
-     * Get username by user ID.
-     */
-    private function getUsernameByUid(int $uid): string
-    {
-        if ($uid === 0) {
-            return '-';
-        }
-
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
-        $result = $queryBuilder
-            ->select('username', 'realName')
-            ->from('be_users')
-            ->where(
-                $queryBuilder->expr()->eq('uid', $uid),
-            )
-            ->executeQuery()
-            ->fetchAssociative();
-
-        if ($result === false) {
-            return 'User #' . $uid;
-        }
-
-        return $result['realName'] !== '' ? $result['realName'] : $result['username'];
-    }
-
-    /**
-     * Get group names by group IDs.
-     *
-     * @param array<int> $groupIds
-     *
-     * @return array<string>
-     */
-    private function getGroupNames(array $groupIds): array
-    {
-        if ($groupIds === []) {
-            return [];
-        }
-
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_groups');
-        $result = $queryBuilder
-            ->select('uid', 'title')
-            ->from('be_groups')
-            ->where(
-                $queryBuilder->expr()->in('uid', $groupIds),
-            )
-            ->executeQuery();
-
-        $names = [];
-        while ($row = $result->fetchAssociative()) {
-            $names[] = $row['title'];
-        }
-
-        return $names;
-    }
-
-    /**
-     * Get all backend users for selector.
-     *
-     * @return array<array{uid: int, username: string, realName: string}>
-     */
-    private function getBackendUsers(): array
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_users');
-        $result = $queryBuilder
-            ->select('uid', 'username', 'realName')
-            ->from('be_users')
-            ->where(
-                $queryBuilder->expr()->eq('deleted', 0),
-                $queryBuilder->expr()->eq('disable', 0),
-            )
-            ->orderBy('username')
-            ->executeQuery();
-
-        $users = [];
-        while ($row = $result->fetchAssociative()) {
-            $users[] = [
-                'uid' => (int) $row['uid'],
-                'username' => $row['username'],
-                'realName' => $row['realName'],
-            ];
-        }
-
-        return $users;
-    }
-
-    /**
-     * Get all backend groups for selector.
-     *
-     * @return array<array{uid: int, title: string}>
-     */
-    private function getBackendGroups(): array
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('be_groups');
-        $result = $queryBuilder
-            ->select('uid', 'title')
-            ->from('be_groups')
-            ->where(
-                $queryBuilder->expr()->eq('deleted', 0),
-                $queryBuilder->expr()->eq('hidden', 0),
-            )
-            ->orderBy('title')
-            ->executeQuery();
-
-        $groups = [];
-        while ($row = $result->fetchAssociative()) {
-            $groups[] = [
-                'uid' => (int) $row['uid'],
-                'title' => $row['title'],
-            ];
-        }
-
-        return $groups;
-    }
-
-    /**
      * Get unique owner options for the filter dropdown.
      *
      * @param array<array{owner_uid: int}> $secrets
@@ -922,60 +428,5 @@ final readonly class SecretsController
         usort($options, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return $options;
-    }
-
-    /**
-     * Update secret metadata in the database.
-     *
-     * @param array<string, mixed> $data
-     */
-    private function updateSecretMetadata(string $identifier, array $data): void
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
-
-        // Build update fields
-        $updateFields = [
-            'tstamp' => time(),
-        ];
-
-        if (\array_key_exists('description', $data)) {
-            $updateFields['description'] = $data['description'];
-        }
-
-        if (\array_key_exists('owner_uid', $data)) {
-            $updateFields['owner_uid'] = $data['owner_uid'];
-        }
-
-        if (\array_key_exists('groups', $data)) {
-            $updateFields['allowed_groups'] = json_encode($data['groups'], JSON_THROW_ON_ERROR);
-        }
-
-        if (\array_key_exists('context', $data)) {
-            $updateFields['context'] = $data['context'];
-        }
-
-        if (\array_key_exists('frontend_accessible', $data)) {
-            $updateFields['frontend_accessible'] = $data['frontend_accessible'] ? 1 : 0;
-        }
-
-        if (\array_key_exists('expires_at', $data)) {
-            $updateFields['expires_at'] = $data['expires_at'];
-        }
-
-        if (\array_key_exists('scope_pid', $data)) {
-            $updateFields['scope_pid'] = $data['scope_pid'];
-        }
-
-        $queryBuilder
-            ->update('tx_nrvault_secret')
-            ->where(
-                $queryBuilder->expr()->eq('identifier', $queryBuilder->createNamedParameter($identifier)),
-            );
-
-        foreach ($updateFields as $field => $value) {
-            $queryBuilder->set($field, $value);
-        }
-
-        $queryBuilder->executeStatement();
     }
 }

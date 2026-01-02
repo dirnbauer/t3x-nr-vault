@@ -1,5 +1,5 @@
 /**
- * Secrets list AJAX functionality for live toggle and other actions.
+ * Secrets list AJAX functionality for live toggle, reveal, rotate, and delete actions.
  *
  * Uses TYPO3 v14 native modules and patterns.
  */
@@ -9,6 +9,7 @@ import Severity from '@typo3/backend/severity.js';
 
 class SecretsList {
     constructor() {
+        this.revealedSecrets = new Map();
         this.init();
     }
 
@@ -23,6 +24,16 @@ class SecretsList {
             if (form && form.action.includes('delete')) {
                 button.addEventListener('click', this.handleDelete.bind(this));
             }
+        });
+
+        // Reveal modal triggers
+        document.querySelectorAll('[data-vault-reveal]').forEach(button => {
+            button.addEventListener('click', this.handleReveal.bind(this));
+        });
+
+        // Rotate modal triggers
+        document.querySelectorAll('[data-vault-rotate]').forEach(button => {
+            button.addEventListener('click', this.handleRotate.bind(this));
         });
     }
 
@@ -152,6 +163,236 @@ class SecretsList {
         const newAriaLabel = (hidden ? 'Enable' : 'Disable') + ' secret ' + identifier;
         button.setAttribute('title', newTitle);
         button.setAttribute('aria-label', newAriaLabel);
+    }
+
+    /**
+     * Handle reveal button click - show modal with secret value.
+     */
+    async handleReveal(event) {
+        const button = event.currentTarget;
+        const identifier = button.dataset.vaultReveal;
+
+        if (!identifier) {
+            Notification.error('Error', 'No identifier found', 5);
+            return;
+        }
+
+        // Check cache first
+        if (this.revealedSecrets.has(identifier)) {
+            this.showRevealModal(identifier, this.revealedSecrets.get(identifier));
+            return;
+        }
+
+        // Show loading modal
+        const loadingModal = Modal.advanced({
+            title: 'Loading Secret',
+            content: '<div class="text-center p-4"><span class="spinner-border" role="status"></span><p class="mt-2">Fetching secret...</p></div>',
+            severity: Severity.info,
+            size: Modal.sizes.small,
+            buttons: []
+        });
+
+        try {
+            const response = await fetch(TYPO3.settings.ajaxUrls['vault_reveal'], {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ identifier }),
+            });
+
+            const data = await response.json();
+            loadingModal.hideModal();
+
+            if (data.success && data.secret !== undefined) {
+                this.revealedSecrets.set(identifier, data.secret);
+                this.showRevealModal(identifier, data.secret);
+            } else {
+                Notification.error('Error', data.error || 'Failed to reveal secret', 5);
+            }
+        } catch (error) {
+            loadingModal.hideModal();
+            Notification.error('Error', error.message || 'Failed to reveal secret', 5);
+        }
+    }
+
+    /**
+     * Show the reveal modal with secret value.
+     */
+    showRevealModal(identifier, secret) {
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <div class="form-group mb-3">
+                <label class="form-label fw-bold">Secret Value</label>
+                <div class="input-group">
+                    <input type="password" class="form-control font-monospace" id="reveal-modal-secret" value="${this.escapeHtml(secret)}" readonly />
+                    <button type="button" class="btn btn-default" id="reveal-modal-toggle" title="Toggle visibility">
+                        <span class="icon icon-size-small icon-state-default icon-actions-eye"></span>
+                    </button>
+                    <button type="button" class="btn btn-default" id="reveal-modal-copy" title="Copy to clipboard">
+                        <span class="icon icon-size-small icon-state-default icon-actions-clipboard"></span>
+                    </button>
+                </div>
+            </div>
+            <p class="text-muted small mb-0">Secret value for: <code>${this.escapeHtml(identifier)}</code></p>
+        `;
+
+        const modal = Modal.advanced({
+            title: 'Secret Value',
+            content: content,
+            severity: Severity.info,
+            size: Modal.sizes.default,
+            buttons: [
+                {
+                    text: 'Close',
+                    active: true,
+                    btnClass: 'btn-default',
+                    trigger: () => modal.hideModal()
+                }
+            ]
+        });
+
+        // Add event listeners after modal is shown
+        setTimeout(() => {
+            const toggleBtn = document.getElementById('reveal-modal-toggle');
+            const copyBtn = document.getElementById('reveal-modal-copy');
+            const input = document.getElementById('reveal-modal-secret');
+
+            if (toggleBtn && input) {
+                toggleBtn.addEventListener('click', () => {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                    } else {
+                        input.type = 'password';
+                    }
+                });
+            }
+
+            if (copyBtn && input) {
+                copyBtn.addEventListener('click', async () => {
+                    try {
+                        await navigator.clipboard.writeText(secret);
+                        Notification.success('Copied', 'Secret copied to clipboard', 2);
+                    } catch (e) {
+                        Notification.error('Error', 'Failed to copy to clipboard', 5);
+                    }
+                });
+            }
+        }, 100);
+    }
+
+    /**
+     * Handle rotate button click - show modal with input for new secret.
+     */
+    handleRotate(event) {
+        const button = event.currentTarget;
+        const identifier = button.dataset.vaultRotate;
+
+        if (!identifier) {
+            Notification.error('Error', 'No identifier found', 5);
+            return;
+        }
+
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <div class="form-group mb-3">
+                <label class="form-label fw-bold" for="rotate-modal-secret">New Secret Value</label>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="rotate-modal-secret" placeholder="Enter new secret value" autocomplete="new-password" />
+                    <button type="button" class="btn btn-default" id="rotate-modal-toggle" title="Toggle visibility">
+                        <span class="icon icon-size-small icon-state-default icon-actions-eye"></span>
+                    </button>
+                </div>
+                <div class="form-text">Enter the new secret value. This will replace the existing secret.</div>
+            </div>
+            <p class="text-warning small mb-0">
+                <strong>Warning:</strong> Rotating a secret is irreversible. The previous value cannot be recovered.
+            </p>
+        `;
+
+        const modal = Modal.advanced({
+            title: 'Rotate Secret: ' + identifier,
+            content: content,
+            severity: Severity.warning,
+            size: Modal.sizes.default,
+            buttons: [
+                {
+                    text: 'Cancel',
+                    active: true,
+                    btnClass: 'btn-default',
+                    trigger: () => modal.hideModal()
+                },
+                {
+                    text: 'Rotate Secret',
+                    btnClass: 'btn-warning',
+                    trigger: () => this.performRotate(modal, identifier)
+                }
+            ]
+        });
+
+        // Add toggle visibility event listener
+        setTimeout(() => {
+            const toggleBtn = document.getElementById('rotate-modal-toggle');
+            const input = document.getElementById('rotate-modal-secret');
+
+            if (toggleBtn && input) {
+                toggleBtn.addEventListener('click', () => {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                    } else {
+                        input.type = 'password';
+                    }
+                });
+
+                // Focus the input
+                input.focus();
+            }
+        }, 100);
+    }
+
+    /**
+     * Perform the actual rotation via AJAX.
+     */
+    async performRotate(modal, identifier) {
+        const input = document.getElementById('rotate-modal-secret');
+        const newSecret = input?.value || '';
+
+        if (!newSecret) {
+            Notification.error('Error', 'Please enter a new secret value', 5);
+            return;
+        }
+
+        try {
+            const response = await fetch(TYPO3.settings.ajaxUrls['vault_rotate'], {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ identifier, secret: newSecret }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                modal.hideModal();
+                // Clear cached secret since it's been rotated
+                this.revealedSecrets.delete(identifier);
+                Notification.success('Success', data.message || 'Secret rotated successfully', 3);
+            } else {
+                Notification.error('Error', data.error || 'Failed to rotate secret', 5);
+            }
+        } catch (error) {
+            Notification.error('Error', error.message || 'Failed to rotate secret', 5);
+        }
+    }
+
+    /**
+     * Escape HTML to prevent XSS.
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 }
 

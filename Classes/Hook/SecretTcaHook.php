@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Hook;
 
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Service\VaultServiceInterface;
 use Throwable;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -15,12 +16,20 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * Handles:
  * - Identifier immutability (prevent changes after creation)
+ * - Secret encryption on save (secret_input field)
  * - Audit logging for metadata changes
  * - FormEngine integration with VaultService
  */
 final class SecretTcaHook
 {
     private const string TABLE = 'tx_nrvault_secret';
+
+    /**
+     * Pending secrets to store after database operations.
+     *
+     * @var array<string, string> Map of temporary ID => secret value
+     */
+    private array $pendingSecrets = [];
 
     /**
      * Called before database operations.
@@ -64,11 +73,21 @@ final class SecretTcaHook
         if (isset($fieldArray['scope_pid']) && \is_string($fieldArray['scope_pid']) && str_contains($fieldArray['scope_pid'], 'pages')) {
             $fieldArray['scope_pid'] = $this->extractUidFromGroupValue($fieldArray['scope_pid']);
         }
+
+        // Handle secret_input field - extract secret value for later processing
+        // The actual encryption happens in afterDatabaseOperations when we have the identifier
+        if (isset($fieldArray['secret_input']) && $fieldArray['secret_input'] !== '') {
+            // Store the secret temporarily keyed by record id
+            $this->pendingSecrets[(string) $id] = $fieldArray['secret_input'];
+        }
+
+        // Always remove secret_input from fieldArray - it's not a real database column
+        unset($fieldArray['secret_input']);
     }
 
     /**
      * Called after database operations.
-     * Logs metadata changes to audit log.
+     * Handles secret encryption and audit logging.
      */
     public function processDatamap_afterDatabaseOperations(
         string $status,
@@ -83,28 +102,77 @@ final class SecretTcaHook
 
         // Get actual UID for new records
         $uid = $id;
+        $originalId = (string) $id;
         if ($status === 'new') {
             $uid = $dataHandler->substNEWwithIDs[$id] ?? $id;
         }
 
-        // Get the secret identifier for audit logging
-        $record = BackendUtility::getRecord(self::TABLE, (int) $uid, 'identifier');
+        // Get the secret identifier for operations
+        $record = BackendUtility::getRecord(self::TABLE, (int) $uid, 'identifier,owner_uid,allowed_groups,scope_pid');
         if ($record === null) {
             return;
         }
 
         $identifier = $record['identifier'];
+        $secretStored = false;
+
+        // Handle pending secret encryption
+        if (isset($this->pendingSecrets[$originalId])) {
+            $secretValue = $this->pendingSecrets[$originalId];
+            unset($this->pendingSecrets[$originalId]);
+
+            try {
+                $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
+
+                // Build options from record data
+                $options = [
+                    'ownerUid' => (int) ($record['owner_uid'] ?? 0),
+                    'allowedGroups' => $record['allowed_groups'] ?? '',
+                    'scopePid' => (int) ($record['scope_pid'] ?? 0),
+                ];
+
+                if ($status === 'new') {
+                    // New record - store the secret
+                    $vaultService->store($identifier, $secretValue, $options);
+                    $secretStored = true;
+                } else {
+                    // Existing record - rotate the secret
+                    $vaultService->rotate($identifier, $secretValue);
+                    $secretStored = true;
+                }
+            } catch (Throwable $e) {
+                $dataHandler->log(
+                    self::TABLE,
+                    (int) $uid,
+                    2,
+                    0,
+                    1,
+                    'Failed to store secret: ' . $e->getMessage(),
+                );
+            }
+        }
 
         // Determine what changed for audit context
         $changedFields = array_keys($fieldArray);
+        if ($secretStored) {
+            $changedFields[] = 'secret_input';
+        }
 
         try {
             $auditService = GeneralUtility::makeInstance(AuditLogServiceInterface::class);
 
-            // Log the metadata update
+            // Determine action type
+            $action = 'metadata_update';
+            if ($status === 'new') {
+                $action = 'create';
+            } elseif ($secretStored) {
+                $action = 'rotate';
+            }
+
+            // Log the operation
             $auditService->log(
                 $identifier,
-                $status === 'new' ? 'create' : 'metadata_update',
+                $action,
                 true,
                 null,
                 'FormEngine edit: ' . implode(', ', $changedFields),
