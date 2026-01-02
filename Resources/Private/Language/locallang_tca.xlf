@@ -100,6 +100,43 @@
             <trans-unit id="tx_nrvault_secret.adapter">
                 <source>Storage Adapter</source>
             </trans-unit>
+
+            <!-- Secret input field -->
+            <trans-unit id="tx_nrvault_secret.secret_input">
+                <source>Secret Value</source>
+            </trans-unit>
+            <trans-unit id="tx_nrvault_secret.secret_input.description">
+                <source>The encrypted secret value stored in the vault</source>
+            </trans-unit>
+
+            <!-- VaultSecretInputElement labels -->
+            <trans-unit id="vault_secret_input.placeholder_new">
+                <source>Enter secret value</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.placeholder_rotate">
+                <source>Enter new secret value to rotate</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.help_new">
+                <source>Enter the secret value. It will be encrypted when the record is saved.</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.help_rotate">
+                <source>Leave empty to keep current secret. Enter a new value to rotate.</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.current_secret">
+                <source>Current Secret</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.new_secret">
+                <source>New Secret Value</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.secret_value">
+                <source>Secret Value</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.rotate">
+                <source>Rotate Secret</source>
+            </trans-unit>
+            <trans-unit id="vault_secret_input.no_secret">
+                <source>No secret value stored. Enter a value below.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

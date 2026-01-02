@@ -1,0 +1,221 @@
+/**
+ * JavaScript module for VaultSecretInputElement.
+ *
+ * Handles:
+ * - Toggle visibility for password fields
+ * - Reveal existing secrets via AJAX
+ * - Copy to clipboard functionality
+ */
+class VaultSecretInput {
+    constructor() {
+        this.revealedSecrets = new Map();
+        this.init();
+    }
+
+    init() {
+        // Toggle visibility buttons
+        document.querySelectorAll('.t3js-vault-input-toggle').forEach(button => {
+            button.addEventListener('click', this.handleToggleVisibility.bind(this));
+        });
+
+        // Reveal buttons for existing secrets
+        document.querySelectorAll('.t3js-vault-input-reveal').forEach(button => {
+            button.addEventListener('click', this.handleReveal.bind(this));
+        });
+
+        // Copy buttons
+        document.querySelectorAll('.t3js-vault-input-copy').forEach(button => {
+            button.addEventListener('click', this.handleCopy.bind(this));
+        });
+    }
+
+    /**
+     * Toggle password/text visibility for input fields.
+     */
+    handleToggleVisibility(event) {
+        const button = event.currentTarget;
+        const inputGroup = button.closest('.input-group');
+        const input = inputGroup.querySelector('input[type="password"], input[type="text"]');
+
+        if (!input) return;
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            const icon = button.querySelector('.t3js-icon');
+            if (icon) {
+                icon.classList.remove('icon-actions-eye');
+                icon.classList.add('icon-actions-eye-slash');
+            }
+        } else {
+            input.type = 'password';
+            const icon = button.querySelector('.t3js-icon');
+            if (icon) {
+                icon.classList.remove('icon-actions-eye-slash');
+                icon.classList.add('icon-actions-eye');
+            }
+        }
+    }
+
+    /**
+     * Reveal an existing secret via AJAX.
+     */
+    async handleReveal(event) {
+        const button = event.currentTarget;
+        const identifier = button.dataset.identifier;
+
+        if (!identifier) {
+            console.error('No identifier found for reveal');
+            return;
+        }
+
+        // Check cache first
+        if (this.revealedSecrets.has(identifier)) {
+            this.showRevealedSecret(button, this.revealedSecrets.get(identifier));
+            return;
+        }
+
+        // Show loading state
+        button.disabled = true;
+        const originalIcon = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+        try {
+            const response = await fetch(TYPO3.settings.ajaxUrls['vault_reveal'], {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ identifier }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.secret !== undefined) {
+                this.revealedSecrets.set(identifier, data.secret);
+                // Restore icon before showing revealed secret
+                button.innerHTML = originalIcon;
+                this.showRevealedSecret(button, data.secret);
+            } else {
+                throw new Error(data.error || 'Failed to reveal secret');
+            }
+        } catch (error) {
+            console.error('Error revealing secret:', error);
+            top.TYPO3.Notification.error('Error', error.message || 'Failed to reveal secret');
+            button.innerHTML = originalIcon;
+            button.disabled = false;
+        }
+    }
+
+    /**
+     * Show the revealed secret value.
+     */
+    showRevealedSecret(button, secret) {
+        const inputGroup = button.closest('.input-group');
+        const displayInput = inputGroup.querySelector('input[data-vault-display]');
+
+        if (displayInput) {
+            displayInput.value = secret;
+            displayInput.type = 'text';
+        }
+
+        // Update button to hide icon
+        const icon = button.querySelector('.t3js-icon');
+        if (icon) {
+            icon.classList.remove('icon-actions-eye');
+            icon.classList.add('icon-actions-eye-slash');
+        }
+
+        // Switch to hide mode
+        button.classList.remove('t3js-vault-input-reveal');
+        button.classList.add('t3js-vault-input-hide');
+        button.removeEventListener('click', this.handleReveal);
+        button.addEventListener('click', this.handleHide.bind(this));
+        button.disabled = false;
+
+        // Show copy button
+        const copyButton = inputGroup.querySelector('.t3js-vault-input-copy');
+        if (copyButton) {
+            copyButton.style.display = '';
+        }
+    }
+
+    /**
+     * Hide a revealed secret.
+     */
+    handleHide(event) {
+        const button = event.currentTarget;
+        const inputGroup = button.closest('.input-group');
+        const displayInput = inputGroup.querySelector('input[data-vault-display]');
+
+        if (displayInput) {
+            displayInput.value = '••••••••••••';
+            displayInput.type = 'password';
+        }
+
+        // Update button back to reveal icon
+        const icon = button.querySelector('.t3js-icon');
+        if (icon) {
+            icon.classList.remove('icon-actions-eye-slash');
+            icon.classList.add('icon-actions-eye');
+        }
+
+        // Switch back to reveal mode
+        button.classList.remove('t3js-vault-input-hide');
+        button.classList.add('t3js-vault-input-reveal');
+        button.removeEventListener('click', this.handleHide);
+        button.addEventListener('click', this.handleReveal.bind(this));
+
+        // Hide copy button
+        const copyButton = inputGroup.querySelector('.t3js-vault-input-copy');
+        if (copyButton) {
+            copyButton.style.display = 'none';
+        }
+    }
+
+    /**
+     * Copy secret to clipboard.
+     */
+    async handleCopy(event) {
+        const button = event.currentTarget;
+        const identifier = button.dataset.identifier;
+
+        // Get from cache
+        const secret = this.revealedSecrets.get(identifier);
+        if (!secret) {
+            top.TYPO3.Notification.warning('Warning', 'Reveal the secret first before copying');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(secret);
+            top.TYPO3.Notification.success('Success', 'Secret copied to clipboard');
+
+            // Visual feedback
+            const icon = button.querySelector('.t3js-icon');
+            if (icon) {
+                icon.classList.remove('icon-actions-clipboard');
+                icon.classList.add('icon-actions-check');
+                setTimeout(() => {
+                    icon.classList.remove('icon-actions-check');
+                    icon.classList.add('icon-actions-clipboard');
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            top.TYPO3.Notification.error('Error', 'Failed to copy to clipboard');
+        }
+    }
+}
+
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new VaultSecretInput());
+} else {
+    new VaultSecretInput();
+}
+
+export default VaultSecretInput;
