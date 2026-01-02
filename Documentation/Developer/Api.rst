@@ -132,7 +132,50 @@ Vault HTTP client
 -----------------
 
 The vault provides an HTTP client that can inject secrets into requests
-without exposing them to your code. Secrets are specified via options.
+without exposing them to your code. You can inject it directly or access
+it via VaultService.
+
+Direct injection (recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: php
+
+   use Netresearch\NrVault\Http\SecretPlacement;
+   use Netresearch\NrVault\Http\VaultHttpClientInterface;
+
+   final class ExternalApiService
+   {
+       public function __construct(
+           private readonly VaultHttpClientInterface $httpClient,
+       ) {}
+
+       public function fetchData(): array
+       {
+           $response = $this->httpClient->get(
+               'https://api.example.com/data',
+               [
+                   'auth_secret' => 'api_token',
+                   'placement' => SecretPlacement::Bearer,
+               ],
+           );
+
+           return json_decode($response->getBody()->getContents(), true);
+       }
+   }
+
+Via VaultService
+~~~~~~~~~~~~~~~~
+
+.. code-block:: php
+
+   $response = $this->vaultService->http()->post(
+       'https://api.stripe.com/v1/charges',
+       [
+           'auth_secret' => 'stripe_api_key',
+           'placement' => SecretPlacement::Bearer,
+           'json' => $payload,
+       ],
+   );
 
 .. php:interface:: VaultHttpClientInterface
 
@@ -142,7 +185,7 @@ without exposing them to your code. Secrets are specified via options.
 
       :param string $method: HTTP method (GET, POST, PUT, DELETE, etc.)
       :param string $url: Request URL
-      :param array $options: Request options including auth_secret, auth_type, headers, etc.
+      :param array $options: Request options including auth_secret, placement, headers, etc.
 
    .. php:method:: get(string $url, array $options = []): ResponseInterface
 
@@ -151,6 +194,22 @@ without exposing them to your code. Secrets are specified via options.
    .. php:method:: post(string $url, array $options = []): ResponseInterface
 
       Shorthand for POST request.
+
+   .. php:method:: put(string $url, array $options = []): ResponseInterface
+
+      Shorthand for PUT request.
+
+   .. php:method:: delete(string $url, array $options = []): ResponseInterface
+
+      Shorthand for DELETE request.
+
+   .. php:method:: patch(string $url, array $options = []): ResponseInterface
+
+      Shorthand for PATCH request.
+
+   .. php:method:: send(string $method, string $url, array $options = []): VaultHttpResponse
+
+      Make a request and return a VaultHttpResponse wrapper with helper methods.
 
 Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~

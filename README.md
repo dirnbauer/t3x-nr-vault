@@ -121,28 +121,33 @@ class MyService
 Make authenticated API calls without exposing secrets to your code:
 
 ```php
-use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Http\SecretPlacement;
+use Netresearch\NrVault\Http\VaultHttpClientInterface;
 
 class PaymentService
 {
     public function __construct(
-        private readonly VaultServiceInterface $vault,
+        private readonly VaultHttpClientInterface $httpClient,
     ) {}
 
     public function chargeCustomer(array $payload): array
     {
         // Secret is injected by vault - never visible to this code
-        $response = $this->vault->http()
-            ->withSecret('stripe_api_key', SecretPlacement::BearerAuth)
-            ->post('https://api.stripe.com/v1/charges', $payload);
+        $response = $this->httpClient->post(
+            'https://api.stripe.com/v1/charges',
+            [
+                'auth_secret' => 'stripe_api_key',
+                'placement' => SecretPlacement::Bearer,
+                'json' => $payload,
+            ],
+        );
 
-        return $response->json();
+        return json_decode($response->getBody()->getContents(), true);
     }
 }
 ```
 
-Secret placement options: `BearerAuth`, `BasicAuthPassword`, `Header`, `QueryParam`, `BodyField`, `UrlSegment`.
+Secret placement options: `Bearer`, `BasicAuth`, `Header`, `QueryParam`, `BodyField`, `ApiKey`, `OAuth2`.
 
 ## TCA Integration
 

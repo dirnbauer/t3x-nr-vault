@@ -49,8 +49,8 @@ Update the database schema to create the required tables:
 
 This creates the following tables:
 
--  :sql:`tx_nrvault_domain_model_secret` - Stores encrypted secrets
--  :sql:`tx_nrvault_audit_log` - Stores audit log entries
+-  :sql:`tx_nrvault_secret` - Stores encrypted secrets with metadata
+-  :sql:`tx_nrvault_audit_log` - Stores audit log entries with hash chain
 
 Master key setup
 ================

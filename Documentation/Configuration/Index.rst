@@ -185,3 +185,48 @@ Organize secrets by context for easier management:
 -  :samp:`database` - External database credentials
 
 Contexts are user-defined strings that help organize and filter secrets.
+
+Site configuration integration
+==============================
+
+Use the ``%vault(identifier)%`` syntax in site configuration files:
+
+.. code-block:: yaml
+   :caption: config/sites/main/config.yaml
+
+   settings:
+     payment:
+       stripeSecretKey: '%vault(stripe_api_key)%'
+     email:
+       mailchimpKey: '%vault(mailchimp_key)%'
+
+Secrets are resolved when the site configuration is loaded. This keeps
+sensitive values out of version control while allowing configuration
+through the standard TYPO3 site settings.
+
+Frontend-accessible secrets
+===========================
+
+By default, secrets cannot be resolved in frontend context (TypoScript).
+To allow a secret to be used in TypoScript:
+
+1. Create the secret with ``frontend_accessible`` metadata
+2. Use the ``%vault(identifier)%`` syntax in TypoScript
+
+.. code-block:: php
+
+   $this->vaultService->store(
+       'google_maps_key',
+       $apiKey,
+       [
+           'metadata' => [
+               'frontend_accessible' => true,
+           ],
+       ],
+   );
+
+.. warning::
+
+   Frontend-accessible secrets may be exposed in rendered HTML output.
+   Only use this for secrets that are intended to be public (like
+   client-side API keys).
