@@ -367,9 +367,9 @@ final readonly class SecretsController
                 $updateData['expires_at'] = null;
             }
 
-            // Page ID
-            if (isset($body['pid']) && $body['pid'] !== '') {
-                $updateData['pid'] = (int) $body['pid'];
+            // Scope Page ID
+            if (isset($body['scopePid']) && $body['scopePid'] !== '') {
+                $updateData['scope_pid'] = (int) $body['scopePid'];
             }
 
             // Update metadata in database
@@ -436,8 +436,8 @@ final readonly class SecretsController
             }
         }
 
-        if (!empty($body['pid'])) {
-            $options['pid'] = (int) $body['pid'];
+        if (!empty($body['scopePid'])) {
+            $options['scopePid'] = (int) $body['scopePid'];
         }
 
         if (!empty($body['metadata'])) {
@@ -962,8 +962,8 @@ final readonly class SecretsController
             $updateFields['expires_at'] = $data['expires_at'];
         }
 
-        if (\array_key_exists('pid', $data)) {
-            $updateFields['pid'] = $data['pid'];
+        if (\array_key_exists('scope_pid', $data)) {
+            $updateFields['scope_pid'] = $data['scope_pid'];
         }
 
         $queryBuilder

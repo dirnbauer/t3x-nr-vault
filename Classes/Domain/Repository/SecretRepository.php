@@ -133,7 +133,7 @@ final readonly class SecretRepository
     /**
      * Find all secrets matching filters.
      *
-     * @param array{owner?: int, prefix?: string, context?: string, pid?: int} $filters
+     * @param array{owner?: int, prefix?: string, context?: string, scopePid?: int} $filters
      *
      * @return string[]
      */
@@ -163,9 +163,9 @@ final readonly class SecretRepository
             );
         }
 
-        if (isset($filters['pid'])) {
+        if (isset($filters['scopePid'])) {
             $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($filters['pid'], Connection::PARAM_INT)),
+                $queryBuilder->expr()->eq('scope_pid', $queryBuilder->createNamedParameter($filters['scopePid'], Connection::PARAM_INT)),
             );
         }
 

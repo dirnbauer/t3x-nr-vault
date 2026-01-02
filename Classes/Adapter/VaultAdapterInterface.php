@@ -46,7 +46,7 @@ interface VaultAdapterInterface
     /**
      * List all secret identifiers.
      *
-     * @param array{owner?: int, prefix?: string, context?: string, pid?: int} $filters
+     * @param array{owner?: int, prefix?: string, context?: string, scopePid?: int} $filters
      *
      * @return string[]
      */

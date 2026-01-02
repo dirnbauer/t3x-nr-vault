@@ -28,7 +28,7 @@ interface VaultServiceInterface
      *                       - expiresAt: int|\DateTimeInterface|null - When secret expires
      *                       - metadata: array - Custom metadata
      *                       - description: string - Human-readable description
-     *                       - pid: int - Page ID for multi-site scoping
+     *                       - scopePid: int - Page ID for multi-site scoping
      *
      * @throws ValidationException If identifier is invalid
      * @throws EncryptionException If encryption fails

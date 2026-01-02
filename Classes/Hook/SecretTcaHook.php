@@ -60,9 +60,9 @@ final class SecretTcaHook
             $fieldArray['owner_uid'] = $this->extractUidFromGroupValue($fieldArray['owner_uid']);
         }
 
-        // Handle pid - convert group format to simple uid
-        if (isset($fieldArray['pid']) && \is_string($fieldArray['pid']) && str_contains($fieldArray['pid'], 'pages')) {
-            $fieldArray['pid'] = $this->extractUidFromGroupValue($fieldArray['pid']);
+        // Handle scope_pid - convert group format to simple uid
+        if (isset($fieldArray['scope_pid']) && \is_string($fieldArray['scope_pid']) && str_contains($fieldArray['scope_pid'], 'pages')) {
+            $fieldArray['scope_pid'] = $this->extractUidFromGroupValue($fieldArray['scope_pid']);
         }
     }
 

@@ -11,7 +11,7 @@ final class Secret
 {
     private ?int $uid = null;
 
-    private int $pid = 0;
+    private int $scopePid = 0;
 
     private string $identifier = '';
 
@@ -76,14 +76,14 @@ final class Secret
         return $this;
     }
 
-    public function getPid(): int
+    public function getScopePid(): int
     {
-        return $this->pid;
+        return $this->scopePid;
     }
 
-    public function setPid(int $pid): self
+    public function setScopePid(int $scopePid): self
     {
-        $this->pid = $pid;
+        $this->scopePid = $scopePid;
 
         return $this;
     }
@@ -420,7 +420,7 @@ final class Secret
     {
         $secret = new self();
         $secret->uid = isset($row['uid']) ? (int) $row['uid'] : null;
-        $secret->pid = (int) ($row['pid'] ?? 0);
+        $secret->scopePid = (int) ($row['scope_pid'] ?? 0);
         $secret->identifier = (string) ($row['identifier'] ?? '');
         $secret->description = (string) ($row['description'] ?? '');
         $secret->encryptedValue = $row['encrypted_value'] ?? null;
@@ -466,7 +466,7 @@ final class Secret
     public function toDatabaseRow(): array
     {
         return [
-            'pid' => $this->pid,
+            'scope_pid' => $this->scopePid,
             'identifier' => $this->identifier,
             'description' => $this->description,
             'encrypted_value' => $this->encryptedValue,

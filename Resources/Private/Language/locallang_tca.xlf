@@ -73,11 +73,11 @@
                 <source>Additional metadata as JSON</source>
             </trans-unit>
 
-            <trans-unit id="tx_nrvault_secret.pid">
-                <source>Storage Page</source>
+            <trans-unit id="tx_nrvault_secret.scope_pid">
+                <source>Scope Page</source>
             </trans-unit>
-            <trans-unit id="tx_nrvault_secret.pid.description">
-                <source>Page where this secret is stored (for organization)</source>
+            <trans-unit id="tx_nrvault_secret.scope_pid.description">
+                <source>Page used for multi-site scoping of this secret</source>
             </trans-unit>
 
             <!-- Info fields -->

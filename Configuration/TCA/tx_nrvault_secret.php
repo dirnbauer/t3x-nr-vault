@@ -147,9 +147,9 @@ return [
             ],
         ],
 
-        'pid' => [
-            'label' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.pid',
-            'description' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.pid.description',
+        'scope_pid' => [
+            'label' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.scope_pid',
+            'description' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tx_nrvault_secret.scope_pid.description',
             'config' => [
                 'type' => 'group',
                 'allowed' => 'pages',
@@ -217,7 +217,7 @@ return [
                 --div--;LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tabs.settings,
                     context,
                     expires_at,
-                    pid,
+                    scope_pid,
                     metadata,
                 --div--;LLL:EXT:nr_vault/Resources/Private/Language/locallang_tca.xlf:tabs.info,
                     version,

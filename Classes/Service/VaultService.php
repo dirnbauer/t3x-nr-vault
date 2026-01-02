@@ -98,8 +98,8 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 $secretEntity->setMetadata((array) $options['metadata']);
             }
 
-            if (isset($options['pid'])) {
-                $secretEntity->setPid((int) $options['pid']);
+            if (isset($options['scopePid'])) {
+                $secretEntity->setScopePid((int) $options['scopePid']);
             }
 
             if (isset($options['expiresAt'])) {
@@ -404,7 +404,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             'expires_at' => $secret->getExpiresAt() ?: null,
             'lastRotatedAt' => $secret->getLastRotatedAt() ?: null,
             'metadata' => $secret->getMetadata(),
-            'pid' => $secret->getPid(),
+            'scopePid' => $secret->getScopePid(),
         ];
     }
 
