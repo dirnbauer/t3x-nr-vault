@@ -927,7 +927,7 @@ parameters:
 		-
 			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\JsonResponse from outside its root namespace TYPO3.'
 			identifier: method.internalClass
-			count: 11
+			count: 14
 			path: Classes/Controller/AjaxController.php
 
 		-
@@ -945,7 +945,7 @@ parameters:
 		-
 			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\JsonResponse.
 			identifier: new.internalClass
-			count: 11
+			count: 14
 			path: Classes/Controller/AjaxController.php
 
 		-
