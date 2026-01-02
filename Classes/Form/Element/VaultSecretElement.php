@@ -8,6 +8,8 @@ use Netresearch\NrVault\Service\VaultFieldPermissionService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Throwable;
 use TYPO3\CMS\Backend\Form\Element\AbstractFormElement;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\StringUtility;
@@ -87,7 +89,13 @@ final class VaultSecretElement extends AbstractFormElement
             'data-vault-can-reveal' => $permissions['reveal'] ? '1' : '0',
             'data-vault-can-copy' => $permissions['copy'] ? '1' : '0',
             'data-vault-can-edit' => $permissions['edit'] ? '1' : '0',
-            'autocomplete' => 'new-password',
+            'autocomplete' => 'off',
+            'data-form-type' => 'other',
+            'data-1p-ignore' => 'true',
+            'data-lpignore' => 'true',
+            'data-bwignore' => 'true',
+            'data-protonpass-ignore' => 'true',
+            'data-dashlane-ignore' => 'true',
         ];
 
         if ($placeholder !== '') {
@@ -119,21 +127,21 @@ final class VaultSecretElement extends AbstractFormElement
         // Toggle visibility button (only if reveal permission is granted)
         if ($permissions['reveal']) {
             $html[] = '<button type="button" class="btn btn-secondary t3js-vault-toggle-visibility" title="Toggle visibility">';
-            $html[] = '<span class="t3js-icon icon icon-size-small icon-state-default icon-actions-eye"></span>';
+            $html[] = $this->renderIcon('actions-eye');
             $html[] = '</button>';
         }
 
         // Copy button (only if copy permission is granted and value exists)
         if ($permissions['copy'] && $hasValue) {
             $html[] = '<button type="button" class="btn btn-secondary t3js-vault-copy" title="Copy to clipboard">';
-            $html[] = '<span class="t3js-icon icon icon-size-small icon-state-default icon-actions-clipboard"></span>';
+            $html[] = $this->renderIcon('actions-clipboard');
             $html[] = '</button>';
         }
 
         // Clear button if value exists and edit permission is granted
         if ($hasValue && $permissions['edit'] && !$permissions['readOnly']) {
             $html[] = '<button type="button" class="btn btn-secondary t3js-vault-clear" title="Clear secret">';
-            $html[] = '<span class="t3js-icon icon icon-size-small icon-state-default icon-actions-delete"></span>';
+            $html[] = $this->renderIcon('actions-delete');
             $html[] = '</button>';
         }
 
@@ -177,5 +185,15 @@ final class VaultSecretElement extends AbstractFormElement
 
         // Format: table__field__uid
         return \sprintf('%s__%s__%d', $table, $field, (int) $uid);
+    }
+
+    /**
+     * Render an icon using TYPO3's IconFactory.
+     */
+    private function renderIcon(string $identifier): string
+    {
+        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+
+        return $iconFactory->getIcon($identifier, IconSize::SMALL)->render();
     }
 }
