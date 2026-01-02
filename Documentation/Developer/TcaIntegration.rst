@@ -14,8 +14,12 @@ instead of plaintext in the database.
    :local:
    :depth: 2
 
+.. _tca-quick-start:
+
 Quick start
 ===========
+
+.. _tca-step1-dependency:
 
 Step 1: Add dependency
 ----------------------
@@ -29,6 +33,8 @@ Add nr-vault as a dependency in your extension's :file:`composer.json`:
            "netresearch/nr-vault": "^1.0"
        }
    }
+
+.. _tca-step2-configure:
 
 Step 2: Configure TCA field
 ---------------------------
@@ -56,6 +62,8 @@ Use the ``vaultSecret`` renderType in your TCA configuration:
        ],
    ];
 
+.. _tca-step3-database:
+
 Step 3: Add database column
 ---------------------------
 
@@ -68,6 +76,8 @@ Add the column to your extension's :file:`ext_tables.sql`:
    );
 
 The column stores the vault identifier, not the actual secret.
+
+.. _tca-step4-retrieve:
 
 Step 4: Retrieve secrets in code
 --------------------------------
@@ -93,6 +103,8 @@ Use the :php:`VaultFieldResolver` utility to retrieve actual secret values:
        }
    }
 
+
+.. _tca-helper:
 
 Using the TCA helper
 ====================
@@ -121,21 +133,26 @@ For cleaner TCA configuration, use the :php:`VaultFieldHelper`:
        ],
    ];
 
-Available options:
+.. _tca-helper-options:
+
+Available options
+-----------------
 
 ==================  ======  ===================================================
 Option              Type    Description
 ==================  ======  ===================================================
-``label``           string  Field label
-``description``     string  Field description/help text
-``size``            int     Input field size (default: 30)
-``required``        bool    Whether field is required (default: false)
-``placeholder``     string  Placeholder text
-``displayCond``     string  TCA display condition
-``l10n_mode``       string  Localization mode
-``exclude``         bool    Exclude from non-admin access
+``label``           string  Field label.
+``description``     string  Field description/help text.
+``size``            int     Input field size (default: 30).
+``required``        bool    Whether field is required (default: false).
+``placeholder``     string  Placeholder text.
+``displayCond``     string  TCA display condition.
+``l10n_mode``       string  Localization mode.
+``exclude``         bool    Exclude from non-admin access.
 ==================  ======  ===================================================
 
+
+.. _tca-flexform:
 
 FlexForm integration
 ====================
@@ -195,11 +212,15 @@ Resolve FlexForm secrets using :php:`FlexFormVaultResolver`:
    }
 
 
+.. _tca-resolver-api:
+
 VaultFieldResolver API
 ======================
 
 The :php:`VaultFieldResolver` class provides utilities for working with
 vault-backed TCA fields.
+
+.. _tca-resolver-resolve-fields:
 
 resolveFields()
 ---------------
@@ -214,6 +235,8 @@ Resolve specific fields in a data array:
        false            // Throw on error (default: false)
    );
 
+.. _tca-resolver-resolve:
+
 resolve()
 ---------
 
@@ -223,6 +246,8 @@ Resolve a single vault identifier:
 
    $secret = VaultFieldResolver::resolve('tx_myext_settings__api_key__1');
 
+.. _tca-resolver-resolve-record:
+
 resolveRecord()
 ---------------
 
@@ -231,6 +256,8 @@ Automatically resolve all vault fields in a record based on TCA:
 .. code-block:: php
 
    $resolved = VaultFieldResolver::resolveRecord('tx_myext_settings', $record);
+
+.. _tca-resolver-is-identifier:
 
 isVaultIdentifier()
 -------------------
@@ -243,6 +270,8 @@ Check if a value is a vault identifier:
        // This is a vault identifier
    }
 
+.. _tca-resolver-get-fields:
+
 getVaultFieldsForTable()
 ------------------------
 
@@ -254,8 +283,12 @@ Get list of vault field names for a table:
    // Returns: ['api_key', 'api_secret']
 
 
+.. _tca-how-it-works:
+
 How it works
 ============
+
+.. _tca-data-flow:
 
 Data flow
 ---------
@@ -265,13 +298,15 @@ Data flow
 
 2. **Form submit**: The :php:`DataHandlerHook` intercepts the form data:
 
-   - Extracts the secret value from the form
-   - Generates a vault identifier: ``{table}__{field}__{uid}``
-   - Stores the secret in the vault
-   - Saves only the identifier to the database
+   - Extracts the secret value from the form.
+   - Generates a vault identifier: ``{table}__{field}__{uid}``.
+   - Stores the secret in the vault.
+   - Saves only the identifier to the database.
 
 3. **Runtime retrieval**: Your code uses :php:`VaultFieldResolver` to
    look up the actual secret from the vault.
+
+.. _tca-identifier-format:
 
 Identifier format
 -----------------
@@ -284,17 +319,23 @@ FlexForm fields: ``{table}__{flexfield}__{sheet}__{fieldpath}__{uid}``
 
 Example: ``tt_content__pi_flexform__settings__apiKey__123``
 
+.. _tca-record-operations:
+
 Record operations
 -----------------
 
-- **Create**: New vault secret is stored automatically
-- **Update**: Secret is rotated (maintains audit trail)
-- **Delete**: Vault secret is removed when record is deleted
-- **Copy**: Vault secret is copied to new record
+-  **Create**: New vault secret is stored automatically.
+-  **Update**: Secret is rotated (maintains audit trail).
+-  **Delete**: Vault secret is removed when record is deleted.
+-  **Copy**: Vault secret is copied to new record.
 
+
+.. _tca-security:
 
 Security considerations
 =======================
+
+.. _tca-security-access-control:
 
 Access control
 --------------
@@ -304,18 +345,22 @@ If a backend user can edit the record, they can update the vault secret.
 
 The reveal button requires explicit user action and is logged.
 
+.. _tca-security-audit:
+
 Audit trail
 -----------
 
 All vault operations are logged:
 
-- Secret creation
-- Secret reads (via reveal button)
-- Secret updates
-- Secret deletion
+-  Secret creation.
+-  Secret reads (via reveal button).
+-  Secret updates.
+-  Secret deletion.
 
 Review the audit log in the backend module under
 :guilabel:`Admin Tools > Vault > Audit Log`.
+
+.. _tca-security-no-plaintext:
 
 No plaintext in database
 ------------------------
@@ -324,12 +369,14 @@ Only vault identifiers are stored in your extension's database tables.
 The actual secrets are encrypted with AES-256-GCM in the vault.
 
 
+.. _tca-migration:
+
 Migration
 =========
 
 To migrate existing plaintext credentials to vault storage:
 
-1. Add the ``renderType`` to your existing TCA field configuration
+1. Add the ``renderType`` to your existing TCA field configuration.
 2. Run the migration command:
 
    .. code-block:: bash
@@ -338,9 +385,9 @@ To migrate existing plaintext credentials to vault storage:
 
 This will:
 
-- Read existing plaintext values
-- Store them securely in the vault
-- Update records with vault identifiers
+-  Read existing plaintext values.
+-  Store them securely in the vault.
+-  Update records with vault identifiers.
 
 .. attention::
 

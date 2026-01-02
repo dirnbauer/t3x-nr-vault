@@ -8,5 +8,5 @@
 .. |php_version| replace:: 8.5
 
 .. _Netresearch: https://www.netresearch.de/
-.. _GitHub: https://github.com/netresearch/nr-vault
-.. _issues: https://github.com/netresearch/nr-vault/issues
+.. _GitHub: https://github.com/netresearch/t3x-nr-vault
+.. _issues: https://github.com/netresearch/t3x-nr-vault/issues
