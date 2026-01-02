@@ -155,12 +155,9 @@ Secret placement options: `Bearer`, `BasicAuth`, `Header`, `QueryParam`, `BodyFi
 'api_key' => [
     'label' => 'API Key',
     'config' => [
-        'type' => 'user',
+        'type' => 'input',
         'renderType' => 'vaultSecret',
-        'parameters' => [
-            'vaultIdentifier' => 'my_extension_{uid}_api_key',
-            'showRotateButton' => true,
-        ],
+        'size' => 30,
     ],
 ],
 ```
@@ -178,7 +175,7 @@ vendor/bin/typo3 vault:list
 vendor/bin/typo3 vault:rotate my_secret_id --reason="Scheduled rotation"
 
 # Rotate master key (re-encrypts all DEKs)
-vendor/bin/typo3 vault:master-key:rotate --new-key-file=/path/to/new.key
+vendor/bin/typo3 vault:rotate-master-key --new-key=/path/to/new.key --confirm
 
 # View audit log
 vendor/bin/typo3 vault:audit --identifier=my_secret_id --days=30
