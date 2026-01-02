@@ -18,7 +18,7 @@ final class SecretTest extends TestCase
         $secret = new Secret();
 
         self::assertNull($secret->getUid());
-        self::assertEquals(0, $secret->getPid());
+        self::assertEquals(0, $secret->getScopePid());
         self::assertEquals('', $secret->getIdentifier());
         self::assertEquals('', $secret->getDescription());
         self::assertNull($secret->getEncryptedValue());
@@ -113,7 +113,7 @@ final class SecretTest extends TestCase
     {
         $row = [
             'uid' => 42,
-            'pid' => 1,
+            'scope_pid' => 1,
             'identifier' => 'api-key',
             'description' => 'Payment gateway API key',
             'encrypted_value' => 'base64_encrypted_data',
@@ -143,7 +143,7 @@ final class SecretTest extends TestCase
         $secret = Secret::fromDatabaseRow($row);
 
         self::assertEquals(42, $secret->getUid());
-        self::assertEquals(1, $secret->getPid());
+        self::assertEquals(1, $secret->getScopePid());
         self::assertEquals('api-key', $secret->getIdentifier());
         self::assertEquals('Payment gateway API key', $secret->getDescription());
         self::assertEquals('base64_encrypted_data', $secret->getEncryptedValue());
@@ -190,7 +190,7 @@ final class SecretTest extends TestCase
     {
         $secret = new Secret();
         $secret
-            ->setPid(1)
+            ->setScopePid(1)
             ->setIdentifier('test-secret')
             ->setDescription('Test secret')
             ->setEncryptedValue('encrypted')
@@ -210,7 +210,7 @@ final class SecretTest extends TestCase
 
         $row = $secret->toDatabaseRow();
 
-        self::assertEquals(1, $row['pid']);
+        self::assertEquals(1, $row['scope_pid']);
         self::assertEquals('test-secret', $row['identifier']);
         self::assertEquals('Test secret', $row['description']);
         self::assertEquals('encrypted', $row['encrypted_value']);

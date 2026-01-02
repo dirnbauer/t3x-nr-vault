@@ -23,18 +23,24 @@ const generateTestId = () => `e2e_tca_${Date.now()}_${Math.random().toString(36)
 test.describe('TYPO3 FormEngine/TCA Integration', () => {
   test.describe('TCA-001: FormEngine Edit Form Rendering', () => {
     test('can load FormEngine for tx_nrvault_secret record', async ({ authenticatedPage: page }) => {
-      // First create a secret via our module
+      // First create a secret via FormEngine (create action redirects to FormEngine now)
       const testIdentifier = generateTestId();
 
       await page.goto('/typo3/module/admin/vault/secrets/create');
       await waitForModuleContent(page);
 
       let frame = getModuleFrame(page);
-      await frame.locator('input[name="identifier"]').fill(testIdentifier);
-      await frame.locator('input[name="secret"]').fill('formengine-test-secret');
-      await frame.locator('button[type="submit"]').click();
+      // Use FormEngine field selectors
+      await frame.locator('input[data-formengine-input-name*="identifier"]').fill(testIdentifier);
+      // For VaultSecretInputElement, new records have data-vault-is-new="1"
+      const secretInput = frame.locator('input[data-vault-is-new="1"]').first();
+      await secretInput.fill('formengine-test-secret');
+      // Click save button - try multiple selectors
+      const saveButton = frame.locator('button[name="_savedok"], button:has-text("Save")').first();
+      await saveButton.click();
 
-      await page.waitForTimeout(1000);
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(2000);
 
       // Get the UID of the created record by finding it in the list
       await page.goto('/typo3/module/admin/vault/secrets');
@@ -46,37 +52,29 @@ test.describe('TYPO3 FormEngine/TCA Integration', () => {
 
       await page.waitForTimeout(1000);
 
-      // Find a view/edit link in the table and extract the UID
+      // Find edit button in the filtered table row (pencil icon button)
+      // The identifier is not shown in the table, so we select by the row in the filtered result
       frame = getModuleFrame(page);
-      const viewLink = frame.locator(`a[href*="${testIdentifier}"], tr:has-text("${testIdentifier}") a`).first();
+      const editButton = frame.locator('table tbody tr button[title*="Edit"], table tbody tr a[title*="Edit"]').first();
 
-      if (await viewLink.isVisible()) {
-        // Now try the native FormEngine URL - we need to get the record UID
-        // Use the database to find records or try with edit URL pattern
-        const response = await page.goto('/typo3/record/edit?edit[tx_nrvault_secret][1]=edit');
+      // Verify filter worked - should have 1 result
+      const secretsCount = frame.getByLabel('secrets found');
+      await expect(secretsCount).toBeVisible();
 
-        // The response might be 200 even if FormEngine fails internally
-        // We need to check for error messages in the content
-        await waitForModuleContent(page);
+      // Click edit button to go to FormEngine
+      await editButton.click();
+      await waitForModuleContent(page);
 
-        const newFrame = getModuleFrame(page);
+      const newFrame = getModuleFrame(page);
 
-        // Critical check: No 503 error or PHP fatal error
-        await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
-        await expect(newFrame.locator('.callout-danger:has-text("503")')).not.toBeVisible();
-        await expect(newFrame.locator('text=str_starts_with')).not.toBeVisible();
+      // Critical check: No 503 error or PHP fatal error
+      await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
+      await expect(newFrame.locator('.callout-danger:has-text("503")')).not.toBeVisible();
+      await expect(newFrame.locator('text=str_starts_with')).not.toBeVisible();
 
-        // FormEngine should render successfully
-        // Look for typical FormEngine elements
-        const formEngineForm = newFrame.locator('form.editform, form[name="editform"]');
-        const tabs = newFrame.locator('.nav-tabs, [role="tablist"]');
-
-        const hasForm = await formEngineForm.first().isVisible();
-        const hasTabs = await tabs.first().isVisible();
-
-        // At least one should be visible for a working FormEngine
-        expect(hasForm || hasTabs).toBe(true);
-      }
+      // FormEngine should render successfully with tabs
+      const tabs = newFrame.locator('[role="tablist"], .nav-tabs');
+      await expect(tabs.first()).toBeVisible();
     });
 
     test('FormEngine renders without PHP errors for any secret record', async ({ authenticatedPage: page }) => {
