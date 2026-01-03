@@ -16,6 +16,7 @@ vault:init
 Initialize the vault by creating a master key.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:init [options]
 
@@ -39,6 +40,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:init examples
 
    # Initialize with default location
    vendor/bin/typo3 vault:init
@@ -62,6 +64,7 @@ vault:store
 Store a secret in the vault.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:store <identifier> [options]
 
@@ -99,6 +102,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:store examples
 
    # Interactive (prompts for secret)
    vendor/bin/typo3 vault:store stripe_api_key
@@ -119,6 +123,7 @@ vault:retrieve
 Retrieve a secret from the vault.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:retrieve <identifier> [options]
 
@@ -136,6 +141,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:retrieve examples
 
    # Display with metadata
    vendor/bin/typo3 vault:retrieve stripe_api_key
@@ -151,6 +157,7 @@ vault:list
 List all accessible secrets.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:list [options]
 
@@ -171,6 +178,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:list examples
 
    # List all secrets
    vendor/bin/typo3 vault:list
@@ -189,6 +197,7 @@ vault:rotate
 Rotate a secret with a new value.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:rotate <identifier> [options]
 
@@ -209,6 +218,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:rotate example
 
    vendor/bin/typo3 vault:rotate stripe_api_key \
      --reason="Scheduled quarterly rotation"
@@ -221,6 +231,7 @@ vault:delete
 Delete a secret from the vault.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:delete <identifier> [options]
 
@@ -241,6 +252,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:delete example
 
    vendor/bin/typo3 vault:delete old_api_key \
      --reason="Service deprecated" \
@@ -254,6 +266,7 @@ vault:audit
 View the audit log.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:audit [options]
 
@@ -283,6 +296,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:audit examples
 
    # View recent audit log
    vendor/bin/typo3 vault:audit --days=7
@@ -301,6 +315,7 @@ vault:rotate-master-key
 Rotate the master encryption key. Re-encrypts all DEKs with a new master key.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:rotate-master-key [options]
 
@@ -332,6 +347,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:rotate-master-key examples
 
    # Old key from file, new key from current config
    vendor/bin/typo3 vault:rotate-master-key \
@@ -357,6 +373,7 @@ vault:scan
 Scan for potential plaintext secrets in database and configuration.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:scan [options]
 
@@ -412,6 +429,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:scan examples
 
    # Scan all sources
    vendor/bin/typo3 vault:scan
@@ -433,6 +451,7 @@ vault:migrate-field
 Migrate existing plaintext database field values to vault storage.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:migrate-field <table> <field> [options]
 
@@ -480,6 +499,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:migrate-field examples
 
    # Preview migration
    vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key --dry-run
@@ -502,6 +522,7 @@ secrets may become orphaned. This command identifies and removes such orphaned
 secrets.
 
 .. code-block:: bash
+   :caption: Command syntax
 
    vendor/bin/typo3 vault:cleanup-orphans [options]
 
@@ -528,6 +549,7 @@ Example
 -------
 
 .. code-block:: bash
+   :caption: vault:cleanup-orphans examples
 
    # Preview orphan cleanup
    vendor/bin/typo3 vault:cleanup-orphans --dry-run

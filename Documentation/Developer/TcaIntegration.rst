@@ -70,6 +70,7 @@ Step 3: Add database column
 Add the column to your extension's :file:`ext_tables.sql`:
 
 .. code-block:: sql
+   :caption: EXT:my_extension/ext_tables.sql
 
    CREATE TABLE tx_myext_settings (
        api_key varchar(255) DEFAULT '' NOT NULL
@@ -85,6 +86,7 @@ Step 4: Retrieve secrets in code
 Use the :php:`VaultFieldResolver` utility to retrieve actual secret values:
 
 .. code-block:: php
+   :caption: Resolve vault fields in code
 
    use Netresearch\NrVault\Utility\VaultFieldResolver;
 
@@ -184,6 +186,7 @@ Vault secrets also work in FlexForm fields:
 Resolve FlexForm secrets using :php:`FlexFormVaultResolver`:
 
 .. code-block:: php
+   :caption: Resolve FlexForm vault fields
 
    use Netresearch\NrVault\Utility\FlexFormVaultResolver;
    use TYPO3\CMS\Core\Service\FlexFormService;
@@ -228,6 +231,7 @@ resolveFields()
 Resolve specific fields in a data array:
 
 .. code-block:: php
+   :caption: VaultFieldResolver::resolveFields()
 
    $resolved = VaultFieldResolver::resolveFields(
        $data,           // Array with potential vault identifiers
@@ -243,6 +247,7 @@ resolve()
 Resolve a single vault identifier:
 
 .. code-block:: php
+   :caption: VaultFieldResolver::resolve()
 
    $secret = VaultFieldResolver::resolve('tx_myext_settings__api_key__1');
 
@@ -254,6 +259,7 @@ resolveRecord()
 Automatically resolve all vault fields in a record based on TCA:
 
 .. code-block:: php
+   :caption: VaultFieldResolver::resolveRecord()
 
    $resolved = VaultFieldResolver::resolveRecord('tx_myext_settings', $record);
 
@@ -265,6 +271,7 @@ isVaultIdentifier()
 Check if a value is a vault identifier:
 
 .. code-block:: php
+   :caption: VaultFieldResolver::isVaultIdentifier()
 
    if (VaultFieldResolver::isVaultIdentifier($value)) {
        // This is a vault identifier
@@ -278,6 +285,7 @@ getVaultFieldsForTable()
 Get list of vault field names for a table:
 
 .. code-block:: php
+   :caption: VaultFieldResolver::getVaultFieldsForTable()
 
    $fields = VaultFieldResolver::getVaultFieldsForTable('tx_myext_settings');
    // Returns: ['api_key', 'api_secret']
@@ -380,6 +388,7 @@ To migrate existing plaintext credentials to vault storage:
 2. Run the migration command:
 
    .. code-block:: bash
+      :caption: Migrate existing field to vault
 
       vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key
 

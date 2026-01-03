@@ -48,6 +48,7 @@ Custom storage adapters
 Implement :php:`VaultAdapterInterface` to add new storage backends:
 
 .. code-block:: php
+   :caption: EXT:my_extension/Classes/Adapter/CustomAdapter.php
 
    namespace MyVendor\MyExtension\Adapter;
 
@@ -105,6 +106,7 @@ Implement :php:`VaultAdapterInterface` to add new storage backends:
 Register in :file:`Services.yaml`:
 
 .. code-block:: yaml
+   :caption: EXT:my_extension/Configuration/Services.yaml
 
    MyVendor\MyExtension\Adapter\CustomAdapter:
      tags:
@@ -119,6 +121,7 @@ Custom master key providers
 Implement :php:`MasterKeyProviderInterface` for custom key sources:
 
 .. code-block:: php
+   :caption: EXT:my_extension/Classes/Crypto/VaultKeyProvider.php
 
    namespace MyVendor\MyExtension\Crypto;
 
@@ -180,6 +183,7 @@ MasterKeyRotatedEvent
 Example listener:
 
 .. code-block:: php
+   :caption: EXT:my_extension/Classes/EventListener/SecretAccessLogger.php
 
    namespace MyVendor\MyExtension\EventListener;
 
@@ -208,6 +212,7 @@ Development setup
 Use DDEV for local development:
 
 .. code-block:: bash
+   :caption: Start DDEV environment
 
    ddev start
    ddev install-v14
@@ -219,6 +224,7 @@ Running tests
 -------------
 
 .. code-block:: bash
+   :caption: Run test suites
 
    # All tests
    ddev exec composer test
@@ -235,6 +241,7 @@ Code quality
 ------------
 
 .. code-block:: bash
+   :caption: Run code quality tools
 
    # PHP-CS-Fixer
    ddev exec composer fix

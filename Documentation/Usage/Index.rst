@@ -94,6 +94,7 @@ TypoScript integration
 Use vault references in TypoScript for frontend-accessible secrets:
 
 .. code-block:: typoscript
+   :caption: TypoScript vault reference
 
    lib.googleMapsKey = TEXT
    lib.googleMapsKey.value = %vault(google_maps_api_key)%
@@ -113,6 +114,7 @@ Use vault references in TypoScript for frontend-accessible secrets:
 Example with caching disabled:
 
 .. code-block:: typoscript
+   :caption: Disable caching for secrets
 
    lib.apiKey = TEXT
    lib.apiKey {
@@ -133,6 +135,7 @@ vault:init
 Initialize the vault and generate a master key:
 
 .. code-block:: bash
+   :caption: Initialize vault
 
    vendor/bin/typo3 vault:init
 
@@ -150,6 +153,7 @@ vault:store
 Create or update a secret:
 
 .. code-block:: bash
+   :caption: Store a secret
 
    # Interactive (prompts for value)
    vendor/bin/typo3 vault:store stripe_api_key
@@ -170,6 +174,7 @@ vault:retrieve
 Retrieve a secret value:
 
 .. code-block:: bash
+   :caption: Retrieve a secret
 
    vendor/bin/typo3 vault:retrieve stripe_api_key
 
@@ -184,6 +189,7 @@ vault:list
 List all accessible secrets:
 
 .. code-block:: bash
+   :caption: List secrets
 
    vendor/bin/typo3 vault:list
 
@@ -201,6 +207,7 @@ vault:rotate
 Rotate a secret with a new value:
 
 .. code-block:: bash
+   :caption: Rotate a secret
 
    vendor/bin/typo3 vault:rotate stripe_api_key \
      --reason="Scheduled quarterly rotation"
@@ -213,6 +220,7 @@ vault:delete
 Delete a secret:
 
 .. code-block:: bash
+   :caption: Delete a secret
 
    vendor/bin/typo3 vault:delete old_api_key \
      --reason="Service deprecated" \
@@ -226,6 +234,7 @@ vault:audit
 View the audit log:
 
 .. code-block:: bash
+   :caption: View audit log
 
    # View recent entries
    vendor/bin/typo3 vault:audit --days=7
@@ -244,6 +253,7 @@ vault:rotate-master-key
 Rotate the master encryption key (re-encrypts all DEKs):
 
 .. code-block:: bash
+   :caption: Rotate master key
 
    # Using old key from file, new key from current config
    vendor/bin/typo3 vault:rotate-master-key \
@@ -263,6 +273,7 @@ vault:scan
 Scan for potential plaintext secrets in database:
 
 .. code-block:: bash
+   :caption: Scan for plaintext secrets
 
    vendor/bin/typo3 vault:scan
 
@@ -280,6 +291,7 @@ vault:migrate-field
 Migrate existing plaintext field values to vault:
 
 .. code-block:: bash
+   :caption: Migrate field to vault
 
    # Preview
    vendor/bin/typo3 vault:migrate-field tx_myext_settings api_key --dry-run
@@ -295,6 +307,7 @@ vault:cleanup-orphans
 Remove orphaned secrets from deleted records:
 
 .. code-block:: bash
+   :caption: Clean up orphaned secrets
 
    vendor/bin/typo3 vault:cleanup-orphans --dry-run
    vendor/bin/typo3 vault:cleanup-orphans --retention-days=30
@@ -312,6 +325,7 @@ VaultService
 Inject the VaultService to access secrets programmatically:
 
 .. code-block:: php
+   :caption: Inject and use VaultService
 
    use Netresearch\NrVault\Service\VaultServiceInterface;
 
@@ -333,6 +347,7 @@ Storing secrets
 ~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: Store secret with options
 
    $this->vaultService->store(
        identifier: 'payment_api_key',
@@ -351,6 +366,7 @@ Checking existence
 ~~~~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: Check if secret exists
 
    if ($this->vaultService->exists('stripe_api_key')) {
        $value = $this->vaultService->retrieve('stripe_api_key');
@@ -362,6 +378,7 @@ Listing secrets
 ~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: List secrets programmatically
 
    // Get all accessible secrets
    $secrets = $this->vaultService->list();
@@ -378,6 +395,7 @@ Make authenticated API calls without exposing secrets to your code.
 Inject :php:`VaultHttpClientInterface` directly:
 
 .. code-block:: php
+   :caption: HTTP client with vault authentication
 
    use Netresearch\NrVault\Http\SecretPlacement;
    use Netresearch\NrVault\Http\VaultHttpClientInterface;
@@ -405,6 +423,7 @@ Inject :php:`VaultHttpClientInterface` directly:
 Or access via VaultService:
 
 .. code-block:: php
+   :caption: HTTP client via VaultService
 
    $response = $this->vaultService->http()->post(
        'https://api.stripe.com/v1/charges',
@@ -421,6 +440,7 @@ Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: Authentication placement options
 
    use Netresearch\NrVault\Http\SecretPlacement;
 

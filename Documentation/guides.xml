@@ -4,13 +4,12 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="https://www.phpdoc.org/guides vendor/phpdocumentor/guides-cli/resources/schema/guides.xsd"
     theme="typo3docs"
-    links-are-relative="true"
 >
     <project
         title="nr-vault"
         version="1.0"
         release="1.0.0"
-        copyright="Netresearch DTT GmbH"
+        copyright="since 2024 by Netresearch DTT GmbH"
     />
 
     <extension
@@ -22,6 +21,7 @@
         project-issues="https://github.com/netresearch/t3x-nr-vault/issues"
         edit-on-github="netresearch/t3x-nr-vault"
         edit-on-github-branch="main"
+        interlink-shortcode="netresearch/nr-vault"
     />
 
     <inventory id="t3coreapi" url="https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/"/>

@@ -94,6 +94,7 @@ Storing a secret
 ~~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: Store a secret with VaultService
 
    use Netresearch\NrVault\Service\VaultServiceInterface;
 
@@ -124,6 +125,7 @@ Retrieving a secret
 ~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: Retrieve a secret value
 
    public function getApiKey(): ?string
    {
@@ -145,6 +147,7 @@ Direct injection (recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: Inject VaultHttpClientInterface
 
    use Netresearch\NrVault\Http\SecretPlacement;
    use Netresearch\NrVault\Http\VaultHttpClientInterface;
@@ -175,6 +178,7 @@ Via VaultService
 ~~~~~~~~~~~~~~~~
 
 .. code-block:: php
+   :caption: HTTP client via VaultService
 
    $response = $this->vaultService->http()->post(
        'https://api.stripe.com/v1/charges',
@@ -259,6 +263,7 @@ reason
 .. _api-http-auth-examples:
 
 .. code-block:: php
+   :caption: Authentication examples
 
    use Netresearch\NrVault\Http\SecretPlacement;
 

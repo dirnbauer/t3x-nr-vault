@@ -26,6 +26,7 @@ Installation via Composer
 Install the extension using Composer:
 
 .. code-block:: bash
+   :caption: Install via Composer
 
    composer require netresearch/nr-vault
 
@@ -43,6 +44,7 @@ After installation, activate the extension in the TYPO3 backend:
 Or use the command line:
 
 .. code-block:: bash
+   :caption: Activate extension via CLI
 
    vendor/bin/typo3 extension:activate nr_vault
 
@@ -54,6 +56,7 @@ Database schema
 Update the database schema to create the required tables:
 
 .. code-block:: bash
+   :caption: Update database schema
 
    vendor/bin/typo3 database:updateschema
 
@@ -85,12 +88,14 @@ The fastest way to get started is using an environment variable:
 1. Generate a master key:
 
    .. code-block:: bash
+      :caption: Generate master key
 
       openssl rand -base64 32
 
 2. Set the environment variable:
 
    .. code-block:: bash
+      :caption: Set environment variable
 
       export NR_VAULT_MASTER_KEY="your-generated-key"
 
@@ -105,6 +110,7 @@ Verify installation
 Verify the installation by listing secrets (should return empty if newly installed):
 
 .. code-block:: bash
+   :caption: List vault secrets
 
    vendor/bin/typo3 vault:list
 
@@ -113,6 +119,7 @@ If the command executes without errors, the extension is properly configured.
 You can also test by storing and retrieving a test secret:
 
 .. code-block:: bash
+   :caption: Test vault functionality
 
    # Store a test secret
    vendor/bin/typo3 vault:store test_secret --value="test-value"

@@ -14,7 +14,7 @@ Extension configuration
 Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuration`.
 
 .. confval:: storageAdapter
-   :name: confval-storageadapter
+   :name: ext-nrvault-storageAdapter
    :type: string
    :Default: local
    :Options: local, hashicorp, aws
@@ -32,7 +32,7 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
       Use AWS Secrets Manager. Requires AWS credentials configuration.
 
 .. confval:: masterKeyProvider
-   :name: confval-masterkeyprovider
+   :name: ext-nrvault-masterKeyProvider
    :type: string
    :Default: typo3
    :Options: typo3, file, env
@@ -50,7 +50,7 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
       Read from an environment variable.
 
 .. confval:: masterKeySource
-   :name: confval-masterkeysource
+   :name: ext-nrvault-masterKeySource
    :type: string
    :Default: NR_VAULT_MASTER_KEY
 
@@ -61,14 +61,14 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
    -  **typo3**: Not used (key derived from TYPO3's encryption key).
 
 .. confval:: allowCliAccess
-   :name: confval-allowcliaccess
+   :name: ext-nrvault-allowCliAccess
    :type: boolean
    :Default: false
 
    Allow CLI commands to access secrets without a backend user session.
 
 .. confval:: cliAccessGroups
-   :name: confval-cliaccessgroups
+   :name: ext-nrvault-cliAccessGroups
    :type: string
    :Default: empty
 
@@ -76,14 +76,14 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
    Empty means all secrets are accessible when CLI access is enabled.
 
 .. confval:: auditLogRetention
-   :name: confval-auditlogretention
+   :name: ext-nrvault-auditLogRetention
    :type: integer
    :Default: 365
 
    Number of days to retain audit log entries. Set to 0 for unlimited retention.
 
 .. confval:: preferXChaCha20
-   :name: confval-preferxchacha20
+   :name: ext-nrvault-preferXChaCha20
    :type: boolean
    :Default: false
 
@@ -113,6 +113,7 @@ nr-vault-specific context, ensuring it cannot be used to compromise other
 TYPO3 functionality.
 
 .. code-block:: php
+   :caption: Master key derivation (internal)
 
    // How it works internally
    $masterKey = hash_hkdf(
@@ -136,6 +137,7 @@ File provider
 Store the master key in a file with restrictive permissions:
 
 .. code-block:: bash
+   :caption: Create master key file
 
    # Generate a new key
    openssl rand -base64 32 > /secure/path/vault-master.key
@@ -143,8 +145,8 @@ Store the master key in a file with restrictive permissions:
 
 Configure in extension settings:
 
--  :confval:`masterKeyProvider <confval-masterkeyprovider>`: file
--  :confval:`masterKeySource <confval-masterkeysource>`: /secure/path/vault-master.key
+-  :confval:`masterKeyProvider <ext-nrvault-masterKeyProvider>`: file
+-  :confval:`masterKeySource <ext-nrvault-masterKeySource>`: /secure/path/vault-master.key
 
 .. warning::
 
@@ -163,13 +165,14 @@ Environment provider
 Store the master key in an environment variable:
 
 .. code-block:: bash
+   :caption: Set master key via environment
 
    export NR_VAULT_MASTER_KEY="base64-encoded-key"
 
 Configure in extension settings:
 
--  :confval:`masterKeyProvider <confval-masterkeyprovider>`: env
--  :confval:`masterKeySource <confval-masterkeysource>`: NR_VAULT_MASTER_KEY
+-  :confval:`masterKeyProvider <ext-nrvault-masterKeyProvider>`: env
+-  :confval:`masterKeySource <ext-nrvault-masterKeySource>`: NR_VAULT_MASTER_KEY
 
 This is ideal for containerized deployments where secrets are injected
 via environment variables.
@@ -184,7 +187,7 @@ Access to secrets is controlled by:
 1. **Ownership**: The user who created the secret has full access.
 2. **Group membership**: Secrets can be shared with backend user groups.
 3. **Admin access**: Backend administrators have access to all secrets.
-4. **CLI access**: Configurable via :confval:`allowCliAccess <confval-allowcliaccess>`.
+4. **CLI access**: Configurable via :confval:`allowCliAccess <ext-nrvault-allowCliAccess>`.
 
 .. _configuration-context:
 
@@ -232,6 +235,7 @@ To allow a secret to be used in TypoScript:
 2. Use the :typoscript:`%vault(identifier)%` syntax in TypoScript.
 
 .. code-block:: php
+   :caption: Store frontend-accessible secret
 
    $this->vaultService->store(
        'google_maps_key',
