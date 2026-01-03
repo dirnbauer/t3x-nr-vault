@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Command;
 
 use DateTimeImmutable;
 use Exception;
+use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -147,44 +148,45 @@ final class VaultAuditCommand extends Command
         }
     }
 
-    private function buildFilters(InputInterface $input): array
+    private function buildFilters(InputInterface $input): ?AuditLogFilter
     {
-        $filters = [];
+        $secretIdentifier = $input->getOption('identifier');
+        $action = $input->getOption('action');
+        $actor = $input->getOption('actor');
+        $successOption = $input->getOption('success');
 
-        if ($input->getOption('identifier')) {
-            $filters['secretIdentifier'] = $input->getOption('identifier');
-        }
-
-        if ($input->getOption('action')) {
-            $filters['action'] = $input->getOption('action');
-        }
-
-        if ($input->getOption('actor')) {
-            $filters['actorUid'] = (int) $input->getOption('actor');
-        }
-
+        $since = null;
         if ($input->getOption('since')) {
             try {
-                $filters['since'] = new DateTimeImmutable($input->getOption('since'));
+                $since = new DateTimeImmutable($input->getOption('since'));
             } catch (Exception) {
                 // Invalid date, skip
             }
         }
 
+        $until = null;
         if ($input->getOption('until')) {
             try {
-                $filters['until'] = new DateTimeImmutable($input->getOption('until'));
+                $until = new DateTimeImmutable($input->getOption('until'));
             } catch (Exception) {
                 // Invalid date, skip
             }
         }
 
-        $success = $input->getOption('success');
-        if ($success !== null) {
-            $filters['success'] = filter_var($success, FILTER_VALIDATE_BOOLEAN);
-        }
+        $success = $successOption !== null
+            ? filter_var($successOption, FILTER_VALIDATE_BOOLEAN)
+            : null;
 
-        return $filters;
+        $filter = new AuditLogFilter(
+            secretIdentifier: \is_string($secretIdentifier) ? $secretIdentifier : null,
+            action: \is_string($action) ? $action : null,
+            actorUid: $actor !== null ? (int) $actor : null,
+            success: $success,
+            since: $since,
+            until: $until,
+        );
+
+        return $filter->isEmpty() ? null : $filter;
     }
 
     private function verifyHashChain(SymfonyStyle $io): int

@@ -6,6 +6,8 @@ namespace Netresearch\NrVault\Controller;
 
 use DateTimeImmutable;
 use Exception;
+use Netresearch\NrVault\Audit\AuditLogEntry;
+use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -63,14 +65,16 @@ final readonly class AuditController
 
         // Merge POST body with query params (POST takes precedence for filters)
         $filterParams = array_merge($queryParams, $bodyArray);
-        $filters = $this->buildAuditFilters($filterParams);
+        $filterData = $this->buildAuditFilters($filterParams);
+        $filter = $filterData['filter'];
+        $formData = $filterData['form'];
 
         $page = max(1, (int) ($filterParams['page'] ?? 1));
         $limit = 50;
         $offset = ($page - 1) * $limit;
 
-        $entries = $this->auditLogService->query($filters, $limit, $offset);
-        $totalCount = $this->auditLogService->count($filters);
+        $entries = $this->auditLogService->query($filter, $limit, $offset);
+        $totalCount = $this->auditLogService->count($filter);
         $totalPages = (int) ceil($totalCount / $limit);
 
         // Format entries and group by date
@@ -103,11 +107,11 @@ final readonly class AuditController
 
         // Build pagination URLs with filter parameters preserved
         $baseFilterParams = array_filter([
-            'secretIdentifier' => $filters['_form']['secretIdentifier'] ?? '',
-            'filterAction' => $filters['_form']['action'] ?? '',
-            'success' => $filters['_form']['success'] ?? '',
-            'since' => $filters['_form']['since'] ?? '',
-            'until' => $filters['_form']['until'] ?? '',
+            'secretIdentifier' => $formData['secretIdentifier'],
+            'filterAction' => $formData['action'],
+            'success' => $formData['success'],
+            'since' => $formData['since'],
+            'until' => $formData['until'],
         ], static fn ($v): bool => $v !== '');
 
         $pagination = [
@@ -124,7 +128,7 @@ final readonly class AuditController
             'totalCount' => $totalCount,
             'currentPage' => $page,
             'totalPages' => $totalPages,
-            'filters' => $filters,
+            'filters' => ['_form' => $formData],
             'pagination' => $pagination,
             'isAdmin' => $this->isAdmin(),
             'actions' => ['create', 'read', 'update', 'delete', 'rotate', 'access_denied', 'http_call'],
@@ -192,81 +196,96 @@ final readonly class AuditController
         $queryParams = $request->getQueryParams();
         $format = $queryParams['format'] ?? 'json';
 
-        $filters = $this->buildAuditFilters($queryParams);
+        $filterData = $this->buildAuditFilters($queryParams);
 
-        $data = $this->auditLogService->export($filters);
+        $entries = $this->auditLogService->export($filterData['filter']);
 
         if ($format === 'csv') {
-            return $this->exportAsCsv($data);
+            return $this->exportAsCsv($entries);
         }
 
+        // JSON: AuditLogEntry implements JsonSerializable, encode directly
         $response = new Response();
-        $response->getBody()->write(json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        $response->getBody()->write(json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
 
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . date('Y-m-d') . '.json"');
     }
 
+    /**
+     * Build audit log filter and form data from request parameters.
+     *
+     * @param array<string, mixed> $queryParams
+     *
+     * @return array{filter: ?AuditLogFilter, form: array<string, string>}
+     */
     private function buildAuditFilters(array $queryParams): array
     {
-        $filters = [];
-
-        // Store raw values for form repopulation
-        $filters['_form'] = [
-            'secretIdentifier' => $queryParams['secretIdentifier'] ?? '',
-            'action' => $queryParams['filterAction'] ?? '',
-            'success' => $queryParams['success'] ?? '',
-            'since' => $queryParams['since'] ?? '',
-            'until' => $queryParams['until'] ?? '',
+        // Form values for repopulation (always strings for form fields)
+        $formData = [
+            'secretIdentifier' => (string) ($queryParams['secretIdentifier'] ?? ''),
+            'action' => (string) ($queryParams['filterAction'] ?? ''),
+            'success' => (string) ($queryParams['success'] ?? ''),
+            'since' => (string) ($queryParams['since'] ?? ''),
+            'until' => (string) ($queryParams['until'] ?? ''),
         ];
 
-        // Query parameters for the service (only if set and not empty)
-        if (!empty($queryParams['secretIdentifier'])) {
-            $filters['secretIdentifier'] = $queryParams['secretIdentifier'];
-        }
-
-        if (!empty($queryParams['filterAction'])) {
-            $filters['action'] = $queryParams['filterAction'];
-        }
-
-        if (!empty($queryParams['actorUid'])) {
-            $filters['actorUid'] = (int) $queryParams['actorUid'];
-        }
-
-        if (isset($queryParams['success']) && $queryParams['success'] !== '') {
-            $filters['success'] = (bool) (int) $queryParams['success'];
-        }
-
+        // Parse dates
+        $since = null;
         if (!empty($queryParams['since'])) {
             try {
-                $filters['since'] = new DateTimeImmutable($queryParams['since']);
+                $since = new DateTimeImmutable($queryParams['since']);
             } catch (Exception) {
             }
         }
 
+        $until = null;
         if (!empty($queryParams['until'])) {
             try {
-                $filters['until'] = new DateTimeImmutable($queryParams['until']);
+                $until = new DateTimeImmutable($queryParams['until']);
             } catch (Exception) {
             }
         }
 
-        return $filters;
+        // Parse success filter
+        $success = null;
+        if (isset($queryParams['success']) && $queryParams['success'] !== '') {
+            $success = (bool) (int) $queryParams['success'];
+        }
+
+        $filter = new AuditLogFilter(
+            secretIdentifier: !empty($queryParams['secretIdentifier']) ? (string) $queryParams['secretIdentifier'] : null,
+            action: !empty($queryParams['filterAction']) ? (string) $queryParams['filterAction'] : null,
+            actorUid: !empty($queryParams['actorUid']) ? (int) $queryParams['actorUid'] : null,
+            success: $success,
+            since: $since,
+            until: $until,
+        );
+
+        return [
+            'filter' => $filter->isEmpty() ? null : $filter,
+            'form' => $formData,
+        ];
     }
 
-    private function exportAsCsv(array $data): ResponseInterface
+    /**
+     * @param list<AuditLogEntry> $entries
+     */
+    private function exportAsCsv(array $entries): ResponseInterface
     {
         $response = new Response();
         $output = fopen('php://temp', 'r+');
 
-        if ($data === []) {
+        if ($entries === []) {
             fwrite($output, "No data\n");
         } else {
-            fputcsv($output, array_keys($data[0]), escape: '\\');
+            $first = $entries[0]->jsonSerialize();
+            fputcsv($output, array_keys($first), escape: '\\');
 
-            foreach ($data as $row) {
-                if (isset($row['context']) && \is_array($row['context'])) {
+            foreach ($entries as $entry) {
+                $row = $entry->jsonSerialize();
+                if (\is_array($row['context'])) {
                     $row['context'] = json_encode($row['context']);
                 }
                 fputcsv($output, $row, escape: '\\');
