@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
 
+use JsonSerializable;
+
 /**
  * Represents an audit log entry.
  */
-final readonly class AuditLogEntry
+final readonly class AuditLogEntry implements JsonSerializable
 {
+    /**
+     * @param array<string, mixed> $context
+     */
     public function __construct(
         public int $uid,
         public string $secretIdentifier,
@@ -68,9 +73,9 @@ final readonly class AuditLogEntry
     }
 
     /**
-     * Convert to array for export.
+     * @return array<string, scalar|array<string, mixed>|null>
      */
-    public function toArray(): array
+    public function jsonSerialize(): array
     {
         return [
             'uid' => $this->uid,
