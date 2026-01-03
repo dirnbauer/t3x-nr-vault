@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http;
 
-use GuzzleHttp\Client;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
@@ -24,12 +23,24 @@ use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * PSR-18 HTTP client that injects vault secrets as authentication.
  *
  * This is an immutable, fluent PSR-18 client. Configure authentication
  * with withAuthentication() or withOAuth(), then send requests with sendRequest().
+ *
+ * TYPO3 HTTP Settings:
+ * This client respects TYPO3's HTTP configuration ($GLOBALS['TYPO3_CONF_VARS']['HTTP']):
+ * - proxy: Corporate proxy settings from TYPO3 or environment (HTTP_PROXY, HTTPS_PROXY)
+ * - verify, cert, ssl_key: SSL/TLS certificate configuration
+ * - timeout, connect_timeout: Connection timeouts
+ * - allow_redirects: Redirect behavior
+ *
+ * Security Hardening:
+ * - debug is always disabled to prevent request/response logging that could expose secrets
+ * - http_errors is disabled so this client can handle errors and audit them properly
  *
  * Supports various authentication types via SecretPlacement enum:
  * - Bearer: Bearer token in Authorization header
@@ -41,6 +52,10 @@ use Psr\Http\Message\ResponseInterface;
  * - ApiKey: X-API-Key header (shorthand)
  *
  * @example
+ *     // Create request using TYPO3's RequestFactory
+ *     $requestFactory = GeneralUtility::makeInstance(RequestFactory::class);
+ *     $request = $requestFactory->createRequest('GET', 'https://api.example.com/data');
+ *
  *     // Bearer token authentication
  *     $client = $vault->http()->withAuthentication('stripe_key', SecretPlacement::Bearer);
  *     $response = $client->sendRequest($request);
@@ -48,6 +63,8 @@ use Psr\Http\Message\ResponseInterface;
  *     // OAuth 2.0
  *     $client = $vault->http()->withOAuth($oauthConfig);
  *     $response = $client->sendRequest($request);
+ *
+ * @see SecureHttpClientFactory for TYPO3 HTTP configuration handling
  */
 final readonly class VaultHttpClient implements VaultHttpClientInterface
 {
@@ -81,11 +98,13 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
         private ?string $usernameSecretIdentifier = null,
         private string $reason = 'HTTP API call',
     ) {
-        $this->innerClient = $innerClient ?? new Client([
-            'timeout' => 30,
-            'connect_timeout' => 10,
-            'http_errors' => false,
-        ]);
+        if ($innerClient !== null) {
+            $this->innerClient = $innerClient;
+        } else {
+            // Use factory that respects TYPO3's HTTP settings with security hardening
+            $factory = GeneralUtility::makeInstance(SecureHttpClientFactory::class);
+            $this->innerClient = $factory->create();
+        }
         $this->oauthManager = new OAuthTokenManager($this->vaultService);
     }
 
