@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Service;
 
+use Netresearch\NrVault\Service\Detection\Severity;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -228,7 +229,7 @@ final class SecretDetectionServiceTest extends TestCase
 
     #[Test]
     #[DataProvider('severityProvider')]
-    public function calculatesSeverityCorrectly(string $name, array $patterns, string $expectedSeverity): void
+    public function calculatesSeverityCorrectly(string $name, array $patterns, Severity $expectedSeverity): void
     {
         $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('calculateSeverity');
@@ -239,19 +240,19 @@ final class SecretDetectionServiceTest extends TestCase
     }
 
     /**
-     * @return array<string, array{0: string, 1: array<string>, 2: string}>
+     * @return array<string, array{0: string, 1: array<string>, 2: Severity}>
      */
     public static function severityProvider(): array
     {
         return [
-            'with patterns = critical' => ['api_key', ['Stripe live key'], 'critical'],
-            'password = high' => ['user_password', [], 'high'],
-            'private key = high' => ['ssl_private_key', [], 'high'],
-            'secret = high' => ['client_secret', [], 'high'],
-            'token = medium' => ['access_token', [], 'medium'],
-            'apikey = medium' => ['stripe_apikey', [], 'medium'],
-            'api_key = medium' => ['payment_api_key', [], 'medium'],
-            'other = low' => ['some_config', [], 'low'],
+            'with patterns = critical' => ['api_key', ['Stripe live key'], Severity::Critical],
+            'password = high' => ['user_password', [], Severity::High],
+            'private key = high' => ['ssl_private_key', [], Severity::High],
+            'secret = high' => ['client_secret', [], Severity::High],
+            'token = medium' => ['access_token', [], Severity::Medium],
+            'apikey = medium' => ['stripe_apikey', [], Severity::Medium],
+            'api_key = medium' => ['payment_api_key', [], Severity::Medium],
+            'other = low' => ['some_config', [], Severity::Low],
         ];
     }
 

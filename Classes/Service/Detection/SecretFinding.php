@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Service\Detection;
+
+use JsonSerializable;
+
+/**
+ * Represents a detected potential secret in the system.
+ */
+interface SecretFinding extends JsonSerializable
+{
+    /**
+     * Unique key identifying this finding (e.g., "database:be_users.api_key").
+     */
+    public function getKey(): string;
+
+    /**
+     * Severity level of this finding.
+     */
+    public function getSeverity(): Severity;
+
+    /**
+     * Patterns that matched (e.g., "Stripe live key", "AWS Access Key").
+     *
+     * @return list<string>
+     */
+    public function getPatterns(): array;
+
+    /**
+     * Human-readable description for display.
+     */
+    public function getDetails(): string;
+}

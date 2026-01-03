@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
+use Netresearch\NrVault\Service\Detection\SecretFinding;
+use Netresearch\NrVault\Service\Detection\Severity;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -174,18 +176,18 @@ final class VaultScanCommand extends Command
     /**
      * Filter secrets by minimum severity.
      *
-     * @param array<string, array<string, array<string, mixed>>> $secrets
+     * @param array<string, array<string, SecretFinding>> $secrets
      *
-     * @return array<string, array<string, array<string, mixed>>>
+     * @return array<string, array<string, SecretFinding>>
      */
     private function filterBySeverity(array $secrets, string $minSeverity): array
     {
-        $severityOrder = ['critical' => 0, 'high' => 1, 'medium' => 2, 'low' => 3];
-        $minLevel = $severityOrder[$minSeverity] ?? 3;
+        $minLevel = Severity::tryFrom($minSeverity) ?? Severity::Low;
 
         $filtered = [];
         foreach ($secrets as $severity => $items) {
-            if (($severityOrder[$severity] ?? 3) <= $minLevel) {
+            $level = Severity::tryFrom($severity) ?? Severity::Low;
+            if ($level->isAtLeast($minLevel)) {
                 $filtered[$severity] = $items;
             }
         }
@@ -196,7 +198,7 @@ final class VaultScanCommand extends Command
     /**
      * Count total secrets across all severity levels.
      *
-     * @param array<string, array<string, array<string, mixed>>> $secrets
+     * @param array<string, array<string, SecretFinding>> $secrets
      */
     private function countSecrets(array $secrets): int
     {
@@ -211,7 +213,7 @@ final class VaultScanCommand extends Command
     /**
      * Output secrets as JSON.
      *
-     * @param array<string, array<string, array<string, mixed>>> $secrets
+     * @param array<string, array<string, SecretFinding>> $secrets
      */
     private function outputJson(OutputInterface $output, array $secrets): void
     {
@@ -221,20 +223,20 @@ final class VaultScanCommand extends Command
     /**
      * Output a summary of detected secrets.
      *
-     * @param array<string, array<string, array<string, mixed>>> $secrets
+     * @param array<string, array<string, SecretFinding>> $secrets
      */
     private function outputSummary(SymfonyStyle $io, array $secrets): void
     {
         $io->section('Summary');
 
         $rows = [];
-        foreach (['critical', 'high', 'medium', 'low'] as $severity) {
-            $count = \count($secrets[$severity] ?? []);
+        foreach (Severity::cases() as $severity) {
+            $count = \count($secrets[$severity->value] ?? []);
             $label = match ($severity) {
-                'critical' => '<error>Critical</error>',
-                'high' => '<comment>High</comment>',
-                'medium' => '<info>Medium</info>',
-                default => 'Low',
+                Severity::Critical => '<error>Critical</error>',
+                Severity::High => '<comment>High</comment>',
+                Severity::Medium => '<info>Medium</info>',
+                Severity::Low => 'Low',
             };
             $rows[] = [$label, (string) $count];
         }
@@ -245,21 +247,21 @@ final class VaultScanCommand extends Command
     /**
      * Output secrets as a formatted table.
      *
-     * @param array<string, array<string, array<string, mixed>>> $secrets
+     * @param array<string, array<string, SecretFinding>> $secrets
      */
     private function outputTable(SymfonyStyle $io, array $secrets): void
     {
-        foreach (['critical', 'high', 'medium', 'low'] as $severity) {
-            $items = $secrets[$severity] ?? [];
-            if (empty($items)) {
+        foreach (Severity::cases() as $severity) {
+            $items = $secrets[$severity->value] ?? [];
+            if ($items === []) {
                 continue;
             }
 
             $severityLabel = match ($severity) {
-                'critical' => '<error>CRITICAL</error>',
-                'high' => '<comment>HIGH</comment>',
-                'medium' => '<info>MEDIUM</info>',
-                default => 'LOW',
+                Severity::Critical => '<error>CRITICAL</error>',
+                Severity::High => '<comment>HIGH</comment>',
+                Severity::Medium => '<info>MEDIUM</info>',
+                Severity::Low => 'LOW',
             };
 
             $io->section(\sprintf('%s Severity (%d)', $severityLabel, \count($items)));
@@ -268,42 +270,18 @@ final class VaultScanCommand extends Command
             $table->setHeaders(['Location', 'Details', 'Patterns']);
 
             $first = true;
-            foreach ($items as $key => $item) {
+            foreach ($items as $key => $finding) {
                 if (!$first) {
                     $table->addRow(new TableSeparator());
                 }
                 $first = false;
 
-                $location = $key;
-                $details = $this->formatDetails($item);
-                $patterns = implode(', ', $item['patterns'] ?? []) ?: '-';
-
-                $table->addRow([$location, $details, $patterns]);
+                $patterns = implode(', ', $finding->getPatterns()) ?: '-';
+                $table->addRow([$key, $finding->getDetails(), $patterns]);
             }
 
             $table->render();
             $io->newLine();
         }
-    }
-
-    /**
-     * Format details for table output.
-     *
-     * @param array<string, mixed> $item
-     */
-    private function formatDetails(array $item): string
-    {
-        $source = $item['source'] ?? 'unknown';
-
-        return match ($source) {
-            'database' => \sprintf(
-                '%d records (%d plaintext)',
-                $item['count'] ?? 0,
-                $item['plaintextCount'] ?? 0,
-            ),
-            'LocalConfiguration' => 'LocalConfiguration.php',
-            'configuration' => 'Extension config',
-            default => $source,
-        };
     }
 }

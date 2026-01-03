@@ -9,6 +9,10 @@ use Doctrine\DBAL\Types\BlobType;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\TextType;
 use Exception;
+use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
+use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
+use Netresearch\NrVault\Service\Detection\SecretFinding;
+use Netresearch\NrVault\Service\Detection\Severity;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Package\PackageManager;
@@ -100,7 +104,7 @@ final class SecretDetectionService implements SingletonInterface
         '/credential/i',          // contains "credential"
     ];
 
-    /** @var array<string, array<string, mixed>> */
+    /** @var array<string, SecretFinding> */
     private array $detectedSecrets = [];
 
     public function __construct(
@@ -114,7 +118,7 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @param array<string> $excludeTables Tables to exclude from scanning
      *
-     * @return array<string, array<string, mixed>> Detected secrets grouped by source
+     * @return array<string, SecretFinding>
      */
     public function scan(array $excludeTables = []): array
     {
@@ -197,25 +201,25 @@ final class SecretDetectionService implements SingletonInterface
         if (!empty($mailConfig['transport_smtp_password'])) {
             $value = $mailConfig['transport_smtp_password'];
             if (!$this->looksLikeVaultIdentifier($value)) {
-                $this->detectedSecrets['config:MAIL.transport_smtp_password'] = [
-                    'source' => 'LocalConfiguration',
-                    'path' => 'MAIL.transport_smtp_password',
-                    'severity' => 'high',
-                    'patterns' => [],
-                ];
+                $finding = new ConfigSecretFinding(
+                    path: 'MAIL.transport_smtp_password',
+                    severity: Severity::High,
+                    isLocalConfiguration: true,
+                );
+                $this->detectedSecrets[$finding->getKey()] = $finding;
             }
         }
 
         // Check SYS encryptionKey if it looks weak
         $encryptionKey = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] ?? '';
         if (!empty($encryptionKey) && \strlen((string) $encryptionKey) < 32) {
-            $this->detectedSecrets['config:SYS.encryptionKey'] = [
-                'source' => 'LocalConfiguration',
-                'path' => 'SYS.encryptionKey',
-                'severity' => 'medium',
-                'message' => 'Encryption key appears too short (< 32 characters)',
-                'patterns' => [],
-            ];
+            $finding = new ConfigSecretFinding(
+                path: 'SYS.encryptionKey',
+                severity: Severity::Medium,
+                isLocalConfiguration: true,
+                message: 'Encryption key appears too short (< 32 characters)',
+            );
+            $this->detectedSecrets[$finding->getKey()] = $finding;
         }
 
         // Note: Extension configuration is already scanned in scanExtensionConfiguration()
@@ -225,20 +229,19 @@ final class SecretDetectionService implements SingletonInterface
     /**
      * Get detected secrets grouped by severity.
      *
-     * @return array<string, array<string, array<string, mixed>>>
+     * @return array<string, array<string, SecretFinding>>
      */
     public function getDetectedSecretsBySeverity(): array
     {
         $grouped = [
-            'critical' => [],
-            'high' => [],
-            'medium' => [],
-            'low' => [],
+            Severity::Critical->value => [],
+            Severity::High->value => [],
+            Severity::Medium->value => [],
+            Severity::Low->value => [],
         ];
 
-        foreach ($this->detectedSecrets as $key => $secret) {
-            $severity = $secret['severity'] ?? 'low';
-            $grouped[$severity][$key] = $secret;
+        foreach ($this->detectedSecrets as $key => $finding) {
+            $grouped[$finding->getSeverity()->value][$key] = $finding;
         }
 
         return $grouped;
@@ -346,16 +349,15 @@ final class SecretDetectionService implements SingletonInterface
                 }
 
                 if ($plaintextCount > 0) {
-                    $key = "database:{$tableName}.{$columnName}";
-                    $this->detectedSecrets[$key] = [
-                        'source' => 'database',
-                        'table' => $tableName,
-                        'column' => $columnName,
-                        'count' => (int) $count,
-                        'plaintextCount' => $plaintextCount,
-                        'patterns' => array_keys($patterns),
-                        'severity' => $this->calculateSeverity($columnName, array_keys($patterns)),
-                    ];
+                    $finding = new DatabaseSecretFinding(
+                        table: $tableName,
+                        column: $columnName,
+                        recordCount: (int) $count,
+                        plaintextCount: $plaintextCount,
+                        severity: $this->calculateSeverity($columnName, array_keys($patterns)),
+                        patterns: array_keys($patterns),
+                    );
+                    $this->detectedSecrets[$finding->getKey()] = $finding;
                 }
             }
         } catch (DbalException) {
@@ -393,12 +395,13 @@ final class SecretDetectionService implements SingletonInterface
                 $detectedPattern = $this->detectValuePattern($value);
                 $patterns = $detectedPattern !== null ? [$detectedPattern] : [];
 
-                $this->detectedSecrets["{$prefix}.{$key}"] = [
-                    'source' => 'configuration',
-                    'path' => "{$prefix}.{$key}",
-                    'severity' => $this->calculateSeverity($key, $patterns),
-                    'patterns' => $patterns,
-                ];
+                $finding = new ConfigSecretFinding(
+                    path: "{$prefix}.{$key}",
+                    severity: $this->calculateSeverity($key, $patterns),
+                    isLocalConfiguration: false,
+                    patterns: $patterns,
+                );
+                $this->detectedSecrets[$finding->getKey()] = $finding;
             }
         }
     }
@@ -498,32 +501,30 @@ final class SecretDetectionService implements SingletonInterface
      *
      * @param string $name Column or config key name
      * @param array<string> $patterns Detected value patterns
-     *
-     * @return string 'critical', 'high', 'medium', 'low'
      */
-    private function calculateSeverity(string $name, array $patterns): string
+    private function calculateSeverity(string $name, array $patterns): Severity
     {
         $nameLower = strtolower($name);
 
         // Critical: Known API key patterns detected
         if ($patterns !== []) {
-            return 'critical';
+            return Severity::Critical;
         }
 
         // High: Password or private key fields
         if (str_contains($nameLower, 'password')
             || str_contains($nameLower, 'private')
             || str_contains($nameLower, 'secret')) {
-            return 'high';
+            return Severity::High;
         }
 
         // Medium: Token or API key fields
         if (str_contains($nameLower, 'token')
             || str_contains($nameLower, 'apikey')
             || str_contains($nameLower, 'api_key')) {
-            return 'medium';
+            return Severity::Medium;
         }
 
-        return 'low';
+        return Severity::Low;
     }
 }
