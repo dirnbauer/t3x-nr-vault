@@ -26,6 +26,11 @@ final readonly class DatabaseSecretFinding implements SecretFinding
         return "database:{$this->table}.{$this->column}";
     }
 
+    public function getSource(): string
+    {
+        return 'database';
+    }
+
     public function getSeverity(): Severity
     {
         return $this->severity;

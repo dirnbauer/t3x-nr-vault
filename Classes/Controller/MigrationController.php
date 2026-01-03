@@ -127,7 +127,7 @@ final readonly class MigrationController
         $databaseCount = 0;
         $configCount = 0;
         foreach ($secrets as $secret) {
-            if (($secret['source'] ?? '') === 'database') {
+            if ($secret->getSource() === 'database') {
                 ++$databaseCount;
             } else {
                 ++$configCount;
@@ -170,15 +170,15 @@ final readonly class MigrationController
         // Filter secrets
         $filteredSecrets = [];
         foreach ($secrets as $key => $secret) {
-            if ($sourceFilter !== 'all' && ($secret['source'] ?? '') !== $sourceFilter) {
+            if ($sourceFilter !== 'all' && $secret->getSource() !== $sourceFilter) {
                 continue;
             }
-            if ($severityFilter !== 'all' && ($secret['severity'] ?? '') !== $severityFilter) {
+            if ($severityFilter !== 'all' && $secret->getSeverity()->value !== $severityFilter) {
                 continue;
             }
 
             // Only database secrets can be migrated via wizard
-            if (($secret['source'] ?? '') === 'database') {
+            if ($secret->getSource() === 'database') {
                 $filteredSecrets[$key] = $secret;
             }
         }

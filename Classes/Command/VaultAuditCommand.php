@@ -130,8 +130,7 @@ final class VaultAuditCommand extends Command
             // Output to console
             switch ($format) {
                 case 'json':
-                    $data = array_map(fn ($e): array => $e->toArray(), $entries);
-                    $output->writeln(json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+                    $output->writeln(json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
                     break;
                 case 'csv':
                     $this->outputCsv($output, $entries);

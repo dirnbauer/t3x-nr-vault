@@ -17,6 +17,11 @@ interface SecretFinding extends JsonSerializable
     public function getKey(): string;
 
     /**
+     * Source type: 'database' or 'config'.
+     */
+    public function getSource(): string;
+
+    /**
      * Severity level of this finding.
      */
     public function getSeverity(): Severity;

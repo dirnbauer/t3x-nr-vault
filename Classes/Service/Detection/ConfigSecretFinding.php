@@ -27,6 +27,11 @@ final readonly class ConfigSecretFinding implements SecretFinding
             : $this->path;
     }
 
+    public function getSource(): string
+    {
+        return 'config';
+    }
+
     public function getSeverity(): Severity
     {
         return $this->severity;
