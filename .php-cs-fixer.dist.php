@@ -46,6 +46,7 @@ return new Config()
         'no_blank_lines_after_class_opening' => true,
         'ordered_class_elements' => [
             'order' => [
+                'case', // Enum cases must come first
                 'use_trait',
                 'constant_public',
                 'constant_protected',
