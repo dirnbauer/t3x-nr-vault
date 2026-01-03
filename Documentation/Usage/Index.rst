@@ -392,11 +392,15 @@ Vault HTTP client
 -----------------
 
 Make authenticated API calls without exposing secrets to your code.
+The HTTP client is PSR-18 compatible. Configure authentication with
+:php:`withAuthentication()`, then use standard :php:`sendRequest()`.
+
 Inject :php:`VaultHttpClientInterface` directly:
 
 .. code-block:: php
    :caption: HTTP client with vault authentication
 
+   use GuzzleHttp\Psr7\Request;
    use Netresearch\NrVault\Http\SecretPlacement;
    use Netresearch\NrVault\Http\VaultHttpClientInterface;
 
@@ -408,13 +412,14 @@ Inject :php:`VaultHttpClientInterface` directly:
 
        public function fetchData(): array
        {
-           $response = $this->httpClient->get(
-               'https://api.example.com/data',
-               [
-                   'auth_secret' => 'api_token',
-                   'placement' => SecretPlacement::Bearer,
-               ],
+           // Configure authentication, then use PSR-18
+           $client = $this->httpClient->withAuthentication(
+               'api_token',
+               SecretPlacement::Bearer,
            );
+
+           $request = new Request('GET', 'https://api.example.com/data');
+           $response = $client->sendRequest($request);
 
            return json_decode($response->getBody()->getContents(), true);
        }
@@ -425,14 +430,20 @@ Or access via VaultService:
 .. code-block:: php
    :caption: HTTP client via VaultService
 
-   $response = $this->vaultService->http()->post(
+   use GuzzleHttp\Psr7\Request;
+   use Netresearch\NrVault\Http\SecretPlacement;
+
+   $client = $this->vaultService->http()
+       ->withAuthentication('stripe_api_key', SecretPlacement::Bearer);
+
+   $request = new Request(
+       'POST',
        'https://api.stripe.com/v1/charges',
-       [
-           'auth_secret' => 'stripe_api_key',
-           'placement' => SecretPlacement::Bearer,
-           'json' => $payload,
-       ],
+       ['Content-Type' => 'application/json'],
+       json_encode($payload),
    );
+
+   $response = $client->sendRequest($request);
 
 .. _usage-php-authentication-options:
 
@@ -440,39 +451,38 @@ Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: php
-   :caption: Authentication placement options
+   :caption: Authentication placement examples
 
+   use GuzzleHttp\Psr7\Request;
    use Netresearch\NrVault\Http\SecretPlacement;
 
    // Bearer token
-   $options = [
-       'auth_secret' => 'api_token',
-       'placement' => SecretPlacement::Bearer,
-   ];
+   $client = $vault->http()
+       ->withAuthentication('api_token', SecretPlacement::Bearer);
+   $response = $client->sendRequest(new Request('GET', $url));
 
-   // API key header
-   $options = [
-       'auth_secret' => 'api_key',
-       'placement' => SecretPlacement::ApiKey,  // X-API-Key header
-   ];
+   // API key header (X-API-Key)
+   $client = $vault->http()
+       ->withAuthentication('api_key', SecretPlacement::ApiKey);
+   $response = $client->sendRequest(new Request('GET', $url));
 
    // Custom header
-   $options = [
-       'auth_secret' => 'api_key',
-       'placement' => SecretPlacement::Header,
-       'auth_header' => 'X-Custom-Auth',
-   ];
+   $client = $vault->http()
+       ->withAuthentication('api_key', SecretPlacement::Header, [
+           'headerName' => 'X-Custom-Auth',
+       ]);
+   $response = $client->sendRequest(new Request('GET', $url));
 
-   // Basic authentication
-   $options = [
-       'auth_username_secret' => 'service_user',
-       'auth_secret' => 'service_password',
-       'placement' => SecretPlacement::BasicAuth,
-   ];
+   // Basic authentication with separate secrets
+   $client = $vault->http()
+       ->withAuthentication('service_password', SecretPlacement::BasicAuth, [
+           'usernameSecret' => 'service_user',
+       ]);
+   $response = $client->sendRequest(new Request('GET', $url));
 
    // Query parameter
-   $options = [
-       'auth_secret' => 'api_key',
-       'placement' => SecretPlacement::QueryParam,
-       'auth_query_param' => 'key',
-   ];
+   $client = $vault->http()
+       ->withAuthentication('api_key', SecretPlacement::QueryParam, [
+           'queryParam' => 'key',
+       ]);
+   $response = $client->sendRequest(new Request('GET', $url));

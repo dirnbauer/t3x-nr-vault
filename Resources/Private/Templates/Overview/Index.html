@@ -142,21 +142,20 @@ public function callExternalApi(): Response
                         <core:icon identifier="actions-cloud" size="small" />
                         HTTP Client with Secrets
                     </h3>
-                    <p class="card-text small">Secure API calls with automatic secret injection. Supports Bearer, API-Key, Basic Auth, OAuth2, and more.</p>
+                    <p class="card-text small">PSR-18 compatible API calls with automatic secret injection. Supports Bearer, API-Key, Basic Auth, OAuth2, and more.</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">public function __construct(
     private readonly VaultHttpClientInterface $http,
 ) {}
 
 public function fetchData(): array
 {
-    $response = $this->http->get(
-        'https://api.example.com/data',
-        [
-            'auth_secret' => 'api_token',
-            'placement' => SecretPlacement::Bearer,
-        ],
+    $client = $this->http->withAuthentication(
+        'api_token',
+        SecretPlacement::Bearer,
     );
-    return $response->toArray();
+    $request = new Request('GET', 'https://api.example.com/data');
+    $response = $client->sendRequest($request);
+    return json_decode($response->getBody()->getContents(), true);
 }</code></pre>
                 </div>
             </div>

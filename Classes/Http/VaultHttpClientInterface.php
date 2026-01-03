@@ -4,65 +4,72 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http;
 
-use Netresearch\NrVault\Exception\VaultException;
-use Psr\Http\Client\ClientExceptionInterface;
-use Psr\Http\Message\ResponseInterface;
+use Netresearch\NrVault\Http\OAuth\OAuthConfig;
+use Psr\Http\Client\ClientInterface;
 
 /**
- * Interface for vault-aware HTTP client.
+ * PSR-18 compatible HTTP client with vault-based authentication.
  *
- * Provides methods to make HTTP requests with secrets automatically
- * injected from the vault as authentication credentials.
+ * This interface extends PSR-18 ClientInterface to provide a standard
+ * HTTP client that can automatically inject vault-stored secrets.
+ *
+ * Usage:
+ *     // Configure authentication, then send PSR-7 requests
+ *     $client = $vault->http()->withAuthentication('api_key', SecretPlacement::Bearer);
+ *     $response = $client->sendRequest($request);
+ *
+ *     // For OAuth2
+ *     $client = $vault->http()->withOAuth($oauthConfig);
+ *     $response = $client->sendRequest($request);
  */
-interface VaultHttpClientInterface
+interface VaultHttpClientInterface extends ClientInterface
 {
     /**
-     * Make an HTTP request with vault-provided authentication.
+     * Create a new client instance configured with authentication.
      *
-     * Options:
-     * - auth_secret: Secret identifier for authentication
-     * - placement: SecretPlacement enum for auth type (Bearer, BasicAuth, Header, etc.)
-     * - auth_header: Custom header name (for Header placement)
-     * - auth_query_param: Query param name (for QueryParam placement)
-     * - auth_body_field: Body field name (for BodyField placement)
-     * - auth_username_secret: Username secret (for BasicAuth with separate secrets)
-     * - oauth_config: OAuthConfig for OAuth2 placement
-     * - headers, query, body, json: Standard HTTP request options
-     * - timeout: Request timeout in seconds
-     * - verify_ssl: SSL verification (default: true)
-     * - reason: Audit log reason
+     * Returns a new immutable instance - the original is unchanged.
      *
-     * @param string $method HTTP method (GET, POST, PUT, DELETE, etc.)
-     * @param string $url Request URL
-     * @param array<string, mixed> $options Request options
+     * @param string $secretIdentifier Vault identifier for the secret
+     * @param SecretPlacement $placement How to inject the secret
+     * @param array{
+     *     headerName?: string,
+     *     queryParam?: string,
+     *     bodyField?: string,
+     *     usernameSecret?: string,
+     *     reason?: string
+     * } $options Additional options:
+     *     - headerName: Custom header name (for SecretPlacement::Header)
+     *     - queryParam: Custom query param name (for SecretPlacement::QueryParam)
+     *     - bodyField: Custom body field name (for SecretPlacement::BodyField)
+     *     - usernameSecret: Username secret identifier (for SecretPlacement::BasicAuth)
+     *     - reason: Audit log reason for this client's requests
      *
-     * @throws VaultException If secret retrieval fails
-     * @throws ClientExceptionInterface If request fails
+     * @return static New client instance with authentication configured
      */
-    public function request(string $method, string $url, array $options = []): ResponseInterface;
+    public function withAuthentication(
+        string $secretIdentifier,
+        SecretPlacement $placement = SecretPlacement::Bearer,
+        array $options = [],
+    ): static;
 
     /**
-     * Shorthand for GET request.
+     * Create a new client instance configured with OAuth 2.0 authentication.
+     *
+     * Returns a new immutable instance - the original is unchanged.
+     *
+     * @param OAuthConfig $config OAuth configuration
+     * @param string $reason Audit log reason for this client's requests
+     *
+     * @return static New client instance with OAuth configured
      */
-    public function get(string $url, array $options = []): ResponseInterface;
+    public function withOAuth(OAuthConfig $config, string $reason = 'OAuth2 API call'): static;
 
     /**
-     * Shorthand for POST request.
+     * Create a new client instance with a custom audit reason.
+     *
+     * @param string $reason Audit log reason for requests
+     *
+     * @return static New client instance with reason configured
      */
-    public function post(string $url, array $options = []): ResponseInterface;
-
-    /**
-     * Shorthand for PUT request.
-     */
-    public function put(string $url, array $options = []): ResponseInterface;
-
-    /**
-     * Shorthand for DELETE request.
-     */
-    public function delete(string $url, array $options = []): ResponseInterface;
-
-    /**
-     * Shorthand for PATCH request.
-     */
-    public function patch(string $url, array $options = []): ResponseInterface;
+    public function withReason(string $reason): static;
 }

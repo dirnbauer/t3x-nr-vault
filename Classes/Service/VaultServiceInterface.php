@@ -9,9 +9,7 @@ use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
-use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClientInterface;
-use Psr\Http\Client\ClientInterface;
 
 /**
  * Primary interface for interacting with the vault.
@@ -112,41 +110,18 @@ interface VaultServiceInterface
 
     /**
      * Get the Vault HTTP Client for making authenticated API calls.
-     */
-    public function http(): VaultHttpClientInterface;
-
-    /**
-     * Create a PSR-18 compatible HTTP client with automatic secret injection.
      *
-     * This allows consuming extensions to use vault-stored secrets transparently
-     * without changing their HTTP client usage patterns.
-     *
-     * @param string $secretIdentifier The vault identifier for the secret
-     * @param SecretPlacement $placement How to inject the secret (Bearer, Header, etc.)
-     * @param array{
-     *     headerName?: string,
-     *     queryParam?: string,
-     *     usernameSecret?: string,
-     *     client?: ClientInterface
-     * } $options Additional options:
-     *     - headerName: Custom header name (for SecretPlacement::Header)
-     *     - queryParam: Custom query param name (for SecretPlacement::QueryParam)
-     *     - usernameSecret: Username secret identifier (for SecretPlacement::BasicAuth)
-     *     - client: Custom PSR-18 client to wrap (default: Guzzle)
+     * Returns a PSR-18 compatible client. Use withAuthentication() to configure
+     * secret injection, then sendRequest() to make calls.
      *
      * @example
-     *     // Before: Manual secret handling
-     *     $apiKey = $vault->retrieve($identifier);
-     *     $request = $request->withHeader('Authorization', 'Bearer ' . $apiKey);
-     *     $response = $httpClient->sendRequest($request);
+     *     // Configure authentication and send PSR-7 request
+     *     $client = $vault->http()->withAuthentication('stripe_key', SecretPlacement::Bearer);
+     *     $response = $client->sendRequest($request);
      *
-     *     // After: Transparent secret injection
-     *     $client = $vault->createAuthenticatedClient($identifier, SecretPlacement::Bearer);
+     *     // OAuth 2.0
+     *     $client = $vault->http()->withOAuth($oauthConfig);
      *     $response = $client->sendRequest($request);
      */
-    public function createAuthenticatedClient(
-        string $secretIdentifier,
-        SecretPlacement $placement = SecretPlacement::Bearer,
-        array $options = [],
-    ): ClientInterface;
+    public function http(): VaultHttpClientInterface;
 }

@@ -13,337 +13,336 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Http;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 /**
- * HTTP client that injects vault secrets as authentication.
+ * PSR-18 HTTP client that injects vault secrets as authentication.
+ *
+ * This is an immutable, fluent PSR-18 client. Configure authentication
+ * with withAuthentication() or withOAuth(), then send requests with sendRequest().
  *
  * Supports various authentication types via SecretPlacement enum:
  * - Bearer: Bearer token in Authorization header
  * - BasicAuth: HTTP Basic Authentication
  * - Header: Custom header with secret value
  * - QueryParam: Query parameter with secret value
- * - BodyField: Secret in request body
+ * - BodyField: Secret in request body (JSON or form)
  * - OAuth2: OAuth 2.0 with automatic token refresh
  * - ApiKey: X-API-Key header (shorthand)
+ *
+ * @example
+ *     // Bearer token authentication
+ *     $client = $vault->http()->withAuthentication('stripe_key', SecretPlacement::Bearer);
+ *     $response = $client->sendRequest($request);
+ *
+ *     // OAuth 2.0
+ *     $client = $vault->http()->withOAuth($oauthConfig);
+ *     $response = $client->sendRequest($request);
  */
-final class VaultHttpClient implements VaultHttpClientInterface
+final readonly class VaultHttpClient implements VaultHttpClientInterface
 {
-    private ?OAuthTokenManager $oauthManager = null;
+    private ClientInterface $innerClient;
+    private OAuthTokenManager $oauthManager;
 
-    public function __construct(private readonly VaultServiceInterface $vaultService, private readonly AuditLogServiceInterface $auditLogService, private readonly ?ClientInterface $client = new Client([
-        'timeout' => 30,
-        'connect_timeout' => 10,
-        'http_errors' => false,
-    ])) {}
+    /**
+     * @param VaultServiceInterface $vaultService Vault for secret retrieval
+     * @param AuditLogServiceInterface $auditLogService Audit logging
+     * @param ClientInterface|null $innerClient Underlying PSR-18 client
+     * @param string|null $secretIdentifier Configured secret identifier
+     * @param SecretPlacement|null $placement Configured placement type
+     * @param OAuthConfig|null $oauthConfig Configured OAuth config
+     * @param string|null $headerName Custom header name for Header placement
+     * @param string|null $queryParam Custom query param for QueryParam placement
+     * @param string|null $bodyField Custom body field for BodyField placement
+     * @param string|null $usernameSecretIdentifier Username secret for BasicAuth
+     * @param string $reason Audit log reason
+     */
+    public function __construct(
+        private VaultServiceInterface $vaultService,
+        private AuditLogServiceInterface $auditLogService,
+        ?ClientInterface $innerClient = null,
+        private ?string $secretIdentifier = null,
+        private ?SecretPlacement $placement = null,
+        private ?OAuthConfig $oauthConfig = null,
+        private ?string $headerName = null,
+        private ?string $queryParam = null,
+        private ?string $bodyField = null,
+        private ?string $usernameSecretIdentifier = null,
+        private string $reason = 'HTTP API call',
+    ) {
+        $this->innerClient = $innerClient ?? new Client([
+            'timeout' => 30,
+            'connect_timeout' => 10,
+            'http_errors' => false,
+        ]);
+        $this->oauthManager = new OAuthTokenManager($this->vaultService);
+    }
 
-    public function request(string $method, string $url, array $options = []): ResponseInterface
+    public function withAuthentication(
+        string $secretIdentifier,
+        SecretPlacement $placement = SecretPlacement::Bearer,
+        array $options = [],
+    ): static {
+        return new self(
+            vaultService: $this->vaultService,
+            auditLogService: $this->auditLogService,
+            innerClient: $this->innerClient,
+            secretIdentifier: $secretIdentifier,
+            placement: $placement,
+            oauthConfig: null,
+            headerName: $options['headerName'] ?? null,
+            queryParam: $options['queryParam'] ?? null,
+            bodyField: $options['bodyField'] ?? null,
+            usernameSecretIdentifier: $options['usernameSecret'] ?? null,
+            reason: $options['reason'] ?? $this->reason,
+        );
+    }
+
+    public function withOAuth(OAuthConfig $config, string $reason = 'OAuth2 API call'): static
     {
-        $authSecret = $options['auth_secret'] ?? null;
-        $placement = $options['placement'] ?? null;
-        $oauthConfig = $options['oauth_config'] ?? null;
-        $reason = $options['reason'] ?? 'HTTP API call';
+        return new self(
+            vaultService: $this->vaultService,
+            auditLogService: $this->auditLogService,
+            innerClient: $this->innerClient,
+            secretIdentifier: null,
+            placement: SecretPlacement::OAuth2,
+            oauthConfig: $config,
+            headerName: null,
+            queryParam: null,
+            bodyField: null,
+            usernameSecretIdentifier: null,
+            reason: $reason,
+        );
+    }
 
-        // Remove vault-specific options before passing to Guzzle
-        $guzzleOptions = $this->extractGuzzleOptions($options);
+    public function withReason(string $reason): static
+    {
+        return new self(
+            vaultService: $this->vaultService,
+            auditLogService: $this->auditLogService,
+            innerClient: $this->innerClient,
+            secretIdentifier: $this->secretIdentifier,
+            placement: $this->placement,
+            oauthConfig: $this->oauthConfig,
+            headerName: $this->headerName,
+            queryParam: $this->queryParam,
+            bodyField: $this->bodyField,
+            usernameSecretIdentifier: $this->usernameSecretIdentifier,
+            reason: $reason,
+        );
+    }
 
-        // Handle OAuth2 authentication
-        if ($placement === SecretPlacement::OAuth2 && $oauthConfig instanceof OAuthConfig) {
-            $guzzleOptions = $this->injectOAuthAuthentication($guzzleOptions, $oauthConfig);
-            $authSecret = 'oauth2:' . $oauthConfig->clientIdSecret;
-        } elseif ($authSecret !== null && $placement !== null) {
-            // Inject authentication from vault
-            $guzzleOptions = $this->injectAuthentication(
-                $guzzleOptions,
-                $authSecret,
-                $placement,
-                $options,
-            );
-        } elseif (isset($options['auth_username_secret'])) {
-            // Basic auth with separate username/password secrets
-            $guzzleOptions = $this->injectBasicAuthFromSecrets($guzzleOptions, $options);
-            $authSecret = $options['auth_username_secret'];
-        }
+    /**
+     * Send an HTTP request with configured authentication.
+     *
+     * @throws ClientExceptionInterface If request fails
+     * @throws VaultException If secret retrieval fails
+     */
+    public function sendRequest(RequestInterface $request): ResponseInterface
+    {
+        $authenticatedRequest = $this->injectAuthentication($request);
+        $secretForAudit = $this->getSecretIdentifierForAudit();
 
         try {
-            $response = $this->client->request($method, $url, $guzzleOptions);
+            $response = $this->innerClient->sendRequest($authenticatedRequest);
 
-            // Log the HTTP call (without exposing sensitive data)
             $this->logHttpCall(
-                $authSecret ?? 'none',
-                $method,
-                $url,
+                $secretForAudit,
+                $request->getMethod(),
+                (string) $request->getUri(),
                 $response->getStatusCode(),
                 true,
                 null,
-                $reason,
             );
 
             return $response;
-        } catch (GuzzleException $e) {
-            // Log failed HTTP call
+        } catch (ClientExceptionInterface $e) {
             $this->logHttpCall(
-                $authSecret ?? 'none',
-                $method,
-                $url,
+                $secretForAudit,
+                $request->getMethod(),
+                (string) $request->getUri(),
                 0,
                 false,
                 $e->getMessage(),
-                $reason,
             );
 
-            throw new VaultException(
-                \sprintf('HTTP request failed: %s', $e->getMessage()),
-                0,
-                $e,
-            );
+            throw $e;
         }
     }
 
     /**
-     * Make a request and return a VaultHttpResponse wrapper.
-     *
-     * @param string $method HTTP method
-     * @param string $url Request URL
-     * @param array<string, mixed> $options Request options
+     * Inject authentication into the request based on configuration.
      */
-    public function send(string $method, string $url, array $options = []): VaultHttpResponse
+    private function injectAuthentication(RequestInterface $request): RequestInterface
     {
-        $response = $this->request($method, $url, $options);
-
-        return VaultHttpResponse::fromPsrResponse($response);
-    }
-
-    public function get(string $url, array $options = []): ResponseInterface
-    {
-        return $this->request('GET', $url, $options);
-    }
-
-    public function post(string $url, array $options = []): ResponseInterface
-    {
-        return $this->request('POST', $url, $options);
-    }
-
-    public function put(string $url, array $options = []): ResponseInterface
-    {
-        return $this->request('PUT', $url, $options);
-    }
-
-    public function delete(string $url, array $options = []): ResponseInterface
-    {
-        return $this->request('DELETE', $url, $options);
-    }
-
-    public function patch(string $url, array $options = []): ResponseInterface
-    {
-        return $this->request('PATCH', $url, $options);
-    }
-
-    /**
-     * Get the OAuth token manager (creates one if needed).
-     */
-    public function getOAuthManager(): OAuthTokenManager
-    {
-        if (!$this->oauthManager instanceof OAuthTokenManager) {
-            $this->oauthManager = new OAuthTokenManager($this->vaultService);
+        if ($this->oauthConfig instanceof OAuthConfig) {
+            return $this->injectOAuth($request);
         }
 
-        return $this->oauthManager;
+        if ($this->secretIdentifier === null || $this->placement === null) {
+            return $request;
+        }
+
+        return match ($this->placement) {
+            SecretPlacement::Bearer => $this->injectBearer($request),
+            SecretPlacement::BasicAuth => $this->injectBasicAuth($request),
+            SecretPlacement::Header => $this->injectHeader($request),
+            SecretPlacement::ApiKey => $this->injectApiKey($request),
+            SecretPlacement::QueryParam => $this->injectQueryParam($request),
+            SecretPlacement::BodyField => $this->injectBodyField($request),
+            SecretPlacement::OAuth2 => $request, // Handled above
+        };
     }
 
-    /**
-     * Set a custom OAuth token manager.
-     */
-    public function setOAuthManager(OAuthTokenManager $manager): void
+    private function injectBearer(RequestInterface $request): RequestInterface
     {
-        $this->oauthManager = $manager;
+        \assert($this->secretIdentifier !== null);
+        $secret = $this->retrieveSecret($this->secretIdentifier);
+
+        try {
+            return $request->withHeader('Authorization', 'Bearer ' . $secret);
+        } finally {
+            sodium_memzero($secret);
+        }
     }
 
-    /**
-     * Extract Guzzle-compatible options from vault options.
-     *
-     * @param array<string, mixed> $options
-     *
-     * @return array<string, mixed>
-     */
-    private function extractGuzzleOptions(array $options): array
+    private function injectBasicAuth(RequestInterface $request): RequestInterface
     {
-        // Keys that are vault-specific, not Guzzle options
-        $vaultKeys = [
-            'auth_secret',
-            'auth_header',
-            'auth_query_param',
-            'auth_body_field',
-            'auth_username_secret',
-            'placement',
-            'oauth_config',
-            'reason',
-        ];
+        \assert($this->secretIdentifier !== null);
+        $password = $this->retrieveSecret($this->secretIdentifier);
 
-        $guzzleOptions = [];
+        if ($this->usernameSecretIdentifier !== null) {
+            $username = $this->retrieveSecret($this->usernameSecretIdentifier);
+            $credentials = $username . ':' . $password;
+            sodium_memzero($username);
+        } else {
+            $credentials = $password;
+        }
 
-        foreach ($options as $key => $value) {
-            if (\in_array($key, $vaultKeys, true)) {
-                continue;
+        try {
+            return $request->withHeader('Authorization', 'Basic ' . base64_encode($credentials));
+        } finally {
+            sodium_memzero($password);
+            sodium_memzero($credentials);
+        }
+    }
+
+    private function injectHeader(RequestInterface $request): RequestInterface
+    {
+        \assert($this->secretIdentifier !== null);
+        $secret = $this->retrieveSecret($this->secretIdentifier);
+        $headerName = $this->headerName ?? 'X-API-Key';
+
+        try {
+            return $request->withHeader($headerName, $secret);
+        } finally {
+            sodium_memzero($secret);
+        }
+    }
+
+    private function injectApiKey(RequestInterface $request): RequestInterface
+    {
+        \assert($this->secretIdentifier !== null);
+        $secret = $this->retrieveSecret($this->secretIdentifier);
+
+        try {
+            return $request->withHeader('X-API-Key', $secret);
+        } finally {
+            sodium_memzero($secret);
+        }
+    }
+
+    private function injectQueryParam(RequestInterface $request): RequestInterface
+    {
+        \assert($this->secretIdentifier !== null);
+        $secret = $this->retrieveSecret($this->secretIdentifier);
+        $paramName = $this->queryParam ?? 'api_key';
+
+        try {
+            $uri = $request->getUri();
+            $existingQuery = $uri->getQuery();
+            $separator = $existingQuery !== '' ? '&' : '';
+            $newQuery = $existingQuery . $separator . urlencode($paramName) . '=' . urlencode($secret);
+
+            return $request->withUri($uri->withQuery($newQuery));
+        } finally {
+            sodium_memzero($secret);
+        }
+    }
+
+    private function injectBodyField(RequestInterface $request): RequestInterface
+    {
+        \assert($this->secretIdentifier !== null);
+        $secret = $this->retrieveSecret($this->secretIdentifier);
+        $fieldName = $this->bodyField ?? 'api_key';
+
+        try {
+            $contentType = $request->getHeaderLine('Content-Type');
+            $body = (string) $request->getBody();
+
+            if (str_contains($contentType, 'application/json')) {
+                /** @var array<string, mixed> $data */
+                $data = json_decode($body, true) ?: [];
+                $data[$fieldName] = $secret;
+                $newBody = json_encode($data, JSON_THROW_ON_ERROR);
+            } else {
+                parse_str($body, $data);
+                $data[$fieldName] = $secret;
+                $newBody = http_build_query($data);
             }
 
-            // Map our options to Guzzle options
-            switch ($key) {
-                case 'body':
-                    $guzzleOptions['body'] = $value;
-                    break;
-                case 'json':
-                    $guzzleOptions['json'] = $value;
-                    break;
-                case 'headers':
-                    $guzzleOptions['headers'] = $value;
-                    break;
-                case 'query':
-                    $guzzleOptions['query'] = $value;
-                    break;
-                case 'timeout':
-                    $guzzleOptions['timeout'] = $value;
-                    break;
-                case 'verify_ssl':
-                    $guzzleOptions['verify'] = $value;
-                    break;
-                default:
-                    $guzzleOptions[$key] = $value;
-            }
+            return $request
+                ->withBody(\GuzzleHttp\Psr7\Utils::streamFor($newBody));
+        } finally {
+            sodium_memzero($secret);
         }
+    }
 
-        return $guzzleOptions;
+    private function injectOAuth(RequestInterface $request): RequestInterface
+    {
+        \assert($this->oauthConfig !== null);
+        $accessToken = $this->oauthManager->getAccessToken($this->oauthConfig);
+
+        try {
+            return $request->withHeader('Authorization', 'Bearer ' . $accessToken);
+        } finally {
+            sodium_memzero($accessToken);
+        }
     }
 
     /**
-     * Inject authentication from vault secret.
-     *
-     * @param array<string, mixed> $guzzleOptions
-     * @param array<string, mixed> $options
-     *
-     * @return array<string, mixed>
+     * Retrieve secret from vault, throwing if not found.
      */
-    private function injectAuthentication(
-        array $guzzleOptions,
-        string $secretIdentifier,
-        SecretPlacement $placement,
-        array $options,
-    ): array {
-        $secret = $this->vaultService->retrieve($secretIdentifier);
+    private function retrieveSecret(string $identifier): string
+    {
+        $secret = $this->vaultService->retrieve($identifier);
 
         if ($secret === null) {
-            throw new SecretNotFoundException($secretIdentifier, 2316228468);
+            throw new SecretNotFoundException($identifier, 1735858521);
         }
 
-        $guzzleOptions['headers'] ??= [];
-        $guzzleOptions['query'] ??= [];
-
-        switch ($placement) {
-            case SecretPlacement::Bearer:
-                $guzzleOptions['headers']['Authorization'] = 'Bearer ' . $secret;
-                break;
-            case SecretPlacement::BasicAuth:
-                // Secret is expected to be "username:password" format
-                $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($secret);
-                break;
-            case SecretPlacement::Header:
-                $headerName = $options['auth_header'] ?? 'X-API-Key';
-                $guzzleOptions['headers'][$headerName] = $secret;
-                break;
-            case SecretPlacement::ApiKey:
-                $guzzleOptions['headers']['X-API-Key'] = $secret;
-                break;
-            case SecretPlacement::QueryParam:
-                $paramName = $options['auth_query_param'] ?? 'api_key';
-                $guzzleOptions['query'][$paramName] = $secret;
-                break;
-            case SecretPlacement::BodyField:
-                $fieldName = $options['auth_body_field'] ?? 'api_key';
-                if (isset($guzzleOptions['json'])) {
-                    $guzzleOptions['json'][$fieldName] = $secret;
-                } elseif (isset($guzzleOptions['form_params'])) {
-                    $guzzleOptions['form_params'][$fieldName] = $secret;
-                } else {
-                    $guzzleOptions['form_params'] = [$fieldName => $secret];
-                }
-                break;
-            case SecretPlacement::OAuth2:
-                // OAuth2 is handled separately via injectOAuthAuthentication
-                break;
-        }
-
-        // Clear secret from memory
-        sodium_memzero($secret);
-
-        return $guzzleOptions;
+        return $secret;
     }
 
     /**
-     * Inject OAuth 2.0 authentication.
-     *
-     * @param array<string, mixed> $guzzleOptions
-     *
-     * @return array<string, mixed>
+     * Get the secret identifier for audit logging.
      */
-    private function injectOAuthAuthentication(array $guzzleOptions, OAuthConfig $config): array
+    private function getSecretIdentifierForAudit(): string
     {
-        $accessToken = $this->getOAuthManager()->getAccessToken($config);
-
-        $guzzleOptions['headers'] ??= [];
-        $guzzleOptions['headers']['Authorization'] = 'Bearer ' . $accessToken;
-
-        // Clear token from memory after use
-        sodium_memzero($accessToken);
-
-        return $guzzleOptions;
-    }
-
-    /**
-     * Inject HTTP Basic auth from separate username and password secrets.
-     *
-     * @param array<string, mixed> $guzzleOptions
-     * @param array<string, mixed> $options
-     *
-     * @return array<string, mixed>
-     */
-    private function injectBasicAuthFromSecrets(array $guzzleOptions, array $options): array
-    {
-        $usernameSecret = $options['auth_username_secret'];
-        $passwordSecret = $options['auth_secret'] ?? null;
-
-        $username = $this->vaultService->retrieve($usernameSecret);
-        if ($username === null) {
-            throw new SecretNotFoundException($usernameSecret, 2800860734);
+        if ($this->oauthConfig instanceof OAuthConfig) {
+            return 'oauth2:' . $this->oauthConfig->clientIdSecret;
         }
 
-        $password = '';
-        if ($passwordSecret !== null) {
-            $password = $this->vaultService->retrieve($passwordSecret);
-            if ($password === null) {
-                sodium_memzero($username);
-
-                throw new SecretNotFoundException($passwordSecret, 8041914792);
-            }
-        }
-
-        $guzzleOptions['headers'] ??= [];
-        $guzzleOptions['headers']['Authorization'] = 'Basic ' . base64_encode($username . ':' . $password);
-
-        // Clear from memory
-        sodium_memzero($username);
-        if ($password !== '') {
-            sodium_memzero($password);
-        }
-
-        return $guzzleOptions;
+        return $this->secretIdentifier ?? 'none';
     }
 
     /**
@@ -356,9 +355,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
         int $statusCode,
         bool $success,
         ?string $errorMessage,
-        string $reason,
     ): void {
-        // Parse URL to get host (don't log full URL for security)
         $parsedUrl = parse_url($url);
         $host = $parsedUrl['host'] ?? 'unknown';
         $path = $parsedUrl['path'] ?? '/';
@@ -368,7 +365,7 @@ final class VaultHttpClient implements VaultHttpClientInterface
             'http_call',
             $success,
             $errorMessage,
-            $reason,
+            $this->reason,
             null,
             null,
             [

@@ -81,7 +81,7 @@ The main service for interacting with the vault.
 
       Get an HTTP client that can inject secrets into requests.
 
-      :returns: A vault-aware HTTP client.
+      :returns: A PSR-18 compatible vault-aware HTTP client.
 
 .. _api-usage-examples:
 
@@ -137,9 +137,9 @@ Retrieving a secret
 Vault HTTP client
 -----------------
 
-The vault provides an HTTP client that can inject secrets into requests
-without exposing them to your code. You can inject it directly or access
-it via VaultService.
+The vault provides a PSR-18 compatible HTTP client that can inject secrets
+into requests without exposing them to your code. Configure authentication
+with :php:`withAuthentication()`, then use standard :php:`sendRequest()`.
 
 .. _api-http-direct-injection:
 
@@ -149,6 +149,7 @@ Direct injection (recommended)
 .. code-block:: php
    :caption: Inject VaultHttpClientInterface
 
+   use GuzzleHttp\Psr7\Request;
    use Netresearch\NrVault\Http\SecretPlacement;
    use Netresearch\NrVault\Http\VaultHttpClientInterface;
 
@@ -160,13 +161,14 @@ Direct injection (recommended)
 
        public function fetchData(): array
        {
-           $response = $this->httpClient->get(
-               'https://api.example.com/data',
-               [
-                   'auth_secret' => 'api_token',
-                   'placement' => SecretPlacement::Bearer,
-               ],
+           // Configure authentication, then use standard PSR-18
+           $client = $this->httpClient->withAuthentication(
+               'api_token',
+               SecretPlacement::Bearer,
            );
+
+           $request = new Request('GET', 'https://api.example.com/data');
+           $response = $client->sendRequest($request);
 
            return json_decode($response->getBody()->getContents(), true);
        }
@@ -180,53 +182,85 @@ Via VaultService
 .. code-block:: php
    :caption: HTTP client via VaultService
 
-   $response = $this->vaultService->http()->post(
+   use GuzzleHttp\Psr7\Request;
+   use Netresearch\NrVault\Http\SecretPlacement;
+
+   $client = $this->vaultService->http()
+       ->withAuthentication('stripe_api_key', SecretPlacement::Bearer);
+
+   $request = new Request(
+       'POST',
        'https://api.stripe.com/v1/charges',
-       [
-           'auth_secret' => 'stripe_api_key',
-           'placement' => SecretPlacement::Bearer,
-           'json' => $payload,
-       ],
+       ['Content-Type' => 'application/json'],
+       json_encode($payload),
    );
+
+   $response = $client->sendRequest($request);
 
 .. php:interface:: VaultHttpClientInterface
 
-   .. php:method:: request(string $method, string $url, array $options = []): ResponseInterface
+   PSR-18 compatible HTTP client with vault-based authentication.
+   Extends :php:`Psr\Http\Client\ClientInterface`.
 
-      Make an HTTP request with vault-provided authentication.
+   .. php:method:: withAuthentication(string $secretIdentifier, SecretPlacement $placement = SecretPlacement::Bearer, array $options = []): static
 
-      :param string $method: HTTP method (GET, POST, PUT, DELETE, etc.).
-      :param string $url: Request URL.
-      :param array $options: Request options including auth_secret, placement, headers, etc.
+      Create a new client instance configured with authentication.
+      Returns an immutable instance - the original is unchanged.
 
-   .. php:method:: get(string $url, array $options = []): ResponseInterface
+      :param string $secretIdentifier: Vault identifier for the secret.
+      :param SecretPlacement $placement: How to inject the secret.
+      :param array $options: Additional options (headerName, queryParam, usernameSecret, reason).
+      :returns: New client instance with authentication configured.
 
-      Shorthand for GET request.
+   .. php:method:: withOAuth(OAuthConfig $config, string $reason = 'OAuth2 API call'): static
 
-   .. php:method:: post(string $url, array $options = []): ResponseInterface
+      Create a new client instance configured with OAuth 2.0 authentication.
 
-      Shorthand for POST request.
+      :param OAuthConfig $config: OAuth configuration.
+      :param string $reason: Audit log reason.
+      :returns: New client instance with OAuth configured.
 
-   .. php:method:: put(string $url, array $options = []): ResponseInterface
+   .. php:method:: withReason(string $reason): static
 
-      Shorthand for PUT request.
+      Create a new client instance with a custom audit reason.
 
-   .. php:method:: delete(string $url, array $options = []): ResponseInterface
+      :param string $reason: Audit log reason for requests.
+      :returns: New client instance with reason configured.
 
-      Shorthand for DELETE request.
+   .. php:method:: sendRequest(RequestInterface $request): ResponseInterface
 
-   .. php:method:: patch(string $url, array $options = []): ResponseInterface
+      Send an HTTP request (PSR-18 method).
 
-      Shorthand for PATCH request.
-
-   .. php:method:: send(string $method, string $url, array $options = []): VaultHttpResponse
-
-      Make a request and return a VaultHttpResponse wrapper with helper methods.
+      :param RequestInterface $request: PSR-7 request.
+      :returns: PSR-7 response.
+      :throws ClientExceptionInterface: If request fails.
 
 .. _api-http-auth-options:
 
 Authentication options
 ~~~~~~~~~~~~~~~~~~~~~~
+
+The :php:`withAuthentication()` method accepts these options:
+
+headerName
+   Custom header name (for :php:`SecretPlacement::Header`, default: ``X-API-Key``).
+
+queryParam
+   Query parameter name (for :php:`SecretPlacement::QueryParam`, default: ``api_key``).
+
+bodyField
+   Body field name (for :php:`SecretPlacement::BodyField`, default: ``api_key``).
+
+usernameSecret
+   Separate username secret identifier (for :php:`SecretPlacement::BasicAuth`).
+
+reason
+   Reason for access (logged in audit).
+
+.. _api-secret-placement:
+
+SecretPlacement enum
+~~~~~~~~~~~~~~~~~~~~
 
 placement
    Authentication placement using :php:`SecretPlacement` enum:
@@ -239,63 +273,47 @@ placement
    -  :php:`SecretPlacement::OAuth2` - OAuth 2.0 with automatic token refresh.
    -  :php:`SecretPlacement::ApiKey` - X-API-Key header (shorthand).
 
-auth_secret
-   Secret identifier for authentication.
-
-auth_header
-   Custom header name (for :php:`SecretPlacement::Header`, default: ``X-API-Key``).
-
-auth_query_param
-   Query parameter name (for :php:`SecretPlacement::QueryParam`, default: ``api_key``).
-
-auth_body_field
-   Body field name (for :php:`SecretPlacement::BodyField`, default: ``api_key``).
-
-auth_username_secret
-   Separate username secret (for :php:`SecretPlacement::BasicAuth`).
-
-oauth_config
-   :php:`OAuthConfig` instance (for :php:`SecretPlacement::OAuth2`).
-
-reason
-   Reason for access (logged in audit).
-
 .. _api-http-auth-examples:
 
 .. code-block:: php
    :caption: Authentication examples
 
+   use GuzzleHttp\Psr7\Request;
    use Netresearch\NrVault\Http\SecretPlacement;
 
    // Bearer authentication
-   $response = $this->vault->http()->post(
-       'https://api.stripe.com/v1/charges',
-       [
-           'auth_secret' => 'stripe_api_key',
-           'placement' => SecretPlacement::Bearer,
-           'json' => $payload,
-       ]
+   $client = $this->vault->http()
+       ->withAuthentication('stripe_api_key', SecretPlacement::Bearer);
+   $response = $client->sendRequest(
+       new Request('POST', 'https://api.stripe.com/v1/charges', [], $body)
    );
 
    // Custom header
-   $response = $this->vault->http()->get(
-       'https://api.example.com/data',
-       [
-           'auth_secret' => 'api_token',
-           'placement' => SecretPlacement::Header,
-           'auth_header' => 'X-API-Key',
-       ]
+   $client = $this->vault->http()
+       ->withAuthentication('api_token', SecretPlacement::Header, [
+           'headerName' => 'X-API-Key',
+       ]);
+   $response = $client->sendRequest(
+       new Request('GET', 'https://api.example.com/data')
    );
 
    // Basic authentication with separate credentials
-   $response = $this->vault->http()->get(
-       'https://api.example.com/secure',
-       [
-           'auth_username_secret' => 'service_username',
-           'auth_secret' => 'service_password',
-           'placement' => SecretPlacement::BasicAuth,
+   $client = $this->vault->http()
+       ->withAuthentication('service_password', SecretPlacement::BasicAuth, [
+           'usernameSecret' => 'service_username',
            'reason' => 'Fetching secure data',
-       ]
+       ]);
+   $response = $client->sendRequest(
+       new Request('GET', 'https://api.example.com/secure')
+   );
+
+   // Query parameter
+   $client = $this->vault->http()
+       ->withAuthentication('api_key', SecretPlacement::QueryParam, [
+           'queryParam' => 'key',
+       ]);
+   $response = $client->sendRequest(
+       new Request('GET', 'https://maps.example.com/geocode')
    );
 
 .. _api-events:
