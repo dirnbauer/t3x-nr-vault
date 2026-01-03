@@ -14,8 +14,8 @@ $finder = Finder::create()
 return new Config()
     ->setRiskyAllowed(true)
     ->setRules([
-        '@PER-CS2.0' => true,
-        '@PHP82Migration' => true,
+        '@PER-CS' => true,
+        '@PHP85Migration' => true,
 
         // Strict rules
         'declare_strict_types' => true,
