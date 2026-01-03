@@ -28,11 +28,15 @@ use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
+use Netresearch\NrVault\Http\AuthenticatedPsr18Client;
+use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
 use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
+use GuzzleHttp\Client;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Psr\Http\Client\ClientInterface;
 use TYPO3\CMS\Core\SingletonInterface;
 
 /**
@@ -413,6 +417,28 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         return new VaultHttpClient(
             $this,
             $this->auditLogService,
+        );
+    }
+
+    public function createAuthenticatedClient(
+        string $secretIdentifier,
+        SecretPlacement $placement = SecretPlacement::Bearer,
+        array $options = [],
+    ): ClientInterface {
+        $innerClient = $options['client'] ?? new Client([
+            'timeout' => 30,
+            'connect_timeout' => 10,
+            'http_errors' => false,
+        ]);
+
+        return new AuthenticatedPsr18Client(
+            vaultService: $this,
+            innerClient: $innerClient,
+            secretIdentifier: $secretIdentifier,
+            placement: $placement,
+            headerName: $options['headerName'] ?? null,
+            queryParam: $options['queryParam'] ?? null,
+            usernameSecretIdentifier: $options['usernameSecret'] ?? null,
         );
     }
 

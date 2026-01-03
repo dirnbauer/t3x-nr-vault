@@ -67,6 +67,9 @@
     "extra": {
         "typo3/cms": {
             "extension-key": "nr_vault"
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev"
         }
     },
     "scripts": {
