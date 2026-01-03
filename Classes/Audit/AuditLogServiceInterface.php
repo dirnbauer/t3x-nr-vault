@@ -1,10 +1,16 @@
 <?php
 
+/*
+ * This file is part of the nr-vault TYPO3 extension.
+ *
+ * (c) Netresearch DTT GmbH <info@netresearch.de>
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
-
-use DateTimeInterface;
 
 /**
  * Interface for audit logging operations.
@@ -21,7 +27,7 @@ interface AuditLogServiceInterface
      * @param string|null $reason Reason for operation (required for rotate/delete)
      * @param string|null $hashBefore Secret's value_checksum before operation
      * @param string|null $hashAfter Secret's value_checksum after operation
-     * @param array $context Additional context (JSON-serializable)
+     * @param AuditContextInterface|null $context Additional context data
      */
     public function log(
         string $secretIdentifier,
@@ -31,27 +37,29 @@ interface AuditLogServiceInterface
         ?string $reason = null,
         ?string $hashBefore = null,
         ?string $hashAfter = null,
-        array $context = [],
+        ?AuditContextInterface $context = null,
     ): void;
 
     /**
      * Query audit logs.
      *
-     * @param array{secretIdentifier?: string, action?: string, actorUid?: int, since?: DateTimeInterface, until?: DateTimeInterface, success?: bool} $filters
+     * @param AuditLogFilter|null $filter Filter criteria (null = no filter)
      *
-     * @return AuditLogEntry[]
+     * @return list<AuditLogEntry>
      */
-    public function query(array $filters = [], int $limit = 100, int $offset = 0): array;
+    public function query(?AuditLogFilter $filter = null, int $limit = 100, int $offset = 0): array;
 
     /**
-     * Get audit log count for filters.
+     * Get audit log count for filter.
      */
-    public function count(array $filters = []): int;
+    public function count(?AuditLogFilter $filter = null): int;
 
     /**
-     * Export audit logs to array.
+     * Export all audit logs matching filter (no pagination).
+     *
+     * @return list<AuditLogEntry>
      */
-    public function export(array $filters = []): array;
+    public function export(?AuditLogFilter $filter = null): array;
 
     /**
      * Verify hash chain integrity.

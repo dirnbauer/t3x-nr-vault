@@ -14,6 +14,7 @@ namespace Netresearch\NrVault\Http;
 
 use GuzzleHttp\Client;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
@@ -51,6 +52,7 @@ use Psr\Http\Message\ResponseInterface;
 final readonly class VaultHttpClient implements VaultHttpClientInterface
 {
     private ClientInterface $innerClient;
+
     private OAuthTokenManager $oauthManager;
 
     /**
@@ -356,10 +358,6 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
         bool $success,
         ?string $errorMessage,
     ): void {
-        $parsedUrl = parse_url($url);
-        $host = $parsedUrl['host'] ?? 'unknown';
-        $path = $parsedUrl['path'] ?? '/';
-
         $this->auditLogService->log(
             $secretIdentifier,
             'http_call',
@@ -368,12 +366,7 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
             $this->reason,
             null,
             null,
-            [
-                'method' => $method,
-                'host' => $host,
-                'path' => $path,
-                'status_code' => $statusCode,
-            ],
+            HttpCallContext::fromRequest($method, $url, $statusCode),
         );
     }
 }

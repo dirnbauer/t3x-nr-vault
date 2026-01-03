@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Controller;
 
 use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Audit\GenericContext;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -257,7 +258,7 @@ final readonly class SecretsController
                 $action === 'disable' ? 'Secret disabled' : 'Secret enabled',
                 null,
                 null,
-                ['action' => $action, 'hidden' => $newState],
+                new GenericContext(['action' => $action, 'hidden' => $newState]),
             );
 
             $message = $newState !== 0

@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
 
-use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -39,7 +38,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         ?string $reason = null,
         ?string $hashBefore = null,
         ?string $hashAfter = null,
-        array $context = [],
+        ?AuditContextInterface $context = null,
     ): void {
         $connection = $this->getConnection();
 
@@ -65,7 +64,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             'hash_before' => $hashBefore ?? '',
             'hash_after' => $hashAfter ?? '',
             'crdate' => time(),
-            'context' => json_encode($context),
+            'context' => $context !== null ? json_encode($context->toArray()) : '{}',
         ];
 
         // Insert to get UID
@@ -73,13 +72,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         $uid = (int) $connection->lastInsertId();
 
         // Calculate entry hash
-        $entryHash = $this->calculateEntryHash([
-            'uid' => $uid,
-            'secret_identifier' => $secretIdentifier,
-            'action' => $action,
-            'actor_uid' => $data['actor_uid'],
-            'crdate' => $data['crdate'],
-        ], $previousHash);
+        $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash);
 
         // Update with hash
         $connection->update(
@@ -89,7 +82,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         );
     }
 
-    public function query(array $filters = [], int $limit = 100, int $offset = 0): array
+    public function query(?AuditLogFilter $filter = null, int $limit = 100, int $offset = 0): array
     {
         $queryBuilder = $this->getConnection()->createQueryBuilder();
         $queryBuilder
@@ -99,7 +92,9 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             ->setMaxResults($limit)
             ->setFirstResult($offset);
 
-        $this->applyFilters($queryBuilder, $filters);
+        if ($filter !== null) {
+            $this->applyFilter($queryBuilder, $filter);
+        }
 
         $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
 
@@ -109,23 +104,23 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         );
     }
 
-    public function count(array $filters = []): int
+    public function count(?AuditLogFilter $filter = null): int
     {
         $queryBuilder = $this->getConnection()->createQueryBuilder();
         $queryBuilder
             ->count('uid')
             ->from(self::TABLE_NAME);
 
-        $this->applyFilters($queryBuilder, $filters);
+        if ($filter !== null) {
+            $this->applyFilter($queryBuilder, $filter);
+        }
 
         return (int) $queryBuilder->executeQuery()->fetchOne();
     }
 
-    public function export(array $filters = []): array
+    public function export(?AuditLogFilter $filter = null): array
     {
-        $entries = $this->query($filters, PHP_INT_MAX, 0);
-
-        return array_map(fn (AuditLogEntry $entry): array => $entry->toArray(), $entries);
+        return $this->query($filter, PHP_INT_MAX, 0);
     }
 
     public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array
@@ -153,13 +148,14 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         $previousHash = '';
 
         foreach ($rows as $row) {
-            $expectedHash = $this->calculateEntryHash([
-                'uid' => (int) $row['uid'],
-                'secret_identifier' => $row['secret_identifier'],
-                'action' => $row['action'],
-                'actor_uid' => (int) $row['actor_uid'],
-                'crdate' => (int) $row['crdate'],
-            ], $previousHash);
+            $expectedHash = $this->calculateEntryHash(
+                (int) $row['uid'],
+                (string) $row['secret_identifier'],
+                (string) $row['action'],
+                (int) $row['actor_uid'],
+                (int) $row['crdate'],
+                $previousHash,
+            );
 
             // Verify previous_hash matches
             if ($row['previous_hash'] !== $previousHash) {
@@ -171,7 +167,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 $errors[(int) $row['uid']] = 'Entry hash mismatch - possible tampering';
             }
 
-            $previousHash = $row['entry_hash'];
+            $previousHash = (string) $row['entry_hash'];
         }
 
         return [
@@ -197,14 +193,20 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     /**
      * Calculate hash for an audit log entry.
      */
-    private function calculateEntryHash(array $entry, string $previousHash): string
-    {
+    private function calculateEntryHash(
+        int $uid,
+        string $secretIdentifier,
+        string $action,
+        int $actorUid,
+        int $crdate,
+        string $previousHash,
+    ): string {
         $payload = json_encode([
-            'uid' => $entry['uid'],
-            'secret_identifier' => $entry['secret_identifier'],
-            'action' => $entry['action'],
-            'actor_uid' => $entry['actor_uid'],
-            'crdate' => $entry['crdate'],
+            'uid' => $uid,
+            'secret_identifier' => $secretIdentifier,
+            'action' => $action,
+            'actor_uid' => $actorUid,
+            'crdate' => $crdate,
             'previous_hash' => $previousHash,
         ], JSON_THROW_ON_ERROR);
 
@@ -212,60 +214,60 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     }
 
     /**
-     * Apply filters to query builder.
+     * Apply filter to query builder.
      */
-    private function applyFilters(QueryBuilder $queryBuilder, array $filters): void
+    private function applyFilter(QueryBuilder $queryBuilder, AuditLogFilter $filter): void
     {
-        if (isset($filters['secretIdentifier'])) {
+        if ($filter->secretIdentifier !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'secret_identifier',
-                    $queryBuilder->createNamedParameter($filters['secretIdentifier']),
+                    $queryBuilder->createNamedParameter($filter->secretIdentifier),
                 ),
             );
         }
 
-        if (isset($filters['action'])) {
+        if ($filter->action !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'action',
-                    $queryBuilder->createNamedParameter($filters['action']),
+                    $queryBuilder->createNamedParameter($filter->action),
                 ),
             );
         }
 
-        if (isset($filters['actorUid'])) {
+        if ($filter->actorUid !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'actor_uid',
-                    $queryBuilder->createNamedParameter($filters['actorUid'], Connection::PARAM_INT),
+                    $queryBuilder->createNamedParameter($filter->actorUid, Connection::PARAM_INT),
                 ),
             );
         }
 
-        if (isset($filters['success'])) {
+        if ($filter->success !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->eq(
                     'success',
-                    $queryBuilder->createNamedParameter($filters['success'] ? 1 : 0, Connection::PARAM_INT),
+                    $queryBuilder->createNamedParameter($filter->success ? 1 : 0, Connection::PARAM_INT),
                 ),
             );
         }
 
-        if (isset($filters['since']) && $filters['since'] instanceof DateTimeInterface) {
+        if ($filter->since !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->gte(
                     'crdate',
-                    $queryBuilder->createNamedParameter($filters['since']->getTimestamp(), Connection::PARAM_INT),
+                    $queryBuilder->createNamedParameter($filter->since->getTimestamp(), Connection::PARAM_INT),
                 ),
             );
         }
 
-        if (isset($filters['until']) && $filters['until'] instanceof DateTimeInterface) {
+        if ($filter->until !== null) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->lte(
                     'crdate',
-                    $queryBuilder->createNamedParameter($filters['until']->getTimestamp(), Connection::PARAM_INT),
+                    $queryBuilder->createNamedParameter($filter->until->getTimestamp(), Connection::PARAM_INT),
                 ),
             );
         }

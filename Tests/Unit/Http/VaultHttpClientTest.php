@@ -6,7 +6,9 @@ namespace Netresearch\NrVault\Tests\Unit\Http;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Netresearch\NrVault\Audit\AuditContextInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
@@ -23,8 +25,10 @@ final class VaultHttpClientTest extends TestCase
 {
     /** @phpstan-ignore property.uninitialized */
     private VaultServiceInterface&MockObject $vaultService;
+
     /** @phpstan-ignore property.uninitialized */
     private AuditLogServiceInterface&MockObject $auditLogService;
+
     /** @phpstan-ignore property.uninitialized */
     private ClientInterface&MockObject $innerClient;
 
@@ -384,7 +388,7 @@ final class VaultHttpClientTest extends TestCase
                 bool $success,
                 ?string $error,
                 string $reason,
-            ) {
+            ): void {
                 self::assertSame('Custom audit reason', $reason);
             });
 
@@ -460,15 +464,15 @@ final class VaultHttpClientTest extends TestCase
                 ?string $reason,
                 ?string $hashBefore,
                 ?string $hashAfter,
-                ?array $metadata,
-            ) {
+                ?AuditContextInterface $context,
+            ): void {
                 self::assertSame('my_key', $identifier);
                 self::assertSame('http_call', $action);
                 self::assertTrue($success);
                 self::assertNull($error);
-                self::assertIsArray($metadata);
-                self::assertSame('POST', $metadata['method']);
-                self::assertSame(201, $metadata['status_code']);
+                self::assertInstanceOf(HttpCallContext::class, $context);
+                self::assertSame('POST', $context->method);
+                self::assertSame(201, $context->statusCode);
             });
 
         $client = new VaultHttpClient(
