@@ -37,20 +37,14 @@ parameters:
 			path: Classes/Audit/AuditLogEntry.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogEntry::__construct() has parameter $context with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogEntry.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogEntry::fromDatabaseRow() has parameter $row with no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Classes/Audit/AuditLogEntry.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogEntry::toArray() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
+			rawMessage: 'Parameter $context of class Netresearch\NrVault\Audit\AuditLogEntry constructor expects array<string, mixed>, array<mixed> given.'
+			identifier: argument.type
 			count: 1
 			path: Classes/Audit/AuditLogEntry.php
 
@@ -87,7 +81,7 @@ parameters:
 		-
 			rawMessage: Cannot cast mixed to string.
 			identifier: cast.string
-			count: 2
+			count: 5
 			path: Classes/Audit/AuditLogService.php
 
 		-
@@ -97,56 +91,8 @@ parameters:
 			path: Classes/Audit/AuditLogService.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::applyFilters() has parameter $filters with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::calculateEntryHash() has parameter $entry with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::count() has parameter $filters with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::export() has parameter $filters with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::export() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::getServerRequest() should return TYPO3\CMS\Core\Http\ServerRequest|null but returns mixed.'
 			identifier: return.type
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogService::log() has parameter $context with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Parameter #1 $filters of method Netresearch\NrVault\Audit\AuditLogService::query() expects array{secretIdentifier?: string, action?: string, actorUid?: int, since?: DateTimeInterface, until?: DateTimeInterface, success?: bool}, array given.'
-			identifier: argument.type
-			count: 1
-			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Parameter #2 $previousHash of method Netresearch\NrVault\Audit\AuditLogService::calculateEntryHash() expects string, mixed given.'
-			identifier: argument.type
 			count: 1
 			path: Classes/Audit/AuditLogService.php
 
@@ -155,30 +101,6 @@ parameters:
 			identifier: return.internalClass
 			count: 1
 			path: Classes/Audit/AuditLogService.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogServiceInterface::count() has parameter $filters with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogServiceInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogServiceInterface::export() has parameter $filters with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogServiceInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogServiceInterface::export() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogServiceInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Audit\AuditLogServiceInterface::log() has parameter $context with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Audit/AuditLogServiceInterface.php
 
 		-
 			rawMessage: Cannot access offset 'context' on mixed.
@@ -253,12 +175,6 @@ parameters:
 			path: Classes/Command/VaultAuditCommand.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Command\VaultAuditCommand::buildFilters() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Command/VaultAuditCommand.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Command\VaultAuditCommand::exportToFile() has parameter $entries with no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
@@ -292,12 +208,6 @@ parameters:
 			rawMessage: 'Parameter #1 $datetime of class DateTimeImmutable constructor expects string, mixed given.'
 			identifier: argument.type
 			count: 2
-			path: Classes/Command/VaultAuditCommand.php
-
-		-
-			rawMessage: 'Parameter #1 $filters of method Netresearch\NrVault\Audit\AuditLogServiceInterface::query() expects array{secretIdentifier?: string, action?: string, actorUid?: int, since?: DateTimeInterface, until?: DateTimeInterface, success?: bool}, array given.'
-			identifier: argument.type
-			count: 1
 			path: Classes/Command/VaultAuditCommand.php
 
 		-
@@ -979,37 +889,7 @@ parameters:
 			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: Cannot access offset 'action' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/AuditController.php
-
-		-
 			rawMessage: Cannot access offset 'context' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/AuditController.php
-
-		-
-			rawMessage: Cannot access offset 'secretIdentifier' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/AuditController.php
-
-		-
-			rawMessage: Cannot access offset 'since' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/AuditController.php
-
-		-
-			rawMessage: Cannot access offset 'success' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/AuditController.php
-
-		-
-			rawMessage: Cannot access offset 'until' on mixed.
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/Controller/AuditController.php
@@ -1024,6 +904,12 @@ parameters:
 			rawMessage: Cannot cast mixed to int.
 			identifier: cast.int
 			count: 3
+			path: Classes/Controller/AuditController.php
+
+		-
+			rawMessage: Cannot cast mixed to string.
+			identifier: cast.string
+			count: 7
 			path: Classes/Controller/AuditController.php
 
 		-
@@ -1042,18 +928,6 @@ parameters:
 			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\Response.
 			identifier: new.internalClass
 			count: 2
-			path: Classes/Controller/AuditController.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\AuditController::buildAuditFilters() has parameter $queryParams with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Controller/AuditController.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\AuditController::buildAuditFilters() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
 			path: Classes/Controller/AuditController.php
 
 		-
@@ -1081,9 +955,9 @@ parameters:
 			path: Classes/Controller/AuditController.php
 
 		-
-			rawMessage: 'Parameter #1 $filters of method Netresearch\NrVault\Audit\AuditLogServiceInterface::query() expects array{secretIdentifier?: string, action?: string, actorUid?: int, since?: DateTimeInterface, until?: DateTimeInterface, success?: bool}, array given.'
+			rawMessage: 'Parameter #1 $queryParams of method Netresearch\NrVault\Controller\AuditController::buildAuditFilters() expects array<string, mixed>, array given.'
 			identifier: argument.type
-			count: 1
+			count: 2
 			path: Classes/Controller/AuditController.php
 
 		-
@@ -1257,96 +1131,36 @@ parameters:
 		-
 			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\JsonResponse from outside its root namespace TYPO3.'
 			identifier: method.internalClass
-			count: 8
+			count: 4
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: 'Call to method __construct() of internal class TYPO3\CMS\Core\Http\RedirectResponse from outside its root namespace TYPO3.'
 			identifier: method.internalClass
-			count: 20
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'context' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'description' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'expiresAt' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'frontendAccessible' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'groups' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 9
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Cannot access offset 'identifier' on array|object.
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'metadata' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
+			count: 3
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Cannot access offset 'owner' on array|object.
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
+			count: 1
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Cannot access offset 'reason' on array|object.
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'scopePid' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'secret' on array|object.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			count: 1
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Cannot access offset 'status' on array|object.
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access offset 'uid' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Cannot access property $user on mixed.
-			identifier: property.nonObject
 			count: 1
 			path: Classes/Controller/SecretsController.php
 
@@ -1359,49 +1173,25 @@ parameters:
 		-
 			rawMessage: Cannot cast mixed to int.
 			identifier: cast.int
-			count: 8
+			count: 2
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Cannot cast mixed to string.
 			identifier: cast.string
-			count: 21
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: Dead catch - Netresearch\NrVault\Exception\SecretNotFoundException is never thrown in the try block.
-			identifier: catch.neverThrown
-			count: 1
+			count: 6
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\JsonResponse.
 			identifier: new.internalClass
-			count: 8
+			count: 4
 			path: Classes/Controller/SecretsController.php
 
 		-
 			rawMessage: Instantiation of internal class TYPO3\CMS\Core\Http\RedirectResponse.
 			identifier: new.internalClass
-			count: 20
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getBackendGroups() should return array<array{uid: int, title: string}> but returns list<array{uid: int, title: mixed}>.'
-			identifier: return.type
-			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getBackendUsers() should return array<array{uid: int, username: string, realName: string}> but returns list<array{uid: int, username: mixed, realName: mixed}>.'
-			identifier: return.type
-			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getGroupNames() should return array<string> but returns list<mixed>.'
-			identifier: return.type
-			count: 1
+			count: 9
 			path: Classes/Controller/SecretsController.php
 
 		-
@@ -1411,27 +1201,9 @@ parameters:
 			path: Classes/Controller/SecretsController.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getUsernameByUid() should return string but returns mixed.'
-			identifier: return.type
-			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Controller\SecretsController::getUsernameCache() should return array<int, string> but returns array<int, mixed>.'
 			identifier: return.type
 			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: 'Parameter #1 $callback of function array_map expects (callable(mixed): mixed)|null, Closure(array|bool|float|int|resource|string|null, int=): int given.'
-			identifier: argument.type
-			count: 1
-			path: Classes/Controller/SecretsController.php
-
-		-
-			rawMessage: 'Parameter #1 $datetime of class DateTimeImmutable constructor expects string, mixed given.'
-			identifier: argument.type
-			count: 2
 			path: Classes/Controller/SecretsController.php
 
 		-
@@ -2221,138 +1993,6 @@ parameters:
 			path: Classes/Http/OAuth/OAuthTokenManager.php
 
 		-
-			rawMessage: Cannot access offset 'Authorization' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: Cannot access offset 'X-API-Key' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: Cannot access offset mixed on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Cannot call method request() on GuzzleHttp\ClientInterface|null.'
-			identifier: method.nonObject
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::delete() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::get() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::patch() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::post() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClient::put() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #1 $identifier of method Netresearch\NrVault\Service\VaultServiceInterface::retrieve() expects string, mixed given.'
-			identifier: argument.type
-			count: 2
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #1 $message of class Netresearch\NrVault\Exception\SecretNotFoundException constructor expects string, mixed given.'
-			identifier: argument.type
-			count: 2
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #1 $secretIdentifier of method Netresearch\NrVault\Http\VaultHttpClient::logHttpCall() expects string, mixed given.'
-			identifier: argument.type
-			count: 2
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #2 $secretIdentifier of method Netresearch\NrVault\Http\VaultHttpClient::injectAuthentication() expects string, mixed given.'
-			identifier: argument.type
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #3 $options of method Netresearch\NrVault\Http\VaultHttpClient::request() expects array<string, mixed>, array given.'
-			identifier: argument.type
-			count: 5
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #3 $placement of method Netresearch\NrVault\Http\VaultHttpClient::injectAuthentication() expects Netresearch\NrVault\Http\SecretPlacement, mixed given.'
-			identifier: argument.type
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Parameter #7 $reason of method Netresearch\NrVault\Http\VaultHttpClient::logHttpCall() expects string, mixed given.'
-			identifier: argument.type
-			count: 2
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: Possibly invalid array key type mixed.
-			identifier: array.invalidKey
-			count: 1
-			path: Classes/Http/VaultHttpClient.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClientInterface::delete() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClientInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClientInterface::get() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClientInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClientInterface::patch() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClientInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClientInterface::post() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClientInterface.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpClientInterface::put() has parameter $options with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Http/VaultHttpClientInterface.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Http\VaultHttpResponse::getHeaders() should return array<string, array<string>> but returns array<array<string>>.'
 			identifier: return.type
 			count: 1
@@ -2687,771 +2327,3 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: Classes/Utility/VaultFieldResolver.php
-
-		-
-			rawMessage: Binary operation "." between mixed and 'typo3temp/var/tests' results in an error.
-			identifier: binaryOp.invalid
-			count: 1
-			path: Tests/Build/FunctionalTestsBootstrap.php
-
-		-
-			rawMessage: Binary operation "." between mixed and 'typo3temp/var…' results in an error.
-			identifier: binaryOp.invalid
-			count: 1
-			path: Tests/Build/FunctionalTestsBootstrap.php
-
-		-
-			rawMessage: Constant ORIGINAL_ROOT not found.
-			identifier: constant.notFound
-			count: 2
-			path: Tests/Build/FunctionalTestsBootstrap.php
-
-		-
-			rawMessage: Cannot access offset 'EXTENSIONS' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Functional/Hook/TcaIntegrationTest.php
-
-		-
-			rawMessage: Cannot access offset 'nr_vault' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Functional/Hook/TcaIntegrationTest.php
-
-		-
-			rawMessage: Cannot access offset 'tx_nrvault_test' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Tests/Functional/Hook/TcaIntegrationTest.php
-
-		-
-			rawMessage: 'Call to an undefined method Netresearch\NrVault\Service\VaultServiceInterface::clearCache().'
-			identifier: method.notFound
-			count: 1
-			path: Tests/Functional/Service/VaultServiceTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertNotNull() with Netresearch\NrVault\Http\VaultHttpClientInterface will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: Tests/Functional/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Cannot access offset 'EXTENSIONS' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Functional/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Cannot access offset 'nr_vault' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Functional/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Functional\Service\VaultServiceTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Functional/Service/VaultServiceTest.php
-
-		-
-			rawMessage: 'Property Netresearch\NrVault\Tests\Functional\Service\VaultServiceTest::$subject (Netresearch\NrVault\Service\VaultServiceInterface) does not accept mixed.'
-			identifier: assign.propertyType
-			count: 1
-			path: Tests/Functional/Service/VaultServiceTest.php
-
-		-
-			rawMessage: 'Call to function is_array() with array will always evaluate to true.'
-			identifier: function.alreadyNarrowedType
-			count: 2
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsBool() with bool will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 3
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsString() with string will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 2
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Fuzz\IdentifierFuzzTest::fuzzedComponentProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Fuzz\IdentifierFuzzTest::fuzzedFlexFormComponentProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Fuzz\IdentifierFuzzTest::fuzzedIdentifierProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Fuzz\IdentifierFuzzTest::injectionPatternProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Fuzz/IdentifierFuzzTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Audit\AuditLogServiceTest has an uninitialized property $accessControlService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Audit/AuditLogServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Audit\AuditLogServiceTest has an uninitialized property $connection. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Audit/AuditLogServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Audit\AuditLogServiceTest has an uninitialized property $connectionPool. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Audit/AuditLogServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Audit\AuditLogServiceTest has an uninitialized property $queryBuilder. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Audit/AuditLogServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Audit\AuditLogServiceTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Audit/AuditLogServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Command\VaultCleanupOrphansCommandTest has an uninitialized property $commandTester. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Command/VaultCleanupOrphansCommandTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Command\VaultCleanupOrphansCommandTest has an uninitialized property $connectionPool. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Command/VaultCleanupOrphansCommandTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Command\VaultCleanupOrphansCommandTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Command/VaultCleanupOrphansCommandTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Command\VaultMigrateFieldCommandTest has an uninitialized property $commandTester. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Command/VaultMigrateFieldCommandTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Command\VaultMigrateFieldCommandTest has an uninitialized property $connectionPool. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Command/VaultMigrateFieldCommandTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Command\VaultMigrateFieldCommandTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Command/VaultMigrateFieldCommandTest.php
-
-		-
-			rawMessage: Cannot access offset 'apiKey' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php
-
-		-
-			rawMessage: Cannot access offset 'payment' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php
-
-		-
-			rawMessage: Cannot access offset 'secret' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Configuration\SiteConfigurationVaultProcessorTest has an uninitialized property $logger. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Configuration\SiteConfigurationVaultProcessorTest has an uninitialized property $processor. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Configuration\SiteConfigurationVaultProcessorTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Configuration/SiteConfigurationVaultProcessorTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsArray() with array will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: Tests/Unit/Crypto/EncryptionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Crypto\EncryptionServiceTest has an uninitialized property $configuration. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Crypto/EncryptionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Crypto\EncryptionServiceTest has an uninitialized property $masterKeyProvider. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Crypto/EncryptionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Crypto\EncryptionServiceTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Crypto/EncryptionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Crypto\EncryptionServiceTest has an uninitialized property $testMasterKey. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Crypto/EncryptionServiceTest.php
-
-		-
-			rawMessage: 'Parameter #1 $string of function substr expects string, string|false given.'
-			identifier: argument.type
-			count: 1
-			path: Tests/Unit/Crypto/EncryptionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Crypto\MasterKeyProviderFactoryTest has an uninitialized property $configuration. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Crypto/MasterKeyProviderFactoryTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Crypto\MasterKeyProviderFactoryTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Crypto/MasterKeyProviderFactoryTest.php
-
-		-
-			rawMessage: 'Call to an undefined method Netresearch\NrVault\Domain\Model\Secret::getPid().'
-			identifier: method.notFound
-			count: 2
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Call to an undefined method Netresearch\NrVault\Domain\Model\Secret::setPid().'
-			identifier: method.notFound
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setAdapter() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setAllowedGroups() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setContext() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setDekNonce() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setDeleted() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setDescription() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setEncryptedDek() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setEncryptedValue() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setExpiresAt() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setHidden() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setIdentifier() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setMetadata() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setOwnerUid() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setValueChecksum() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setValueNonce() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Cannot call method setVersion() on mixed.'
-			identifier: method.nonObject
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: 'Parameter #1 $allowedGroups of method Netresearch\NrVault\Domain\Model\Secret::setAllowedGroups() expects array<int>, array<int, string> given.'
-			identifier: argument.type
-			count: 1
-			path: Tests/Unit/Domain/Model/SecretTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\EventListener\SiteConfigurationVaultListenerTest has an uninitialized property $listener. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/EventListener/SiteConfigurationVaultListenerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\EventListener\SiteConfigurationVaultListenerTest has an uninitialized property $processor. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/EventListener/SiteConfigurationVaultListenerTest.php
-
-		-
-			rawMessage: Cannot cast mixed to string.
-			identifier: cast.string
-			count: 1
-			path: Tests/Unit/EventListener/TypoScriptVaultListenerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\EventListener\TypoScriptVaultListenerTest has an uninitialized property $listener. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/EventListener/TypoScriptVaultListenerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\EventListener\TypoScriptVaultListenerTest has an uninitialized property $logger. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/EventListener/TypoScriptVaultListenerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\EventListener\TypoScriptVaultListenerTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/EventListener/TypoScriptVaultListenerTest.php
-
-		-
-			rawMessage: Access to internal property TYPO3\CMS\Core\DataHandling\DataHandler::$copyMappingArray from outside its root namespace TYPO3.
-			identifier: property.internal
-			count: 4
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Cannot access offset 'tx_test' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 15
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Cannot access offset string on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $auditLogService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $dataHandler. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest::identifierFormatProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
-			rawMessage: Cannot access offset 'scope' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Http\OAuth\OAuthTokenManagerTest has an uninitialized property $httpClient. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Http\OAuth\OAuthTokenManagerTest has an uninitialized property $logger. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Http\OAuth\OAuthTokenManagerTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Http\OAuth\OAuthTokenManagerTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Http\OAuth\OAuthTokenManagerTest::createSuccessfulTokenResponse() has parameter $data with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: 'Parameter #2 $array of static method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.'
-			identifier: argument.type
-			count: 1
-			path: Tests/Unit/Http/OAuth/OAuthTokenManagerTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsString() with string will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: Tests/Unit/Http/SecretPlacementTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Http\SecretPlacementTest::configRequirementProvider() return type has no value type specified in iterable type iterable.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Http/SecretPlacementTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Http\SecretPlacementTest::defaultConfigKeyProvider() return type has no value type specified in iterable type iterable.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Http/SecretPlacementTest.php
-
-		-
-			rawMessage: Access to an undefined property object::$name.
-			identifier: property.notFound
-			count: 1
-			path: Tests/Unit/Http/VaultHttpResponseTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Http\VaultHttpResponseTest::clientErrorStatusCodesProvider() return type has no value type specified in iterable type iterable.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Http/VaultHttpResponseTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Http\VaultHttpResponseTest::serverErrorStatusCodesProvider() return type has no value type specified in iterable type iterable.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Http/VaultHttpResponseTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Http\VaultHttpResponseTest::successfulStatusCodesProvider() return type has no value type specified in iterable type iterable.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Http/VaultHttpResponseTest.php
-
-		-
-			rawMessage: Access to internal property TYPO3\CMS\Core\Authentication\AbstractUserAuthentication::$user from outside its root namespace TYPO3.
-			identifier: property.internal
-			count: 1
-			path: Tests/Unit/Security/AccessControlServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Security\AccessControlServiceTest has an uninitialized property $configuration. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Security/AccessControlServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Security\AccessControlServiceTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Security/AccessControlServiceTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Security\AccessControlServiceTest::createSecret() has parameter $allowedGroups with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Security/AccessControlServiceTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Security\AccessControlServiceTest::setBackendUser() has parameter $groups with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Security/AccessControlServiceTest.php
-
-		-
-			rawMessage: 'Parameter #1 $allowedGroups of method Netresearch\NrVault\Domain\Model\Secret::setAllowedGroups() expects array<int>, array given.'
-			identifier: argument.type
-			count: 1
-			path: Tests/Unit/Security/AccessControlServiceTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsArray() with array will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\SecretDetectionServiceTest has an uninitialized property $connectionPool. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\SecretDetectionServiceTest has an uninitialized property $extensionConfiguration. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\SecretDetectionServiceTest has an uninitialized property $packageManager. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\SecretDetectionServiceTest has an uninitialized property $service. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Service\SecretDetectionServiceTest::calculatesSeverityCorrectly() has parameter $patterns with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Service\SecretDetectionServiceTest::excludesTablesCorrectly() has parameter $patterns with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Service/SecretDetectionServiceTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertNotNull() with Netresearch\NrVault\Http\VaultHttpClientInterface will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\VaultServiceTest has an uninitialized property $accessControlService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\VaultServiceTest has an uninitialized property $adapter. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\VaultServiceTest has an uninitialized property $auditLogService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\VaultServiceTest has an uninitialized property $configuration. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\VaultServiceTest has an uninitialized property $encryptionService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Service\VaultServiceTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Service/VaultServiceTest.php
-
-		-
-			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsArray() with array will always evaluate to true.'
-			identifier: staticMethod.alreadyNarrowedType
-			count: 1
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'api_key' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'api_secret' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'config' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'placeholder' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'renderType' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 4
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'required' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'size' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: Cannot access offset 'type' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: 'Parameter #2 $array of static method PHPUnit\Framework\Assert::assertArrayHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.'
-			identifier: argument.type
-			count: 3
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: 'Parameter #2 $array of static method PHPUnit\Framework\Assert::assertArrayNotHasKey() expects array<mixed>|ArrayAccess<(int|string), mixed>, mixed given.'
-			identifier: argument.type
-			count: 2
-			path: Tests/Unit/TCA/VaultFieldHelperTest.php
-
-		-
-			rawMessage: 'Call to internal static method TYPO3\CMS\Core\Utility\GeneralUtility::setSingletonInstance() from outside its root namespace TYPO3.'
-			identifier: staticMethod.internal
-			count: 1
-			path: Tests/Unit/Task/OrphanCleanupTaskTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Task\OrphanCleanupTaskTest has an uninitialized property $connectionPool. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Task/OrphanCleanupTaskTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Task\OrphanCleanupTaskTest has an uninitialized property $logger. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Task/OrphanCleanupTaskTest.php
-
-		-
-			rawMessage: Class Netresearch\NrVault\Tests\Unit\Task\OrphanCleanupTaskTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
-			identifier: property.uninitialized
-			count: 1
-			path: Tests/Unit/Task/OrphanCleanupTaskTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Utility\FlexFormVaultResolverTest::flexFormIdentifierProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Utility/FlexFormVaultResolverTest.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Utility\VaultFieldResolverTest::identifierProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Tests/Unit/Utility/VaultFieldResolverTest.php
