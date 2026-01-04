@@ -9,6 +9,7 @@ services:
     exclude:
       - '../Classes/Domain/Model/*'
       - '../Classes/Exception/*'
+      - '../Classes/Http/OAuth/OAuthConfig.php'
 
   # Configuration
   Netresearch\NrVault\Configuration\ExtensionConfiguration:
@@ -77,8 +78,14 @@ services:
     tags:
       - name: backend.controller
 
-  # DataHandler hook
+  # DataHandler hooks (must be public for GeneralUtility::makeInstance DI resolution)
   Netresearch\NrVault\Hook\DataHandlerHook:
+    public: true
+
+  Netresearch\NrVault\Hook\FlexFormVaultHook:
+    public: true
+
+  Netresearch\NrVault\Hook\SecretTcaHook:
     public: true
 
   # CLI Commands
