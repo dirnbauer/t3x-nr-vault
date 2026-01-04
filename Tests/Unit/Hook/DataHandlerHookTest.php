@@ -12,7 +12,6 @@ use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -33,12 +32,15 @@ final class DataHandlerHookTest extends UnitTestCase
 
     private DataHandler&MockObject $dataHandler;
 
+    private ConnectionPool&MockObject $connectionPool;
+
     #[Override]
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->subject = new DataHandlerHook();
+        $this->connectionPool = $this->createMock(ConnectionPool::class);
+        $this->subject = new DataHandlerHook($this->connectionPool);
 
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
