@@ -218,7 +218,7 @@ final class VaultCleanupOrphansCommand extends Command
         $tcaSecrets = [];
 
         foreach ($allSecrets as $secret) {
-            $metadata = $secret['metadata'] ?? [];
+            $metadata = $secret->metadata;
             $source = $metadata['source'] ?? '';
 
             // Only include TCA-sourced secrets (regular fields, FlexForm, or copied records)
@@ -236,9 +236,9 @@ final class VaultCleanupOrphansCommand extends Command
             }
 
             $tcaSecrets[] = [
-                'identifier' => $secret['identifier'],
+                'identifier' => $secret->identifier,
                 'metadata' => $metadata,
-                'created_at' => $secret['createdAt'] ?? 0,
+                'created_at' => $secret->createdAt,
             ];
         }
 

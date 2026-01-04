@@ -89,7 +89,7 @@ final class OrphanCleanupTask extends AbstractTask
         $checked = 0;
 
         foreach ($allSecrets as $secret) {
-            $metadata = $secret['metadata'] ?? [];
+            $metadata = $secret->metadata;
             $source = $metadata['source'] ?? '';
 
             // Only check TCA-sourced secrets
@@ -106,8 +106,8 @@ final class OrphanCleanupTask extends AbstractTask
             }
 
             $checked++;
-            $identifier = $secret['identifier'];
-            $createdAt = $secret['createdAt'] ?? 0;
+            $identifier = $secret->identifier;
+            $createdAt = $secret->createdAt;
 
             // Parse identifier
             $parsed = $this->parseIdentifier($identifier);

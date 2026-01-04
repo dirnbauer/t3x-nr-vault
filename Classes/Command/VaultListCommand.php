@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -61,7 +62,7 @@ final class VaultListCommand extends Command
         $limit = (int) $input->getOption('limit');
 
         try {
-            $secrets = $this->vaultService->list($pattern);
+            $secrets = $this->vaultService->list(\is_string($pattern) ? $pattern : null);
 
             // Apply limit
             if ($limit > 0 && \count($secrets) > $limit) {
@@ -75,7 +76,7 @@ final class VaultListCommand extends Command
             }
 
             match ($format) {
-                'json' => $output->writeln(json_encode($secrets, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
+                'json' => $this->outputJson($output, $secrets),
                 'csv' => $this->outputCsv($output, $secrets),
                 default => $this->outputTable($io, $secrets),
             };
@@ -89,19 +90,31 @@ final class VaultListCommand extends Command
     }
 
     /**
-     * @param array<array{identifier: string, owner_uid: int, crdate: int, tstamp: int, read_count: int, last_read_at: int|null, description: string, version: int}> $secrets
+     * @param list<SecretMetadata> $secrets
+     */
+    private function outputJson(OutputInterface $output, array $secrets): void
+    {
+        $data = array_map(
+            static fn (SecretMetadata $secret): array => $secret->toArray(),
+            $secrets,
+        );
+        $output->writeln(json_encode($data, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @param list<SecretMetadata> $secrets
      */
     private function outputTable(SymfonyStyle $io, array $secrets): void
     {
         $rows = [];
         foreach ($secrets as $secret) {
             $rows[] = [
-                $secret['identifier'],
-                $secret['owner_uid'] ?? 0,
-                date('Y-m-d H:i', $secret['crdate'] ?? 0),
-                date('Y-m-d H:i', $secret['tstamp'] ?? 0),
-                $secret['read_count'] ?? 0,
-                $secret['last_read_at'] ? date('Y-m-d H:i', $secret['last_read_at']) : '-',
+                $secret->identifier,
+                $secret->ownerUid,
+                date('Y-m-d H:i', $secret->createdAt),
+                date('Y-m-d H:i', $secret->updatedAt),
+                $secret->readCount,
+                $secret->lastReadAt !== null ? date('Y-m-d H:i', $secret->lastReadAt) : '-',
             ];
         }
 
@@ -114,7 +127,7 @@ final class VaultListCommand extends Command
     }
 
     /**
-     * @param array<array{identifier: string, owner_uid: int, crdate: int, tstamp: int, read_count: int, last_read_at: int|null, description: string, version: int}> $secrets
+     * @param list<SecretMetadata> $secrets
      */
     private function outputCsv(OutputInterface $output, array $secrets): void
     {
@@ -125,12 +138,12 @@ final class VaultListCommand extends Command
         foreach ($secrets as $secret) {
             $output->writeln(\sprintf(
                 '%s,%d,%s,%s,%d,%s',
-                $this->escapeCsv($secret['identifier']),
-                $secret['owner_uid'] ?? 0,
-                date('Y-m-d H:i:s', $secret['crdate'] ?? 0),
-                date('Y-m-d H:i:s', $secret['tstamp'] ?? 0),
-                $secret['read_count'] ?? 0,
-                $secret['last_read_at'] ? date('Y-m-d H:i:s', $secret['last_read_at']) : '',
+                $this->escapeCsv($secret->identifier),
+                $secret->ownerUid,
+                date('Y-m-d H:i:s', $secret->createdAt),
+                date('Y-m-d H:i:s', $secret->updatedAt),
+                $secret->readCount,
+                $secret->lastReadAt !== null ? date('Y-m-d H:i:s', $secret->lastReadAt) : '',
             ));
         }
     }

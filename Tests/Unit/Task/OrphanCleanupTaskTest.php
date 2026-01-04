@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\Task;
 
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Task\OrphanCleanupTask;
@@ -92,11 +93,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function skipsNonTcaSecrets(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'manual_secret',
-                'metadata' => ['source' => 'manual'],
-                'createdAt' => time(),
-            ],
+            $this->createSecretMetadata('manual_secret', time(), ['source' => 'manual']),
         ]);
 
         $this->vaultService->expects($this->never())->method('delete');
@@ -111,11 +108,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function skipsSecretsWithExistingRecords(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                'tx_myext__api_key__1',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext'],
+            ),
         ]);
 
         $this->mockRecordExists(1, true);
@@ -131,11 +128,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function deletesOrphansOlderThanRetention(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 30, // 30 days old
-            ],
+            $this->createSecretMetadata(
+                'tx_myext__api_key__1',
+                time() - 86400 * 30, // 30 days old
+                ['source' => 'tca_field', 'table' => 'tx_myext'],
+            ),
         ]);
 
         $this->mockRecordExists(1, false);
@@ -156,11 +153,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function skipsOrphansWithinRetentionPeriod(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 3, // 3 days old
-            ],
+            $this->createSecretMetadata(
+                'tx_myext__api_key__1',
+                time() - 86400 * 3, // 3 days old
+                ['source' => 'tca_field', 'table' => 'tx_myext'],
+            ),
         ]);
 
         $this->mockRecordExists(1, false);
@@ -177,16 +174,16 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function appliesTableFilter(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 30,
-            ],
-            [
-                'identifier' => 'tx_other__secret__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_other'],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                'tx_myext__api_key__1',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext'],
+            ),
+            $this->createSecretMetadata(
+                'tx_other__secret__1',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_other'],
+            ),
         ]);
 
         $this->mockRecordExists(1, false);
@@ -210,11 +207,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function returnsFalseOnDeleteFailure(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                'tx_myext__api_key__1',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext'],
+            ),
         ]);
 
         $this->mockRecordExists(1, false);
@@ -234,11 +231,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function handlesMigrationSourceSecrets(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'migration', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                'tx_myext__api_key__1',
+                time() - 86400 * 30,
+                ['source' => 'migration', 'table' => 'tx_myext'],
+            ),
         ]);
 
         $this->mockRecordExists(1, false);
@@ -259,11 +256,11 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     public function skipsInvalidIdentifierFormats(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'invalid_format',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                'invalid_format',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext'],
+            ),
         ]);
 
         $this->vaultService->expects($this->never())->method('delete');
@@ -319,5 +316,26 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         $this->connectionPool
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    private function createSecretMetadata(
+        string $identifier,
+        int $createdAt,
+        array $metadata = [],
+    ): SecretMetadata {
+        return new SecretMetadata(
+            identifier: $identifier,
+            ownerUid: 1,
+            createdAt: $createdAt,
+            updatedAt: $createdAt,
+            readCount: 0,
+            lastReadAt: null,
+            description: '',
+            version: 1,
+            metadata: $metadata,
+        );
     }
 }

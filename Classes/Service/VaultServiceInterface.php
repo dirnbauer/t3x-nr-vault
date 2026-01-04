@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Service;
 
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
@@ -73,16 +74,7 @@ interface VaultServiceInterface
      *
      * @param string|null $pattern Optional pattern to filter identifiers (supports * wildcard)
      *
-     * @return array<array{
-     *     identifier: string,
-     *     owner_uid: int,
-     *     crdate: int,
-     *     tstamp: int,
-     *     read_count: int,
-     *     last_read_at: int|null,
-     *     description: string,
-     *     version: int
-     * }>
+     * @return list<SecretMetadata>
      */
     public function list(?string $pattern = null): array;
 

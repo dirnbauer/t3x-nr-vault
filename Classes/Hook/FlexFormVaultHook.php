@@ -9,6 +9,8 @@ use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Schema\Struct\FlexForm;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -24,6 +26,10 @@ final class FlexFormVaultHook
     /** @var array<string, array<string|int, list<array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool}>>> */
     private array $pendingFlexSecrets = [];
 
+    public function __construct(
+        private readonly TcaSchemaFactory $tcaSchemaFactory,
+    ) {}
+
     /**
      * Called before database operations.
      * Scans FlexForm fields for vault secrets.
@@ -33,15 +39,23 @@ final class FlexFormVaultHook
         string $table,
         string|int $id,
     ): void {
-        /** @var array<string, array{config: array<string, mixed>}> $tcaColumns */
-        $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
+        if (!$this->tcaSchemaFactory->has($table)) {
+            return;
+        }
 
-        foreach ($tcaColumns as $fieldName => $fieldConfig) {
+        $schema = $this->tcaSchemaFactory->get($table);
+
+        foreach ($schema->getFields() as $field) {
+            $fieldConfig = $field->getConfiguration();
+
             // Check for FlexForm type fields
-            $configType = $fieldConfig['config']['type'] ?? '';
+            $configType = $fieldConfig['type'] ?? '';
             if (!\is_string($configType) || $configType !== 'flex') {
                 continue;
             }
+
+            $fieldName = $field->getName();
+
             // Check if this FlexForm field is being saved
             if (!isset($fieldArray[$fieldName])) {
                 continue;
@@ -56,7 +70,7 @@ final class FlexFormVaultHook
                 $table,
                 $id,
                 $fieldName,
-                $fieldConfig,
+                ['config' => $fieldConfig],
             );
         }
     }

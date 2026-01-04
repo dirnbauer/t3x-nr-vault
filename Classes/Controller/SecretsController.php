@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Controller;
 use Exception;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\GenericContext;
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -82,30 +83,25 @@ final readonly class SecretsController
         $formattedSecrets = [];
         foreach ($secrets as $secret) {
             // Apply filters
-            if ($filters['identifier'] !== '' && stripos($secret['identifier'], $filters['identifier']) === false) {
+            if ($filters['identifier'] !== '' && stripos($secret->identifier, $filters['identifier']) === false) {
                 continue;
             }
-            if ($filters['status'] === 'active' && !empty($secret['hidden'])) {
-                continue;
-            }
-            if ($filters['status'] === 'disabled' && empty($secret['hidden'])) {
-                continue;
-            }
-            if ($filters['owner'] > 0 && $secret['owner_uid'] !== $filters['owner']) {
+            // Status filter not applicable - secrets don't have hidden state
+            if ($filters['owner'] > 0 && $secret->ownerUid !== $filters['owner']) {
                 continue;
             }
 
-            $ownerUid = $secret['owner_uid'];
+            $ownerUid = $secret->ownerUid;
             $formattedSecrets[] = [
-                'identifier' => $secret['identifier'],
+                'identifier' => $secret->identifier,
                 'owner_uid' => $ownerUid,
                 'owner_name' => $userCache[$ownerUid] ?? 'User #' . $ownerUid,
-                'created' => date('Y-m-d H:i:s', $secret['crdate']),
-                'updated' => date('Y-m-d H:i:s', $secret['tstamp']),
-                'read_count' => $secret['read_count'],
-                'last_read' => $secret['last_read_at'] ? date('Y-m-d H:i:s', $secret['last_read_at']) : '-',
-                'description' => $secret['description'] ?? '',
-                'hidden' => (bool) ($secret['hidden'] ?? false),
+                'created' => date('Y-m-d H:i:s', $secret->createdAt),
+                'updated' => date('Y-m-d H:i:s', $secret->updatedAt),
+                'read_count' => $secret->readCount,
+                'last_read' => $secret->lastReadAt !== null ? date('Y-m-d H:i:s', $secret->lastReadAt) : '-',
+                'description' => $secret->description,
+                'hidden' => false,
             ];
         }
 
@@ -378,13 +374,16 @@ final readonly class SecretsController
     /**
      * Build a cache of user IDs to usernames.
      *
-     * @param array<array{owner_uid: int}> $secrets
+     * @param list<SecretMetadata> $secrets
      *
      * @return array<int, string>
      */
     private function getUsernameCache(array $secrets): array
     {
-        $userIds = array_unique(array_filter(array_column($secrets, 'owner_uid')));
+        $userIds = array_unique(array_filter(array_map(
+            static fn (SecretMetadata $s): int => $s->ownerUid,
+            $secrets,
+        )));
 
         if ($userIds === []) {
             return [];
@@ -411,14 +410,17 @@ final readonly class SecretsController
     /**
      * Get unique owner options for the filter dropdown.
      *
-     * @param array<array{owner_uid: int}> $secrets
+     * @param list<SecretMetadata> $secrets
      * @param array<int, string> $userCache
      *
      * @return array<array{uid: int, name: string}>
      */
     private function getOwnerOptions(array $secrets, array $userCache): array
     {
-        $ownerIds = array_unique(array_filter(array_column($secrets, 'owner_uid')));
+        $ownerIds = array_unique(array_filter(array_map(
+            static fn (SecretMetadata $s): int => $s->ownerUid,
+            $secrets,
+        )));
         $options = [];
         foreach ($ownerIds as $uid) {
             $options[] = [

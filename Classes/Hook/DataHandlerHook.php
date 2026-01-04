@@ -8,6 +8,7 @@ use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -31,7 +32,10 @@ final class DataHandlerHook
      */
     private array $pendingSecrets = [];
 
-    public function __construct(private readonly ConnectionPool $connectionPool) {}
+    public function __construct(
+        private readonly ConnectionPool $connectionPool,
+        private readonly TcaSchemaFactory $tcaSchemaFactory,
+    ) {}
 
     /**
      * Called before database operations.
@@ -42,16 +46,9 @@ final class DataHandlerHook
         string $table,
         string|int $id,
     ): void {
-        /** @var array<string, array{config?: array<string, mixed>}> $tcaColumns */
-        $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
+        $vaultFieldNames = $this->getVaultFieldNames($table);
 
-        foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['renderType'] ?? '';
-
-            // Check if this is a vault secret field
-            if (!\is_string($renderType) || $renderType !== 'vaultSecret') {
-                continue;
-            }
+        foreach ($vaultFieldNames as $fieldName) {
 
             // Check if field is in the data being saved
             if (!isset($fieldArray[$fieldName])) {
@@ -175,17 +172,7 @@ final class DataHandlerHook
             return;
         }
 
-        /** @var array<string, array{config?: array<string, mixed>}> $tcaColumns */
-        $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
-        $vaultFields = [];
-
-        foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['renderType'] ?? '';
-            if (\is_string($renderType) && $renderType === 'vaultSecret') {
-                $vaultFields[] = $fieldName;
-            }
-        }
-
+        $vaultFields = $this->getVaultFieldNames($table);
         if ($vaultFields === []) {
             return;
         }
@@ -247,17 +234,7 @@ final class DataHandlerHook
             return;
         }
 
-        /** @var array<string, array{config?: array<string, mixed>}> $tcaColumns */
-        $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
-        $vaultFields = [];
-
-        foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['renderType'] ?? '';
-            if (\is_string($renderType) && $renderType === 'vaultSecret') {
-                $vaultFields[] = $fieldName;
-            }
-        }
-
+        $vaultFields = $this->getVaultFieldNames($table);
         if ($vaultFields === []) {
             return;
         }
@@ -323,6 +300,31 @@ final class DataHandlerHook
         if ($updates !== []) {
             $connection->update($table, $updates, ['uid' => (int) $newId]);
         }
+    }
+
+    /**
+     * Get field names with vaultSecret renderType from TCA schema.
+     *
+     * @return list<string>
+     */
+    private function getVaultFieldNames(string $table): array
+    {
+        if (!$this->tcaSchemaFactory->has($table)) {
+            return [];
+        }
+
+        $schema = $this->tcaSchemaFactory->get($table);
+        $vaultFields = [];
+
+        foreach ($schema->getFields() as $field) {
+            $config = $field->getConfiguration();
+            $renderType = $config['renderType'] ?? '';
+            if ($renderType === 'vaultSecret') {
+                $vaultFields[] = $field->getName();
+            }
+        }
+
+        return $vaultFields;
     }
 
     /**

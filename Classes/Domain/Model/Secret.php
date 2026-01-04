@@ -44,6 +44,7 @@ final class Secret
 
     private int $lastRotatedAt = 0;
 
+    /** @var array<string, mixed> */
     private array $metadata = [];
 
     private string $adapter = 'local';
@@ -286,11 +287,17 @@ final class Secret
         return $this;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getMetadata(): array
     {
         return $this->metadata;
     }
 
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function setMetadata(array $metadata): self
     {
         $this->metadata = $metadata;

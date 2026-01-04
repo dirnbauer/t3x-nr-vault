@@ -395,7 +395,7 @@ final class VaultServiceTest extends TestCase
         $result = $this->subject->list();
 
         self::assertCount(1, $result);
-        self::assertEquals('secret1', $result[0]['identifier']);
+        self::assertEquals('secret1', $result[0]->identifier);
     }
 
     #[Test]

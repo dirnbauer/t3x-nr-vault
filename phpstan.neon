@@ -28,4 +28,4 @@ parameters:
     typeAliases:
         SecretOptions: 'array{owner?: int, groups?: int[], context?: string, description?: string, metadata?: array<string, mixed>, pid?: int, expiresAt?: int|\DateTimeInterface}'
         EncryptedData: 'array{encrypted_value: string, encrypted_dek: string, dek_nonce: string, value_nonce: string, value_checksum: string}'
-        SecretMetadata: 'array{identifier: string, description: string, owner: int, groups: int[], context: string, version: int, createdAt: int, updatedAt: int, expiresAt: int|null, lastRotatedAt: int|null, metadata: array<string, mixed>}'
+        SecretMetadataArray: 'array{identifier: string, description: string, owner: int, groups: int[], context: string, version: int, createdAt: int, updatedAt: int, expiresAt: int|null, lastRotatedAt: int|null, metadata: array<string, mixed>}'

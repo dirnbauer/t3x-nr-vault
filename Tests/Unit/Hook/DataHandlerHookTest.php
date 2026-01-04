@@ -14,6 +14,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Schema\Field\FieldCollection;
+use TYPO3\CMS\Core\Schema\Field\FieldTypeInterface;
+use TYPO3\CMS\Core\Schema\TcaSchema;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
@@ -34,13 +38,16 @@ final class DataHandlerHookTest extends UnitTestCase
 
     private ConnectionPool&MockObject $connectionPool;
 
+    private TcaSchemaFactory&MockObject $tcaSchemaFactory;
+
     #[Override]
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->subject = new DataHandlerHook($this->connectionPool);
+        $this->tcaSchemaFactory = $this->createMock(TcaSchemaFactory::class);
+        $this->subject = new DataHandlerHook($this->connectionPool, $this->tcaSchemaFactory);
 
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
@@ -48,6 +55,30 @@ final class DataHandlerHookTest extends UnitTestCase
 
         GeneralUtility::addInstance(VaultServiceInterface::class, $this->vaultService);
         GeneralUtility::addInstance(AuditLogServiceInterface::class, $this->auditLogService);
+    }
+
+    /**
+     * Create a mock TcaSchema for a table with given fields.
+     *
+     * @param array<string, array{type: string, renderType?: string}> $fields
+     */
+    private function mockTcaSchemaForTable(string $table, array $fields): void
+    {
+        $schema = $this->createMock(TcaSchema::class);
+        $fieldMocks = [];
+
+        foreach ($fields as $fieldName => $config) {
+            $field = $this->createMock(FieldTypeInterface::class);
+            $field->method('getName')->willReturn($fieldName);
+            $field->method('getConfiguration')->willReturn($config);
+            $fieldMocks[$fieldName] = $field;
+        }
+
+        $fieldCollection = new FieldCollection($fieldMocks);
+        $schema->method('getFields')->willReturn($fieldCollection);
+
+        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
+        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
     }
 
     #[Override]
@@ -60,15 +91,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function preProcessFieldArrayIgnoresFieldsWithoutVaultRenderType(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'title' => [
-                    'config' => [
-                        'type' => 'input',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'title' => ['type' => 'input'],
+        ]);
 
         $fieldArray = ['title' => 'Test Title'];
 
@@ -84,16 +109,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function preProcessFieldArrayGeneratesUuidForNewSecret(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $fieldArray = [
             'api_key' => [
@@ -116,16 +134,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function preProcessFieldArrayKeepsExistingUuidForUpdate(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
         $fieldArray = [
@@ -149,16 +160,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function preProcessFieldArrayHandlesStringValue(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $fieldArray = ['api_key' => 'direct-string-value'];
 
@@ -175,16 +179,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function preProcessFieldArrayRemovesEmptyValueWithNoChecksum(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $fieldArray = [
             'api_key' => [
@@ -207,16 +204,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function afterDatabaseOperationsStoresNewSecret(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         // Setup pending secrets via preProcess
         $fieldArray = [
@@ -260,16 +250,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function afterDatabaseOperationsRotatesExistingSecret(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
         $fieldArray = [
@@ -307,16 +290,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function afterDatabaseOperationsDeletesSecretWhenCleared(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
         $fieldArray = [
@@ -353,16 +329,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function afterDatabaseOperationsLogsVaultException(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $fieldArray = ['api_key' => 'test-secret'];
 
@@ -400,16 +369,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function cmdmapPreProcessIgnoresNonDeleteCommands(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $this->vaultService
             ->expects(self::never())
@@ -445,16 +407,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function cmdmapPostProcessSkipsWhenNoNewIdFound(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
         $this->dataHandler->copyMappingArray = [];
 
@@ -475,27 +430,11 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function multipleVaultFieldsAreProcessed(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-                'api_secret' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-                'title' => [
-                    'config' => [
-                        'type' => 'input',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+            'api_secret' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+            'title' => ['type' => 'input'],
+        ]);
 
         $fieldArray = [
             'api_key' => 'key-value',

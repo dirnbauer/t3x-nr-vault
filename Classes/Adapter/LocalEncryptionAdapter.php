@@ -78,6 +78,9 @@ final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
         ];
     }
 
+    /**
+     * @param array<string, mixed> $metadata
+     */
     public function updateMetadata(string $identifier, array $metadata): void
     {
         $secret = $this->secretRepository->findByIdentifier($identifier);
@@ -86,7 +89,9 @@ final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
         }
 
         $existing = $secret->getMetadata();
-        $secret->setMetadata(array_merge($existing, $metadata));
+        /** @var array<string, mixed> $merged */
+        $merged = array_merge($existing, $metadata);
+        $secret->setMetadata($merged);
         $this->secretRepository->save($secret);
     }
 }

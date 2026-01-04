@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Command;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Command\VaultCleanupOrphansCommand;
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -74,11 +75,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function skipsNonTcaSecrets(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => 'manual_secret',
-                'metadata' => ['source' => 'manual'],
-                'createdAt' => time(),
-            ],
+            $this->createSecretMetadata('manual_secret', time(), ['source' => 'manual']),
         ]);
 
         $exitCode = $this->commandTester->execute([]);
@@ -92,11 +89,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         // Metadata must include table, field, and uid for orphan detection
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789ab',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordExists(1, true);
@@ -111,11 +108,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function findsOrphansWhenRecordsDeleted(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789ab',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordExists(1, false);
@@ -137,16 +134,16 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         $oldOrphan = time() - 86400 * 30;   // 30 days ago
 
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => $recentOrphan,
-            ],
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a2',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 2],
-                'createdAt' => $oldOrphan,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789a1',
+                $recentOrphan,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789a2',
+                $oldOrphan,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 2],
+            ),
         ]);
 
         $this->mockRecordDoesNotExist();
@@ -166,16 +163,16 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function tableFilterLimitsScope(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a2',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_other', 'field' => 'secret', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789a1',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789a2',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_other', 'field' => 'secret', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordDoesNotExist();
@@ -195,11 +192,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function deletesOrphansWhenConfirmed(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789ab',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordDoesNotExist();
@@ -220,11 +217,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function handlesDeleteFailures(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789ab',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordDoesNotExist();
@@ -244,11 +241,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function cancelsWhenNotConfirmed(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789ab',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordDoesNotExist();
@@ -266,11 +263,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     public function handlesMigrationSourceSecrets(): void
     {
         $this->vaultService->method('list')->willReturn([
-            [
-                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
-                'metadata' => ['source' => 'migration', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
-                'createdAt' => time() - 86400 * 30,
-            ],
+            $this->createSecretMetadata(
+                '01937b6e-4b6c-7abc-8def-0123456789ab',
+                time() - 86400 * 30,
+                ['source' => 'migration', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
+            ),
         ]);
 
         $this->mockRecordDoesNotExist();
@@ -350,5 +347,26 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         $this->connectionPool
             ->method('getQueryBuilderForTable')
             ->willReturn($queryBuilder);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    private function createSecretMetadata(
+        string $identifier,
+        int $createdAt,
+        array $metadata = [],
+    ): SecretMetadata {
+        return new SecretMetadata(
+            identifier: $identifier,
+            ownerUid: 1,
+            createdAt: $createdAt,
+            updatedAt: $createdAt,
+            readCount: 0,
+            lastReadAt: null,
+            description: '',
+            version: 1,
+            metadata: $metadata,
+        );
     }
 }

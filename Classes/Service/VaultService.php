@@ -17,6 +17,7 @@ use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Event\SecretAccessedEvent;
 use Netresearch\NrVault\Event\SecretCreatedEvent;
@@ -95,7 +96,9 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             }
 
             if (isset($options['metadata'])) {
-                $secretEntity->setMetadata((array) $options['metadata']);
+                /** @var array<string, mixed> $metadata */
+                $metadata = (array) $options['metadata'];
+                $secretEntity->setMetadata($metadata);
             }
 
             if (isset($options['scopePid'])) {
@@ -358,17 +361,17 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 continue;
             }
 
-            $secrets[] = [
-                'identifier' => $secret->getIdentifier(),
-                'owner_uid' => $secret->getOwnerUid(),
-                'crdate' => $secret->getCrdate(),
-                'tstamp' => $secret->getTstamp(),
-                'read_count' => $secret->getReadCount(),
-                'last_read_at' => $secret->getLastReadAt(),
-                'description' => $secret->getDescription(),
-                'version' => $secret->getVersion(),
-                'hidden' => $secret->isHidden(),
-            ];
+            $secrets[] = new SecretMetadata(
+                identifier: $secret->getIdentifier(),
+                ownerUid: $secret->getOwnerUid(),
+                createdAt: $secret->getCrdate(),
+                updatedAt: $secret->getTstamp(),
+                readCount: $secret->getReadCount(),
+                lastReadAt: $secret->getLastReadAt(),
+                description: $secret->getDescription(),
+                version: $secret->getVersion(),
+                metadata: $secret->getMetadata(),
+            );
         }
 
         return $secrets;
