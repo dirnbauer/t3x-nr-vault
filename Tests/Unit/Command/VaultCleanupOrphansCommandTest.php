@@ -90,10 +90,11 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     #[Test]
     public function findsNoOrphansWhenRecordsExist(): void
     {
+        // Metadata must include table, field, and uid for orphan detection
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);
@@ -111,8 +112,8 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);
@@ -137,13 +138,13 @@ final class VaultCleanupOrphansCommandTest extends TestCase
 
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a1',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => $recentOrphan,
             ],
             [
-                'identifier' => 'tx_myext__api_key__2',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a2',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 2],
                 'createdAt' => $oldOrphan,
             ],
         ]);
@@ -166,13 +167,13 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a1',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
             [
-                'identifier' => 'tx_other__secret__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_other'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789a2',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_other', 'field' => 'secret', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);
@@ -195,8 +196,8 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);
@@ -206,7 +207,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         $this->vaultService
             ->expects($this->once())
             ->method('delete')
-            ->with('tx_myext__api_key__1', 'Orphan cleanup');
+            ->with('01937b6e-4b6c-7abc-8def-0123456789ab', 'Orphan cleanup');
 
         $this->commandTester->setInputs(['yes']);
         $exitCode = $this->commandTester->execute([]);
@@ -220,8 +221,8 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);
@@ -244,8 +245,8 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
+                'metadata' => ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);
@@ -266,8 +267,8 @@ final class VaultCleanupOrphansCommandTest extends TestCase
     {
         $this->vaultService->method('list')->willReturn([
             [
-                'identifier' => 'tx_myext__api_key__1',
-                'metadata' => ['source' => 'migration', 'table' => 'tx_myext'],
+                'identifier' => '01937b6e-4b6c-7abc-8def-0123456789ab',
+                'metadata' => ['source' => 'migration', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
                 'createdAt' => time() - 86400 * 30,
             ],
         ]);

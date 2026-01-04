@@ -16,88 +16,52 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     protected bool $resetSingletonInstances = true;
 
     #[Test]
-    public function isFlexFormVaultIdentifierReturnsTrueForValidIdentifier(): void
+    public function isVaultIdentifierReturnsTrueForValidUuid(): void
     {
-        // FlexForm format: table__flexfield__sheet__fieldpath__uid
-        self::assertTrue(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'tt_content__pi_flexform__settings__apiKey__123',
+        // FlexForm and TCA vault fields now use UUID v7 format
+        self::assertTrue(FlexFormVaultResolver::isVaultIdentifier(
+            '01937b6e-4b6c-7abc-8def-0123456789ab',
         ));
-        self::assertTrue(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'tx_ext__flex__sheet1__field_name__42',
+        self::assertTrue(FlexFormVaultResolver::isVaultIdentifier(
+            '01937b6f-0000-7000-8000-000000000000',
         ));
     }
 
     #[Test]
-    public function isFlexFormVaultIdentifierReturnsFalseForInvalidIdentifier(): void
+    public function isVaultIdentifierReturnsFalseForInvalidIdentifier(): void
     {
         // Empty or non-string
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(''));
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(null));
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(123));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(''));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(null));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(123));
 
-        // Wrong format - standard TCA (3 parts, not 5)
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier('tx_ext__field__1'));
+        // Old format (no longer valid)
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier('tx_ext__field__1'));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(
+            'tt_content__pi_flexform__settings__apiKey__123',
+        ));
 
-        // Too few parts
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier('table__flex__sheet'));
-
-        // Too many parts
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'too__many__parts__in__this__identifier',
+        // Wrong UUID format
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier('not-a-uuid'));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(
+            '01937b6e-4b6c-1abc-8def-0123456789ab', // UUID v1, not v7
+        ));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(
+            '01937b6e-4b6c-4abc-8def-0123456789ab', // UUID v4, not v7
         ));
     }
 
     #[Test]
-    public function buildIdentifierCreatesCorrectFormat(): void
+    public function isFlexFormVaultIdentifierIsDeprecatedAlias(): void
     {
-        $identifier = FlexFormVaultResolver::buildIdentifier(
-            'tt_content',
-            'pi_flexform',
-            'settings',
-            'apiKey',
-            123,
-        );
-
-        self::assertSame('tt_content__pi_flexform__settings__apiKey__123', $identifier);
-    }
-
-    #[Test]
-    public function buildIdentifierSanitizesFieldPath(): void
-    {
-        // Field paths with dots/slashes should be converted to underscores
-        $identifier = FlexFormVaultResolver::buildIdentifier(
-            'tt_content',
-            'pi_flexform',
-            'settings',
-            'nested.field/name',
-            123,
-        );
-
-        self::assertSame('tt_content__pi_flexform__settings__nested_field_name__123', $identifier);
-    }
-
-    #[Test]
-    public function parseIdentifierReturnsCorrectComponents(): void
-    {
-        $result = FlexFormVaultResolver::parseIdentifier(
-            'tt_content__pi_flexform__settings__apiKey__123',
-        );
-
-        self::assertIsArray($result);
-        self::assertSame('tt_content', $result['table']);
-        self::assertSame('pi_flexform', $result['flexField']);
-        self::assertSame('settings', $result['sheet']);
-        self::assertSame('apiKey', $result['fieldPath']);
-        self::assertSame(123, $result['uid']);
-    }
-
-    #[Test]
-    public function parseIdentifierReturnsNullForInvalidIdentifier(): void
-    {
-        self::assertNull(FlexFormVaultResolver::parseIdentifier('invalid'));
-        self::assertNull(FlexFormVaultResolver::parseIdentifier(''));
-        // Standard TCA format (3 parts) is not a FlexForm identifier
-        self::assertNull(FlexFormVaultResolver::parseIdentifier('tx_ext__field__1'));
+        // The deprecated method should work the same as isVaultIdentifier
+        self::assertTrue(FlexFormVaultResolver::isFlexFormVaultIdentifier(
+            '01937b6e-4b6c-7abc-8def-0123456789ab',
+        ));
+        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(''));
+        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(
+            'tt_content__pi_flexform__settings__apiKey__123', // Old format
+        ));
     }
 
     #[Test]
@@ -129,31 +93,28 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     }
 
     #[Test]
-    #[DataProvider('flexFormIdentifierProvider')]
-    public function isFlexFormVaultIdentifierWithDataProvider(mixed $value, bool $expected): void
+    #[DataProvider('uuidIdentifierProvider')]
+    public function isVaultIdentifierWithDataProvider(mixed $value, bool $expected): void
     {
-        self::assertSame($expected, FlexFormVaultResolver::isFlexFormVaultIdentifier($value));
+        self::assertSame($expected, FlexFormVaultResolver::isVaultIdentifier($value));
     }
 
-    public static function flexFormIdentifierProvider(): array
+    public static function uuidIdentifierProvider(): array
     {
         return [
-            'valid 5-part identifier' => [
-                'tt_content__pi_flexform__settings__apiKey__123',
-                true,
-            ],
-            'valid with underscores in parts' => [
-                'tx_my_ext__my_flex__my_sheet__my_field__999',
-                true,
-            ],
+            'valid uuid v7 lowercase' => ['01937b6e-4b6c-7abc-8def-0123456789ab', true],
+            'valid uuid v7 uppercase' => ['01937B6E-4B6C-7ABC-8DEF-0123456789AB', true],
+            'valid uuid v7 mixed case' => ['01937b6e-4B6C-7abc-8DEF-0123456789ab', true],
             'empty string' => ['', false],
             'null' => [null, false],
             'integer' => [42, false],
             'array' => [['test'], false],
-            'standard TCA identifier (3 parts)' => ['tx_ext__field__1', false],
-            'four parts (missing one)' => ['a__b__c__d', false],
-            'six parts (extra)' => ['a__b__c__d__e__f', false],
-            'non-numeric uid' => ['a__b__c__d__abc', false],
+            'old TCA format (3 parts)' => ['tx_ext__field__1', false],
+            'old FlexForm format (5 parts)' => ['tt_content__pi_flexform__settings__apiKey__123', false],
+            'uuid v1' => ['01937b6e-4b6c-1abc-8def-0123456789ab', false],
+            'uuid v4' => ['01937b6e-4b6c-4abc-8def-0123456789ab', false],
+            'uuid with wrong variant' => ['01937b6e-4b6c-7abc-cdef-0123456789ab', false],
+            'too short' => ['01937b6e-4b6c-7abc-8def', false],
         ];
     }
 

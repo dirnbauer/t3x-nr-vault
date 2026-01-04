@@ -155,7 +155,8 @@ final class VaultMigrateFieldCommandTest extends TestCase
             ->expects($this->once())
             ->method('store')
             ->with(
-                'tx_myext_settings__api_key__1',
+                // UUID v7 is now used instead of table__field__uid format
+                $this->matchesRegularExpression('/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i'),
                 'secret123',
                 $this->callback(fn (array $metadata): bool => $metadata['table'] === 'tx_myext_settings'
                     && $metadata['field'] === 'api_key'

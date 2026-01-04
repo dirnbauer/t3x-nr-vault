@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Hook;
 
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
-use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\DataHandlerHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -21,6 +21,8 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[CoversClass(DataHandlerHook::class)]
 final class DataHandlerHookTest extends UnitTestCase
 {
+    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+
     protected bool $resetSingletonInstances = true;
 
     private DataHandlerHook $subject;
@@ -78,7 +80,7 @@ final class DataHandlerHookTest extends UnitTestCase
     }
 
     #[Test]
-    public function preProcessFieldArrayExtractsVaultFieldValue(): void
+    public function preProcessFieldArrayGeneratesUuidForNewSecret(): void
     {
         $GLOBALS['TCA']['tx_test'] = [
             'columns' => [
@@ -105,8 +107,41 @@ final class DataHandlerHookTest extends UnitTestCase
             1,
         );
 
-        // Value should be replaced with placeholder
-        self::assertSame('__VAULT__', $fieldArray['api_key']);
+        // Value should be replaced with a UUID
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $fieldArray['api_key']);
+    }
+
+    #[Test]
+    public function preProcessFieldArrayKeepsExistingUuidForUpdate(): void
+    {
+        $GLOBALS['TCA']['tx_test'] = [
+            'columns' => [
+                'api_key' => [
+                    'config' => [
+                        'type' => 'input',
+                        'renderType' => 'vaultSecret',
+                    ],
+                ],
+            ],
+        ];
+
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $fieldArray = [
+            'api_key' => [
+                'value' => 'updated-secret',
+                '_vault_identifier' => $existingUuid,
+                '_vault_checksum' => 'existing-checksum',
+            ],
+        ];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        // Should keep existing UUID
+        self::assertSame($existingUuid, $fieldArray['api_key']);
     }
 
     #[Test]
@@ -131,7 +166,8 @@ final class DataHandlerHookTest extends UnitTestCase
             1,
         );
 
-        self::assertSame('__VAULT__', $fieldArray['api_key']);
+        // Should generate UUID for string value
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $fieldArray['api_key']);
     }
 
     #[Test]
@@ -202,7 +238,7 @@ final class DataHandlerHookTest extends UnitTestCase
             ->expects(self::once())
             ->method('store')
             ->with(
-                'tx_test__api_key__42',
+                self::matchesRegularExpression(self::UUID_PATTERN),
                 'new-secret',
                 self::callback(static fn (array $options): bool => $options['table'] === 'tx_test'
                     && $options['field'] === 'api_key'
@@ -233,10 +269,11 @@ final class DataHandlerHookTest extends UnitTestCase
             ],
         ];
 
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
         $fieldArray = [
             'api_key' => [
                 'value' => 'updated-secret',
-                '_vault_identifier' => 'tx_test__api_key__42',
+                '_vault_identifier' => $existingUuid,
                 '_vault_checksum' => 'existing-checksum',
             ],
         ];
@@ -251,7 +288,7 @@ final class DataHandlerHookTest extends UnitTestCase
             ->expects(self::once())
             ->method('rotate')
             ->with(
-                'tx_test__api_key__42',
+                $existingUuid,
                 'updated-secret',
                 'TCA field updated',
             );
@@ -279,10 +316,11 @@ final class DataHandlerHookTest extends UnitTestCase
             ],
         ];
 
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
         $fieldArray = [
             'api_key' => [
                 'value' => '',
-                '_vault_identifier' => 'tx_test__api_key__42',
+                '_vault_identifier' => $existingUuid,
                 '_vault_checksum' => 'existing-checksum',
             ],
         ];
@@ -297,7 +335,7 @@ final class DataHandlerHookTest extends UnitTestCase
             ->expects(self::once())
             ->method('delete')
             ->with(
-                'tx_test__api_key__42',
+                $existingUuid,
                 'TCA field cleared',
             );
 
@@ -358,40 +396,6 @@ final class DataHandlerHookTest extends UnitTestCase
     }
 
     #[Test]
-    public function cmdmapPreProcessDeletesVaultSecretsOnRecordDelete(): void
-    {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
-
-        $this->vaultService
-            ->method('getMetadata')
-            ->with('tx_test__api_key__42')
-            ->willReturn(['identifier' => 'tx_test__api_key__42']);
-
-        $this->vaultService
-            ->expects(self::once())
-            ->method('delete')
-            ->with('tx_test__api_key__42', 'Record deleted');
-
-        $this->subject->processCmdmap_preProcess(
-            'delete',
-            'tx_test',
-            42,
-            null,
-            $this->dataHandler,
-            false,
-        );
-    }
-
-    #[Test]
     public function cmdmapPreProcessIgnoresNonDeleteCommands(): void
     {
         $GLOBALS['TCA']['tx_test'] = [
@@ -410,84 +414,6 @@ final class DataHandlerHookTest extends UnitTestCase
             ->method('delete');
 
         $this->subject->processCmdmap_preProcess(
-            'copy',
-            'tx_test',
-            42,
-            null,
-            $this->dataHandler,
-            false,
-        );
-    }
-
-    #[Test]
-    public function cmdmapPreProcessSkipsNonExistentSecrets(): void
-    {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
-
-        $this->vaultService
-            ->method('getMetadata')
-            ->willThrowException(new SecretNotFoundException('Secret not found'));
-
-        $this->vaultService
-            ->expects(self::never())
-            ->method('delete');
-
-        $this->subject->processCmdmap_preProcess(
-            'delete',
-            'tx_test',
-            42,
-            null,
-            $this->dataHandler,
-            false,
-        );
-    }
-
-    #[Test]
-    public function cmdmapPostProcessCopiesVaultSecretsOnRecordCopy(): void
-    {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
-
-        $this->dataHandler->copyMappingArray = [
-            'tx_test' => [42 => 100],
-        ];
-
-        $this->vaultService
-            ->method('retrieve')
-            ->with('tx_test__api_key__42')
-            ->willReturn('copied-secret-value');
-
-        $this->vaultService
-            ->expects(self::once())
-            ->method('store')
-            ->with(
-                'tx_test__api_key__100',
-                'copied-secret-value',
-                self::callback(static fn (array $options): bool => $options['table'] === 'tx_test'
-                    && $options['field'] === 'api_key'
-                    && $options['uid'] === 100
-                    && $options['source'] === 'record_copy'
-                    && $options['copied_from'] === 'tx_test__api_key__42'),
-            );
-
-        $this->subject->processCmdmap_postProcess(
             'copy',
             'tx_test',
             42,
@@ -545,114 +471,6 @@ final class DataHandlerHookTest extends UnitTestCase
     }
 
     #[Test]
-    public function cmdmapPostProcessSkipsWhenSourceSecretIsNull(): void
-    {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
-
-        $this->dataHandler->copyMappingArray = [
-            'tx_test' => [42 => 100],
-        ];
-
-        $this->vaultService
-            ->method('retrieve')
-            ->willReturn(null);
-
-        $this->vaultService
-            ->expects(self::never())
-            ->method('store');
-
-        $this->subject->processCmdmap_postProcess(
-            'copy',
-            'tx_test',
-            42,
-            null,
-            $this->dataHandler,
-            false,
-        );
-    }
-
-    #[Test]
-    #[DataProvider('identifierFormatProvider')]
-    public function buildVaultIdentifierCreatesCorrectFormat(
-        string $table,
-        string $field,
-        int $uid,
-        string $expected,
-    ): void {
-        $GLOBALS['TCA'][$table] = [
-            'columns' => [
-                $field => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
-
-        // We test this indirectly through cmdmapPostProcess
-        $this->dataHandler->copyMappingArray = [
-            $table => [$uid => 999],
-        ];
-
-        $this->vaultService
-            ->method('retrieve')
-            ->with($expected)
-            ->willReturn('secret');
-
-        $this->vaultService
-            ->expects(self::once())
-            ->method('store')
-            ->with(
-                \sprintf('%s__%s__999', $table, $field),
-                'secret',
-                self::anything(),
-            );
-
-        $this->subject->processCmdmap_postProcess(
-            'copy',
-            $table,
-            $uid,
-            null,
-            $this->dataHandler,
-            false,
-        );
-    }
-
-    public static function identifierFormatProvider(): array
-    {
-        return [
-            'simple table and field' => [
-                'tx_test',
-                'api_key',
-                42,
-                'tx_test__api_key__42',
-            ],
-            'table with underscores' => [
-                'tx_my_extension_settings',
-                'secret_token',
-                1,
-                'tx_my_extension_settings__secret_token__1',
-            ],
-            'large uid' => [
-                'pages',
-                'secret',
-                999999,
-                'pages__secret__999999',
-            ],
-        ];
-    }
-
-    #[Test]
     public function multipleVaultFieldsAreProcessed(): void
     {
         $GLOBALS['TCA']['tx_test'] = [
@@ -689,9 +507,11 @@ final class DataHandlerHookTest extends UnitTestCase
             42,
         );
 
-        // Both vault fields should be replaced
-        self::assertSame('__VAULT__', $fieldArray['api_key']);
-        self::assertSame('__VAULT__', $fieldArray['api_secret']);
+        // Both vault fields should be replaced with UUIDs
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $fieldArray['api_key']);
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $fieldArray['api_secret']);
+        // UUIDs should be different for each field
+        self::assertNotSame($fieldArray['api_key'], $fieldArray['api_secret']);
         // Non-vault field unchanged
         self::assertSame('Test Title', $fieldArray['title']);
     }

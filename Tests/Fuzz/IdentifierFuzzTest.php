@@ -18,18 +18,20 @@ use stdClass;
  *
  * These tests ensure that malicious, malformed, or edge case inputs
  * are handled gracefully without crashes or security vulnerabilities.
+ *
+ * Both VaultFieldResolver and FlexFormVaultResolver now use UUID v7 format.
  */
 #[CoversClass(VaultFieldResolver::class)]
 #[CoversClass(FlexFormVaultResolver::class)]
 #[CoversClass(IdentifierValidator::class)]
 final class IdentifierFuzzTest extends TestCase
 {
+    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+
     /**
      * Test VaultFieldResolver with fuzzed inputs.
      *
      * Validates that isVaultIdentifier never throws and returns boolean.
-     * Note: parseIdentifier may return null even if isVaultIdentifier returns true
-     * (regex matches format but parsing may fail due to structure issues).
      */
     #[Test]
     #[DataProvider('fuzzedIdentifierProvider')]
@@ -38,32 +40,19 @@ final class IdentifierFuzzTest extends TestCase
         // Should not throw exceptions
         $result = VaultFieldResolver::isVaultIdentifier($input);
         self::assertIsBool($result);
-
-        // If it passes validation, parseIdentifier should be called but may return null
-        if ($result && \is_string($input)) {
-            $parsed = VaultFieldResolver::parseIdentifier($input);
-            // parseIdentifier returns array or null - either is acceptable
-            self::assertTrue($parsed === null || \is_array($parsed));
-        }
     }
 
     /**
      * Test FlexFormVaultResolver with fuzzed inputs.
      *
-     * Validates that isFlexFormVaultIdentifier never throws and returns boolean.
+     * Validates that isVaultIdentifier never throws and returns boolean.
      */
     #[Test]
     #[DataProvider('fuzzedIdentifierProvider')]
     public function flexFormVaultResolverHandlesFuzzedInput(mixed $input): void
     {
-        $result = FlexFormVaultResolver::isFlexFormVaultIdentifier($input);
+        $result = FlexFormVaultResolver::isVaultIdentifier($input);
         self::assertIsBool($result);
-
-        if ($result && \is_string($input)) {
-            $parsed = FlexFormVaultResolver::parseIdentifier($input);
-            // parseIdentifier returns array or null - either is acceptable
-            self::assertTrue($parsed === null || \is_array($parsed));
-        }
     }
 
     /**
@@ -83,49 +72,6 @@ final class IdentifierFuzzTest extends TestCase
             // Non-string inputs: verify no exception is thrown by other methods
             self::assertFalse(VaultFieldResolver::isVaultIdentifier($input));
         }
-    }
-
-    /**
-     * Test buildIdentifier with fuzzed table/field names.
-     */
-    #[Test]
-    #[DataProvider('fuzzedComponentProvider')]
-    public function buildIdentifierHandlesFuzzedComponents(
-        string $table,
-        string $field,
-        int $uid,
-    ): void {
-        $identifier = VaultFieldResolver::buildIdentifier($table, $field, $uid);
-
-        // Should return a string
-        self::assertIsString($identifier);
-
-        // Should contain the components
-        self::assertStringContainsString((string) $uid, $identifier);
-    }
-
-    /**
-     * Test FlexForm buildIdentifier with fuzzed components.
-     */
-    #[Test]
-    #[DataProvider('fuzzedFlexFormComponentProvider')]
-    public function flexFormBuildIdentifierHandlesFuzzedComponents(
-        string $table,
-        string $flexField,
-        string $sheet,
-        string $fieldPath,
-        int $uid,
-    ): void {
-        $identifier = FlexFormVaultResolver::buildIdentifier(
-            $table,
-            $flexField,
-            $sheet,
-            $fieldPath,
-            $uid,
-        );
-
-        self::assertIsString($identifier);
-        self::assertStringContainsString((string) $uid, $identifier);
     }
 
     /**
@@ -153,103 +99,54 @@ final class IdentifierFuzzTest extends TestCase
             'object' => [new stdClass()],
 
             // Injection attempts
-            'sql injection single quote' => ["table__field__1'; DROP TABLE users; --"],
-            'sql injection double quote' => ['table__field__1" OR "1"="1'],
-            'sql injection union' => ['table__field__1 UNION SELECT * FROM users'],
-            'sql injection comment' => ['table__field__/**/1'],
+            'sql injection single quote' => ["01937b6e-4b6c-7abc-8def-'; DROP TABLE users; --"],
+            'sql injection double quote' => ['01937b6e-4b6c-7abc-8def-" OR "1"="1'],
+            'sql injection union' => ['01937b6e-4b6c-7abc-8def-0123456789ab UNION SELECT'],
 
             // XSS attempts
-            'xss script tag' => ['<script>alert("xss")</script>__field__1'],
-            'xss img onerror' => ['<img src=x onerror=alert(1)>__field__1'],
-            'xss event handler' => ['table__onload=alert(1)__1'],
+            'xss script tag' => ['<script>alert("xss")</script>'],
+            'xss img onerror' => ['<img src=x onerror=alert(1)>'],
+            'xss event handler' => ['onload=alert(1)'],
 
             // Path traversal
-            'path traversal dots' => ['../../../etc/passwd__field__1'],
-            'path traversal encoded' => ['..%2F..%2F..%2Fetc%2Fpasswd__field__1'],
-            'path traversal null' => ['table__field__1\x00.txt'],
+            'path traversal dots' => ['../../../etc/passwd'],
+            'path traversal encoded' => ['..%2F..%2F..%2Fetc%2Fpasswd'],
 
             // Unicode and encoding
-            'unicode null' => ["table__field__1\u0000"],
-            'unicode bom' => ["\xEF\xBB\xBFtable__field__1"],
-            'unicode rtl override' => ["table__field__1\u202E"],
-            'unicode homoglyph' => ['tаble__field__1'], // Cyrillic 'а'
-            'unicode emoji' => ['table__field__1🔥'],
-            'unicode high codepoint' => ["table__field__\u{10FFFF}"],
+            'unicode null' => ["01937b6e-4b6c-7abc-8def-\u0000"],
+            'unicode bom' => ["\xEF\xBB\xBF01937b6e-4b6c-7abc-8def-0123456789ab"],
+            'unicode rtl override' => ["01937b6e-4b6c-7abc-8def-\u202E"],
+            'unicode emoji' => ['01937b6e-4b6c-7abc-8def-0123456789ab🔥'],
 
-            // Boundary values
-            'max int as string' => ['table__field__9223372036854775807'],
-            'overflow int' => ['table__field__99999999999999999999999999999'],
-            'negative uid' => ['table__field__-1'],
-            'zero uid' => ['table__field__0'],
+            // UUID edge cases
+            'uuid v1' => ['01937b6e-4b6c-1abc-8def-0123456789ab'],
+            'uuid v2' => ['01937b6e-4b6c-2abc-8def-0123456789ab'],
+            'uuid v3' => ['01937b6e-4b6c-3abc-8def-0123456789ab'],
+            'uuid v4' => ['01937b6e-4b6c-4abc-8def-0123456789ab'],
+            'uuid v5' => ['01937b6e-4b6c-5abc-8def-0123456789ab'],
+            'uuid wrong variant' => ['01937b6e-4b6c-7abc-cdef-0123456789ab'],
+            'uuid too short' => ['01937b6e-4b6c-7abc-8def'],
+            'uuid too long' => ['01937b6e-4b6c-7abc-8def-0123456789ab1'],
+            'uuid missing hyphens' => ['01937b6e4b6c7abc8def0123456789ab'],
+            'uuid extra hyphens' => ['0193-7b6e-4b6c-7abc-8def-0123456789ab'],
 
-            // Format edge cases
-            'single underscore' => ['table_field_1'],
-            'triple underscore' => ['table___field___1'],
-            'quadruple underscore' => ['table____field____1'],
-            'leading underscore' => ['__table__field__1'],
-            'trailing underscore' => ['table__field__1__'],
-            'only separators' => ['________'],
+            // Old format (should be rejected)
+            'old format table__field__uid' => ['tx_test__api_key__42'],
+            'old format flexform' => ['tt_content__pi_flexform__settings__apiKey__123'],
 
             // Long strings
-            'very long table name' => [str_repeat('a', 1000) . '__field__1'],
-            'very long field name' => ['table__' . str_repeat('b', 1000) . '__1'],
-            'very long overall' => [str_repeat('x__', 10000) . '1'],
+            'very long random' => [str_repeat('a', 1000)],
 
             // Special characters
-            'newline in middle' => ["table__field\n__1"],
-            'carriage return' => ["table__field\r__1"],
-            'null byte' => ["table__field\x00__1"],
-            'backslash' => ['table\\__field\\__1'],
-            'forward slash' => ['table/__field/__1'],
-            'angle brackets' => ['<table>__<field>__1'],
-            'ampersand' => ['table&field__test__1'],
-            'percent' => ['table%20field__test__1'],
-            'hash' => ['table#field__test__1'],
+            'newline in middle' => ["01937b6e-4b6c\n-7abc-8def-0123456789ab"],
+            'carriage return' => ["01937b6e-4b6c\r-7abc-8def-0123456789ab"],
+            'null byte' => ["01937b6e-4b6c\x00-7abc-8def-0123456789ab"],
+            'backslash' => ['01937b6e\\-4b6c-7abc-8def-0123456789ab'],
 
-            // Valid-looking but invalid
-            'valid format non-numeric uid' => ['tx_ext__field__abc'],
-            'valid format float uid' => ['tx_ext__field__1.5'],
-            'valid format with spaces' => ['tx ext__field__1'],
-            'flexform format 3 parts' => ['table__field__1'], // 3 parts is TCA, not FlexForm
-
-            // Actually valid identifiers
-            'valid simple' => ['tx_ext__field__1'],
-            'valid with underscores' => ['tx_my_ext__api_key__42'],
-            'valid flexform' => ['tt_content__pi_flexform__settings__apiKey__123'],
-        ];
-    }
-
-    /**
-     * Provide fuzzed component values for buildIdentifier.
-     */
-    public static function fuzzedComponentProvider(): array
-    {
-        return [
-            'normal values' => ['tx_test', 'api_key', 42],
-            'empty table' => ['', 'field', 1],
-            'empty field' => ['table', '', 1],
-            'zero uid' => ['table', 'field', 0],
-            'large uid' => ['table', 'field', PHP_INT_MAX],
-            'special chars table' => ['tx-test.table', 'field', 1],
-            'special chars field' => ['table', 'api-key.name', 1],
-            'unicode table' => ['tаble', 'field', 1], // Cyrillic 'а'
-            'long table' => [str_repeat('a', 100), 'field', 1],
-            'long field' => ['table', str_repeat('b', 100), 1],
-        ];
-    }
-
-    /**
-     * Provide fuzzed FlexForm component values.
-     */
-    public static function fuzzedFlexFormComponentProvider(): array
-    {
-        return [
-            'normal values' => ['tt_content', 'pi_flexform', 'settings', 'apiKey', 123],
-            'empty components' => ['', '', '', '', 0],
-            'dots in path' => ['table', 'flex', 'sheet', 'nested.field', 1],
-            'slashes in path' => ['table', 'flex', 'sheet', 'path/to/field', 1],
-            'special chars' => ['tt-content', 'pi_flex', 'my-sheet', 'api.key', 1],
-            'long path' => ['t', 'f', 's', str_repeat('field/', 50), 1],
+            // Valid UUIDs
+            'valid uuid lowercase' => ['01937b6e-4b6c-7abc-8def-0123456789ab'],
+            'valid uuid uppercase' => ['01937B6E-4B6C-7ABC-8DEF-0123456789AB'],
+            'valid uuid mixed' => ['01937b6e-4B6C-7abc-8DEF-0123456789ab'],
         ];
     }
 
@@ -262,23 +159,22 @@ final class IdentifierFuzzTest extends TestCase
     {
         // These should all be rejected
         self::assertFalse(VaultFieldResolver::isVaultIdentifier($input));
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier($input));
+        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier($input));
     }
 
     public static function injectionPatternProvider(): array
     {
         return [
-            'sql comment' => ['table__field__1--'],
-            'sql semicolon' => ['table__field__1;'],
-            'sql or' => ['table__field__1 OR 1=1'],
-            'shell command' => ['table__field__1; rm -rf /'],
-            'shell backtick' => ['table__field__`whoami`'],
-            'shell dollar' => ['table__field__$(whoami)'],
-            'ldap injection' => ['table__field__1)(cn=*)'],
-            'xpath injection' => ['table__field__1\' or \'1\'=\'1'],
-            'xml entity' => ['table__field__1<!ENTITY xxe SYSTEM "file:///etc/passwd">'],
-            'template injection' => ['table__field__{{7*7}}'],
-            'ssti jinja' => ['table__field__{{ config.items() }}'],
+            'sql comment' => ['01937b6e-4b6c-7abc-8def-0123456789ab--'],
+            'sql semicolon' => ['01937b6e-4b6c-7abc-8def-0123456789ab;'],
+            'sql or' => ['01937b6e-4b6c-7abc-8def-0123456789ab OR 1=1'],
+            'shell command' => ['01937b6e-4b6c-7abc-8def-0123456789ab; rm -rf /'],
+            'shell backtick' => ['01937b6e-4b6c-7abc-`whoami`'],
+            'shell dollar' => ['01937b6e-4b6c-7abc-$(whoami)'],
+            'ldap injection' => ['01937b6e-4b6c-7abc-8def-0123456789ab)(cn=*)'],
+            'xpath injection' => ['01937b6e-4b6c-7abc-8def-0123456789ab\' or \'1\'=\'1'],
+            'template injection' => ['01937b6e-4b6c-7abc-{{7*7}}'],
+            'ssti jinja' => ['01937b6e-4b6c-7abc-{{ config }}'],
         ];
     }
 
@@ -294,7 +190,7 @@ final class IdentifierFuzzTest extends TestCase
         $startMemory = memory_get_usage();
 
         VaultFieldResolver::isVaultIdentifier($longString);
-        FlexFormVaultResolver::isFlexFormVaultIdentifier($longString);
+        FlexFormVaultResolver::isVaultIdentifier($longString);
 
         $endMemory = memory_get_usage();
 
@@ -309,10 +205,10 @@ final class IdentifierFuzzTest extends TestCase
     public function validationIsDeterministic(): void
     {
         $inputs = [
-            'tx_ext__field__1',
+            '01937b6e-4b6c-7abc-8def-0123456789ab',
             'invalid',
             '',
-            'tt_content__pi_flexform__settings__apiKey__123',
+            'tx_ext__field__1', // Old format
         ];
 
         foreach ($inputs as $input) {
@@ -320,12 +216,48 @@ final class IdentifierFuzzTest extends TestCase
             for ($i = 0; $i < 100; $i++) {
                 $results[] = [
                     VaultFieldResolver::isVaultIdentifier($input),
-                    FlexFormVaultResolver::isFlexFormVaultIdentifier($input),
+                    FlexFormVaultResolver::isVaultIdentifier($input),
                 ];
             }
 
             // All results should be identical
             self::assertCount(1, array_unique($results, SORT_REGULAR));
+        }
+    }
+
+    /**
+     * Test that both resolvers accept the same UUID format.
+     */
+    #[Test]
+    public function bothResolversAcceptSameUuidFormat(): void
+    {
+        $validUuids = [
+            '01937b6e-4b6c-7abc-8def-0123456789ab',
+            '01937b6f-0000-7000-8000-000000000000',
+            '01937b6f-ffff-7fff-bfff-ffffffffffff',
+        ];
+
+        foreach ($validUuids as $uuid) {
+            self::assertTrue(VaultFieldResolver::isVaultIdentifier($uuid), "VaultFieldResolver should accept: {$uuid}");
+            self::assertTrue(FlexFormVaultResolver::isVaultIdentifier($uuid), "FlexFormVaultResolver should accept: {$uuid}");
+        }
+    }
+
+    /**
+     * Test that old formats are rejected.
+     */
+    #[Test]
+    public function oldFormatsAreRejected(): void
+    {
+        $oldFormats = [
+            'tx_test__api_key__42',
+            'pages__secret__1',
+            'tt_content__pi_flexform__settings__apiKey__123',
+        ];
+
+        foreach ($oldFormats as $old) {
+            self::assertFalse(VaultFieldResolver::isVaultIdentifier($old), "Should reject old format: {$old}");
+            self::assertFalse(FlexFormVaultResolver::isVaultIdentifier($old), "Should reject old format: {$old}");
         }
     }
 }

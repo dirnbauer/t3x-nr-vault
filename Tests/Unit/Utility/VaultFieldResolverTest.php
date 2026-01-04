@@ -35,11 +35,12 @@ final class VaultFieldResolverTest extends UnitTestCase
     }
 
     #[Test]
-    public function isVaultIdentifierReturnsTrueForValidIdentifier(): void
+    public function isVaultIdentifierReturnsTrueForValidUuid(): void
     {
-        self::assertTrue(VaultFieldResolver::isVaultIdentifier('tx_myext_settings__api_key__42'));
-        self::assertTrue(VaultFieldResolver::isVaultIdentifier('pages__secret__1'));
-        self::assertTrue(VaultFieldResolver::isVaultIdentifier('tx_ext__field__99999'));
+        // Valid UUID v7 identifiers
+        self::assertTrue(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-7abc-8def-0123456789ab'));
+        self::assertTrue(VaultFieldResolver::isVaultIdentifier('01937b6f-0000-7000-8000-000000000000'));
+        self::assertTrue(VaultFieldResolver::isVaultIdentifier('01937b6f-ffff-7fff-bfff-ffffffffffff'));
     }
 
     #[Test]
@@ -53,36 +54,11 @@ final class VaultFieldResolverTest extends UnitTestCase
 
         // Wrong format
         self::assertFalse(VaultFieldResolver::isVaultIdentifier('invalid'));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('not__a__valid__id'));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('tx_myext__api_key')); // Missing uid
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('__field__42')); // Missing table
-    }
-
-    #[Test]
-    public function buildIdentifierCreatesCorrectFormat(): void
-    {
-        $identifier = VaultFieldResolver::buildIdentifier('tx_myext_settings', 'api_key', 42);
-
-        self::assertSame('tx_myext_settings__api_key__42', $identifier);
-    }
-
-    #[Test]
-    public function parseIdentifierReturnsCorrectComponents(): void
-    {
-        $result = VaultFieldResolver::parseIdentifier('tx_myext_settings__api_key__42');
-
-        self::assertIsArray($result);
-        self::assertSame('tx_myext_settings', $result['table']);
-        self::assertSame('api_key', $result['field']);
-        self::assertSame(42, $result['uid']);
-    }
-
-    #[Test]
-    public function parseIdentifierReturnsNullForInvalidIdentifier(): void
-    {
-        self::assertNull(VaultFieldResolver::parseIdentifier('invalid'));
-        self::assertNull(VaultFieldResolver::parseIdentifier(''));
-        self::assertNull(VaultFieldResolver::parseIdentifier('too__many__parts__here'));
+        self::assertFalse(VaultFieldResolver::isVaultIdentifier('not-a-valid-uuid'));
+        self::assertFalse(VaultFieldResolver::isVaultIdentifier('tx_myext__api_key__42')); // Old format
+        self::assertFalse(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-1abc-8def-0123456789ab')); // UUID v1 (not v7)
+        self::assertFalse(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-4abc-8def-0123456789ab')); // UUID v4 (not v7)
+        self::assertFalse(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-7abc-cdef-0123456789ab')); // Wrong variant
     }
 
     #[Test]
@@ -138,16 +114,83 @@ final class VaultFieldResolverTest extends UnitTestCase
     public static function identifierProvider(): array
     {
         return [
-            'valid identifier' => ['tx_ext__field__1', true],
-            'valid with underscores in parts' => ['tx_my_ext__api_key__123', true],
+            'valid uuid v7 lowercase' => ['01937b6e-4b6c-7abc-8def-0123456789ab', true],
+            'valid uuid v7 uppercase' => ['01937B6E-4B6C-7ABC-8DEF-0123456789AB', true],
+            'valid uuid v7 mixed case' => ['01937b6e-4B6C-7abc-8DEF-0123456789ab', true],
             'empty string' => ['', false],
             'null' => [null, false],
             'integer' => [42, false],
             'array' => [['test'], false],
-            'single part' => ['single', false],
-            'two parts' => ['two__parts', false],
-            'non-numeric uid' => ['table__field__abc', false],
-            'extra separator' => ['too__many__sep__arators', false],
+            'old format table__field__uid' => ['tx_ext__field__1', false],
+            'uuid v1' => ['01937b6e-4b6c-1abc-8def-0123456789ab', false],
+            'uuid v4' => ['01937b6e-4b6c-4abc-8def-0123456789ab', false],
+            'uuid with wrong variant' => ['01937b6e-4b6c-7abc-cdef-0123456789ab', false],
+            'too short' => ['01937b6e-4b6c-7abc-8def', false],
+            'too long' => ['01937b6e-4b6c-7abc-8def-0123456789ab1', false],
+            'missing hyphens' => ['01937b6e4b6c7abc8def0123456789ab', false],
         ];
+    }
+
+    #[Test]
+    public function getVaultFieldsForTableReturnsVaultSecretFields(): void
+    {
+        $GLOBALS['TCA']['tx_test'] = [
+            'columns' => [
+                'title' => [
+                    'config' => [
+                        'type' => 'input',
+                    ],
+                ],
+                'api_key' => [
+                    'config' => [
+                        'type' => 'input',
+                        'renderType' => 'vaultSecret',
+                    ],
+                ],
+                'api_secret' => [
+                    'config' => [
+                        'type' => 'input',
+                        'renderType' => 'vaultSecret',
+                    ],
+                ],
+            ],
+        ];
+
+        $fields = VaultFieldResolver::getVaultFieldsForTable('tx_test');
+
+        self::assertSame(['api_key', 'api_secret'], $fields);
+    }
+
+    #[Test]
+    public function hasVaultFieldsReturnsTrueForTableWithVaultFields(): void
+    {
+        $GLOBALS['TCA']['tx_test'] = [
+            'columns' => [
+                'api_key' => [
+                    'config' => [
+                        'type' => 'input',
+                        'renderType' => 'vaultSecret',
+                    ],
+                ],
+            ],
+        ];
+
+        self::assertTrue(VaultFieldResolver::hasVaultFields('tx_test'));
+    }
+
+    #[Test]
+    public function resolveSingleReturnsNullForNonUuid(): void
+    {
+        $result = VaultFieldResolver::resolve('not-a-uuid');
+
+        self::assertNull($result);
+    }
+
+    #[Test]
+    public function resolveSingleReturnsNullForEmptyString(): void
+    {
+        $result = VaultFieldResolver::resolve('');
+
+        self::assertNull($result);
     }
 }

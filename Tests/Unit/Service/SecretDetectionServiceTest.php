@@ -183,8 +183,9 @@ final class SecretDetectionServiceTest extends TestCase
     public static function vaultIdentifierProvider(): array
     {
         return [
-            'TCA format' => ['tx_myext_config__api_key__123', true],
+            'UUID v7 format' => ['01937b6e-4b6c-7abc-8def-0123456789ab', true],
             'vault reference' => ['%vault(my_secret_key)%', true],
+            'old TCA format (no longer detected)' => ['tx_myext_config__api_key__123', false],
             'regular value' => ['some_regular_value', false],
             'API key' => ['sk_live_abcdefghij', false],
             'password' => ['mySecretPassword123', false],
