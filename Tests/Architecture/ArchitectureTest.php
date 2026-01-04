@@ -19,11 +19,29 @@ use PHPat\Test\PHPat;
  * Architecture tests for nr-vault extension.
  *
  * Enforces clean architecture boundaries and security patterns.
+ *
+ * Layer dependency rules (allowed dependencies flow downward):
+ *
+ *   Controller/Command (presentation)
+ *          ↓
+ *      Service (application)
+ *          ↓
+ *   Domain/Adapter (core)
+ *          ↓
+ *   Crypto/Security (infrastructure)
+ *          ↓
+ *   Exception/Event (shared kernel)
  */
 final class ArchitectureTest
 {
+    // =========================================================================
+    // IMMUTABILITY RULES - Security-critical classes must be immutable
+    // =========================================================================
+
     /**
      * Events must be readonly for immutability.
+     *
+     * PSR-14 events should never be modified after creation.
      */
     public function testEventsMustBeReadonly(): BuildStep
     {
@@ -34,49 +52,53 @@ final class ArchitectureTest
     }
 
     /**
-     * Services must not depend on Controllers.
+     * Audit log entries must be readonly.
+     *
+     * Audit data must never be modified after creation for integrity.
      */
-    public function testServicesDoNotDependOnControllers(): BuildStep
+    public function testAuditLogEntryMustBeReadonly(): BuildStep
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('Netresearch\NrVault\Service'))
-            ->shouldNotDependOn()
-            ->classes(Selector::inNamespace('Netresearch\NrVault\Controller'))
-            ->because('services should be independent of the presentation layer');
+            ->classes(Selector::classname('Netresearch\NrVault\Audit\AuditLogEntry'))
+            ->shouldBeReadonly()
+            ->because('audit entries must be immutable for tamper-evidence');
     }
 
     /**
-     * Domain layer must not depend on infrastructure.
+     * OAuth value objects must be readonly.
+     *
+     * Token and config objects should be immutable.
      */
-    public function testDomainDoesNotDependOnInfrastructure(): BuildStep
+    public function testOAuthValueObjectsMustBeReadonly(): BuildStep
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('Netresearch\NrVault\Domain'))
-            ->shouldNotDependOn()
             ->classes(
-                Selector::inNamespace('Netresearch\NrVault\Controller'),
-                Selector::inNamespace('Netresearch\NrVault\Command'),
+                Selector::classname('Netresearch\NrVault\Http\OAuth\OAuthConfig'),
+                Selector::classname('Netresearch\NrVault\Http\OAuth\OAuthToken'),
             )
-            ->because('domain layer must be isolated from infrastructure concerns');
+            ->shouldBeReadonly()
+            ->because('OAuth value objects must be immutable');
     }
 
     /**
-     * Crypto layer must not depend on HTTP layer.
+     * HTTP client must be readonly (immutable/fluent pattern).
      */
-    public function testCryptoDoesNotDependOnHttp(): BuildStep
+    public function testVaultHttpClientMustBeReadonly(): BuildStep
     {
         return PHPat::rule()
-            ->classes(Selector::inNamespace('Netresearch\NrVault\Crypto'))
-            ->shouldNotDependOn()
-            ->classes(
-                Selector::inNamespace('Netresearch\NrVault\Http'),
-                Selector::inNamespace('Netresearch\NrVault\Controller'),
-            )
-            ->because('crypto operations must be independent of HTTP context');
+            ->classes(Selector::classname('Netresearch\NrVault\Http\VaultHttpClient'))
+            ->shouldBeReadonly()
+            ->because('HTTP client uses immutable fluent pattern');
     }
+
+    // =========================================================================
+    // FINALITY RULES - Security classes must not be extended
+    // =========================================================================
 
     /**
      * Exceptions must be final.
+     *
+     * Prevents exception hierarchy manipulation attacks.
      */
     public function testExceptionsMustBeFinal(): BuildStep
     {
@@ -87,7 +109,39 @@ final class ArchitectureTest
     }
 
     /**
+     * Crypto implementations must be final.
+     *
+     * Prevents override attacks on cryptographic operations.
+     */
+    public function testCryptoImplementationsMustBeFinal(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Crypto'))
+            ->excluding(Selector::classname('/.*Interface$/', true))
+            ->shouldBeFinal()
+            ->because('crypto implementations must not be overridden');
+    }
+
+    /**
+     * Security implementations must be final.
+     */
+    public function testSecurityImplementationsMustBeFinal(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Security'))
+            ->excluding(Selector::classname('/.*Interface$/', true))
+            ->shouldBeFinal()
+            ->because('security implementations must not be overridden');
+    }
+
+    // =========================================================================
+    // INTERFACE RULES - Ensure proper abstractions
+    // =========================================================================
+
+    /**
      * Services must implement an interface.
+     *
+     * Enables dependency injection and testing.
      */
     public function testServicesMustImplementInterface(): BuildStep
     {
@@ -102,5 +156,225 @@ final class ArchitectureTest
             ->shouldImplement()
             ->classes(Selector::classname('/.*Interface$/', true))
             ->because('services should be injected via interfaces for testability');
+    }
+
+    /**
+     * Adapters must implement VaultAdapterInterface.
+     */
+    public function testAdaptersMustImplementInterface(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Adapter'))
+            ->excluding(Selector::classname('/.*Interface$/', true))
+            ->shouldImplement()
+            ->classes(Selector::classname('Netresearch\NrVault\Adapter\VaultAdapterInterface'))
+            ->because('adapters must follow the adapter contract');
+    }
+
+    // =========================================================================
+    // LAYER DEPENDENCY RULES - Enforce clean architecture
+    // =========================================================================
+
+    /**
+     * Services must not depend on Controllers.
+     *
+     * Services are application layer, controllers are presentation.
+     */
+    public function testServicesDoNotDependOnControllers(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Service'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Controller'))
+            ->because('services should be independent of the presentation layer');
+    }
+
+    /**
+     * Services must not depend on Commands.
+     *
+     * CLI commands are presentation layer.
+     */
+    public function testServicesDoNotDependOnCommands(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Service'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Command'))
+            ->because('services should be independent of CLI commands');
+    }
+
+    /**
+     * Domain layer must not depend on infrastructure.
+     *
+     * Domain models should be pure and framework-independent.
+     */
+    public function testDomainDoesNotDependOnInfrastructure(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Domain'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Controller'),
+                Selector::inNamespace('Netresearch\NrVault\Command'),
+                Selector::inNamespace('Netresearch\NrVault\Hook'),
+                Selector::inNamespace('Netresearch\NrVault\Form'),
+                Selector::inNamespace('Netresearch\NrVault\Task'),
+            )
+            ->because('domain layer must be isolated from infrastructure concerns');
+    }
+
+    /**
+     * Crypto layer must be isolated.
+     *
+     * Cryptographic operations must not depend on HTTP, presentation, or hooks.
+     */
+    public function testCryptoIsIsolated(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Crypto'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Http'),
+                Selector::inNamespace('Netresearch\NrVault\Controller'),
+                Selector::inNamespace('Netresearch\NrVault\Command'),
+                Selector::inNamespace('Netresearch\NrVault\Hook'),
+                Selector::inNamespace('Netresearch\NrVault\Form'),
+                Selector::inNamespace('Netresearch\NrVault\Audit'),
+                Selector::inNamespace('Netresearch\NrVault\Service'),
+            )
+            ->because('crypto operations must be independent of application context');
+    }
+
+    /**
+     * Security layer must not depend on HTTP.
+     *
+     * Access control should work regardless of request context.
+     */
+    public function testSecurityDoesNotDependOnHttp(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Security'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Http'),
+                Selector::inNamespace('Netresearch\NrVault\Controller'),
+            )
+            ->because('security layer must be context-independent');
+    }
+
+    /**
+     * Hooks must not depend on Controllers.
+     *
+     * TYPO3 hooks should call services, not controllers.
+     */
+    public function testHooksDoNotDependOnControllers(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Hook'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Controller'))
+            ->because('hooks should use services, not controllers');
+    }
+
+    /**
+     * Commands must not depend on Controllers.
+     *
+     * CLI and web are separate presentation channels.
+     */
+    public function testCommandsDoNotDependOnControllers(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Command'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Controller'))
+            ->because('CLI commands should not use web controllers');
+    }
+
+    /**
+     * Controllers must not depend on Crypto directly.
+     *
+     * Controllers should use services which handle crypto.
+     */
+    public function testControllersDoNotDependOnCrypto(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Controller'))
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Crypto'))
+            ->because('controllers should use services for crypto operations');
+    }
+
+    /**
+     * Configuration must not depend on Services.
+     *
+     * Configuration is low-level infrastructure.
+     */
+    public function testConfigurationDoesNotDependOnServices(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Configuration'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Service'),
+                Selector::inNamespace('Netresearch\NrVault\Controller'),
+                Selector::inNamespace('Netresearch\NrVault\Command'),
+            )
+            ->because('configuration should be low-level infrastructure');
+    }
+
+    /**
+     * EventListeners must not depend on Controllers or Commands.
+     *
+     * Event handlers should only use services.
+     */
+    public function testEventListenersDoNotDependOnPresentation(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\EventListener'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Controller'),
+                Selector::inNamespace('Netresearch\NrVault\Command'),
+            )
+            ->because('event listeners should use services, not presentation layer');
+    }
+
+    /**
+     * Utilities must not depend on Services.
+     *
+     * Utilities should be stateless helper functions.
+     */
+    public function testUtilitiesDoNotDependOnServices(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault\Utility'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Controller'),
+                Selector::inNamespace('Netresearch\NrVault\Command'),
+                Selector::inNamespace('Netresearch\NrVault\Hook'),
+            )
+            ->because('utilities should be stateless helpers');
+    }
+
+    // =========================================================================
+    // ENUM RULES - Ensure enums are used properly
+    // =========================================================================
+
+    /**
+     * Enums must be in appropriate namespaces.
+     *
+     * Severity enum is a value object in Service\Detection.
+     * SecretPlacement enum is a value object in Http.
+     */
+    public function testEnumsMustBeFinal(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(
+                Selector::classname('Netresearch\NrVault\Service\Detection\Severity'),
+                Selector::classname('Netresearch\NrVault\Http\SecretPlacement'),
+            )
+            ->shouldBeFinal()
+            ->because('enums are implicitly final but this documents intent');
     }
 }

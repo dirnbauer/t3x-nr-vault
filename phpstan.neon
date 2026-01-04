@@ -8,6 +8,7 @@ parameters:
     level: 10
     paths:
         - Classes
+        - Tests/Architecture
     excludePaths:
         analyseAndScan:
             - Classes/Domain/Model/Secret.php
