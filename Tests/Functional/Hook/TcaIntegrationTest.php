@@ -124,8 +124,8 @@ final class TcaIntegrationTest extends FunctionalTestCase
         // This test can run - it tests VaultFieldResolver directly without DataHandler
         $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
 
-        // Manually store a secret (simulating what DataHandler hook would do)
-        $identifier = 'tx_nrvault_test__api_key__999';
+        // Generate a proper UUID v7 identifier (simulating what DataHandler hook would do)
+        $identifier = $this->generateUuidV7();
         $secretValue = 'resolver-secret';
         $vaultService->store($identifier, $secretValue);
 
@@ -151,9 +151,9 @@ final class TcaIntegrationTest extends FunctionalTestCase
         // This test can run - it tests VaultFieldResolver directly
         $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
 
-        // Manually store secrets
-        $identifier1 = 'tx_nrvault_test__api_key__998';
-        $identifier2 = 'tx_nrvault_test__api_secret__998';
+        // Generate proper UUID v7 identifiers (simulating what DataHandler hook would do)
+        $identifier1 = $this->generateUuidV7();
+        $identifier2 = $this->generateUuidV7();
         $vaultService->store($identifier1, 'my-key');
         $vaultService->store($identifier2, 'my-secret');
 
@@ -230,5 +230,35 @@ final class TcaIntegrationTest extends FunctionalTestCase
                 PRIMARY KEY (uid)
             )
         ');
+    }
+
+    /**
+     * Generate a UUID v7 for testing.
+     *
+     * UUID v7 format: xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
+     * where y is 8, 9, a, or b (variant bits).
+     */
+    private function generateUuidV7(): string
+    {
+        // Get current timestamp in milliseconds
+        $timestamp = (int) (microtime(true) * 1000);
+
+        // Convert to hex (48 bits = 12 hex chars)
+        $timestampHex = str_pad(dechex($timestamp), 12, '0', STR_PAD_LEFT);
+
+        // Generate random bytes for the rest
+        $randomBytes = random_bytes(10);
+        $randomHex = bin2hex($randomBytes);
+
+        // Format as UUID v7: timestamp (48 bits) + version (4 bits) + random (12 bits) + variant (2 bits) + random (62 bits)
+        return \sprintf(
+            '%s-%s-7%s-%s%s-%s',
+            substr($timestampHex, 0, 8),
+            substr($timestampHex, 8, 4),
+            substr($randomHex, 0, 3),
+            dechex(8 + random_int(0, 3)), // variant: 8, 9, a, or b
+            substr($randomHex, 3, 3),
+            substr($randomHex, 6, 12),
+        );
     }
 }
