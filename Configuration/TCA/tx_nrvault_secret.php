@@ -21,7 +21,6 @@ return [
             'disabled' => 'hidden',
         ],
         'iconfile' => 'EXT:nr_vault/Resources/Public/Icons/vault-secret.svg',
-        'searchFields' => 'identifier,description,context',
         'security' => [
             'ignorePageTypeRestriction' => true,
         ],
@@ -55,6 +54,7 @@ return [
                 'eval' => 'trim,alphanum_x',
                 'placeholder' => 'my-api-key',
                 'required' => true,
+                'searchable' => true,
                 // Identifier is immutable after creation - use readOnly in edit context
             ],
         ],
@@ -76,6 +76,7 @@ return [
                 'rows' => 3,
                 'cols' => 50,
                 'max' => 1000,
+                'searchable' => true,
             ],
         ],
 
@@ -123,6 +124,7 @@ return [
                 'size' => 30,
                 'max' => 50,
                 'placeholder' => 'production',
+                'searchable' => true,
             ],
         ],
 
