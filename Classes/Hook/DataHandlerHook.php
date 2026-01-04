@@ -9,7 +9,6 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DataHandler hook for vault secret TCA fields.
@@ -35,6 +34,7 @@ final class DataHandlerHook
     public function __construct(
         private readonly ConnectionPool $connectionPool,
         private readonly TcaSchemaFactory $tcaSchemaFactory,
+        private readonly VaultServiceInterface $vaultService,
     ) {}
 
     /**
@@ -121,16 +121,14 @@ final class DataHandlerHook
             $isNew = $secretData['isNew'];
 
             try {
-                $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-
                 if ($secretValue === '') {
                     // Empty value means delete the secret
                     if ($originalChecksum !== '') {
-                        $vaultService->delete($vaultIdentifier, 'TCA field cleared');
+                        $this->vaultService->delete($vaultIdentifier, 'TCA field cleared');
                     }
                 } elseif ($isNew) {
                     // New secret with new UUID
-                    $vaultService->store($vaultIdentifier, $secretValue, [
+                    $this->vaultService->store($vaultIdentifier, $secretValue, [
                         'table' => $table,
                         'field' => $fieldName,
                         'uid' => (int) $uid,
@@ -138,7 +136,7 @@ final class DataHandlerHook
                     ]);
                 } else {
                     // Update existing - use rotate to maintain audit trail
-                    $vaultService->rotate($vaultIdentifier, $secretValue, 'TCA field updated');
+                    $this->vaultService->rotate($vaultIdentifier, $secretValue, 'TCA field updated');
                 }
             } catch (VaultException $e) {
                 $dataHandler->log(
@@ -198,8 +196,7 @@ final class DataHandlerHook
             }
 
             try {
-                $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-                $vaultService->delete($vaultIdentifier, 'Record deleted');
+                $this->vaultService->delete($vaultIdentifier, 'Record deleted');
             } catch (VaultException $e) {
                 $dataHandler->log(
                     $table,
@@ -262,10 +259,8 @@ final class DataHandlerHook
             }
 
             try {
-                $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-
                 // Get source secret
-                $sourceValue = $vaultService->retrieve($sourceIdentifier);
+                $sourceValue = $this->vaultService->retrieve($sourceIdentifier);
                 if ($sourceValue === null) {
                     continue;
                 }
@@ -274,7 +269,7 @@ final class DataHandlerHook
                 $newIdentifier = $this->generateUuid();
 
                 // Store as new secret
-                $vaultService->store($newIdentifier, $sourceValue, [
+                $this->vaultService->store($newIdentifier, $sourceValue, [
                     'table' => $table,
                     'field' => $fieldName,
                     'uid' => (int) $newId,

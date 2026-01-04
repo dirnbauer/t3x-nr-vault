@@ -47,13 +47,16 @@ final class DataHandlerHookTest extends UnitTestCase
 
         $this->connectionPool = $this->createMock(ConnectionPool::class);
         $this->tcaSchemaFactory = $this->createMock(TcaSchemaFactory::class);
-        $this->subject = new DataHandlerHook($this->connectionPool, $this->tcaSchemaFactory);
-
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
         $this->dataHandler = $this->createMock(DataHandler::class);
 
-        GeneralUtility::addInstance(VaultServiceInterface::class, $this->vaultService);
+        $this->subject = new DataHandlerHook(
+            $this->connectionPool,
+            $this->tcaSchemaFactory,
+            $this->vaultService,
+        );
+
         GeneralUtility::addInstance(AuditLogServiceInterface::class, $this->auditLogService);
     }
 

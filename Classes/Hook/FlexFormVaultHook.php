@@ -11,7 +11,6 @@ use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Schema\Struct\FlexForm;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DataHandler hook for vault secrets in FlexForm fields.
@@ -28,6 +27,8 @@ final class FlexFormVaultHook
 
     public function __construct(
         private readonly TcaSchemaFactory $tcaSchemaFactory,
+        private readonly VaultServiceInterface $vaultService,
+        private readonly FlexFormTools $flexFormTools,
     ) {}
 
     /**
@@ -208,16 +209,14 @@ final class FlexFormVaultHook
         $isNew = $secretData['isNew'];
 
         try {
-            $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-
             if ($secretData['value'] === '') {
                 // Delete secret if cleared
                 if ($secretData['originalChecksum'] !== '') {
-                    $vaultService->delete($vaultIdentifier, 'FlexForm field cleared');
+                    $this->vaultService->delete($vaultIdentifier, 'FlexForm field cleared');
                 }
             } elseif ($isNew) {
                 // New secret with new UUID
-                $vaultService->store($vaultIdentifier, $secretData['value'], [
+                $this->vaultService->store($vaultIdentifier, $secretData['value'], [
                     'table' => $table,
                     'flexField' => $secretData['flexField'],
                     'sheet' => $secretData['sheet'],
@@ -227,7 +226,7 @@ final class FlexFormVaultHook
                 ]);
             } else {
                 // Update existing
-                $vaultService->rotate($vaultIdentifier, $secretData['value'], 'FlexForm field updated');
+                $this->vaultService->rotate($vaultIdentifier, $secretData['value'], 'FlexForm field updated');
             }
         } catch (VaultException $e) {
             $dataHandler->log(
@@ -271,17 +270,15 @@ final class FlexFormVaultHook
      */
     private function getFlexFormDataStructure(array $fieldConfig, array $data): ?array
     {
-        $flexFormTools = GeneralUtility::makeInstance(FlexFormTools::class);
-
         try {
-            $dataStructureIdentifier = $flexFormTools->getDataStructureIdentifier(
+            $dataStructureIdentifier = $this->flexFormTools->getDataStructureIdentifier(
                 $fieldConfig,
                 '',
                 '',
                 $data,
             );
 
-            return $flexFormTools->parseDataStructureByIdentifier($dataStructureIdentifier);
+            return $this->flexFormTools->parseDataStructureByIdentifier($dataStructureIdentifier);
         } catch (Exception) {
             return null;
         }

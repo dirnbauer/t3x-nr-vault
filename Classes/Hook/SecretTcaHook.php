@@ -9,7 +9,6 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Throwable;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DataHandler hook for tx_nrvault_secret TCA operations.
@@ -30,6 +29,11 @@ final class SecretTcaHook
      * @var array<string, string> Map of temporary ID => secret value
      */
     private array $pendingSecrets = [];
+
+    public function __construct(
+        private readonly VaultServiceInterface $vaultService,
+        private readonly AuditLogServiceInterface $auditService,
+    ) {}
 
     /**
      * Called before database operations.
@@ -122,8 +126,6 @@ final class SecretTcaHook
             unset($this->pendingSecrets[$originalId]);
 
             try {
-                $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-
                 // Build options from record data
                 $options = [
                     'ownerUid' => (int) ($record['owner_uid'] ?? 0),
@@ -133,11 +135,11 @@ final class SecretTcaHook
 
                 if ($status === 'new') {
                     // New record - store the secret
-                    $vaultService->store($identifier, $secretValue, $options);
+                    $this->vaultService->store($identifier, $secretValue, $options);
                     $secretStored = true;
                 } else {
                     // Existing record - rotate the secret
-                    $vaultService->rotate($identifier, $secretValue);
+                    $this->vaultService->rotate($identifier, $secretValue);
                     $secretStored = true;
                 }
             } catch (Throwable $e) {
@@ -159,8 +161,6 @@ final class SecretTcaHook
         }
 
         try {
-            $auditService = GeneralUtility::makeInstance(AuditLogServiceInterface::class);
-
             // Determine action type
             $action = 'metadata_update';
             if ($status === 'new') {
@@ -170,7 +170,7 @@ final class SecretTcaHook
             }
 
             // Log the operation
-            $auditService->log(
+            $this->auditService->log(
                 $identifier,
                 $action,
                 true,
@@ -209,8 +209,7 @@ final class SecretTcaHook
         }
 
         try {
-            $auditService = GeneralUtility::makeInstance(AuditLogServiceInterface::class);
-            $auditService->log(
+            $this->auditService->log(
                 $record['identifier'],
                 'delete',
                 true,
