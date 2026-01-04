@@ -14,12 +14,15 @@ namespace Netresearch\NrVault\Http\OAuth;
 
 use DateTimeImmutable;
 use GuzzleHttp\Client;
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\HttpFactory;
 use JsonException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -30,6 +33,7 @@ use Psr\Log\LoggerInterface;
  * - In-memory token caching
  * - Support for client_credentials and refresh_token grants
  * - Secure credential retrieval from vault
+ * - PSR-18 compliant HTTP client
  */
 final class OAuthTokenManager
 {
@@ -40,10 +44,24 @@ final class OAuthTokenManager
      */
     private array $tokenCache = [];
 
-    public function __construct(private readonly VaultServiceInterface $vaultService, private readonly ?LoggerInterface $logger = null, private readonly ?ClientInterface $httpClient = new Client([
-        'timeout' => 30,
-        'connect_timeout' => 10,
-    ])) {}
+    private readonly ClientInterface $httpClient;
+
+    private readonly RequestFactoryInterface $requestFactory;
+
+    private readonly StreamFactoryInterface $streamFactory;
+
+    public function __construct(
+        private readonly VaultServiceInterface $vaultService,
+        private readonly ?LoggerInterface $logger = null,
+        ?ClientInterface $httpClient = null,
+        ?RequestFactoryInterface $requestFactory = null,
+        ?StreamFactoryInterface $streamFactory = null,
+    ) {
+        $this->httpClient = $httpClient ?? new Client(['timeout' => 30, 'connect_timeout' => 10]);
+        $httpFactory = new HttpFactory();
+        $this->requestFactory = $requestFactory ?? $httpFactory;
+        $this->streamFactory = $streamFactory ?? $httpFactory;
+    }
 
     /**
      * Get a valid access token for the given OAuth config.
@@ -136,12 +154,15 @@ final class OAuthTokenManager
         $params = array_merge($params, $config->additionalParams);
 
         try {
-            $response = $this->httpClient->request('POST', $config->tokenEndpoint, [
-                'form_params' => $params,
-                'headers' => [
-                    'Accept' => 'application/json',
-                ],
-            ]);
+            // Build PSR-7 request
+            $body = $this->streamFactory->createStream(http_build_query($params));
+            $request = $this->requestFactory->createRequest('POST', $config->tokenEndpoint)
+                ->withHeader('Content-Type', 'application/x-www-form-urlencoded')
+                ->withHeader('Accept', 'application/json')
+                ->withBody($body);
+
+            // Send request via PSR-18 client
+            $response = $this->httpClient->sendRequest($request);
 
             // Clear credentials from memory
             sodium_memzero($clientId);
@@ -185,7 +206,7 @@ final class OAuthTokenManager
                 expiresAt: $expiresAt,
                 scope: $body['scope'] ?? null,
             );
-        } catch (GuzzleException $e) {
+        } catch (ClientExceptionInterface $e) {
             // Clear credentials from memory on error
             sodium_memzero($clientId);
             sodium_memzero($clientSecret);

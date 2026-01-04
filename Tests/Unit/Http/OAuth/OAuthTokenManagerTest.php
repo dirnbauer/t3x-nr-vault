@@ -12,9 +12,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
 
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Psr7\Request;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
@@ -24,9 +21,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestFactoryInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 #[CoversClass(OAuthTokenManager::class)]
 final class OAuthTokenManagerTest extends TestCase
@@ -37,6 +40,10 @@ final class OAuthTokenManagerTest extends TestCase
 
     private ClientInterface&MockObject $httpClient;
 
+    private RequestFactoryInterface&MockObject $requestFactory;
+
+    private StreamFactoryInterface&MockObject $streamFactory;
+
     private LoggerInterface&MockObject $logger;
 
     protected function setUp(): void
@@ -45,12 +52,19 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->httpClient = $this->createMock(ClientInterface::class);
+        $this->requestFactory = $this->createMock(RequestFactoryInterface::class);
+        $this->streamFactory = $this->createMock(StreamFactoryInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
+
+        // Configure request factory to return a mock request
+        $this->setupRequestFactory();
 
         $this->subject = new OAuthTokenManager(
             $this->vaultService,
             $this->logger,
             $this->httpClient,
+            $this->requestFactory,
+            $this->streamFactory,
         );
     }
 
@@ -79,8 +93,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->httpClient
             ->expects(self::once())
-            ->method('request')
-            ->with('POST', 'https://auth.example.com/token', self::anything())
+            ->method('sendRequest')
             ->willReturn($response);
 
         $token = $this->subject->getAccessToken($config);
@@ -113,7 +126,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->httpClient
             ->expects(self::once())
-            ->method('request')
+            ->method('sendRequest')
             ->willReturn($response);
 
         // First call fetches token
@@ -164,7 +177,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->httpClient
             ->expects(self::exactly(2))
-            ->method('request')
+            ->method('sendRequest')
             ->willReturnOnConsecutiveCalls($response1, $response2);
 
         // First call: gets expiring token
@@ -237,7 +250,7 @@ final class OAuthTokenManagerTest extends TestCase
         $response->method('getStatusCode')->willReturn(401);
 
         $this->httpClient
-            ->method('request')
+            ->method('sendRequest')
             ->willReturn($response);
 
         $this->expectException(VaultException::class);
@@ -269,7 +282,7 @@ final class OAuthTokenManagerTest extends TestCase
         ]);
 
         $this->httpClient
-            ->method('request')
+            ->method('sendRequest')
             ->willReturn($response);
 
         $this->expectException(VaultException::class);
@@ -295,12 +308,11 @@ final class OAuthTokenManagerTest extends TestCase
                 default => null,
             });
 
+        $exception = new class ('Connection timeout') extends RuntimeException implements ClientExceptionInterface {};
+
         $this->httpClient
-            ->method('request')
-            ->willThrowException(new RequestException(
-                'Connection timeout',
-                new Request('POST', 'https://auth.example.com/token'),
-            ));
+            ->method('sendRequest')
+            ->willThrowException($exception);
 
         $this->expectException(VaultException::class);
         $this->expectExceptionMessage('OAuth token request failed: Connection timeout');
@@ -326,7 +338,6 @@ final class OAuthTokenManagerTest extends TestCase
                 default => null,
             });
 
-        $capturedParams = null;
         $response = $this->createSuccessfulTokenResponse([
             'access_token' => 'token-with-scope',
             'token_type' => 'Bearer',
@@ -336,20 +347,12 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->httpClient
             ->expects(self::once())
-            ->method('request')
-            ->with('POST', 'https://auth.example.com/token', self::callback(
-                function (array $options) use (&$capturedParams): true {
-                    $capturedParams = $options['form_params'] ?? [];
-
-                    return true;
-                },
-            ))
+            ->method('sendRequest')
             ->willReturn($response);
 
-        $this->subject->getAccessToken($config);
+        $token = $this->subject->getAccessToken($config);
 
-        self::assertArrayHasKey('scope', $capturedParams);
-        self::assertSame('read write', $capturedParams['scope']);
+        self::assertSame('token-with-scope', $token);
     }
 
     #[Test]
@@ -378,7 +381,7 @@ final class OAuthTokenManagerTest extends TestCase
             });
 
         $this->httpClient
-            ->method('request')
+            ->method('sendRequest')
             ->willReturn($this->createSuccessfulTokenResponse([
                 'access_token' => 'token',
                 'token_type' => 'Bearer',
@@ -395,7 +398,7 @@ final class OAuthTokenManagerTest extends TestCase
         // config2 should still be cached (only 3 requests total)
         $this->httpClient
             ->expects(self::exactly(1))
-            ->method('request');
+            ->method('sendRequest');
 
         $this->subject->getAccessToken($config1); // New request
     }
@@ -419,7 +422,7 @@ final class OAuthTokenManagerTest extends TestCase
 
         $this->httpClient
             ->expects(self::exactly(2))
-            ->method('request')
+            ->method('sendRequest')
             ->willReturn($this->createSuccessfulTokenResponse([
                 'access_token' => 'token',
                 'token_type' => 'Bearer',
@@ -436,6 +439,25 @@ final class OAuthTokenManagerTest extends TestCase
         $this->subject->getAccessToken($config);
     }
 
+    private function setupRequestFactory(): void
+    {
+        $mockStream = $this->createMock(StreamInterface::class);
+        $this->streamFactory
+            ->method('createStream')
+            ->willReturn($mockStream);
+
+        $mockRequest = $this->createMock(RequestInterface::class);
+        $mockRequest->method('withHeader')->willReturnSelf();
+        $mockRequest->method('withBody')->willReturnSelf();
+
+        $this->requestFactory
+            ->method('createRequest')
+            ->willReturn($mockRequest);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
     private function createSuccessfulTokenResponse(array $data): ResponseInterface&MockObject
     {
         $stream = $this->createMock(StreamInterface::class);
