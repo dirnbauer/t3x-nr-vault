@@ -8,6 +8,7 @@ use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -143,17 +144,23 @@ final class VaultFieldResolver
      *
      * @param string $table The table name
      *
-     * @return array<string> Field names that use vaultSecret renderType
+     * @return list<string> Field names that use vaultSecret renderType
      */
     public static function getVaultFieldsForTable(string $table): array
     {
-        $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
+        $tcaSchemaFactory = GeneralUtility::makeInstance(TcaSchemaFactory::class);
+
+        if (!$tcaSchemaFactory->has($table)) {
+            return [];
+        }
+
+        $schema = $tcaSchemaFactory->get($table);
         $vaultFields = [];
 
-        foreach ($tcaColumns as $fieldName => $fieldConfig) {
-            $renderType = $fieldConfig['config']['renderType'] ?? '';
-            if ($renderType === 'vaultSecret') {
-                $vaultFields[] = $fieldName;
+        foreach ($schema->getFields() as $field) {
+            $config = $field->getConfiguration();
+            if (($config['renderType'] ?? '') === 'vaultSecret') {
+                $vaultFields[] = $field->getName();
             }
         }
 
