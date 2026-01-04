@@ -42,13 +42,14 @@ final class DataHandlerHook
         string $table,
         string|int $id,
     ): void {
+        /** @var array<string, array{config?: array<string, mixed>}> $tcaColumns */
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
             $renderType = $fieldConfig['config']['renderType'] ?? '';
 
             // Check if this is a vault secret field
-            if ($renderType !== 'vaultSecret') {
+            if (!\is_string($renderType) || $renderType !== 'vaultSecret') {
                 continue;
             }
 
@@ -61,11 +62,14 @@ final class DataHandlerHook
 
             // Handle array format from form element
             if (\is_array($value)) {
-                $secretValue = $value['value'] ?? $value[0] ?? '';
-                $existingIdentifier = $value['_vault_identifier'] ?? '';
-                $originalChecksum = $value['_vault_checksum'] ?? '';
+                $rawSecretValue = $value['value'] ?? $value[0] ?? '';
+                $rawIdentifier = $value['_vault_identifier'] ?? '';
+                $rawChecksum = $value['_vault_checksum'] ?? '';
+                $secretValue = \is_string($rawSecretValue) || \is_int($rawSecretValue) ? (string) $rawSecretValue : '';
+                $existingIdentifier = \is_string($rawIdentifier) ? $rawIdentifier : '';
+                $originalChecksum = \is_string($rawChecksum) ? $rawChecksum : '';
             } else {
-                $secretValue = (string) $value;
+                $secretValue = \is_string($value) || \is_int($value) ? (string) $value : '';
                 $existingIdentifier = '';
                 $originalChecksum = '';
             }
@@ -171,12 +175,13 @@ final class DataHandlerHook
             return;
         }
 
+        /** @var array<string, array{config?: array<string, mixed>}> $tcaColumns */
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
         $vaultFields = [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
             $renderType = $fieldConfig['config']['renderType'] ?? '';
-            if ($renderType === 'vaultSecret') {
+            if (\is_string($renderType) && $renderType === 'vaultSecret') {
                 $vaultFields[] = $fieldName;
             }
         }
@@ -242,12 +247,13 @@ final class DataHandlerHook
             return;
         }
 
+        /** @var array<string, array{config?: array<string, mixed>}> $tcaColumns */
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
         $vaultFields = [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
             $renderType = $fieldConfig['config']['renderType'] ?? '';
-            if ($renderType === 'vaultSecret') {
+            if (\is_string($renderType) && $renderType === 'vaultSecret') {
                 $vaultFields[] = $fieldName;
             }
         }

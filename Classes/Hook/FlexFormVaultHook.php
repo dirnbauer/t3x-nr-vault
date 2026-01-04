@@ -33,11 +33,13 @@ final class FlexFormVaultHook
         string $table,
         string|int $id,
     ): void {
+        /** @var array<string, array{config: array<string, mixed>}> $tcaColumns */
         $tcaColumns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
         foreach ($tcaColumns as $fieldName => $fieldConfig) {
             // Check for FlexForm type fields
-            if (($fieldConfig['config']['type'] ?? '') !== 'flex') {
+            $configType = $fieldConfig['config']['type'] ?? '';
+            if (!\is_string($configType) || $configType !== 'flex') {
                 continue;
             }
             // Check if this FlexForm field is being saved
@@ -104,14 +106,34 @@ final class FlexFormVaultHook
         }
 
         // Process each sheet
-        foreach ($data['data'] ?? [] as $sheetName => &$sheetData) {
-            $sheetConfig = $dataStructure['sheets'][$sheetName] ?? [];
+        if (!\is_array($data['data'] ?? null)) {
+            return;
+        }
 
-            foreach ($sheetData['lDEF'] ?? [] as $fieldPath => &$fieldData) {
-                $elementConfig = $this->getFlexFormElementConfig($sheetConfig, $fieldPath);
+        foreach ($data['data'] as $sheetName => &$sheetData) {
+            if (!\is_array($sheetData)) {
+                continue;
+            }
+
+            /** @var array<string, mixed> $sheets */
+            $sheets = $dataStructure['sheets'] ?? [];
+            /** @var array{ROOT?: array{el?: array<string, array{config?: array{renderType?: string}}>}} $sheetConfig */
+            $sheetConfig = \is_array($sheets[$sheetName] ?? null) ? $sheets[$sheetName] : [];
+
+            if (!\is_array($sheetData['lDEF'] ?? null)) {
+                continue;
+            }
+
+            foreach ($sheetData['lDEF'] as $fieldPath => &$fieldData) {
+                if (!\is_array($fieldData)) {
+                    continue;
+                }
+
+                $elementConfig = $this->getFlexFormElementConfig($sheetConfig, (string) $fieldPath);
 
                 // Check if this is a vault secret field
-                if (($elementConfig['config']['renderType'] ?? '') !== 'vaultSecret') {
+                $renderType = $elementConfig['config']['renderType'] ?? '';
+                if (!\is_string($renderType) || $renderType !== 'vaultSecret') {
                     continue;
                 }
 
@@ -119,11 +141,14 @@ final class FlexFormVaultHook
 
                 // Handle array format from form element
                 if (\is_array($value)) {
-                    $secretValue = $value['value'] ?? $value[0] ?? '';
-                    $existingIdentifier = $value['_vault_identifier'] ?? '';
-                    $originalChecksum = $value['_vault_checksum'] ?? '';
+                    $rawSecretValue = $value['value'] ?? $value[0] ?? '';
+                    $rawIdentifier = $value['_vault_identifier'] ?? '';
+                    $rawChecksum = $value['_vault_checksum'] ?? '';
+                    $secretValue = \is_string($rawSecretValue) || \is_int($rawSecretValue) ? (string) $rawSecretValue : '';
+                    $existingIdentifier = \is_string($rawIdentifier) ? $rawIdentifier : '';
+                    $originalChecksum = \is_string($rawChecksum) ? $rawChecksum : '';
                 } else {
-                    $secretValue = (string) $value;
+                    $secretValue = \is_string($value) || \is_int($value) ? (string) $value : '';
                     $existingIdentifier = '';
                     $originalChecksum = '';
                 }
@@ -140,8 +165,8 @@ final class FlexFormVaultHook
                 // Store for post-processing
                 $this->pendingFlexSecrets[$table][$id][] = [
                     'flexField' => $flexFieldName,
-                    'sheet' => $sheetName,
-                    'fieldPath' => $fieldPath,
+                    'sheet' => (string) $sheetName,
+                    'fieldPath' => (string) $fieldPath,
                     'value' => $secretValue,
                     'identifier' => $vaultIdentifier,
                     'originalChecksum' => $originalChecksum,
@@ -156,6 +181,8 @@ final class FlexFormVaultHook
 
     /**
      * Store a FlexForm vault secret.
+     *
+     * @param array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool} $secretData
      */
     private function storeFlexFormSecret(
         array $secretData,
@@ -248,6 +275,10 @@ final class FlexFormVaultHook
 
     /**
      * Get FlexForm element configuration from sheet config.
+     *
+     * @param array{ROOT?: array{el?: array<string, array{config?: array{renderType?: string}}>}} $sheetConfig
+     *
+     * @return array{config?: array{renderType?: string}}
      */
     private function getFlexFormElementConfig(array $sheetConfig, string $fieldPath): array
     {

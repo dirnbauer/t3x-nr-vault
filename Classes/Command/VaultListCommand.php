@@ -88,6 +88,9 @@ final class VaultListCommand extends Command
         }
     }
 
+    /**
+     * @param array<array{identifier: string, owner_uid: int, crdate: int, tstamp: int, read_count: int, last_read_at: int|null, description: string, version: int}> $secrets
+     */
     private function outputTable(SymfonyStyle $io, array $secrets): void
     {
         $rows = [];
@@ -110,6 +113,9 @@ final class VaultListCommand extends Command
         $io->writeln(\sprintf('<info>Total: %d secrets</info>', \count($secrets)));
     }
 
+    /**
+     * @param array<array{identifier: string, owner_uid: int, crdate: int, tstamp: int, read_count: int, last_read_at: int|null, description: string, version: int}> $secrets
+     */
     private function outputCsv(OutputInterface $output, array $secrets): void
     {
         // Header
