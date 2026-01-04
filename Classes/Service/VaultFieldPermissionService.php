@@ -40,14 +40,6 @@ use TYPO3\CMS\Core\SingletonInterface;
  */
 final class VaultFieldPermissionService implements SingletonInterface
 {
-    public const string PERMISSION_REVEAL = 'reveal';
-
-    public const string PERMISSION_COPY = 'copy';
-
-    public const string PERMISSION_EDIT = 'edit';
-
-    public const string PERMISSION_READ_ONLY = 'readOnly';
-
     /** @var array<string, bool> */
     private array $permissionCache = [];
 
@@ -57,7 +49,7 @@ final class VaultFieldPermissionService implements SingletonInterface
     public function isAllowed(
         string $table,
         string $field,
-        string $permission,
+        VaultFieldPermission $permission,
         ?BackendUserAuthentication $backendUser = null,
     ): bool {
         $backendUser ??= $GLOBALS['BE_USER'] ?? null;
@@ -70,10 +62,10 @@ final class VaultFieldPermissionService implements SingletonInterface
         if ($backendUser->isAdmin()) {
             // For readOnly permission, admins should NOT be read-only (return false)
             // For all other permissions, admins have full access (return true)
-            return $permission !== self::PERMISSION_READ_ONLY;
+            return $permission !== VaultFieldPermission::ReadOnly;
         }
 
-        $cacheKey = \sprintf('%s:%s:%s:%d', $table, $field, $permission, $backendUser->user['uid'] ?? 0);
+        $cacheKey = \sprintf('%s:%s:%s:%d', $table, $field, $permission->value, $backendUser->user['uid'] ?? 0);
 
         if (isset($this->permissionCache[$cacheKey])) {
             return $this->permissionCache[$cacheKey];
@@ -88,19 +80,20 @@ final class VaultFieldPermissionService implements SingletonInterface
     /**
      * Get all permissions for a vault field.
      *
-     * @return array{reveal: bool, copy: bool, edit: bool, readOnly: bool}
+     * @return array<string, bool>
      */
     public function getPermissions(
         string $table,
         string $field,
         ?BackendUserAuthentication $backendUser = null,
     ): array {
-        return [
-            self::PERMISSION_REVEAL => $this->isAllowed($table, $field, self::PERMISSION_REVEAL, $backendUser),
-            self::PERMISSION_COPY => $this->isAllowed($table, $field, self::PERMISSION_COPY, $backendUser),
-            self::PERMISSION_EDIT => $this->isAllowed($table, $field, self::PERMISSION_EDIT, $backendUser),
-            self::PERMISSION_READ_ONLY => $this->isAllowed($table, $field, self::PERMISSION_READ_ONLY, $backendUser),
-        ];
+        $permissions = [];
+
+        foreach (VaultFieldPermission::cases() as $permission) {
+            $permissions[$permission->value] = $this->isAllowed($table, $field, $permission, $backendUser);
+        }
+
+        return $permissions;
     }
 
     /**
@@ -111,7 +104,7 @@ final class VaultFieldPermissionService implements SingletonInterface
         string $field,
         ?BackendUserAuthentication $backendUser = null,
     ): bool {
-        return $this->isAllowed($table, $field, self::PERMISSION_READ_ONLY, $backendUser);
+        return $this->isAllowed($table, $field, VaultFieldPermission::ReadOnly, $backendUser);
     }
 
     /**
@@ -125,24 +118,24 @@ final class VaultFieldPermissionService implements SingletonInterface
     private function checkPermission(
         string $table,
         string $field,
-        string $permission,
+        VaultFieldPermission $permission,
     ): bool {
         $tsConfig = $this->getVaultTsConfig();
 
         // Check field-specific setting: vault.permissions.{table}.{field}.{permission}
-        $fieldValue = $this->getNestedValue($tsConfig, [$table, $field, $permission]);
+        $fieldValue = $this->getNestedValue($tsConfig, [$table, $field, $permission->value]);
         if ($fieldValue !== null) {
             return $this->toBoolean($fieldValue);
         }
 
         // Check table default: vault.permissions.{table}.default.{permission}
-        $tableDefault = $this->getNestedValue($tsConfig, [$table, 'default', $permission]);
+        $tableDefault = $this->getNestedValue($tsConfig, [$table, 'default', $permission->value]);
         if ($tableDefault !== null) {
             return $this->toBoolean($tableDefault);
         }
 
         // Check global default: vault.permissions.default.{permission}
-        $globalDefault = $this->getNestedValue($tsConfig, ['default', $permission]);
+        $globalDefault = $this->getNestedValue($tsConfig, ['default', $permission->value]);
         if ($globalDefault !== null) {
             return $this->toBoolean($globalDefault);
         }
@@ -196,14 +189,13 @@ final class VaultFieldPermissionService implements SingletonInterface
         return (bool) $value;
     }
 
-    private function getBuiltInDefault(string $permission): bool
+    private function getBuiltInDefault(VaultFieldPermission $permission): bool
     {
         return match ($permission) {
-            self::PERMISSION_REVEAL => true,
-            self::PERMISSION_COPY => true,
-            self::PERMISSION_EDIT => true,
-            self::PERMISSION_READ_ONLY => false,
-            default => false,
+            VaultFieldPermission::Reveal => true,
+            VaultFieldPermission::Copy => true,
+            VaultFieldPermission::Edit => true,
+            VaultFieldPermission::ReadOnly => false,
         };
     }
 }
