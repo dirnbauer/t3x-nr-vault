@@ -15,10 +15,18 @@ final class IdentifierValidator
 
     private const int MAX_LENGTH = 255;
 
-    private const string PATTERN = '/^[a-zA-Z]\w*$/';
+    /** User-friendly identifier pattern (e.g., my_api_key). */
+    private const string USER_PATTERN = '/^[a-zA-Z]\w*$/';
+
+    /** UUID v7 pattern for TCA/FlexForm vault field identifiers. */
+    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /**
      * Validate a secret identifier.
+     *
+     * Accepts two formats:
+     * - User-friendly: starts with letter, contains letters/numbers/underscores (e.g., my_api_key)
+     * - UUID v7: standard UUID v7 format used by TCA/FlexForm vault fields
      *
      * @throws ValidationException If identifier is invalid
      */
@@ -28,6 +36,12 @@ final class IdentifierValidator
             throw ValidationException::invalidIdentifier($identifier, 'cannot be empty');
         }
 
+        // Check if it's a valid UUID v7 (used by TCA/FlexForm vault fields)
+        if (preg_match(self::UUID_PATTERN, $identifier)) {
+            return;
+        }
+
+        // Otherwise validate as user-friendly identifier
         $length = \strlen($identifier);
         if ($length < self::MIN_LENGTH) {
             throw ValidationException::invalidIdentifier(
@@ -43,7 +57,7 @@ final class IdentifierValidator
             );
         }
 
-        if (!preg_match(self::PATTERN, $identifier)) {
+        if (!preg_match(self::USER_PATTERN, $identifier)) {
             throw ValidationException::invalidIdentifier(
                 $identifier,
                 'must start with a letter and contain only letters, numbers, and underscores',
