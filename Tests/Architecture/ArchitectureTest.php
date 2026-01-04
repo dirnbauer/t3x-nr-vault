@@ -11,6 +11,13 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Architecture;
 
+use Netresearch\NrVault\Adapter\VaultAdapterInterface;
+use Netresearch\NrVault\Audit\AuditLogEntry;
+use Netresearch\NrVault\Http\OAuth\OAuthConfig;
+use Netresearch\NrVault\Http\OAuth\OAuthToken;
+use Netresearch\NrVault\Http\SecretPlacement;
+use Netresearch\NrVault\Http\VaultHttpClient;
+use Netresearch\NrVault\Service\Detection\Severity;
 use PHPat\Selector\Selector;
 use PHPat\Test\Builder\BuildStep;
 use PHPat\Test\PHPat;
@@ -59,7 +66,7 @@ final class ArchitectureTest
     public function testAuditLogEntryMustBeReadonly(): BuildStep
     {
         return PHPat::rule()
-            ->classes(Selector::classname('Netresearch\NrVault\Audit\AuditLogEntry'))
+            ->classes(Selector::classname(AuditLogEntry::class))
             ->shouldBeReadonly()
             ->because('audit entries must be immutable for tamper-evidence');
     }
@@ -73,8 +80,8 @@ final class ArchitectureTest
     {
         return PHPat::rule()
             ->classes(
-                Selector::classname('Netresearch\NrVault\Http\OAuth\OAuthConfig'),
-                Selector::classname('Netresearch\NrVault\Http\OAuth\OAuthToken'),
+                Selector::classname(OAuthConfig::class),
+                Selector::classname(OAuthToken::class),
             )
             ->shouldBeReadonly()
             ->because('OAuth value objects must be immutable');
@@ -86,7 +93,7 @@ final class ArchitectureTest
     public function testVaultHttpClientMustBeReadonly(): BuildStep
     {
         return PHPat::rule()
-            ->classes(Selector::classname('Netresearch\NrVault\Http\VaultHttpClient'))
+            ->classes(Selector::classname(VaultHttpClient::class))
             ->shouldBeReadonly()
             ->because('HTTP client uses immutable fluent pattern');
     }
@@ -167,7 +174,7 @@ final class ArchitectureTest
             ->classes(Selector::inNamespace('Netresearch\NrVault\Adapter'))
             ->excluding(Selector::classname('/.*Interface$/', true))
             ->shouldImplement()
-            ->classes(Selector::classname('Netresearch\NrVault\Adapter\VaultAdapterInterface'))
+            ->classes(Selector::classname(VaultAdapterInterface::class))
             ->because('adapters must follow the adapter contract');
     }
 
@@ -371,8 +378,8 @@ final class ArchitectureTest
     {
         return PHPat::rule()
             ->classes(
-                Selector::classname('Netresearch\NrVault\Service\Detection\Severity'),
-                Selector::classname('Netresearch\NrVault\Http\SecretPlacement'),
+                Selector::classname(Severity::class),
+                Selector::classname(SecretPlacement::class),
             )
             ->shouldBeFinal()
             ->because('enums are implicitly final but this documents intent');

@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Command;
 
 use DateTimeImmutable;
 use Exception;
+use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
@@ -223,7 +224,7 @@ final class VaultAuditCommand extends Command
     }
 
     /**
-     * @param array<int, \Netresearch\NrVault\Audit\AuditLogEntry> $entries
+     * @param array<int, AuditLogEntry> $entries
      */
     private function outputTable(SymfonyStyle $io, array $entries): void
     {
@@ -249,7 +250,7 @@ final class VaultAuditCommand extends Command
     }
 
     /**
-     * @param array<int, \Netresearch\NrVault\Audit\AuditLogEntry> $entries
+     * @param array<int, AuditLogEntry> $entries
      */
     private function outputCsv(OutputInterface $output, array $entries): void
     {
@@ -273,11 +274,11 @@ final class VaultAuditCommand extends Command
     }
 
     /**
-     * @param array<int, \Netresearch\NrVault\Audit\AuditLogEntry> $entries
+     * @param array<int, AuditLogEntry> $entries
      */
     private function exportToFile(SymfonyStyle $io, array $entries, string $file, string $format): int
     {
-        $data = array_map(static fn (\Netresearch\NrVault\Audit\AuditLogEntry $e): array => $e->jsonSerialize(), $entries);
+        $data = array_map(static fn (AuditLogEntry $e): array => $e->jsonSerialize(), $entries);
 
         $content = match ($format) {
             'csv' => $this->formatCsv($data),
