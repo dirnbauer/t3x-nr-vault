@@ -12,10 +12,7 @@
     "logs": {
         "text": ".Build/infection/infection.log",
         "html": ".Build/infection/infection.html",
-        "json": ".Build/infection/infection.json",
-        "badge": {
-            "branch": "main"
-        }
+        "json": ".Build/infection/infection.json"
     },
     "tmpDir": ".Build/infection/tmp",
     "phpUnit": {
@@ -31,7 +28,5 @@
         "UnwrapArrayMerge": false
     },
     "minMsi": 70,
-    "minCoveredMsi": 80,
-    // Focus on TCA integration classes for mutation testing
-    "filter": "Classes/Utility/,Classes/TCA/,Classes/Hook/"
+    "minCoveredMsi": 80
 }
