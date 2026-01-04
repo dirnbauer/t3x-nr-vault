@@ -95,14 +95,23 @@ final class VaultMigrateFieldCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
         $table = $input->getArgument('table');
         $field = $input->getArgument('field');
-        $dryRun = $input->getOption('dry-run');
-        $batchSize = (int) $input->getOption('batch-size');
-        $whereClause = $input->getOption('where');
-        $force = $input->getOption('force');
-        $clearSource = $input->getOption('clear-source');
         $uidField = $input->getOption('uid-field');
+
+        \assert(\is_string($table));
+        \assert(\is_string($field));
+        \assert(\is_string($uidField));
+
+        $dryRun = (bool) $input->getOption('dry-run');
+        $batchSize = $input->getOption('batch-size');
+        $whereClause = $input->getOption('where');
+        $force = (bool) $input->getOption('force');
+        $clearSource = (bool) $input->getOption('clear-source');
+
+        \assert(\is_int($batchSize) && $batchSize >= 1);
+        \assert($whereClause === null || \is_string($whereClause));
 
         $io->title('Vault Field Migration');
         $io->text([
@@ -139,7 +148,7 @@ final class VaultMigrateFieldCommand extends Command
 
         if ($dryRun) {
             $io->section('Records that would be migrated:');
-            $this->showDryRunResults($io, $records, $table, $field, $uidField);
+            $this->showDryRunResults($io, $records, $field, $uidField);
 
             return Command::SUCCESS;
         }
@@ -165,21 +174,27 @@ final class VaultMigrateFieldCommand extends Command
                 $uid = $record[$uidField];
                 $value = $record[$field];
 
+                \assert(\is_int($uid) || \is_string($uid));
+                \assert(\is_string($value) || \is_int($value) || $value === null);
+
+                $uidInt = (int) $uid;
+                $valueStr = (string) $value;
+
                 try {
                     $identifier = $this->generateUuid();
 
                     // Store in vault
-                    $this->vaultService->store($identifier, (string) $value, [
+                    $this->vaultService->store($identifier, $valueStr, [
                         'table' => $table,
                         'field' => $field,
-                        'uid' => (int) $uid,
+                        'uid' => $uidInt,
                         'source' => 'migration',
                         'migrated_at' => time(),
                     ]);
 
                     // Optionally clear source field
                     if ($clearSource) {
-                        $this->clearSourceField($table, $field, $uidField, $uid);
+                        $this->clearSourceField($table, $field, $uidField, $uidInt);
                     }
 
                     $migrated++;
@@ -306,7 +321,6 @@ final class VaultMigrateFieldCommand extends Command
     private function showDryRunResults(
         SymfonyStyle $io,
         array $records,
-        string $table,
         string $field,
         string $uidField,
     ): void {
@@ -345,7 +359,7 @@ final class VaultMigrateFieldCommand extends Command
         return str_repeat('*', $maxLength - 3) . '...';
     }
 
-    private function clearSourceField(string $table, string $field, string $uidField, mixed $uid): void
+    private function clearSourceField(string $table, string $field, string $uidField, int $uid): void
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
         $queryBuilder
@@ -368,14 +382,14 @@ final class VaultMigrateFieldCommand extends Command
         $time = (int) (microtime(true) * 1000);
         $random = random_bytes(10);
 
-        return sprintf(
+        return \sprintf(
             '%08x-%04x-7%03x-%04x-%012x',
             ($time >> 16) & 0xFFFFFFFF,
             $time & 0xFFFF,
-            ord($random[0]) << 4 | ord($random[1]) >> 4 & 0x0FFF,
-            (ord($random[1]) & 0x0F) << 8 | ord($random[2]) & 0x3FFF | 0x8000,
-            (ord($random[3]) << 40) | (ord($random[4]) << 32) | (ord($random[5]) << 24)
-                | (ord($random[6]) << 16) | (ord($random[7]) << 8) | ord($random[8]),
+            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF,
+            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000,
+            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
+                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]),
         );
     }
 }

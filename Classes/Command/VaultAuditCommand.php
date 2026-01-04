@@ -110,7 +110,11 @@ final class VaultAuditCommand extends Command
         // Build filters
         $filters = $this->buildFilters($input);
         $format = $input->getOption('format');
-        $limit = (int) $input->getOption('limit');
+        $limit = $input->getOption('limit');
+
+        \assert(\is_string($format));
+        \assert(\is_string($limit) || \is_int($limit));
+        $limit = (int) $limit;
 
         try {
             $entries = $this->auditLogService->query($filters, $limit, 0);
@@ -123,21 +127,16 @@ final class VaultAuditCommand extends Command
 
             // Export to file
             $exportFile = $input->getOption('export');
-            if ($exportFile !== null) {
+            if (\is_string($exportFile) && $exportFile !== '') {
                 return $this->exportToFile($io, $entries, $exportFile, $format);
             }
 
             // Output to console
-            switch ($format) {
-                case 'json':
-                    $output->writeln(json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
-                    break;
-                case 'csv':
-                    $this->outputCsv($output, $entries);
-                    break;
-                default:
-                    $this->outputTable($io, $entries);
-            }
+            match ($format) {
+                'json' => $output->writeln(json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)),
+                'csv' => $this->outputCsv($output, $entries),
+                default => $this->outputTable($io, $entries),
+            };
 
             return Command::SUCCESS;
         } catch (VaultException $e) {
@@ -153,33 +152,40 @@ final class VaultAuditCommand extends Command
         $action = $input->getOption('action');
         $actor = $input->getOption('actor');
         $successOption = $input->getOption('success');
+        $sinceOption = $input->getOption('since');
+        $untilOption = $input->getOption('until');
 
         $since = null;
-        if ($input->getOption('since')) {
+        if (\is_string($sinceOption) && $sinceOption !== '') {
             try {
-                $since = new DateTimeImmutable($input->getOption('since'));
+                $since = new DateTimeImmutable($sinceOption);
             } catch (Exception) {
                 // Invalid date, skip
             }
         }
 
         $until = null;
-        if ($input->getOption('until')) {
+        if (\is_string($untilOption) && $untilOption !== '') {
             try {
-                $until = new DateTimeImmutable($input->getOption('until'));
+                $until = new DateTimeImmutable($untilOption);
             } catch (Exception) {
                 // Invalid date, skip
             }
         }
 
-        $success = $successOption !== null
+        $success = \is_string($successOption)
             ? filter_var($successOption, FILTER_VALIDATE_BOOLEAN)
             : null;
+
+        $actorUid = null;
+        if (\is_string($actor) || \is_int($actor)) {
+            $actorUid = (int) $actor;
+        }
 
         $filter = new AuditLogFilter(
             secretIdentifier: \is_string($secretIdentifier) ? $secretIdentifier : null,
             action: \is_string($action) ? $action : null,
-            actorUid: $actor !== null ? (int) $actor : null,
+            actorUid: $actorUid,
             success: $success,
             since: $since,
             until: $until,
@@ -216,6 +222,9 @@ final class VaultAuditCommand extends Command
         return Command::FAILURE;
     }
 
+    /**
+     * @param array<int, \Netresearch\NrVault\Audit\AuditLogEntry> $entries
+     */
     private function outputTable(SymfonyStyle $io, array $entries): void
     {
         $rows = [];
@@ -239,6 +248,9 @@ final class VaultAuditCommand extends Command
         $io->writeln(\sprintf('<info>Total: %d entries</info>', \count($entries)));
     }
 
+    /**
+     * @param array<int, \Netresearch\NrVault\Audit\AuditLogEntry> $entries
+     */
     private function outputCsv(OutputInterface $output, array $entries): void
     {
         // Header
@@ -260,9 +272,12 @@ final class VaultAuditCommand extends Command
         }
     }
 
+    /**
+     * @param array<int, \Netresearch\NrVault\Audit\AuditLogEntry> $entries
+     */
     private function exportToFile(SymfonyStyle $io, array $entries, string $file, string $format): int
     {
-        $data = array_map(fn ($e) => $e->toArray(), $entries);
+        $data = array_map(static fn (\Netresearch\NrVault\Audit\AuditLogEntry $e): array => $e->jsonSerialize(), $entries);
 
         $content = match ($format) {
             'csv' => $this->formatCsv($data),
@@ -281,6 +296,9 @@ final class VaultAuditCommand extends Command
         return Command::SUCCESS;
     }
 
+    /**
+     * @param array<int, array<string, scalar|array<string, mixed>|null>> $data
+     */
     private function formatCsv(array $data): string
     {
         if ($data === []) {
@@ -288,13 +306,21 @@ final class VaultAuditCommand extends Command
         }
 
         $output = fopen('php://temp', 'r+');
+        \assert(\is_resource($output));
         fputcsv($output, array_keys($data[0]), escape: '\\');
 
         foreach ($data as $row) {
+            // Convert context array to JSON string for CSV
             if (isset($row['context']) && \is_array($row['context'])) {
                 $row['context'] = json_encode($row['context']);
             }
-            fputcsv($output, $row, escape: '\\');
+            // Filter to only scalar/null values for fputcsv
+            /** @var array<string, bool|float|int|string|null> $csvRow */
+            $csvRow = array_map(
+                static fn (mixed $v): bool|float|int|string|null => \is_scalar($v) || $v === null ? $v : json_encode($v),
+                $row,
+            );
+            fputcsv($output, $csvRow, escape: '\\');
         }
 
         rewind($output);
