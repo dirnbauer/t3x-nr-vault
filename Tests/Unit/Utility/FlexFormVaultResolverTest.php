@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Utility;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
@@ -52,6 +53,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     }
 
     #[Test]
+    #[IgnoreDeprecations]
     public function isFlexFormVaultIdentifierIsDeprecatedAlias(): void
     {
         // The deprecated method should work the same as isVaultIdentifier
