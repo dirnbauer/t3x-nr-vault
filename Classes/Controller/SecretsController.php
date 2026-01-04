@@ -131,7 +131,7 @@ final readonly class SecretsController
     /**
      * Redirect to FormEngine for creating a new secret.
      */
-    public function createAction(ServerRequestInterface $request): ResponseInterface
+    public function createAction(): ResponseInterface
     {
         // Redirect to FormEngine for native TYPO3 editing experience
         $editUrl = $this->uriBuilder->buildUriFromRoute('record_edit', [

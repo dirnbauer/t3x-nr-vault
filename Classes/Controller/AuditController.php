@@ -112,7 +112,7 @@ final readonly class AuditController
             'success' => $formData['success'],
             'since' => $formData['since'],
             'until' => $formData['until'],
-        ], static fn ($v): bool => $v !== '');
+        ], static fn (string $v): bool => $v !== '');
 
         $pagination = [
             'first' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => 1])),
@@ -255,9 +255,9 @@ final readonly class AuditController
         }
 
         $filter = new AuditLogFilter(
-            secretIdentifier: !empty($queryParams['secretIdentifier']) ? (string) $queryParams['secretIdentifier'] : null,
-            action: !empty($queryParams['filterAction']) ? (string) $queryParams['filterAction'] : null,
-            actorUid: !empty($queryParams['actorUid']) ? (int) $queryParams['actorUid'] : null,
+            secretIdentifier: empty($queryParams['secretIdentifier']) ? null : (string) $queryParams['secretIdentifier'],
+            action: empty($queryParams['filterAction']) ? null : (string) $queryParams['filterAction'],
+            actorUid: empty($queryParams['actorUid']) ? null : (int) $queryParams['actorUid'],
             success: $success,
             since: $since,
             until: $until,

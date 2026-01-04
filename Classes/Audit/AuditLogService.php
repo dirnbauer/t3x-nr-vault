@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Audit;
 
+use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -64,7 +65,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             'hash_before' => $hashBefore ?? '',
             'hash_after' => $hashAfter ?? '',
             'crdate' => time(),
-            'context' => $context !== null ? json_encode($context->toArray()) : '{}',
+            'context' => $context instanceof AuditContextInterface ? json_encode($context->toArray()) : '{}',
         ];
 
         // Insert to get UID
@@ -92,7 +93,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             ->setMaxResults($limit)
             ->setFirstResult($offset);
 
-        if ($filter !== null) {
+        if ($filter instanceof AuditLogFilter) {
             $this->applyFilter($queryBuilder, $filter);
         }
 
@@ -111,7 +112,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             ->count('uid')
             ->from(self::TABLE_NAME);
 
-        if ($filter !== null) {
+        if ($filter instanceof AuditLogFilter) {
             $this->applyFilter($queryBuilder, $filter);
         }
 
@@ -254,7 +255,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             );
         }
 
-        if ($filter->since !== null) {
+        if ($filter->since instanceof DateTimeInterface) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->gte(
                     'crdate',
@@ -263,7 +264,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             );
         }
 
-        if ($filter->until !== null) {
+        if ($filter->until instanceof DateTimeInterface) {
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->lte(
                     'crdate',

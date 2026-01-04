@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Utility;
 
+use Deprecated;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -25,9 +26,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FlexFormVaultResolver
 {
-    /**
-     * UUID v7 pattern for vault identifiers.
-     */
+    /** UUID v7 pattern for vault identifiers. */
     private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /**
@@ -113,9 +112,8 @@ final class FlexFormVaultResolver
      * @param mixed $value Value to check
      *
      * @return bool True if it's a vault identifier
-     *
-     * @deprecated Use isVaultIdentifier() instead. FlexForm and TCA fields use the same UUID format.
      */
+    #[Deprecated(message: 'Use isVaultIdentifier() instead. FlexForm and TCA fields use the same UUID format.')]
     public static function isFlexFormVaultIdentifier(mixed $value): bool
     {
         return self::isVaultIdentifier($value);

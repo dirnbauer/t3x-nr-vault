@@ -8,7 +8,6 @@ use Exception;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -22,9 +21,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FlexFormVaultHook
 {
-    /**
-     * @var array<string, array<string|int, list<array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool}>>>
-     */
+    /** @var array<string, array<string|int, list<array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool}>>> */
     private array $pendingFlexSecrets = [];
 
     /**
@@ -217,14 +214,14 @@ final class FlexFormVaultHook
         // 10 random bytes for the remaining fields
         $random = random_bytes(10);
 
-        return sprintf(
+        return \sprintf(
             '%08x-%04x-7%03x-%04x-%012x',
             ($time >> 16) & 0xFFFFFFFF,
             $time & 0xFFFF,
-            ord($random[0]) << 4 | ord($random[1]) >> 4 & 0x0FFF,
-            (ord($random[1]) & 0x0F) << 8 | ord($random[2]) & 0x3FFF | 0x8000,
-            (ord($random[3]) << 40) | (ord($random[4]) << 32) | (ord($random[5]) << 24)
-                | (ord($random[6]) << 16) | (ord($random[7]) << 8) | ord($random[8]),
+            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF,
+            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000,
+            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
+                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]),
         );
     }
 

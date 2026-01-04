@@ -142,7 +142,7 @@ final readonly class AuditLogFilter
             && $this->action === null
             && $this->actorUid === null
             && $this->success === null
-            && $this->since === null
-            && $this->until === null;
+            && !$this->since instanceof DateTimeInterface
+            && !$this->until instanceof DateTimeInterface;
     }
 }

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Http;
 
+use GuzzleHttp\Psr7\Utils;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
@@ -98,7 +99,7 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
         private ?string $usernameSecretIdentifier = null,
         private string $reason = 'HTTP API call',
     ) {
-        if ($innerClient !== null) {
+        if ($innerClient instanceof ClientInterface) {
             $this->innerClient = $innerClient;
         } else {
             // Use factory that respects TYPO3's HTTP settings with security hardening
@@ -209,7 +210,7 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
             return $this->injectOAuth($request);
         }
 
-        if ($this->secretIdentifier === null || $this->placement === null) {
+        if ($this->secretIdentifier === null || !$this->placement instanceof SecretPlacement) {
             return $request;
         }
 
@@ -322,7 +323,7 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
             }
 
             return $request
-                ->withBody(\GuzzleHttp\Psr7\Utils::streamFor($newBody));
+                ->withBody(Utils::streamFor($newBody));
         } finally {
             sodium_memzero($secret);
         }
@@ -330,7 +331,7 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
 
     private function injectOAuth(RequestInterface $request): RequestInterface
     {
-        \assert($this->oauthConfig !== null);
+        \assert($this->oauthConfig instanceof OAuthConfig);
         $accessToken = $this->oauthManager->getAccessToken($this->oauthConfig);
 
         try {

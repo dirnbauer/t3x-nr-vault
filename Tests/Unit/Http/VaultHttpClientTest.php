@@ -57,7 +57,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 self::assertFalse($request->hasHeader('Authorization'));
 
                 return new Response(200);
@@ -105,7 +105,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 self::assertSame('Bearer secret-token-123', $request->getHeaderLine('Authorization'));
 
                 return new Response(200);
@@ -136,7 +136,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 self::assertSame('key-abc-123', $request->getHeaderLine('X-API-Key'));
 
                 return new Response(200);
@@ -165,7 +165,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 self::assertSame('custom-value', $request->getHeaderLine('X-Custom-Auth'));
 
                 return new Response(200);
@@ -198,7 +198,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 $expected = 'Basic ' . base64_encode('user:pass123');
                 self::assertSame($expected, $request->getHeaderLine('Authorization'));
 
@@ -230,7 +230,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 $expected = 'Basic ' . base64_encode('john_doe:secret123');
                 self::assertSame($expected, $request->getHeaderLine('Authorization'));
 
@@ -264,7 +264,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 self::assertStringContainsString('api_key=query-key-value', $request->getUri()->getQuery());
 
                 return new Response(200);
@@ -293,7 +293,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 self::assertStringContainsString('access_token=token123', $request->getUri()->getQuery());
 
                 return new Response(200);
@@ -326,7 +326,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 $query = $request->getUri()->getQuery();
                 self::assertStringContainsString('existing=value', $query);
                 self::assertStringContainsString('api_key=key123', $query);
@@ -416,7 +416,7 @@ final class VaultHttpClientTest extends TestCase
         $this->innerClient
             ->expects(self::once())
             ->method('sendRequest')
-            ->willReturnCallback(function (RequestInterface $request) {
+            ->willReturnCallback(function (RequestInterface $request): Response {
                 // Original headers should be preserved
                 self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
                 self::assertSame('CustomAgent', $request->getHeaderLine('User-Agent'));
