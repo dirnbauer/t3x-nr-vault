@@ -9,63 +9,73 @@ use Netresearch\NrVault\Utility\VaultFieldResolver;
 use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Schema\Field\FieldCollection;
+use TYPO3\CMS\Core\Schema\Field\FieldTypeInterface;
+use TYPO3\CMS\Core\Schema\TcaSchema;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 final class VaultFieldResolverTest extends UnitTestCase
 {
-    protected bool $resetSingletonInstances = true;
+    private VaultServiceInterface&MockObject $vaultService;
+
+    private TcaSchemaFactory&MockObject $tcaSchemaFactory;
+
+    private LoggerInterface&MockObject $logger;
+
+    private VaultFieldResolver $subject;
 
     #[Override]
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Register mock VaultService for tests that call resolveFields
-        $vaultServiceMock = $this->createMock(VaultServiceInterface::class);
-        $vaultServiceMock->method('retrieve')->willReturn(null);
-        GeneralUtility::addInstance(VaultServiceInterface::class, $vaultServiceMock);
-    }
+        $this->vaultService = $this->createMock(VaultServiceInterface::class);
+        $this->tcaSchemaFactory = $this->createMock(TcaSchemaFactory::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
 
-    #[Override]
-    protected function tearDown(): void
-    {
-        GeneralUtility::purgeInstances();
-        parent::tearDown();
+        $this->subject = new VaultFieldResolver(
+            $this->vaultService,
+            $this->tcaSchemaFactory,
+            $this->logger,
+        );
     }
 
     #[Test]
     public function isVaultIdentifierReturnsTrueForValidUuid(): void
     {
         // Valid UUID v7 identifiers
-        self::assertTrue(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-7abc-8def-0123456789ab'));
-        self::assertTrue(VaultFieldResolver::isVaultIdentifier('01937b6f-0000-7000-8000-000000000000'));
-        self::assertTrue(VaultFieldResolver::isVaultIdentifier('01937b6f-ffff-7fff-bfff-ffffffffffff'));
+        self::assertTrue($this->subject->isVaultIdentifier('01937b6e-4b6c-7abc-8def-0123456789ab'));
+        self::assertTrue($this->subject->isVaultIdentifier('01937b6f-0000-7000-8000-000000000000'));
+        self::assertTrue($this->subject->isVaultIdentifier('01937b6f-ffff-7fff-bfff-ffffffffffff'));
     }
 
     #[Test]
     public function isVaultIdentifierReturnsFalseForInvalidIdentifier(): void
     {
         // Empty or non-string
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier(''));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier(null));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier(123));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier([]));
+        self::assertFalse($this->subject->isVaultIdentifier(''));
+        self::assertFalse($this->subject->isVaultIdentifier(null));
+        self::assertFalse($this->subject->isVaultIdentifier(123));
+        self::assertFalse($this->subject->isVaultIdentifier([]));
 
         // Wrong format
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('invalid'));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('not-a-valid-uuid'));
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('tx_myext__api_key__42')); // Old format
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-1abc-8def-0123456789ab')); // UUID v1 (not v7)
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-4abc-8def-0123456789ab')); // UUID v4 (not v7)
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier('01937b6e-4b6c-7abc-cdef-0123456789ab')); // Wrong variant
+        self::assertFalse($this->subject->isVaultIdentifier('invalid'));
+        self::assertFalse($this->subject->isVaultIdentifier('not-a-valid-uuid'));
+        self::assertFalse($this->subject->isVaultIdentifier('tx_myext__api_key__42')); // Old format
+        self::assertFalse($this->subject->isVaultIdentifier('01937b6e-4b6c-1abc-8def-0123456789ab')); // UUID v1 (not v7)
+        self::assertFalse($this->subject->isVaultIdentifier('01937b6e-4b6c-4abc-8def-0123456789ab')); // UUID v4 (not v7)
+        self::assertFalse($this->subject->isVaultIdentifier('01937b6e-4b6c-7abc-cdef-0123456789ab')); // Wrong variant
     }
 
     #[Test]
     public function getVaultFieldsForTableReturnsEmptyForUnknownTable(): void
     {
-        // No TCA loaded for this table
-        $fields = VaultFieldResolver::getVaultFieldsForTable('tx_nonexistent_table');
+        $this->tcaSchemaFactory->method('has')->with('tx_nonexistent_table')->willReturn(false);
+
+        $fields = $this->subject->getVaultFieldsForTable('tx_nonexistent_table');
 
         self::assertSame([], $fields);
     }
@@ -73,7 +83,9 @@ final class VaultFieldResolverTest extends UnitTestCase
     #[Test]
     public function hasVaultFieldsReturnsFalseForTableWithoutVaultFields(): void
     {
-        self::assertFalse(VaultFieldResolver::hasVaultFields('tx_nonexistent_table'));
+        $this->tcaSchemaFactory->method('has')->with('tx_nonexistent_table')->willReturn(false);
+
+        self::assertFalse($this->subject->hasVaultFields('tx_nonexistent_table'));
     }
 
     #[Test]
@@ -86,7 +98,7 @@ final class VaultFieldResolverTest extends UnitTestCase
         ];
 
         // None of these are vault identifiers, so they should be unchanged
-        $result = VaultFieldResolver::resolveFields($data, ['title', 'description', 'count']);
+        $result = $this->subject->resolveFields($data, ['title', 'description', 'count']);
 
         self::assertSame($data, $result);
     }
@@ -99,7 +111,7 @@ final class VaultFieldResolverTest extends UnitTestCase
         ];
 
         // Field doesn't exist, should not throw
-        $result = VaultFieldResolver::resolveFields($data, ['api_key']);
+        $result = $this->subject->resolveFields($data, ['api_key']);
 
         self::assertSame($data, $result);
     }
@@ -108,9 +120,12 @@ final class VaultFieldResolverTest extends UnitTestCase
     #[DataProvider('identifierProvider')]
     public function isVaultIdentifierWithDataProvider(mixed $value, bool $expected): void
     {
-        self::assertSame($expected, VaultFieldResolver::isVaultIdentifier($value));
+        self::assertSame($expected, $this->subject->isVaultIdentifier($value));
     }
 
+    /**
+     * @return array<string, array{0: mixed, 1: bool}>
+     */
     public static function identifierProvider(): array
     {
         return [
@@ -134,29 +149,13 @@ final class VaultFieldResolverTest extends UnitTestCase
     #[Test]
     public function getVaultFieldsForTableReturnsVaultSecretFields(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'title' => [
-                    'config' => [
-                        'type' => 'input',
-                    ],
-                ],
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-                'api_secret' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'title' => ['type' => 'input'],
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+            'api_secret' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
-        $fields = VaultFieldResolver::getVaultFieldsForTable('tx_test');
+        $fields = $this->subject->getVaultFieldsForTable('tx_test');
 
         self::assertSame(['api_key', 'api_secret'], $fields);
     }
@@ -164,24 +163,17 @@ final class VaultFieldResolverTest extends UnitTestCase
     #[Test]
     public function hasVaultFieldsReturnsTrueForTableWithVaultFields(): void
     {
-        $GLOBALS['TCA']['tx_test'] = [
-            'columns' => [
-                'api_key' => [
-                    'config' => [
-                        'type' => 'input',
-                        'renderType' => 'vaultSecret',
-                    ],
-                ],
-            ],
-        ];
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
 
-        self::assertTrue(VaultFieldResolver::hasVaultFields('tx_test'));
+        self::assertTrue($this->subject->hasVaultFields('tx_test'));
     }
 
     #[Test]
     public function resolveSingleReturnsNullForNonUuid(): void
     {
-        $result = VaultFieldResolver::resolve('not-a-uuid');
+        $result = $this->subject->resolve('not-a-uuid');
 
         self::assertNull($result);
     }
@@ -189,8 +181,30 @@ final class VaultFieldResolverTest extends UnitTestCase
     #[Test]
     public function resolveSingleReturnsNullForEmptyString(): void
     {
-        $result = VaultFieldResolver::resolve('');
+        $result = $this->subject->resolve('');
 
         self::assertNull($result);
+    }
+
+    /**
+     * @param array<string, array<string, mixed>> $fields
+     */
+    private function mockTcaSchemaForTable(string $table, array $fields): void
+    {
+        $schema = $this->createMock(TcaSchema::class);
+        $fieldMocks = [];
+
+        foreach ($fields as $fieldName => $config) {
+            $field = $this->createMock(FieldTypeInterface::class);
+            $field->method('getName')->willReturn($fieldName);
+            $field->method('getConfiguration')->willReturn($config);
+            $fieldMocks[$fieldName] = $field;
+        }
+
+        $fieldCollection = new FieldCollection($fieldMocks);
+        $schema->method('getFields')->willReturn($fieldCollection);
+
+        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
+        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
     }
 }

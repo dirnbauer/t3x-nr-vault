@@ -123,6 +123,7 @@ final class TcaIntegrationTest extends FunctionalTestCase
     {
         // This test can run - it tests VaultFieldResolver directly without DataHandler
         $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
+        $vaultFieldResolver = GeneralUtility::makeInstance(VaultFieldResolver::class);
 
         // Generate a proper UUID v7 identifier (simulating what DataHandler hook would do)
         $identifier = $this->generateUuidV7();
@@ -136,7 +137,7 @@ final class TcaIntegrationTest extends FunctionalTestCase
         ];
 
         // Resolve vault fields
-        $resolved = VaultFieldResolver::resolveFields($data, ['api_key']);
+        $resolved = $vaultFieldResolver->resolveFields($data, ['api_key']);
 
         self::assertSame($secretValue, $resolved['api_key']);
         self::assertSame('Resolver Test', $resolved['title']);
@@ -150,6 +151,7 @@ final class TcaIntegrationTest extends FunctionalTestCase
     {
         // This test can run - it tests VaultFieldResolver directly
         $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
+        $vaultFieldResolver = GeneralUtility::makeInstance(VaultFieldResolver::class);
 
         // Generate proper UUID v7 identifiers (simulating what DataHandler hook would do)
         $identifier1 = $this->generateUuidV7();
@@ -165,7 +167,7 @@ final class TcaIntegrationTest extends FunctionalTestCase
         ];
 
         // Resolve vault fields
-        $resolved = VaultFieldResolver::resolveFields($data, ['api_key', 'api_secret']);
+        $resolved = $vaultFieldResolver->resolveFields($data, ['api_key', 'api_secret']);
 
         self::assertSame('my-key', $resolved['api_key']);
         self::assertSame('my-secret', $resolved['api_secret']);

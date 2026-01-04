@@ -6,24 +6,43 @@ namespace Netresearch\NrVault\Tests\Unit\Utility;
 
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
+use Override;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\Test;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use PHPUnit\Framework\MockObject\MockObject;
+use Psr\Log\LoggerInterface;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 final class FlexFormVaultResolverTest extends UnitTestCase
 {
-    protected bool $resetSingletonInstances = true;
+    private VaultServiceInterface&MockObject $vaultService;
+
+    private LoggerInterface&MockObject $logger;
+
+    private FlexFormVaultResolver $subject;
+
+    #[Override]
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->vaultService = $this->createMock(VaultServiceInterface::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
+
+        $this->subject = new FlexFormVaultResolver(
+            $this->vaultService,
+            $this->logger,
+        );
+    }
 
     #[Test]
     public function isVaultIdentifierReturnsTrueForValidUuid(): void
     {
         // FlexForm and TCA vault fields now use UUID v7 format
-        self::assertTrue(FlexFormVaultResolver::isVaultIdentifier(
+        self::assertTrue($this->subject->isVaultIdentifier(
             '01937b6e-4b6c-7abc-8def-0123456789ab',
         ));
-        self::assertTrue(FlexFormVaultResolver::isVaultIdentifier(
+        self::assertTrue($this->subject->isVaultIdentifier(
             '01937b6f-0000-7000-8000-000000000000',
         ));
     }
@@ -32,51 +51,36 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     public function isVaultIdentifierReturnsFalseForInvalidIdentifier(): void
     {
         // Empty or non-string
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(''));
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(null));
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(123));
+        self::assertFalse($this->subject->isVaultIdentifier(''));
+        self::assertFalse($this->subject->isVaultIdentifier(null));
+        self::assertFalse($this->subject->isVaultIdentifier(123));
 
         // Old format (no longer valid)
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier('tx_ext__field__1'));
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(
+        self::assertFalse($this->subject->isVaultIdentifier('tx_ext__field__1'));
+        self::assertFalse($this->subject->isVaultIdentifier(
             'tt_content__pi_flexform__settings__apiKey__123',
         ));
 
         // Wrong UUID format
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier('not-a-uuid'));
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(
+        self::assertFalse($this->subject->isVaultIdentifier('not-a-uuid'));
+        self::assertFalse($this->subject->isVaultIdentifier(
             '01937b6e-4b6c-1abc-8def-0123456789ab', // UUID v1, not v7
         ));
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier(
+        self::assertFalse($this->subject->isVaultIdentifier(
             '01937b6e-4b6c-4abc-8def-0123456789ab', // UUID v4, not v7
-        ));
-    }
-
-    #[Test]
-    #[IgnoreDeprecations]
-    public function isFlexFormVaultIdentifierIsDeprecatedAlias(): void
-    {
-        // The deprecated method should work the same as isVaultIdentifier
-        self::assertTrue(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            '01937b6e-4b6c-7abc-8def-0123456789ab',
-        ));
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(''));
-        self::assertFalse(FlexFormVaultResolver::isFlexFormVaultIdentifier(
-            'tt_content__pi_flexform__settings__apiKey__123', // Old format
         ));
     }
 
     #[Test]
     public function resolveSettingsPreservesNonVaultFields(): void
     {
-        $this->registerVaultServiceMock();
         $settings = [
             'title' => 'Test Title',
             'limit' => 10,
             'showTitle' => true,
         ];
 
-        $result = FlexFormVaultResolver::resolveSettings($settings, ['title', 'limit']);
+        $result = $this->subject->resolveSettings($settings, ['title', 'limit']);
 
         self::assertSame($settings, $result);
     }
@@ -84,21 +88,43 @@ final class FlexFormVaultResolverTest extends UnitTestCase
     #[Test]
     public function resolveSettingsSkipsMissingFields(): void
     {
-        $this->registerVaultServiceMock();
         $settings = [
             'title' => 'Test',
         ];
 
-        $result = FlexFormVaultResolver::resolveSettings($settings, ['apiKey']);
+        $result = $this->subject->resolveSettings($settings, ['apiKey']);
 
         self::assertSame($settings, $result);
+    }
+
+    #[Test]
+    public function resolveSettingsResolvesVaultIdentifiers(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $secretValue = 'my-secret-api-key';
+
+        $this->vaultService
+            ->expects($this->once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($secretValue);
+
+        $settings = [
+            'title' => 'Test',
+            'apiKey' => $identifier,
+        ];
+
+        $result = $this->subject->resolveSettings($settings, ['apiKey']);
+
+        self::assertSame('Test', $result['title']);
+        self::assertSame($secretValue, $result['apiKey']);
     }
 
     #[Test]
     #[DataProvider('uuidIdentifierProvider')]
     public function isVaultIdentifierWithDataProvider(mixed $value, bool $expected): void
     {
-        self::assertSame($expected, FlexFormVaultResolver::isVaultIdentifier($value));
+        self::assertSame($expected, $this->subject->isVaultIdentifier($value));
     }
 
     public static function uuidIdentifierProvider(): array
@@ -118,12 +144,5 @@ final class FlexFormVaultResolverTest extends UnitTestCase
             'uuid with wrong variant' => ['01937b6e-4b6c-7abc-cdef-0123456789ab', false],
             'too short' => ['01937b6e-4b6c-7abc-8def', false],
         ];
-    }
-
-    private function registerVaultServiceMock(): void
-    {
-        // Register mock VaultService for resolveSettings tests
-        $vaultService = $this->createMock(VaultServiceInterface::class);
-        GeneralUtility::addInstance(VaultServiceInterface::class, $vaultService);
     }
 }

@@ -4,14 +4,19 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Fuzz;
 
+use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
+use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use stdClass;
+use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 
 /**
  * Fuzz tests for identifier validation and parsing.
@@ -26,6 +31,36 @@ use stdClass;
 #[CoversClass(IdentifierValidator::class)]
 final class IdentifierFuzzTest extends TestCase
 {
+    private VaultFieldResolver $vaultFieldResolver;
+
+    private FlexFormVaultResolver $flexFormVaultResolver;
+
+    #[Override]
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Create resolvers with mock dependencies
+        // isVaultIdentifier() is a pure function that doesn't use dependencies
+        /** @var VaultServiceInterface&MockObject $vaultService */
+        $vaultService = $this->createMock(VaultServiceInterface::class);
+        /** @var TcaSchemaFactory&MockObject $tcaSchemaFactory */
+        $tcaSchemaFactory = $this->createMock(TcaSchemaFactory::class);
+        /** @var LoggerInterface&MockObject $logger */
+        $logger = $this->createMock(LoggerInterface::class);
+
+        $this->vaultFieldResolver = new VaultFieldResolver(
+            $vaultService,
+            $tcaSchemaFactory,
+            $logger,
+        );
+
+        $this->flexFormVaultResolver = new FlexFormVaultResolver(
+            $vaultService,
+            $logger,
+        );
+    }
+
     /**
      * Test VaultFieldResolver with fuzzed inputs.
      *
@@ -36,7 +71,7 @@ final class IdentifierFuzzTest extends TestCase
     public function vaultFieldResolverHandlesFuzzedInput(mixed $input): void
     {
         // Should not throw exceptions
-        $result = VaultFieldResolver::isVaultIdentifier($input);
+        $result = $this->vaultFieldResolver->isVaultIdentifier($input);
         self::assertIsBool($result);
     }
 
@@ -49,7 +84,7 @@ final class IdentifierFuzzTest extends TestCase
     #[DataProvider('fuzzedIdentifierProvider')]
     public function flexFormVaultResolverHandlesFuzzedInput(mixed $input): void
     {
-        $result = FlexFormVaultResolver::isVaultIdentifier($input);
+        $result = $this->flexFormVaultResolver->isVaultIdentifier($input);
         self::assertIsBool($result);
     }
 
@@ -68,7 +103,7 @@ final class IdentifierFuzzTest extends TestCase
             self::assertIsBool($result);
         } else {
             // Non-string inputs: verify no exception is thrown by other methods
-            self::assertFalse(VaultFieldResolver::isVaultIdentifier($input));
+            self::assertFalse($this->vaultFieldResolver->isVaultIdentifier($input));
         }
     }
 
@@ -156,8 +191,8 @@ final class IdentifierFuzzTest extends TestCase
     public function parsingRejectsInjectionPatterns(string $input): void
     {
         // These should all be rejected
-        self::assertFalse(VaultFieldResolver::isVaultIdentifier($input));
-        self::assertFalse(FlexFormVaultResolver::isVaultIdentifier($input));
+        self::assertFalse($this->vaultFieldResolver->isVaultIdentifier($input));
+        self::assertFalse($this->flexFormVaultResolver->isVaultIdentifier($input));
     }
 
     public static function injectionPatternProvider(): array
@@ -187,8 +222,8 @@ final class IdentifierFuzzTest extends TestCase
 
         $startMemory = memory_get_usage();
 
-        VaultFieldResolver::isVaultIdentifier($longString);
-        FlexFormVaultResolver::isVaultIdentifier($longString);
+        $this->vaultFieldResolver->isVaultIdentifier($longString);
+        $this->flexFormVaultResolver->isVaultIdentifier($longString);
 
         $endMemory = memory_get_usage();
 
@@ -213,8 +248,8 @@ final class IdentifierFuzzTest extends TestCase
             $results = [];
             for ($i = 0; $i < 100; $i++) {
                 $results[] = [
-                    VaultFieldResolver::isVaultIdentifier($input),
-                    FlexFormVaultResolver::isVaultIdentifier($input),
+                    $this->vaultFieldResolver->isVaultIdentifier($input),
+                    $this->flexFormVaultResolver->isVaultIdentifier($input),
                 ];
             }
 
@@ -236,8 +271,8 @@ final class IdentifierFuzzTest extends TestCase
         ];
 
         foreach ($validUuids as $uuid) {
-            self::assertTrue(VaultFieldResolver::isVaultIdentifier($uuid), "VaultFieldResolver should accept: {$uuid}");
-            self::assertTrue(FlexFormVaultResolver::isVaultIdentifier($uuid), "FlexFormVaultResolver should accept: {$uuid}");
+            self::assertTrue($this->vaultFieldResolver->isVaultIdentifier($uuid), "VaultFieldResolver should accept: {$uuid}");
+            self::assertTrue($this->flexFormVaultResolver->isVaultIdentifier($uuid), "FlexFormVaultResolver should accept: {$uuid}");
         }
     }
 
@@ -254,8 +289,8 @@ final class IdentifierFuzzTest extends TestCase
         ];
 
         foreach ($oldFormats as $old) {
-            self::assertFalse(VaultFieldResolver::isVaultIdentifier($old), "Should reject old format: {$old}");
-            self::assertFalse(FlexFormVaultResolver::isVaultIdentifier($old), "Should reject old format: {$old}");
+            self::assertFalse($this->vaultFieldResolver->isVaultIdentifier($old), "Should reject old format: {$old}");
+            self::assertFalse($this->flexFormVaultResolver->isVaultIdentifier($old), "Should reject old format: {$old}");
         }
     }
 }

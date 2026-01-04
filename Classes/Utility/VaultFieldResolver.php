@@ -9,44 +9,48 @@ use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Utility for resolving vault identifiers to actual secret values.
+ * Service for resolving vault identifiers to actual secret values.
  *
  * Vault identifiers are UUIDs stored in TCA fields with renderType 'vaultSecret'.
  * Use this in your extension code to retrieve secrets stored via vault TCA fields.
  *
  * Example:
- *   // Resolve specific fields
- *   $settings = $this->getTypoScriptSettings();
- *   $resolved = VaultFieldResolver::resolveFields($settings, ['api_key', 'api_secret']);
- *   // Now $resolved['api_key'] contains the actual secret value
+ *   public function __construct(
+ *       private readonly VaultFieldResolver $vaultFieldResolver,
+ *   ) {}
  *
- *   // Or resolve all vault fields in a record
- *   $endpoint = $this->endpointRepository->findByUid(42);
- *   $resolved = VaultFieldResolver::resolveRecord('tx_myext_apiendpoint', $endpoint);
+ *   public function fetchData(): array
+ *   {
+ *       $settings = $this->getTypoScriptSettings();
+ *       return $this->vaultFieldResolver->resolveFields($settings, ['api_key', 'api_secret']);
+ *   }
  */
-final class VaultFieldResolver
+final readonly class VaultFieldResolver
 {
     /** UUID v7 pattern for vault identifiers. */
     private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+
+    public function __construct(
+        private VaultServiceInterface $vaultService,
+        private TcaSchemaFactory $tcaSchemaFactory,
+        private LoggerInterface $logger,
+    ) {}
 
     /**
      * Resolve vault identifiers in an array to their actual secret values.
      *
      * @param array<string, mixed> $data Record data potentially containing vault identifiers
-     * @param array<string> $fields Field names to check and resolve
+     * @param list<string> $fields Field names to check and resolve
      * @param bool $throwOnError If true, throws exception on vault errors; if false, sets field to null
      *
      * @throws VaultException If throwOnError is true and vault retrieval fails
      *
      * @return array<string, mixed> Data with vault identifiers replaced by actual values
      */
-    public static function resolveFields(array $data, array $fields, bool $throwOnError = false): array
+    public function resolveFields(array $data, array $fields, bool $throwOnError = false): array
     {
-        $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-
         foreach ($fields as $field) {
             if (!isset($data[$field])) {
                 continue;
@@ -54,19 +58,19 @@ final class VaultFieldResolver
 
             $value = $data[$field];
 
-            if (!self::isVaultIdentifier($value)) {
+            if (!$this->isVaultIdentifier($value)) {
                 continue;
             }
 
             try {
-                $data[$field] = $vaultService->retrieve($value);
+                $data[$field] = $this->vaultService->retrieve($value);
             } catch (SecretNotFoundException) {
                 $data[$field] = null;
             } catch (VaultException $e) {
                 if ($throwOnError) {
                     throw $e;
                 }
-                self::getLogger()->error('Failed to resolve vault field', [
+                $this->logger->error('Failed to resolve vault field', [
                     'field' => $field,
                     'identifier' => $value,
                     'error' => $e->getMessage(),
@@ -87,16 +91,14 @@ final class VaultFieldResolver
      *
      * @return string|null The secret value, or null if not found or invalid identifier
      */
-    public static function resolve(string $identifier): ?string
+    public function resolve(string $identifier): ?string
     {
-        if (!self::isVaultIdentifier($identifier)) {
+        if (!$this->isVaultIdentifier($identifier)) {
             return null;
         }
 
-        $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-
         try {
-            return $vaultService->retrieve($identifier);
+            return $this->vaultService->retrieve($identifier);
         } catch (SecretNotFoundException) {
             return null;
         }
@@ -112,25 +114,25 @@ final class VaultFieldResolver
      *
      * @return array<string, mixed> Record with vault fields resolved
      */
-    public static function resolveRecord(string $table, array $record): array
+    public function resolveRecord(string $table, array $record): array
     {
-        $vaultFields = self::getVaultFieldsForTable($table);
+        $vaultFields = $this->getVaultFieldsForTable($table);
 
         if ($vaultFields === []) {
             return $record;
         }
 
-        return self::resolveFields($record, $vaultFields);
+        return $this->resolveFields($record, $vaultFields);
     }
 
     /**
-     * Check if a value looks like a vault identifier (UUID v4).
+     * Check if a value looks like a vault identifier (UUID v7).
      *
      * @param mixed $value The value to check
      *
      * @return bool True if the value appears to be a vault identifier
      */
-    public static function isVaultIdentifier(mixed $value): bool
+    public function isVaultIdentifier(mixed $value): bool
     {
         if (!\is_string($value) || $value === '') {
             return false;
@@ -146,15 +148,13 @@ final class VaultFieldResolver
      *
      * @return list<string> Field names that use vaultSecret renderType
      */
-    public static function getVaultFieldsForTable(string $table): array
+    public function getVaultFieldsForTable(string $table): array
     {
-        $tcaSchemaFactory = GeneralUtility::makeInstance(TcaSchemaFactory::class);
-
-        if (!$tcaSchemaFactory->has($table)) {
+        if (!$this->tcaSchemaFactory->has($table)) {
             return [];
         }
 
-        $schema = $tcaSchemaFactory->get($table);
+        $schema = $this->tcaSchemaFactory->get($table);
         $vaultFields = [];
 
         foreach ($schema->getFields() as $field) {
@@ -174,13 +174,8 @@ final class VaultFieldResolver
      *
      * @return bool True if the table has vault fields
      */
-    public static function hasVaultFields(string $table): bool
+    public function hasVaultFields(string $table): bool
     {
-        return self::getVaultFieldsForTable($table) !== [];
-    }
-
-    private static function getLogger(): LoggerInterface
-    {
-        return GeneralUtility::makeInstance(LoggerInterface::class);
+        return $this->getVaultFieldsForTable($table) !== [];
     }
 }
