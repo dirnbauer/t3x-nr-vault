@@ -112,21 +112,24 @@ final class VaultCleanupOrphansCommand extends Command
                 $metadata = $secret['metadata'];
                 $createdAt = $secret['created_at'] ?? 0;
 
-                // Parse identifier to get table/field/uid
-                $parsed = $this->parseIdentifier($identifier);
-                if ($parsed === null) {
+                // Get table/field/uid from metadata (UUIDs don't encode this)
+                $table = $metadata['table'] ?? '';
+                $field = $metadata['field'] ?? $metadata['flexField'] ?? '';
+                $uid = (int) ($metadata['uid'] ?? 0);
+
+                if ($table === '' || $uid === 0) {
                     $progressBar->advance();
                     continue;
                 }
 
                 // Check if record still exists
                 // Only include if older than retention period
-                if (!$this->recordExists($parsed['table'], $parsed['uid']) && $createdAt < $retentionCutoff) {
+                if (!$this->recordExists($table, $uid) && $createdAt < $retentionCutoff) {
                     $orphans[] = [
                         'identifier' => $identifier,
-                        'table' => $parsed['table'],
-                        'field' => $parsed['field'],
-                        'uid' => $parsed['uid'],
+                        'table' => $table,
+                        'field' => $field,
+                        'uid' => $uid,
                         'created_at' => $createdAt,
                     ];
                 }
@@ -218,8 +221,9 @@ final class VaultCleanupOrphansCommand extends Command
             $metadata = $secret['metadata'] ?? [];
             $source = $metadata['source'] ?? '';
 
-            // Only include TCA-sourced secrets
-            if ($source !== 'tca_field' && $source !== 'migration') {
+            // Only include TCA-sourced secrets (regular fields, FlexForm, or copied records)
+            $tcaSources = ['tca_field', 'flexform_field', 'record_copy', 'migration'];
+            if (!\in_array($source, $tcaSources, true)) {
                 continue;
             }
 
@@ -239,32 +243,6 @@ final class VaultCleanupOrphansCommand extends Command
         }
 
         return $tcaSecrets;
-    }
-
-    /**
-     * Parse a vault identifier into table, field, and uid components.
-     *
-     * @return array{table: string, field: string, uid: int}|null
-     */
-    private function parseIdentifier(string $identifier): ?array
-    {
-        // Format: table__field__uid
-        $parts = explode('__', $identifier);
-        if (\count($parts) !== 3) {
-            return null;
-        }
-
-        [$table, $field, $uidStr] = $parts;
-
-        if (!is_numeric($uidStr)) {
-            return null;
-        }
-
-        return [
-            'table' => $table,
-            'field' => $field,
-            'uid' => (int) $uidStr,
-        ];
     }
 
     /**

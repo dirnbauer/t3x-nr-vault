@@ -6,7 +6,6 @@ namespace Netresearch\NrVault\Command;
 
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use Netresearch\NrVault\Utility\VaultFieldResolver;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -167,10 +166,10 @@ final class VaultMigrateFieldCommand extends Command
                 $value = $record[$field];
 
                 try {
-                    $identifier = VaultFieldResolver::buildIdentifier($table, $field, (int) $uid);
+                    $identifier = $this->generateUuid();
 
                     // Store in vault
-                    $this->vaultService->store($identifier, $value, [
+                    $this->vaultService->store($identifier, (string) $value, [
                         'table' => $table,
                         'field' => $field,
                         'uid' => (int) $uid,
@@ -275,12 +274,13 @@ final class VaultMigrateFieldCommand extends Command
                 $queryBuilder->expr()->isNotNull($field),
             );
 
-        // Skip records that already have vault identifiers (unless forced)
+        // Skip records that already have vault identifiers (UUIDs) (unless forced)
         if (!$force) {
+            // UUID v7 pattern: 8-4-4-4-12 hex chars with version 7 and correct variant
             $queryBuilder->andWhere(
                 $queryBuilder->expr()->notLike(
                     $field,
-                    $queryBuilder->createNamedParameter($table . '__%'),
+                    $queryBuilder->createNamedParameter('________-____-7___-____-____________'),
                 ),
             );
         }
@@ -314,12 +314,11 @@ final class VaultMigrateFieldCommand extends Command
         foreach (\array_slice($records, 0, 20) as $record) {
             $uid = $record[$uidField];
             $value = $record[$field];
-            $identifier = VaultFieldResolver::buildIdentifier($table, $field, (int) $uid);
 
             $rows[] = [
                 $uid,
                 $this->truncateValue($value, 30),
-                $identifier,
+                '(new UUID will be generated)',
             ];
         }
 
@@ -356,5 +355,27 @@ final class VaultMigrateFieldCommand extends Command
                 $queryBuilder->expr()->eq($uidField, $queryBuilder->createNamedParameter($uid)),
             )
             ->executeStatement();
+    }
+
+    /**
+     * Generate a UUID v7 for vault identifiers.
+     *
+     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
+     * This provides time-ordered IDs with better database index performance.
+     */
+    private function generateUuid(): string
+    {
+        $time = (int) (microtime(true) * 1000);
+        $random = random_bytes(10);
+
+        return sprintf(
+            '%08x-%04x-7%03x-%04x-%012x',
+            ($time >> 16) & 0xFFFFFFFF,
+            $time & 0xFFFF,
+            ord($random[0]) << 4 | ord($random[1]) >> 4 & 0x0FFF,
+            (ord($random[1]) & 0x0F) << 8 | ord($random[2]) & 0x3FFF | 0x8000,
+            (ord($random[3]) << 40) | (ord($random[4]) << 32) | (ord($random[5]) << 24)
+                | (ord($random[6]) << 16) | (ord($random[7]) << 8) | ord($random[8]),
+        );
     }
 }

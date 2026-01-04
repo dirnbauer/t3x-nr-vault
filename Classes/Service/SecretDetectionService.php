@@ -448,13 +448,18 @@ final class SecretDetectionService implements SingletonInterface
     }
 
     /**
+     * UUID v7 pattern for vault identifiers.
+     */
+    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+
+    /**
      * Check if a value looks like a vault identifier.
      */
     private function looksLikeVaultIdentifier(string $value): bool
     {
-        // Vault identifiers follow pattern: table__field__uid or prefix_suffix
+        // TCA vault fields store UUIDs
         // Also check for vault reference format: %vault(identifier)%
-        return preg_match('/^[a-z][a-z0-9_]+__[a-z][a-z0-9_]+__\d+$/i', $value) === 1
+        return preg_match(self::UUID_PATTERN, $value) === 1
             || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
     }
 

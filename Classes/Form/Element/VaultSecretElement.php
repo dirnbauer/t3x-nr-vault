@@ -34,20 +34,20 @@ final class VaultSecretElement extends AbstractFormElement
         $fieldId = StringUtility::getUniqueId('formengine-vault-');
         $width = $this->formMaxWidth($config['size'] ?? 30);
 
-        // Build vault identifier from table, field, and record uid
         $table = $this->data['tableName'];
         $field = $this->data['fieldName'];
-        $uid = $this->data['databaseRow']['uid'] ?? 0;
 
         // Get field permissions from TSconfig
         $permissionService = GeneralUtility::makeInstance(VaultFieldPermissionService::class);
         $permissions = $permissionService->getPermissions($table, $field);
-        $vaultIdentifier = $this->buildVaultIdentifier($table, $field, $uid);
 
-        // Check if secret exists in vault
+        // UUID is stored directly in the field value
+        $vaultIdentifier = (string) ($parameterArray['itemFormElValue'] ?? '');
+
+        // Check if secret exists in vault (UUID is non-empty)
         $hasValue = false;
         $valueChecksum = '';
-        if ($uid > 0 && $vaultIdentifier !== '') {
+        if ($vaultIdentifier !== '') {
             try {
                 $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
                 $metadata = $vaultService->getMetadata($vaultIdentifier);
@@ -171,20 +171,6 @@ final class VaultSecretElement extends AbstractFormElement
         );
 
         return $resultArray;
-    }
-
-    /**
-     * Build vault identifier from table, field, and uid.
-     */
-    private function buildVaultIdentifier(string $table, string $field, int|string $uid): string
-    {
-        if ($uid === 0 || $uid === 'NEW' || str_starts_with((string) $uid, 'NEW')) {
-            // New record - identifier will be generated after save
-            return '';
-        }
-
-        // Format: table__field__uid
-        return \sprintf('%s__%s__%d', $table, $field, (int) $uid);
     }
 
     /**

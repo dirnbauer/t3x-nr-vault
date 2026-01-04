@@ -8,6 +8,7 @@ use Exception;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -16,9 +17,14 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  *
  * Processes FlexForm XML to detect and handle vault secret fields.
  * Works alongside the regular DataHandlerHook for standard TCA fields.
+ *
+ * Vault identifiers are UUIDs stored in the FlexForm XML.
  */
 final class FlexFormVaultHook
 {
+    /**
+     * @var array<string, array<string|int, list<array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool}>>>
+     */
     private array $pendingFlexSecrets = [];
 
     /**
@@ -117,11 +123,11 @@ final class FlexFormVaultHook
                 // Handle array format from form element
                 if (\is_array($value)) {
                     $secretValue = $value['value'] ?? $value[0] ?? '';
-                    $vaultIdentifier = $value['_vault_identifier'] ?? '';
+                    $existingIdentifier = $value['_vault_identifier'] ?? '';
                     $originalChecksum = $value['_vault_checksum'] ?? '';
                 } else {
                     $secretValue = (string) $value;
-                    $vaultIdentifier = '';
+                    $existingIdentifier = '';
                     $originalChecksum = '';
                 }
 
@@ -129,6 +135,10 @@ final class FlexFormVaultHook
                 if ($secretValue === '' && $originalChecksum === '') {
                     continue;
                 }
+
+                // Determine vault identifier (generate new UUID if needed)
+                $isNewSecret = $existingIdentifier === '' || $originalChecksum === '';
+                $vaultIdentifier = $isNewSecret ? $this->generateUuid() : $existingIdentifier;
 
                 // Store for post-processing
                 $this->pendingFlexSecrets[$table][$id][] = [
@@ -138,10 +148,11 @@ final class FlexFormVaultHook
                     'value' => $secretValue,
                     'identifier' => $vaultIdentifier,
                     'originalChecksum' => $originalChecksum,
+                    'isNew' => $isNewSecret,
                 ];
 
-                // Replace with placeholder
-                $fieldData['vDEF'] = $secretValue !== '' ? '__VAULT__' : '';
+                // Store UUID in FlexForm (or empty if clearing)
+                $fieldData['vDEF'] = $secretValue !== '' ? $vaultIdentifier : '';
             }
         }
     }
@@ -155,13 +166,8 @@ final class FlexFormVaultHook
         int $uid,
         DataHandler $dataHandler,
     ): void {
-        $vaultIdentifier = $this->buildFlexFormVaultIdentifier(
-            $table,
-            $secretData['flexField'],
-            $secretData['sheet'],
-            $secretData['fieldPath'],
-            $uid,
-        );
+        $vaultIdentifier = $secretData['identifier'];
+        $isNew = $secretData['isNew'];
 
         try {
             $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
@@ -171,8 +177,8 @@ final class FlexFormVaultHook
                 if ($secretData['originalChecksum'] !== '') {
                     $vaultService->delete($vaultIdentifier, 'FlexForm field cleared');
                 }
-            } elseif ($secretData['originalChecksum'] === '') {
-                // New secret
+            } elseif ($isNew) {
+                // New secret with new UUID
                 $vaultService->store($vaultIdentifier, $secretData['value'], [
                     'table' => $table,
                     'flexField' => $secretData['flexField'],
@@ -198,20 +204,28 @@ final class FlexFormVaultHook
     }
 
     /**
-     * Build vault identifier for FlexForm field.
+     * Generate a UUID v7 for vault identifiers.
+     *
+     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
+     * This provides time-ordered IDs with better database index performance.
      */
-    private function buildFlexFormVaultIdentifier(
-        string $table,
-        string $flexField,
-        string $sheet,
-        string $fieldPath,
-        int $uid,
-    ): string {
-        // Format: table__flexfield__sheet__fieldpath__uid
-        // Replace dots/slashes in fieldPath with underscores
-        $safeFieldPath = str_replace(['.', '/'], '_', $fieldPath);
+    private function generateUuid(): string
+    {
+        // 48-bit timestamp in milliseconds
+        $time = (int) (microtime(true) * 1000);
 
-        return \sprintf('%s__%s__%s__%s__%d', $table, $flexField, $sheet, $safeFieldPath, $uid);
+        // 10 random bytes for the remaining fields
+        $random = random_bytes(10);
+
+        return sprintf(
+            '%08x-%04x-7%03x-%04x-%012x',
+            ($time >> 16) & 0xFFFFFFFF,
+            $time & 0xFFFF,
+            ord($random[0]) << 4 | ord($random[1]) >> 4 & 0x0FFF,
+            (ord($random[1]) & 0x0F) << 8 | ord($random[2]) & 0x3FFF | 0x8000,
+            (ord($random[3]) << 40) | (ord($random[4]) << 32) | (ord($random[5]) << 24)
+                | (ord($random[6]) << 16) | (ord($random[7]) << 8) | ord($random[8]),
+        );
     }
 
     /**

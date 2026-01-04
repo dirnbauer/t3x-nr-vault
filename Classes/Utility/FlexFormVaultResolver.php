@@ -16,6 +16,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  * Use this to retrieve actual secret values from FlexForm settings
  * that were stored using the vaultSecret renderType.
  *
+ * FlexForm vault fields store UUIDs just like regular TCA vault fields.
+ *
  * Example:
  *   $flexFormService = GeneralUtility::makeInstance(FlexFormService::class);
  *   $settings = $flexFormService->convertFlexFormContentToArray($record['pi_flexform']);
@@ -23,7 +25,10 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class FlexFormVaultResolver
 {
-    private const string VAULT_FLEXFORM_PATTERN = '/^[a-z0-9_]+__[a-z0-9_]+__[a-z0-9_]+__[a-z0-9_]+__\d+$/i';
+    /**
+     * UUID v7 pattern for vault identifiers.
+     */
+    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /**
      * Resolve vault identifiers in FlexForm settings.
@@ -45,7 +50,7 @@ final class FlexFormVaultResolver
 
             $value = $settings[$field];
 
-            if (!self::isFlexFormVaultIdentifier($value)) {
+            if (!self::isVaultIdentifier($value)) {
                 continue;
             }
 
@@ -85,72 +90,35 @@ final class FlexFormVaultResolver
     }
 
     /**
-     * Check if a value is a FlexForm vault identifier.
+     * Check if a value is a vault identifier (UUID v7).
      *
-     * FlexForm vault identifiers have format:
-     * {table}__{flexfield}__{sheet}__{fieldpath}__{uid}
+     * Both FlexForm and regular TCA vault fields use the same UUID format.
      *
      * @param mixed $value Value to check
      *
-     * @return bool True if it's a FlexForm vault identifier
+     * @return bool True if it's a vault identifier
      */
-    public static function isFlexFormVaultIdentifier(mixed $value): bool
+    public static function isVaultIdentifier(mixed $value): bool
     {
         if (!\is_string($value) || $value === '') {
             return false;
         }
 
-        return (bool) preg_match(self::VAULT_FLEXFORM_PATTERN, $value);
+        return (bool) preg_match(self::UUID_PATTERN, $value);
     }
 
     /**
-     * Build a FlexForm vault identifier.
+     * Check if a value is a FlexForm vault identifier (UUID v7).
      *
-     * @param string $table Table name
-     * @param string $flexField FlexForm field name (e.g., 'pi_flexform')
-     * @param string $sheet Sheet name
-     * @param string $fieldPath Field path within sheet
-     * @param int $uid Record UID
+     * @param mixed $value Value to check
      *
-     * @return string The vault identifier
+     * @return bool True if it's a vault identifier
+     *
+     * @deprecated Use isVaultIdentifier() instead. FlexForm and TCA fields use the same UUID format.
      */
-    public static function buildIdentifier(
-        string $table,
-        string $flexField,
-        string $sheet,
-        string $fieldPath,
-        int $uid,
-    ): string {
-        $safeFieldPath = str_replace(['.', '/'], '_', $fieldPath);
-
-        return \sprintf('%s__%s__%s__%s__%d', $table, $flexField, $sheet, $safeFieldPath, $uid);
-    }
-
-    /**
-     * Parse a FlexForm vault identifier.
-     *
-     * @param string $identifier The vault identifier
-     *
-     * @return array{table: string, flexField: string, sheet: string, fieldPath: string, uid: int}|null
-     */
-    public static function parseIdentifier(string $identifier): ?array
+    public static function isFlexFormVaultIdentifier(mixed $value): bool
     {
-        if (!self::isFlexFormVaultIdentifier($identifier)) {
-            return null;
-        }
-
-        $parts = explode('__', $identifier);
-        if (\count($parts) !== 5) {
-            return null;
-        }
-
-        return [
-            'table' => $parts[0],
-            'flexField' => $parts[1],
-            'sheet' => $parts[2],
-            'fieldPath' => $parts[3],
-            'uid' => (int) $parts[4],
-        ];
+        return self::isVaultIdentifier($value);
     }
 
     /**
@@ -163,7 +131,7 @@ final class FlexFormVaultResolver
         foreach ($data as $key => $value) {
             if (\is_array($value)) {
                 $data[$key] = self::resolveRecursive($value);
-            } elseif (self::isFlexFormVaultIdentifier($value) || VaultFieldResolver::isVaultIdentifier($value)) {
+            } elseif (self::isVaultIdentifier($value)) {
                 try {
                     $data[$key] = $vaultService->retrieve($value);
                 } catch (SecretNotFoundException) {

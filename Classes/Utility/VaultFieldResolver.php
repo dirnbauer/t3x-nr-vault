@@ -13,16 +13,25 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 /**
  * Utility for resolving vault identifiers to actual secret values.
  *
+ * Vault identifiers are UUIDs stored in TCA fields with renderType 'vaultSecret'.
  * Use this in your extension code to retrieve secrets stored via vault TCA fields.
  *
  * Example:
+ *   // Resolve specific fields
  *   $settings = $this->getTypoScriptSettings();
  *   $resolved = VaultFieldResolver::resolveFields($settings, ['api_key', 'api_secret']);
  *   // Now $resolved['api_key'] contains the actual secret value
+ *
+ *   // Or resolve all vault fields in a record
+ *   $endpoint = $this->endpointRepository->findByUid(42);
+ *   $resolved = VaultFieldResolver::resolveRecord('tx_myext_apiendpoint', $endpoint);
  */
 final class VaultFieldResolver
 {
-    private const string VAULT_IDENTIFIER_PATTERN = '/^[a-z0-9_]+__[a-z0-9_]+__\d+$/i';
+    /**
+     * UUID v7 pattern for vault identifiers.
+     */
+    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /**
      * Resolve vault identifiers in an array to their actual secret values.
@@ -73,11 +82,11 @@ final class VaultFieldResolver
     /**
      * Resolve a single vault identifier to its secret value.
      *
-     * @param string $identifier The vault identifier
+     * @param string $identifier The vault identifier (UUID)
      *
      * @throws VaultException On vault errors (if identifier is valid but retrieval fails)
      *
-     * @return string|null The secret value, or null if not found
+     * @return string|null The secret value, or null if not found or invalid identifier
      */
     public static function resolve(string $identifier): ?string
     {
@@ -116,9 +125,7 @@ final class VaultFieldResolver
     }
 
     /**
-     * Check if a value looks like a vault identifier.
-     *
-     * Vault identifiers follow the pattern: {table}__{field}__{uid}
+     * Check if a value looks like a vault identifier (UUID v4).
      *
      * @param mixed $value The value to check
      *
@@ -130,60 +137,7 @@ final class VaultFieldResolver
             return false;
         }
 
-        // Must match pattern: tablename__fieldname__123
-        return (bool) preg_match(self::VAULT_IDENTIFIER_PATTERN, $value);
-    }
-
-    /**
-     * Build a vault identifier from table, field, and uid.
-     *
-     * @param string $table Table name
-     * @param string $field Field name
-     * @param int $uid Record UID
-     *
-     * @return string The vault identifier
-     */
-    public static function buildIdentifier(string $table, string $field, int $uid): string
-    {
-        return \sprintf('%s__%s__%d', $table, $field, $uid);
-    }
-
-    /**
-     * Parse a vault identifier into its components.
-     *
-     * @param string $identifier The vault identifier
-     *
-     * @return array{table: string, field: string, uid: int}|null Parsed components or null if invalid
-     */
-    public static function parseIdentifier(string $identifier): ?array
-    {
-        if (!self::isVaultIdentifier($identifier)) {
-            return null;
-        }
-
-        $parts = explode('__', $identifier);
-        if (\count($parts) !== 3) {
-            return null;
-        }
-
-        // Validate UID is within integer range to prevent overflow warnings
-        $uidString = $parts[2];
-        $maxIntString = (string) PHP_INT_MAX;
-        $maxLen = \strlen($maxIntString);
-        $uidLen = \strlen($uidString);
-        if ($uidString === ''
-            || !ctype_digit($uidString)
-            || $uidLen > $maxLen
-            || ($uidLen === $maxLen && strcmp($uidString, $maxIntString) > 0)
-        ) {
-            return null;
-        }
-
-        return [
-            'table' => $parts[0],
-            'field' => $parts[1],
-            'uid' => (int) $uidString,
-        ];
+        return (bool) preg_match(self::UUID_PATTERN, $value);
     }
 
     /**
