@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+namespace MyVendor\MyDeeplExtension\Service;
+
+use MyVendor\MyDeeplExtension\Domain\Repository\ConfigRepository;
+use Netresearch\NrVault\Http\SecretPlacement;
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use TYPO3\CMS\Core\Http\RequestFactory;
+
+final class DeepLService
+{
+    public function __construct(
+        private readonly VaultServiceInterface $vault,
+        private readonly RequestFactory $requestFactory,
+        private readonly ConfigRepository $configRepository,
+    ) {}
+
+    public function translate(string $text, string $targetLang): string
+    {
+        $config = $this->configRepository->findDefault();
+        if ($config === null) {
+            throw new \RuntimeException('DeepL not configured', 1735900001);
+        }
+
+        $request = $this->requestFactory
+            ->createRequest('POST', $config->apiUrl . '/translate')
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody(\GuzzleHttp\Psr7\Utils::streamFor(json_encode([
+                'text' => [$text],
+                'target_lang' => $targetLang,
+            ])));
+
+        $response = $this->vault->http()
+            ->withAuthentication($config->apiKey, SecretPlacement::Bearer)
+            ->withReason('DeepL translation: ' . $targetLang)
+            ->sendRequest($request);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        return $data['translations'][0]['text'] ?? '';
+    }
+}

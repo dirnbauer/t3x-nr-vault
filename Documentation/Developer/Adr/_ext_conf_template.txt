@@ -1,0 +1,5 @@
+# cat=api; type=string; label=API Key (Vault Identifier): Enter your vault secret identifier
+apiKey =
+
+# cat=api; type=string; label=API Endpoint
+apiEndpoint = https://api.translate.example.com/v1

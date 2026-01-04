@@ -2,6 +2,37 @@
 
 > Documentation guidelines for nr-vault using TYPO3 docs standards.
 
+## Critical Requirement: Backend-First Documentation
+
+**nr-vault is fully usable without CLI or file access.** All documentation
+examples MUST show both approaches:
+
+1. **Backend UI** (primary) - For editors and admins without server access
+2. **CLI commands** (secondary) - For developers and automation
+
+This is a key feature: secure secret management accessible to non-technical
+users through the TYPO3 backend.
+
+### Example Pattern
+
+```rst
+**Via backend:**
+
+1. Go to :guilabel:`Admin Tools > Vault > Secrets`
+2. Click :guilabel:`Create Secret`
+3. Enter identifier ``deepl_api_key`` and paste your API key
+4. Click :guilabel:`Save`
+
+**Via CLI:**
+
+.. code-block:: bash
+   :caption: Alternative: CLI command
+
+   ./vendor/bin/typo3 vault:store deepl_api_key "your-api-key"
+```
+
+Always show backend first, CLI second. Never assume users have CLI access.
+
 ## Structure
 
 ```

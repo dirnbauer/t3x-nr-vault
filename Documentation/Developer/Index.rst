@@ -12,6 +12,7 @@ Developer
    Api
    Commands
    TcaIntegration
+   Adr/Index
 
 .. _developer-architecture:
 

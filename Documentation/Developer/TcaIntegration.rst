@@ -27,6 +27,7 @@ Step 1: Add dependency
 Add nr-vault as a dependency in your extension's :file:`composer.json`:
 
 .. code-block:: json
+   :caption: EXT:my_extension/composer.json
 
    {
        "require": {
@@ -244,12 +245,13 @@ Resolve specific fields in a data array:
 resolve()
 ---------
 
-Resolve a single vault identifier:
+Resolve a single vault identifier (UUID v7 format):
 
 .. code-block:: php
    :caption: VaultFieldResolver::resolve()
 
-   $secret = VaultFieldResolver::resolve('tx_myext_settings__api_key__1');
+   // TCA field identifiers use UUID v7 format
+   $secret = VaultFieldResolver::resolve('01937b6e-4b6c-7abc-8def-0123456789ab');
 
 .. _tca-resolver-resolve-record:
 
@@ -307,25 +309,35 @@ Data flow
 2. **Form submit**: The :php:`DataHandlerHook` intercepts the form data:
 
    - Extracts the secret value from the form.
-   - Generates a vault identifier: ``{table}__{field}__{uid}``.
-   - Stores the secret in the vault.
-   - Saves only the identifier to the database.
+   - Generates a UUID v7 identifier (time-ordered, unique).
+   - Stores the secret in the vault with metadata (table, field, uid).
+   - Saves only the UUID identifier to the database.
 
 3. **Runtime retrieval**: Your code uses :php:`VaultFieldResolver` to
-   look up the actual secret from the vault.
+   look up the actual secret from the vault using the UUID.
 
 .. _tca-identifier-format:
 
 Identifier format
 -----------------
 
-Standard TCA fields: ``{table}__{field}__{uid}``
+TCA and FlexForm fields use **UUID v7** identifiers::
 
-Example: ``tx_myext_settings__api_key__42``
+   01937b6e-4b6c-7abc-8def-0123456789ab
 
-FlexForm fields: ``{table}__{flexfield}__{sheet}__{fieldpath}__{uid}``
+UUID v7 provides:
 
-Example: ``tt_content__pi_flexform__settings__apiKey__123``
+-  **Time-ordering**: Better B-tree index performance in databases.
+-  **Uniqueness**: Collision-free without central coordination.
+-  **Security**: Does not expose table/field names in the identifier.
+
+The source context (table, field, uid) is stored as metadata in the vault,
+not in the identifier itself.
+
+.. tip::
+
+   See :ref:`adr-001-uuid-v7` for the full rationale behind this design
+   decision.
 
 .. _tca-record-operations:
 

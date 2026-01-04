@@ -486,3 +486,12 @@ Authentication options
            'queryParam' => 'key',
        ]);
    $response = $client->sendRequest(new Request('GET', $url));
+
+For a complete real-world example combining TCA vault fields with the HTTP
+client, see :ref:`usage-api-endpoint-example`.
+
+.. toctree::
+   :hidden:
+
+   ApiEndpointExample
+   ExtensionSettings
