@@ -28,9 +28,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 final class VaultFieldResolver
 {
-    /**
-     * UUID v7 pattern for vault identifiers.
-     */
+    /** UUID v7 pattern for vault identifiers. */
     private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /**
