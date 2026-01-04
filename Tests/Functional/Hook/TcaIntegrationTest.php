@@ -121,8 +121,9 @@ final class TcaIntegrationTest extends FunctionalTestCase
     #[Test]
     public function vaultFieldResolverResolvesStoredSecrets(): void
     {
-        // This test can run - it tests VaultFieldResolver directly without DataHandler
-        $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
+        // Get services from container - VaultFieldResolver uses constructor DI
+        $vaultService = $this->get(VaultServiceInterface::class);
+        // VaultFieldResolver is private in container, get via GeneralUtility (which uses DI container internally)
         $vaultFieldResolver = GeneralUtility::makeInstance(VaultFieldResolver::class);
 
         // Generate a proper UUID v7 identifier (simulating what DataHandler hook would do)
@@ -149,8 +150,8 @@ final class TcaIntegrationTest extends FunctionalTestCase
     #[Test]
     public function multipleVaultFieldsAreHandledCorrectly(): void
     {
-        // This test can run - it tests VaultFieldResolver directly
-        $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
+        // Get services - VaultFieldResolver is private, use GeneralUtility which resolves from DI container
+        $vaultService = $this->get(VaultServiceInterface::class);
         $vaultFieldResolver = GeneralUtility::makeInstance(VaultFieldResolver::class);
 
         // Generate proper UUID v7 identifiers (simulating what DataHandler hook would do)
