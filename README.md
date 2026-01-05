@@ -31,50 +31,47 @@ nr-vault provides:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         TYPO3 Backend                                    │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │
-│  │  TCA Field      │  │ Backend Module  │  │  CLI Commands   │          │
-│  │  (vaultSecret)  │  │  (Secrets Mgr)  │  │                 │          │
-│  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘          │
-│           └────────────────────┼─────────────────────┘                   │
-│                                ▼                                          │
-│  ┌───────────────────────────────────────────────────────────────────┐   │
-│  │                        VaultService                                │   │
-│  │  store() │ retrieve() │ rotate() │ delete() │ list() │ http()     │   │
-│  └───────────────────────────────────────────────────────────────────┘   │
-│                                │                                          │
-│      ┌─────────────────────────┼─────────────────────────┐               │
-│      ▼                         ▼                         ▼               │
-│  ┌────────────────┐   ┌────────────────┐   ┌────────────────┐           │
-│  │ AccessControl  │   │ EncryptionSvc  │   │  AuditLogSvc   │           │
-│  │ Service        │   │                │   │                │           │
-│  └────────────────┘   └───────┬────────┘   └────────────────┘           │
-│                               │                                           │
-│                               ▼                                           │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │                      Vault Adapters                                 │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │  │
-│  │  │ LocalDatabase│  │ HashiCorp    │  │ AWS Secrets  │              │  │
-│  │  │ (DEFAULT)    │  │ Vault        │  │ Manager      │              │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘              │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph TYPO3["TYPO3 Backend"]
+        subgraph Entry["Entry Points"]
+            TCA["TCA Field<br/>(vaultSecret)"]
+            Backend["Backend Module<br/>(Secrets Manager)"]
+            CLI["CLI Commands"]
+        end
+
+        TCA & Backend & CLI --> VaultService
+
+        subgraph VaultService["VaultService"]
+            API["store() | retrieve() | rotate() | delete() | list() | http()"]
+        end
+
+        VaultService --> AccessControl["AccessControl<br/>Service"]
+        VaultService --> Encryption["EncryptionService"]
+        VaultService --> Audit["AuditLogService"]
+
+        Encryption --> Adapters
+
+        subgraph Adapters["Vault Adapters"]
+            Local["LocalDatabase<br/>(DEFAULT)"]
+            HashiCorp["HashiCorp<br/>Vault"]
+            AWS["AWS Secrets<br/>Manager"]
+        end
+    end
 ```
 
 ## Encryption Model
 
 Uses **envelope encryption** (same pattern as AWS KMS, Google Cloud KMS):
 
-```
-Master Key (stored outside database)
-    │
-    ▼ encrypts
-Data Encryption Key (DEK) - unique per secret
-    │
-    ▼ encrypts
-Secret Value (API key, password, token)
+```mermaid
+flowchart TB
+    MK["🔐 Master Key<br/>(stored outside database)"]
+    DEK["🔑 Data Encryption Key (DEK)<br/>(unique per secret)"]
+    Secret["📄 Secret Value<br/>(API key, password, token)"]
+
+    MK -->|encrypts| DEK
+    DEK -->|encrypts| Secret
 ```
 
 Benefits:
