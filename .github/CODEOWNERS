@@ -2,10 +2,10 @@
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owner for all files
-*                       @netresearch/typo3-team
+*                       @CybotTM
 
 # Security-sensitive code (explicit for visibility)
-/Classes/Crypto/        @netresearch/typo3-team
-/Classes/Security/      @netresearch/typo3-team
-/SECURITY.md            @netresearch/typo3-team
-/.github/workflows/     @netresearch/typo3-team
+/Classes/Crypto/        @CybotTM
+/Classes/Security/      @CybotTM
+/SECURITY.md            @CybotTM
+/.github/workflows/     @CybotTM
