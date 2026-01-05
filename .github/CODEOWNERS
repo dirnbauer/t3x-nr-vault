@@ -1,0 +1,11 @@
+# CODEOWNERS - defines code ownership for review requests
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for all files
+*                       @netresearch/typo3-team
+
+# Security-sensitive code (explicit for visibility)
+/Classes/Crypto/        @netresearch/typo3-team
+/Classes/Security/      @netresearch/typo3-team
+/SECURITY.md            @netresearch/typo3-team
+/.github/workflows/     @netresearch/typo3-team
