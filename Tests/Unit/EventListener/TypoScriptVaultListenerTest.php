@@ -106,7 +106,7 @@ final class TypoScriptVaultListenerTest extends TestCase
             ->with(
                 'Failed to resolve vault reference in TypoScript',
                 $this->callback(static fn (array $context): bool => $context['identifier'] === 'missing_key'
-                    && str_contains((string) $context['error'], 'Secret not found')),
+                    && \str_contains((string) $context['error'], 'Secret not found')),
             );
 
         ($this->listener)($event);
