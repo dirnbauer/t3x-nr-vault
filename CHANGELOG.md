@@ -8,11 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial release preparation
-- Project documentation files (CONTRIBUTING.md, SECURITY.md)
-- Code quality configuration (PHPStan, PHP-CS-Fixer, EditorConfig)
+- Enterprise readiness improvements (CODEOWNERS, CODE_OF_CONDUCT.md)
+- Supply chain security (SBOM, Cosign signing, SLSA provenance)
+- Mermaid diagrams in README
 
-## [1.0.0] - Unreleased
+### Changed
+- GitHub Actions pinned with SHA hashes
+- Branch protection enabled
+
+## [0.1.0] - 2026-01-05
 
 ### Added
 - **Core Vault Service**: Secure secrets storage with CRUD operations
@@ -23,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Audit Logging**: Tamper-evident hash chain for all secret operations
 - **CLI Commands**: Command-line tools for secret management and key rotation
 - **Backend Module**: TYPO3 backend interface for secret management
+- **TCA Integration**: Custom `vaultSecret` renderType for TCA fields
+- **FlexForm Support**: Vault secrets in FlexForm configurations
+- **Vault HTTP Client**: Make authenticated API calls without exposing secrets
+- **OAuth 2.0 Support**: Token management with automatic refresh
 - **Secret Versioning**: Track secret changes with version history
 - **Expiration Support**: Optional expiration dates for secrets
 - **Memory Safety**: Automatic wiping of sensitive data with `sodium_memzero()`
@@ -38,11 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Technical
 - PHP 8.5+ required
 - TYPO3 v14 compatible
-- PSR-12 / PER-CS 2.0 coding standards
-- PHPStan level 8 compliance
+- PER Coding Style (latest)
+- PHPStan level 10 (maximum)
+- PHPat architecture tests
+- Mutation testing with Infection
 - Readonly classes and properties throughout
 - Constructor property promotion
 - Modern PHP 8.x patterns (match, named arguments, attributes)
 
-[Unreleased]: https://github.com/netresearch/t3x-nr-vault/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/netresearch/t3x-nr-vault/releases/tag/v1.0.0
+[Unreleased]: https://github.com/netresearch/t3x-nr-vault/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/netresearch/t3x-nr-vault/releases/tag/v0.1.0

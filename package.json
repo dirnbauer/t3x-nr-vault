@@ -1,6 +1,6 @@
 {
   "name": "nr-vault-e2e",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "E2E tests for nr-vault TYPO3 extension",
   "scripts": {

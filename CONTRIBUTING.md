@@ -147,7 +147,8 @@ For feature requests, please describe:
 
 **DO NOT** create public issues for security vulnerabilities.
 
-Please report security issues to: **security@netresearch.de**
+Use GitHub's private security reporting feature:
+**[Report a vulnerability](https://github.com/netresearch/t3x-nr-vault/security/advisories/new)**
 
 See [SECURITY.md](SECURITY.md) for details.
 
