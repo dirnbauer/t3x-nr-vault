@@ -1,6 +1,7 @@
 # nr-vault: Secure Secrets Management for TYPO3
 
 [![CI](https://github.com/netresearch/t3x-nr-vault/actions/workflows/tests.yml/badge.svg)](https://github.com/netresearch/t3x-nr-vault/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/netresearch/t3x-nr-vault/graph/badge.svg)](https://codecov.io/gh/netresearch/t3x-nr-vault)
 [![Security](https://github.com/netresearch/t3x-nr-vault/actions/workflows/security.yml/badge.svg)](https://github.com/netresearch/t3x-nr-vault/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/netresearch/t3x-nr-vault/badge)](https://securityscorecards.dev/viewer/?uri=github.com/netresearch/t3x-nr-vault)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11695/badge)](https://www.bestpractices.dev/projects/11695)
