@@ -6,7 +6,6 @@ namespace Netresearch\NrVault\Tests\Unit\Service\Detection;
 
 use Netresearch\NrVault\Service\Detection\Severity;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

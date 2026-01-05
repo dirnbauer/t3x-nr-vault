@@ -97,7 +97,7 @@ final class VaultInitCommandTest extends TestCase
         self::assertSame(0, $exitCode);
         self::assertFileExists($outputFile);
         // Key should be 32 bytes (SODIUM_CRYPTO_SECRETBOX_KEYBYTES)
-        self::assertSame(32, strlen(file_get_contents($outputFile)));
+        self::assertSame(32, \strlen(\file_get_contents($outputFile)));
         self::assertStringContainsString('generated and saved', $this->commandTester->getDisplay());
     }
 
@@ -106,7 +106,7 @@ final class VaultInitCommandTest extends TestCase
     {
         $root = vfsStream::setup('vault');
         vfsStream::newFile('master.key')
-            ->withContent(str_repeat('x', 32))
+            ->withContent(\str_repeat('x', 32))
             ->at($root);
 
         $this->configuration
@@ -130,7 +130,7 @@ final class VaultInitCommandTest extends TestCase
     {
         $root = vfsStream::setup('vault');
         vfsStream::newFile('master.key')
-            ->withContent(str_repeat('x', 32))
+            ->withContent(\str_repeat('x', 32))
             ->at($root);
 
         $this->configuration
@@ -146,7 +146,7 @@ final class VaultInitCommandTest extends TestCase
 
         self::assertSame(0, $exitCode);
         // Should have a new key (different from original)
-        self::assertNotSame(str_repeat('x', 32), file_get_contents($outputFile));
+        self::assertNotSame(\str_repeat('x', 32), \file_get_contents($outputFile));
     }
 
     #[Test]

@@ -111,7 +111,7 @@ final class Typo3MasterKeyProviderTest extends TestCase
         $provider = new Typo3MasterKeyProvider();
         $key = $provider->getMasterKey();
 
-        self::assertEquals(32, strlen($key));
+        self::assertEquals(32, \strlen($key));
     }
 
     #[Test]
@@ -177,7 +177,7 @@ final class Typo3MasterKeyProviderTest extends TestCase
         $this->expectException(MasterKeyException::class);
         $this->expectExceptionMessage('TYPO3 provider derives the key');
 
-        $provider->storeMasterKey(random_bytes(32));
+        $provider->storeMasterKey(\random_bytes(32));
     }
 
     #[Test]
@@ -187,7 +187,7 @@ final class Typo3MasterKeyProviderTest extends TestCase
 
         $key = $provider->generateMasterKey();
 
-        self::assertEquals(32, strlen($key));
+        self::assertEquals(32, \strlen($key));
     }
 
     #[Test]

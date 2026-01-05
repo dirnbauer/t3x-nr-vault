@@ -199,7 +199,7 @@ final class VaultHttpClientTest extends TestCase
             ->expects(self::once())
             ->method('sendRequest')
             ->willReturnCallback(function (RequestInterface $request): Response {
-                $expected = 'Basic ' . base64_encode('user:pass123');
+                $expected = 'Basic ' . \base64_encode('user:pass123');
                 self::assertSame($expected, $request->getHeaderLine('Authorization'));
 
                 return new Response(200);
@@ -231,7 +231,7 @@ final class VaultHttpClientTest extends TestCase
             ->expects(self::once())
             ->method('sendRequest')
             ->willReturnCallback(function (RequestInterface $request): Response {
-                $expected = 'Basic ' . base64_encode('john_doe:secret123');
+                $expected = 'Basic ' . \base64_encode('john_doe:secret123');
                 self::assertSame($expected, $request->getHeaderLine('Authorization'));
 
                 return new Response(200);

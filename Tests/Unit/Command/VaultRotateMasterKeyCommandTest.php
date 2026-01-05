@@ -19,7 +19,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
-use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 #[CoversClass(VaultRotateMasterKeyCommand::class)]
@@ -73,15 +72,15 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function warnsWhenNoSecretsFound(): void
     {
-        $this->mockMasterKeyProvider(str_repeat('a', 32));
+        $this->mockMasterKeyProvider(\str_repeat('a', 32));
 
         $this->secretRepository
             ->method('findIdentifiers')
             ->willReturn([]);
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
         ]);
 
         self::assertSame(0, $exitCode);
@@ -91,7 +90,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function failsWhenKeysAreIdentical(): void
     {
-        $keyContent = str_repeat('x', 32);
+        $keyContent = \str_repeat('x', 32);
 
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', $keyContent),
@@ -105,15 +104,15 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function failsWithoutConfirmOption(): void
     {
-        $this->mockMasterKeyProvider(str_repeat('a', 32));
+        $this->mockMasterKeyProvider(\str_repeat('a', 32));
 
         $this->secretRepository
             ->method('findIdentifiers')
             ->willReturn(['secret-1']);
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
         ]);
 
         self::assertSame(1, $exitCode);
@@ -141,8 +140,8 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
             ]);
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
             '--dry-run' => true,
         ]);
 
@@ -157,7 +156,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     {
         $exitCode = $this->commandTester->execute([
             '--old-key' => '/nonexistent/key.file',
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
         ]);
 
         self::assertSame(1, $exitCode);
@@ -169,7 +168,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     {
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', 'short'),
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
         ]);
 
         self::assertSame(1, $exitCode);
@@ -194,8 +193,8 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
             ->willThrowException(EncryptionException::decryptionFailed());
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
             '--confirm' => true,
         ]);
 
@@ -206,8 +205,8 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function handlesBase64EncodedKeys(): void
     {
-        $rawKey = str_repeat('k', 32);
-        $base64Key = base64_encode($rawKey);
+        $rawKey = \str_repeat('k', 32);
+        $base64Key = \base64_encode($rawKey);
 
         $secret = $this->createMockSecret('b64-secret');
 
@@ -229,7 +228,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         // Base64 keys should work
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', $base64Key),
-            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
             '--dry-run' => true,
         ]);
 

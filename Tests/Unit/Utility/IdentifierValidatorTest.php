@@ -62,7 +62,7 @@ final class IdentifierValidatorTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessage('exceed');
 
-        IdentifierValidator::validate(str_repeat('a', 256));
+        IdentifierValidator::validate(\str_repeat('a', 256));
     }
 
     #[Test]
@@ -132,7 +132,7 @@ final class IdentifierValidatorTest extends TestCase
     #[Test]
     public function sanitizeTruncatesToMaxLength(): void
     {
-        $longIdentifier = str_repeat('a', 300);
+        $longIdentifier = \str_repeat('a', 300);
         $result = IdentifierValidator::sanitize($longIdentifier);
 
         self::assertEquals(255, \strlen($result));
@@ -151,6 +151,6 @@ final class IdentifierValidatorTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        IdentifierValidator::validate('a' . str_repeat('b', 254)); // Exactly 255 characters
+        IdentifierValidator::validate('a' . \str_repeat('b', 254)); // Exactly 255 characters
     }
 }

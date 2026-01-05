@@ -37,7 +37,7 @@ final class FileMasterKeyProviderTest extends TestCase
     public function isAvailableReturnsTrueWhenFileExists(): void
     {
         $keyPath = vfsStream::url('vault/master.key');
-        file_put_contents($keyPath, base64_encode(random_bytes(32)));
+        \file_put_contents($keyPath, \base64_encode(\random_bytes(32)));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn($keyPath);
@@ -72,9 +72,9 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReadsAndDecodesBase64Key(): void
     {
-        $key = random_bytes(32);
+        $key = \random_bytes(32);
         $keyPath = vfsStream::url('vault/master.key');
-        file_put_contents($keyPath, base64_encode($key));
+        \file_put_contents($keyPath, \base64_encode($key));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn($keyPath);
@@ -87,9 +87,9 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReadsRaw32ByteKey(): void
     {
-        $key = random_bytes(32);
+        $key = \random_bytes(32);
         $keyPath = vfsStream::url('vault/master.key');
-        file_put_contents($keyPath, $key);
+        \file_put_contents($keyPath, $key);
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn($keyPath);
@@ -117,9 +117,9 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyFallsBackToAutoKeyPath(): void
     {
-        $key = random_bytes(32);
+        $key = \random_bytes(32);
         $autoKeyPath = vfsStream::url('vault/auto.key');
-        file_put_contents($autoKeyPath, base64_encode($key));
+        \file_put_contents($autoKeyPath, \base64_encode($key));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(vfsStream::url('vault/nonexistent.key'));
@@ -134,7 +134,7 @@ final class FileMasterKeyProviderTest extends TestCase
     public function getMasterKeyThrowsWhenKeyLengthInvalid(): void
     {
         $keyPath = vfsStream::url('vault/master.key');
-        file_put_contents($keyPath, 'tooshort');
+        \file_put_contents($keyPath, 'tooshort');
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn($keyPath);
@@ -150,7 +150,7 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function storeMasterKeyCreatesFileWithCorrectPermissions(): void
     {
-        $key = random_bytes(32);
+        $key = \random_bytes(32);
         $keyPath = vfsStream::url('vault/new.key');
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
@@ -160,13 +160,13 @@ final class FileMasterKeyProviderTest extends TestCase
         $provider->storeMasterKey($key);
 
         self::assertFileExists($keyPath);
-        self::assertEquals(base64_encode($key), file_get_contents($keyPath));
+        self::assertEquals(\base64_encode($key), \file_get_contents($keyPath));
     }
 
     #[Test]
     public function storeMasterKeyUsesAutoKeyPathWhenSourceEmpty(): void
     {
-        $key = random_bytes(32);
+        $key = \random_bytes(32);
         $autoKeyPath = vfsStream::url('vault/auto.key');
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
@@ -194,7 +194,7 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function storeMasterKeyCreatesDirectory(): void
     {
-        $key = random_bytes(32);
+        $key = \random_bytes(32);
         $keyPath = vfsStream::url('vault/subdir/deep/master.key');
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
@@ -214,6 +214,6 @@ final class FileMasterKeyProviderTest extends TestCase
 
         $key = $provider->generateMasterKey();
 
-        self::assertEquals(32, strlen($key));
+        self::assertEquals(32, \strlen($key));
     }
 }

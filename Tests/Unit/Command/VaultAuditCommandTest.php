@@ -276,7 +276,7 @@ final class VaultAuditCommandTest extends TestCase
 
         self::assertSame(0, $exitCode);
         self::assertFileExists($exportFile);
-        $content = file_get_contents($exportFile);
+        $content = \file_get_contents($exportFile);
         self::assertJson($content);
         self::assertStringContainsString('exported', $content);
     }

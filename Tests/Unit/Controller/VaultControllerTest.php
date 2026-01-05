@@ -32,7 +32,7 @@ final class VaultControllerTest extends TestCase
         $xliffPath = __DIR__ . '/../../../Resources/Private/Language/locallang_mod.xlf';
         self::assertFileExists($xliffPath);
 
-        $xliffContent = file_get_contents($xliffPath);
+        $xliffContent = \file_get_contents($xliffPath);
         self::assertNotFalse($xliffContent);
 
         // Required button labels
@@ -58,7 +58,7 @@ final class VaultControllerTest extends TestCase
         $controllerPath = __DIR__ . '/../../../Classes/Controller/SecretsController.php';
         self::assertFileExists($controllerPath);
 
-        $controllerContent = file_get_contents($controllerPath);
+        $controllerContent = \file_get_contents($controllerPath);
         self::assertNotFalse($controllerContent);
 
         // Should NOT use deprecated Icon::SIZE_* constants
@@ -88,7 +88,7 @@ final class VaultControllerTest extends TestCase
         $controllerPath = __DIR__ . '/../../../Classes/Controller/SecretsController.php';
         self::assertFileExists($controllerPath);
 
-        $controllerContent = file_get_contents($controllerPath);
+        $controllerContent = \file_get_contents($controllerPath);
         self::assertNotFalse($controllerContent);
 
         // Should import IconSize

@@ -19,7 +19,7 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
 
     protected function tearDown(): void
     {
-        putenv(self::TEST_ENV_VAR);
+        \putenv(self::TEST_ENV_VAR);
     }
 
     #[Test]
@@ -34,8 +34,8 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function isAvailableReturnsTrueWhenEnvVarSet(): void
     {
-        $key = random_bytes(32);
-        putenv(self::TEST_ENV_VAR . '=' . base64_encode($key));
+        $key = \random_bytes(32);
+        \putenv(self::TEST_ENV_VAR . '=' . \base64_encode($key));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
@@ -48,7 +48,7 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function isAvailableReturnsFalseWhenEnvVarNotSet(): void
     {
-        putenv(self::TEST_ENV_VAR);
+        \putenv(self::TEST_ENV_VAR);
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
@@ -61,8 +61,8 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReturnsDecodedKey(): void
     {
-        $key = random_bytes(32);
-        putenv(self::TEST_ENV_VAR . '=' . base64_encode($key));
+        $key = \random_bytes(32);
+        \putenv(self::TEST_ENV_VAR . '=' . \base64_encode($key));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
@@ -75,8 +75,8 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReturnsRawKeyWhen32Bytes(): void
     {
-        $key = random_bytes(32);
-        putenv(self::TEST_ENV_VAR . '=' . $key);
+        $key = \random_bytes(32);
+        \putenv(self::TEST_ENV_VAR . '=' . $key);
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
@@ -89,7 +89,7 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyThrowsWhenEnvVarNotSet(): void
     {
-        putenv(self::TEST_ENV_VAR);
+        \putenv(self::TEST_ENV_VAR);
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
@@ -105,7 +105,7 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyThrowsWhenKeyLengthInvalid(): void
     {
-        putenv(self::TEST_ENV_VAR . '=tooshort');
+        \putenv(self::TEST_ENV_VAR . '=tooshort');
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
@@ -127,7 +127,7 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
         $this->expectException(MasterKeyException::class);
         $this->expectExceptionMessage('cannot be persisted');
 
-        $provider->storeMasterKey(random_bytes(32));
+        $provider->storeMasterKey(\random_bytes(32));
     }
 
     #[Test]
@@ -138,14 +138,14 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
 
         $key = $provider->generateMasterKey();
 
-        self::assertEquals(32, strlen($key));
+        self::assertEquals(32, \strlen($key));
     }
 
     #[Test]
     public function usesDefaultEnvVarNameWhenSourceEmpty(): void
     {
-        $key = random_bytes(32);
-        putenv(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE . '=' . base64_encode($key));
+        $key = \random_bytes(32);
+        \putenv(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE . '=' . \base64_encode($key));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn('');
@@ -154,6 +154,6 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
 
         self::assertEquals($key, $provider->getMasterKey());
 
-        putenv(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE);
+        \putenv(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE);
     }
 }
