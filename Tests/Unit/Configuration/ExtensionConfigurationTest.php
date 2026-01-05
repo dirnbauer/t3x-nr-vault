@@ -1,0 +1,291 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Configuration;
+
+use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
+
+#[CoversClass(ExtensionConfiguration::class)]
+final class ExtensionConfigurationTest extends TestCase
+{
+    private Typo3ExtensionConfiguration&MockObject $typo3Config;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->typo3Config = $this->createMock(Typo3ExtensionConfiguration::class);
+    }
+
+    #[Test]
+    public function getStorageAdapterReturnsConfiguredValue(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['storageAdapter' => 'hashicorp']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame('hashicorp', $config->getStorageAdapter());
+    }
+
+    #[Test]
+    public function getStorageAdapterReturnsDefaultWhenNotConfigured(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_STORAGE_ADAPTER, $config->getStorageAdapter());
+    }
+
+    #[Test]
+    public function getMasterKeyProviderReturnsConfiguredValue(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['masterKeyProvider' => 'env']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame('env', $config->getMasterKeyProvider());
+    }
+
+    #[Test]
+    public function getMasterKeyProviderReturnsDefaultWhenNotConfigured(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_MASTER_KEY_PROVIDER, $config->getMasterKeyProvider());
+    }
+
+    #[Test]
+    public function getMasterKeySourceReturnsConfiguredValue(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['masterKeySource' => '/path/to/key']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame('/path/to/key', $config->getMasterKeySource());
+    }
+
+    #[Test]
+    public function getAuditLogRetentionReturnsConfiguredValue(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditLogRetention' => 90]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(90, $config->getAuditLogRetention());
+    }
+
+    #[Test]
+    public function getAuditLogRetentionReturnsDefaultWhenNotConfigured(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_AUDIT_LOG_RETENTION, $config->getAuditLogRetention());
+    }
+
+    #[Test]
+    public function isCliAccessAllowedReturnsTrueWhenEnabled(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['allowCliAccess' => true]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertTrue($config->isCliAccessAllowed());
+    }
+
+    #[Test]
+    public function isCliAccessAllowedReturnsFalseByDefault(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertFalse($config->isCliAccessAllowed());
+    }
+
+    #[Test]
+    public function getCliAccessGroupsParsesCommaString(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['cliAccessGroups' => '1,2,3']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame([1, 2, 3], $config->getCliAccessGroups());
+    }
+
+    #[Test]
+    public function getCliAccessGroupsHandlesArray(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['cliAccessGroups' => [1, 2, 3]]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame([1, 2, 3], $config->getCliAccessGroups());
+    }
+
+    #[Test]
+    public function isCacheEnabledReturnsTrueByDefault(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertTrue($config->isCacheEnabled());
+    }
+
+    #[Test]
+    public function isCacheEnabledReturnsFalseWhenDisabled(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['cacheEnabled' => false]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertFalse($config->isCacheEnabled());
+    }
+
+    #[Test]
+    public function preferXChaCha20ReturnsFalseByDefault(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertFalse($config->preferXChaCha20());
+    }
+
+    #[Test]
+    public function preferXChaCha20ReturnsTrueWhenEnabled(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['preferXChaCha20' => true]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertTrue($config->preferXChaCha20());
+    }
+
+    #[Test]
+    public function getHashiCorpConfigReturnsEmptyArrayByDefault(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame([], $config->getHashiCorpConfig());
+    }
+
+    #[Test]
+    public function getHashiCorpConfigReturnsConfiguredValues(): void
+    {
+        $hashicorpConfig = [
+            'address' => 'https://vault.example.com',
+            'path' => 'secret/data',
+            'authMethod' => 'token',
+        ];
+
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['hashicorp' => $hashicorpConfig]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame($hashicorpConfig, $config->getHashiCorpConfig());
+    }
+
+    #[Test]
+    public function getAwsConfigReturnsEmptyArrayByDefault(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame([], $config->getAwsConfig());
+    }
+
+    #[Test]
+    public function getAwsConfigReturnsConfiguredValues(): void
+    {
+        $awsConfig = [
+            'region' => 'eu-west-1',
+            'secretPrefix' => 'myapp/',
+        ];
+
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['aws' => $awsConfig]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame($awsConfig, $config->getAwsConfig());
+    }
+
+    #[Test]
+    public function getAutoKeyPathReturnsPath(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        $path = $config->getAutoKeyPath();
+
+        self::assertStringContainsString('secrets/vault-master.key', $path);
+    }
+
+    #[Test]
+    public function handlesNullConfiguration(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(null);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        // Should use defaults without crashing
+        self::assertSame(ExtensionConfiguration::DEFAULT_STORAGE_ADAPTER, $config->getStorageAdapter());
+        self::assertSame(ExtensionConfiguration::DEFAULT_MASTER_KEY_PROVIDER, $config->getMasterKeyProvider());
+    }
+}

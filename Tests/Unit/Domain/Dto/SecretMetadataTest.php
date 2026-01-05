@@ -1,0 +1,154 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Domain\Dto;
+
+use Netresearch\NrVault\Domain\Dto\SecretMetadata;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(SecretMetadata::class)]
+final class SecretMetadataTest extends TestCase
+{
+    #[Test]
+    public function constructorSetsAllProperties(): void
+    {
+        $metadata = new SecretMetadata(
+            identifier: 'api-key',
+            ownerUid: 5,
+            createdAt: 1704067200,
+            updatedAt: 1704153600,
+            readCount: 10,
+            lastReadAt: 1704150000,
+            description: 'Payment API key',
+            version: 3,
+            metadata: ['service' => 'stripe'],
+        );
+
+        self::assertEquals('api-key', $metadata->identifier);
+        self::assertEquals(5, $metadata->ownerUid);
+        self::assertEquals(1704067200, $metadata->createdAt);
+        self::assertEquals(1704153600, $metadata->updatedAt);
+        self::assertEquals(10, $metadata->readCount);
+        self::assertEquals(1704150000, $metadata->lastReadAt);
+        self::assertEquals('Payment API key', $metadata->description);
+        self::assertEquals(3, $metadata->version);
+        self::assertEquals(['service' => 'stripe'], $metadata->metadata);
+    }
+
+    #[Test]
+    public function metadataDefaultsToEmptyArray(): void
+    {
+        $metadata = new SecretMetadata(
+            identifier: 'test',
+            ownerUid: 1,
+            createdAt: 0,
+            updatedAt: 0,
+            readCount: 0,
+            lastReadAt: null,
+            description: '',
+            version: 1,
+        );
+
+        self::assertEquals([], $metadata->metadata);
+    }
+
+    #[Test]
+    public function fromArrayCreatesMetadataWithAllFields(): void
+    {
+        $row = [
+            'identifier' => 'api-key',
+            'owner_uid' => 5,
+            'crdate' => 1704067200,
+            'tstamp' => 1704153600,
+            'read_count' => 10,
+            'last_read_at' => 1704150000,
+            'description' => 'Test secret',
+            'version' => 2,
+            'metadata' => ['key' => 'value'],
+        ];
+
+        $metadata = SecretMetadata::fromArray($row);
+
+        self::assertEquals('api-key', $metadata->identifier);
+        self::assertEquals(5, $metadata->ownerUid);
+        self::assertEquals(1704067200, $metadata->createdAt);
+        self::assertEquals(1704153600, $metadata->updatedAt);
+        self::assertEquals(10, $metadata->readCount);
+        self::assertEquals(1704150000, $metadata->lastReadAt);
+        self::assertEquals('Test secret', $metadata->description);
+        self::assertEquals(2, $metadata->version);
+        self::assertEquals(['key' => 'value'], $metadata->metadata);
+    }
+
+    #[Test]
+    public function fromArrayUsesDefaultsForMissingFields(): void
+    {
+        $row = ['identifier' => 'minimal'];
+
+        $metadata = SecretMetadata::fromArray($row);
+
+        self::assertEquals('minimal', $metadata->identifier);
+        self::assertEquals(0, $metadata->ownerUid);
+        self::assertEquals(0, $metadata->createdAt);
+        self::assertEquals(0, $metadata->updatedAt);
+        self::assertEquals(0, $metadata->readCount);
+        self::assertNull($metadata->lastReadAt);
+        self::assertEquals('', $metadata->description);
+        self::assertEquals(1, $metadata->version);
+        self::assertEquals([], $metadata->metadata);
+    }
+
+    #[Test]
+    public function toArrayReturnsCorrectStructure(): void
+    {
+        $metadata = new SecretMetadata(
+            identifier: 'api-key',
+            ownerUid: 5,
+            createdAt: 1704067200,
+            updatedAt: 1704153600,
+            readCount: 10,
+            lastReadAt: 1704150000,
+            description: 'Test secret',
+            version: 2,
+            metadata: ['key' => 'value'],
+        );
+
+        $array = $metadata->toArray();
+
+        self::assertEquals([
+            'identifier' => 'api-key',
+            'owner_uid' => 5,
+            'crdate' => 1704067200,
+            'tstamp' => 1704153600,
+            'read_count' => 10,
+            'last_read_at' => 1704150000,
+            'description' => 'Test secret',
+            'version' => 2,
+            'metadata' => ['key' => 'value'],
+        ], $array);
+    }
+
+    #[Test]
+    public function roundTripFromArrayToArray(): void
+    {
+        $original = [
+            'identifier' => 'roundtrip-test',
+            'owner_uid' => 42,
+            'crdate' => 1704067200,
+            'tstamp' => 1704153600,
+            'read_count' => 5,
+            'last_read_at' => null,
+            'description' => 'Test',
+            'version' => 1,
+            'metadata' => [],
+        ];
+
+        $metadata = SecretMetadata::fromArray($original);
+        $result = $metadata->toArray();
+
+        self::assertEquals($original, $result);
+    }
+}

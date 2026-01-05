@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Event;
+
+use Netresearch\NrVault\Domain\Model\Secret;
+use Netresearch\NrVault\Event\SecretCreatedEvent;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(SecretCreatedEvent::class)]
+final class SecretCreatedEventTest extends TestCase
+{
+    #[Test]
+    public function constructorSetsProperties(): void
+    {
+        $secret = new Secret();
+        $secret->setIdentifier('api-key');
+
+        $event = new SecretCreatedEvent('api-key', $secret, 5);
+
+        self::assertEquals('api-key', $event->getIdentifier());
+        self::assertSame($secret, $event->getSecret());
+        self::assertEquals(5, $event->getActorUid());
+    }
+}

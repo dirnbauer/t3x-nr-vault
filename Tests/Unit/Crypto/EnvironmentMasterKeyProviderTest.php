@@ -1,0 +1,159 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Crypto;
+
+use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
+use Netresearch\NrVault\Crypto\EnvironmentMasterKeyProvider;
+use Netresearch\NrVault\Exception\MasterKeyException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(EnvironmentMasterKeyProvider::class)]
+final class EnvironmentMasterKeyProviderTest extends TestCase
+{
+    private const string TEST_ENV_VAR = 'NR_VAULT_TEST_KEY_12345';
+
+    protected function tearDown(): void
+    {
+        putenv(self::TEST_ENV_VAR);
+    }
+
+    #[Test]
+    public function getIdentifierReturnsEnv(): void
+    {
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        self::assertEquals('env', $provider->getIdentifier());
+    }
+
+    #[Test]
+    public function isAvailableReturnsTrueWhenEnvVarSet(): void
+    {
+        $key = random_bytes(32);
+        putenv(self::TEST_ENV_VAR . '=' . base64_encode($key));
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        self::assertTrue($provider->isAvailable());
+    }
+
+    #[Test]
+    public function isAvailableReturnsFalseWhenEnvVarNotSet(): void
+    {
+        putenv(self::TEST_ENV_VAR);
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        self::assertFalse($provider->isAvailable());
+    }
+
+    #[Test]
+    public function getMasterKeyReturnsDecodedKey(): void
+    {
+        $key = random_bytes(32);
+        putenv(self::TEST_ENV_VAR . '=' . base64_encode($key));
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        self::assertEquals($key, $provider->getMasterKey());
+    }
+
+    #[Test]
+    public function getMasterKeyReturnsRawKeyWhen32Bytes(): void
+    {
+        $key = random_bytes(32);
+        putenv(self::TEST_ENV_VAR . '=' . $key);
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        self::assertEquals($key, $provider->getMasterKey());
+    }
+
+    #[Test]
+    public function getMasterKeyThrowsWhenEnvVarNotSet(): void
+    {
+        putenv(self::TEST_ENV_VAR);
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        $this->expectException(MasterKeyException::class);
+        $this->expectExceptionMessage('Environment variable');
+
+        $provider->getMasterKey();
+    }
+
+    #[Test]
+    public function getMasterKeyThrowsWhenKeyLengthInvalid(): void
+    {
+        putenv(self::TEST_ENV_VAR . '=tooshort');
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(self::TEST_ENV_VAR);
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        $this->expectException(MasterKeyException::class);
+        $this->expectExceptionMessage('Invalid master key length');
+
+        $provider->getMasterKey();
+    }
+
+    #[Test]
+    public function storeMasterKeyThrowsException(): void
+    {
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        $this->expectException(MasterKeyException::class);
+        $this->expectExceptionMessage('cannot be persisted');
+
+        $provider->storeMasterKey(random_bytes(32));
+    }
+
+    #[Test]
+    public function generateMasterKeyReturns32Bytes(): void
+    {
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        $key = $provider->generateMasterKey();
+
+        self::assertEquals(32, strlen($key));
+    }
+
+    #[Test]
+    public function usesDefaultEnvVarNameWhenSourceEmpty(): void
+    {
+        $key = random_bytes(32);
+        putenv(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE . '=' . base64_encode($key));
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn('');
+
+        $provider = new EnvironmentMasterKeyProvider($config);
+
+        self::assertEquals($key, $provider->getMasterKey());
+
+        putenv(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE);
+    }
+}

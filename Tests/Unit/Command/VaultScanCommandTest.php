@@ -1,0 +1,293 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Unit\Command;
+
+use Netresearch\NrVault\Command\VaultScanCommand;
+use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
+use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
+use Netresearch\NrVault\Service\Detection\Severity;
+use Netresearch\NrVault\Service\SecretDetectionService;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Tester\CommandTester;
+
+#[CoversClass(VaultScanCommand::class)]
+final class VaultScanCommandTest extends TestCase
+{
+    private SecretDetectionService&MockObject $detectionService;
+
+    private CommandTester $commandTester;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->detectionService = $this->createMock(SecretDetectionService::class);
+
+        $command = new VaultScanCommand($this->detectionService);
+
+        $application = new Application();
+        $application->add($command);
+
+        $this->commandTester = new CommandTester($command);
+    }
+
+    #[Test]
+    public function hasCorrectName(): void
+    {
+        $command = new VaultScanCommand($this->detectionService);
+
+        self::assertSame('vault:scan', $command->getName());
+    }
+
+    #[Test]
+    public function showsSuccessWhenNoSecretsFound(): void
+    {
+        $this->detectionService
+            ->expects($this->once())
+            ->method('scan')
+            ->with([]);
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([]);
+
+        $exitCode = $this->commandTester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('No potential plaintext secrets detected', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function scansWithExcludedTables(): void
+    {
+        $this->detectionService
+            ->expects($this->once())
+            ->method('scan')
+            ->with(['tx_cache', 'tx_temp']);
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--exclude' => 'tx_cache, tx_temp',
+        ]);
+    }
+
+    #[Test]
+    public function outputsTableFormat(): void
+    {
+        $finding = new DatabaseSecretFinding(
+            table: 'be_users',
+            column: 'api_key',
+            recordCount: 10,
+            plaintextCount: 5,
+            severity: Severity::High,
+            patterns: ['API Key'],
+        );
+
+        $this->detectionService
+            ->method('scan');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([
+                'high' => [$finding->getKey() => $finding],
+            ]);
+
+        $exitCode = $this->commandTester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('HIGH', $display);
+        self::assertStringContainsString('be_users', $display);
+    }
+
+    #[Test]
+    public function outputsJsonFormat(): void
+    {
+        $finding = new ConfigSecretFinding(
+            path: 'MAIL/smtp_password',
+            severity: Severity::Critical,
+            isLocalConfiguration: true,
+        );
+
+        $this->detectionService
+            ->method('scan');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([
+                'critical' => [$finding->getKey() => $finding],
+            ]);
+
+        $exitCode = $this->commandTester->execute([
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        // The JSON output should contain the path
+        self::assertStringContainsString('MAIL/smtp_password', $display);
+    }
+
+    #[Test]
+    public function outputsSummaryFormat(): void
+    {
+        $finding = new DatabaseSecretFinding(
+            table: 'tx_myext',
+            column: 'secret',
+            recordCount: 1,
+            plaintextCount: 1,
+            severity: Severity::Medium,
+        );
+
+        $this->detectionService
+            ->method('scan');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([
+                'medium' => [$finding->getKey() => $finding],
+            ]);
+
+        $exitCode = $this->commandTester->execute([
+            '--format' => 'summary',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('Summary', $display);
+        self::assertStringContainsString('Medium', $display);
+    }
+
+    #[Test]
+    public function filtersBySeverity(): void
+    {
+        $lowFinding = new DatabaseSecretFinding(
+            table: 'tx_low',
+            column: 'field',
+            recordCount: 1,
+            plaintextCount: 1,
+            severity: Severity::Low,
+        );
+
+        $highFinding = new DatabaseSecretFinding(
+            table: 'tx_high',
+            column: 'password',
+            recordCount: 1,
+            plaintextCount: 1,
+            severity: Severity::High,
+        );
+
+        $this->detectionService
+            ->method('scan');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([
+                'high' => [$highFinding->getKey() => $highFinding],
+                'low' => [$lowFinding->getKey() => $lowFinding],
+            ]);
+
+        $exitCode = $this->commandTester->execute([
+            '--severity' => 'high',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('tx_high', $display);
+        self::assertStringNotContainsString('tx_low', $display);
+    }
+
+    #[Test]
+    public function scansDatabaseOnly(): void
+    {
+        $this->detectionService
+            ->expects($this->once())
+            ->method('scanDatabaseTables')
+            ->with([]);
+
+        $this->detectionService
+            ->expects($this->never())
+            ->method('scanExtensionConfiguration');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--database-only' => true,
+        ]);
+    }
+
+    #[Test]
+    public function scansConfigOnly(): void
+    {
+        $this->detectionService
+            ->expects($this->never())
+            ->method('scanDatabaseTables');
+
+        $this->detectionService
+            ->expects($this->once())
+            ->method('scanExtensionConfiguration');
+
+        $this->detectionService
+            ->expects($this->once())
+            ->method('scanLocalConfiguration');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--config-only' => true,
+        ]);
+    }
+
+    #[Test]
+    public function failsWithBothDatabaseAndConfigOnlyOptions(): void
+    {
+        $exitCode = $this->commandTester->execute([
+            '--database-only' => true,
+            '--config-only' => true,
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Cannot use both', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function displaysWarningWhenSecretsFound(): void
+    {
+        $finding = new DatabaseSecretFinding(
+            table: 'tx_myext',
+            column: 'api_key',
+            recordCount: 5,
+            plaintextCount: 3,
+            severity: Severity::High,
+        );
+
+        $this->detectionService
+            ->method('scan');
+
+        $this->detectionService
+            ->method('getDetectedSecretsBySeverity')
+            ->willReturn([
+                'high' => [$finding->getKey() => $finding],
+            ]);
+
+        $exitCode = $this->commandTester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('Found 1 potential plaintext secret', $display);
+        self::assertStringContainsString('vault:migrate-field', $display);
+    }
+}
