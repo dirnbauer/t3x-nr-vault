@@ -73,7 +73,7 @@ composer cs-check
 
 ### Static Analysis
 
-We use PHPStan at level 8. Run analysis:
+We use PHPStan at the maximum level (10). Run analysis:
 
 ```bash
 composer phpstan
