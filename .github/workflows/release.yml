@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # v2.33.0
+        with:
+          php-version: '8.5'
+          extensions: sodium, json
+          tools: composer:v2
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+
+      - name: Install dependencies
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Create release archive
+        run: |
+          # Create clean archive without dev files
+          mkdir -p dist
+          tar --exclude='.git' \
+              --exclude='.github' \
+              --exclude='.ddev' \
+              --exclude='.Build' \
+              --exclude='Tests' \
+              --exclude='dist' \
+              --exclude='.php-cs-fixer.dist.php' \
+              --exclude='phpstan.neon' \
+              --exclude='phpstan-baseline.neon' \
+              --exclude='phpat.neon' \
+              --exclude='infection.json5' \
+              --exclude='rector.php' \
+              -czvf dist/nr-vault-${{ steps.version.outputs.version }}.tar.gz .
+
+          # Create zip as well
+          zip -r dist/nr-vault-${{ steps.version.outputs.version }}.zip . \
+              -x '.git/*' \
+              -x '.github/*' \
+              -x '.ddev/*' \
+              -x '.Build/*' \
+              -x 'Tests/*' \
+              -x 'dist/*' \
+              -x '.php-cs-fixer.dist.php' \
+              -x 'phpstan.neon' \
+              -x 'phpstan-baseline.neon' \
+              -x 'phpat.neon' \
+              -x 'infection.json5' \
+              -x 'rector.php'
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@a930d0ac434e3182448fe678398ba5713717112a # v0.21.0
+        with:
+          artifact-name: sbom-${{ steps.version.outputs.version }}.spdx.json
+          output-file: dist/sbom-${{ steps.version.outputs.version }}.spdx.json
+          format: spdx-json
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums-${{ steps.version.outputs.version }}.txt
+
+      - name: Sign artifacts with Cosign (keyless)
+        run: |
+          cd dist
+          for file in *.tar.gz *.zip *.spdx.json checksums-*.txt; do
+            cosign sign-blob --yes "$file" --output-signature "${file}.sig" --output-certificate "${file}.pem"
+          done
+
+      - name: Generate build provenance attestation
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: dist/nr-vault-${{ steps.version.outputs.version }}.tar.gz
+
+      - name: Generate build provenance attestation (zip)
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-path: dist/nr-vault-${{ steps.version.outputs.version }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
+        with:
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.spdx.json
+            dist/checksums-*.txt
+            dist/*.sig
+            dist/*.pem
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
