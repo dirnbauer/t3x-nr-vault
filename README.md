@@ -27,7 +27,7 @@ nr-vault provides:
 - **TCA integration** via custom `vaultSecret` field type
 - **Vault HTTP Client** - make authenticated API calls without exposing secrets
 - **CLI commands** for DevOps automation
-- **Optional external vault adapters** (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault)
+- **Pluggable adapter architecture** (external vault adapters planned for future releases)
 
 ## Architecture
 
@@ -54,8 +54,7 @@ flowchart TB
 
         subgraph Adapters["Vault Adapters"]
             Local["LocalDatabase<br/>(DEFAULT)"]
-            HashiCorp["HashiCorp<br/>Vault"]
-            AWS["AWS Secrets<br/>Manager"]
+            Future["Future: HashiCorp,<br/>AWS, Azure"]
         end
     end
 ```
@@ -215,7 +214,7 @@ Internal development documents are available in `docs/`:
 |---------|----------|------------|-----------------|-----------------|
 | Envelope encryption | Yes | No | No | No |
 | Per-secret DEKs | Yes | No | No | No |
-| External vault support | Pluggable | Pluggable | Limited | HashiCorp |
+| External vault support | Planned | Pluggable | Limited | HashiCorp |
 | Access control | BE groups + context | By key | N/A | N/A |
 | Audit logging | Full + hash chain | Limited | None | None |
 | TCA/Form integration | Native | Form API | N/A | N/A |
