@@ -3,7 +3,6 @@
 [![CI](https://github.com/netresearch/t3x-nr-vault/actions/workflows/tests.yml/badge.svg)](https://github.com/netresearch/t3x-nr-vault/actions/workflows/tests.yml)
 [![Security](https://github.com/netresearch/t3x-nr-vault/actions/workflows/security.yml/badge.svg)](https://github.com/netresearch/t3x-nr-vault/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/netresearch/t3x-nr-vault/badge)](https://securityscorecards.dev/viewer/?uri=github.com/netresearch/t3x-nr-vault)
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10345/badge)](https://www.bestpractices.dev/projects/10345)
 [![TYPO3](https://img.shields.io/badge/TYPO3-14-orange.svg)](https://typo3.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.5+-blue.svg)](https://www.php.net/)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg)](https://phpstan.org/)
