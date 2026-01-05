@@ -50,6 +50,7 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
+          publish_results: true
         continue-on-error: true
 
       - name: Upload results to GitHub Security tab
