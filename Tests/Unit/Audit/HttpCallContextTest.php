@@ -91,7 +91,7 @@ final class HttpCallContextTest extends TestCase
     {
         $context = new HttpCallContext('GET', 'api.test.com', '/health', 200);
 
-        $json = json_encode($context);
+        $json = \json_encode($context);
 
         self::assertEquals(
             '{"method":"GET","host":"api.test.com","path":"\/health","status_code":200}',

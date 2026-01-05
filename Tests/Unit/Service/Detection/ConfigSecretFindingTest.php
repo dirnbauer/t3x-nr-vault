@@ -213,7 +213,7 @@ final class ConfigSecretFindingTest extends TestCase
             isLocalConfiguration: true,
         );
 
-        $json = json_encode($finding);
+        $json = \json_encode($finding);
 
         self::assertJson($json);
         self::assertStringContainsString('"source":"LocalConfiguration"', $json);

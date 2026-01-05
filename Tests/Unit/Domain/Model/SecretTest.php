@@ -59,7 +59,7 @@ final class SecretTest extends TestCase
     public function isExpiredReturnsTrueWhenPastExpiration(): void
     {
         $secret = new Secret();
-        $secret->setExpiresAt(time() - 3600); // 1 hour ago
+        $secret->setExpiresAt(\time() - 3600); // 1 hour ago
 
         self::assertTrue($secret->isExpired());
     }
@@ -68,7 +68,7 @@ final class SecretTest extends TestCase
     public function isExpiredReturnsFalseWhenFutureExpiration(): void
     {
         $secret = new Secret();
-        $secret->setExpiresAt(time() + 3600); // 1 hour from now
+        $secret->setExpiresAt(\time() + 3600); // 1 hour from now
 
         self::assertFalse($secret->isExpired());
     }
