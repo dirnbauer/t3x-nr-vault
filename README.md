@@ -193,13 +193,24 @@ vendor/bin/typo3 vault:export --output=secrets.enc
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [API Reference](docs/api.md)
-- [Database Schema](docs/database.md)
-- [Security Considerations](docs/security.md)
-- [Implementation Plan](docs/implementation-plan.md)
-- [Delivery Plan](docs/delivery-plan.md)
-- [Use Cases](docs/use-cases.md)
+Full documentation is available in the `Documentation/` folder and can be rendered with the TYPO3 documentation tools.
+
+### Render locally
+
+```bash
+docker run --rm -v $(pwd):/project ghcr.io/typo3-documentation/render-guides:latest --progress Documentation
+# Open Documentation-GENERATED-temp/Index.html
+```
+
+### Planning documents
+
+Internal development documents are available in `docs/`:
+
+- [Architecture](docs/architecture.md) - System architecture overview
+- [API Reference](docs/api.md) - Service API documentation
+- [Database Schema](docs/database.md) - Database structure
+- [Security Considerations](docs/security.md) - Security design decisions
+- [Use Cases](docs/use-cases.md) - Supported use cases
 
 ## Feature Comparison
 
