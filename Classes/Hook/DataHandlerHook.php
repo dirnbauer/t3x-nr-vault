@@ -49,7 +49,6 @@ final class DataHandlerHook
         $vaultFieldNames = $this->getVaultFieldNames($table);
 
         foreach ($vaultFieldNames as $fieldName) {
-
             // Check if field is in the data being saved
             if (!isset($fieldArray[$fieldName])) {
                 continue;

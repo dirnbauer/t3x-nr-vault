@@ -60,30 +60,6 @@ final class DataHandlerHookTest extends UnitTestCase
         GeneralUtility::addInstance(AuditLogServiceInterface::class, $this->auditLogService);
     }
 
-    /**
-     * Create a mock TcaSchema for a table with given fields.
-     *
-     * @param array<string, array{type: string, renderType?: string}> $fields
-     */
-    private function mockTcaSchemaForTable(string $table, array $fields): void
-    {
-        $schema = $this->createMock(TcaSchema::class);
-        $fieldMocks = [];
-
-        foreach ($fields as $fieldName => $config) {
-            $field = $this->createMock(FieldTypeInterface::class);
-            $field->method('getName')->willReturn($fieldName);
-            $field->method('getConfiguration')->willReturn($config);
-            $fieldMocks[$fieldName] = $field;
-        }
-
-        $fieldCollection = new FieldCollection($fieldMocks);
-        $schema->method('getFields')->willReturn($fieldCollection);
-
-        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
-        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
-    }
-
     #[Override]
     protected function tearDown(): void
     {
@@ -458,5 +434,29 @@ final class DataHandlerHookTest extends UnitTestCase
         self::assertNotSame($fieldArray['api_key'], $fieldArray['api_secret']);
         // Non-vault field unchanged
         self::assertSame('Test Title', $fieldArray['title']);
+    }
+
+    /**
+     * Create a mock TcaSchema for a table with given fields.
+     *
+     * @param array<string, array{type: string, renderType?: string}> $fields
+     */
+    private function mockTcaSchemaForTable(string $table, array $fields): void
+    {
+        $schema = $this->createMock(TcaSchema::class);
+        $fieldMocks = [];
+
+        foreach ($fields as $fieldName => $config) {
+            $field = $this->createMock(FieldTypeInterface::class);
+            $field->method('getName')->willReturn($fieldName);
+            $field->method('getConfiguration')->willReturn($config);
+            $fieldMocks[$fieldName] = $field;
+        }
+
+        $fieldCollection = new FieldCollection($fieldMocks);
+        $schema->method('getFields')->willReturn($fieldCollection);
+
+        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
+        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
     }
 }
