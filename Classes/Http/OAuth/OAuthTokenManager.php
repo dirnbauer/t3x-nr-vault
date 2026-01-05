@@ -44,8 +44,6 @@ final class OAuthTokenManager
      */
     private array $tokenCache = [];
 
-    private readonly ClientInterface $httpClient;
-
     private readonly RequestFactoryInterface $requestFactory;
 
     private readonly StreamFactoryInterface $streamFactory;
@@ -53,11 +51,10 @@ final class OAuthTokenManager
     public function __construct(
         private readonly VaultServiceInterface $vaultService,
         private readonly ?LoggerInterface $logger = null,
-        ?ClientInterface $httpClient = null,
+        private readonly ClientInterface $httpClient = new Client(['timeout' => 30, 'connect_timeout' => 10]),
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
     ) {
-        $this->httpClient = $httpClient ?? new Client(['timeout' => 30, 'connect_timeout' => 10]);
         $httpFactory = new HttpFactory();
         $this->requestFactory = $requestFactory ?? $httpFactory;
         $this->streamFactory = $streamFactory ?? $httpFactory;

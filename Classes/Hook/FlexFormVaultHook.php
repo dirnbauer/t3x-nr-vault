@@ -9,7 +9,6 @@ use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Schema\Struct\FlexForm;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 
 /**
@@ -51,7 +50,10 @@ final class FlexFormVaultHook
 
             // Check for FlexForm type fields
             $configType = $fieldConfig['type'] ?? '';
-            if (!\is_string($configType) || $configType !== 'flex') {
+            if (!\is_string($configType)) {
+                continue;
+            }
+            if ($configType !== 'flex') {
                 continue;
             }
 
@@ -148,7 +150,10 @@ final class FlexFormVaultHook
 
                 // Check if this is a vault secret field
                 $renderType = $elementConfig['config']['renderType'] ?? '';
-                if (!\is_string($renderType) || $renderType !== 'vaultSecret') {
+                if (!\is_string($renderType)) {
+                    continue;
+                }
+                if ($renderType !== 'vaultSecret') {
                     continue;
                 }
 

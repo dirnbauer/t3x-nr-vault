@@ -7,12 +7,6 @@ parameters:
 			path: Classes/Adapter/LocalEncryptionAdapter.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Adapter\LocalEncryptionAdapter::updateMetadata() has parameter $metadata with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Adapter/LocalEncryptionAdapter.php
-
-		-
 			rawMessage: 'Method Netresearch\NrVault\Adapter\VaultAdapterInterface::getMetadata() return type has no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
@@ -219,12 +213,6 @@ parameters:
 		-
 			rawMessage: Cannot cast mixed to int.
 			identifier: cast.int
-			count: 1
-			path: Classes/Command/VaultListCommand.php
-
-		-
-			rawMessage: 'Parameter #1 $pattern of method Netresearch\NrVault\Service\VaultServiceInterface::list() expects string|null, mixed given.'
-			identifier: argument.type
 			count: 1
 			path: Classes/Command/VaultListCommand.php
 
@@ -1063,18 +1051,6 @@ parameters:
 			path: Classes/Hook/DataHandlerHook.php
 
 		-
-			rawMessage: Cannot access offset 'columns' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: Classes/Hook/DataHandlerHook.php
-
-		-
-			rawMessage: Cannot access offset string on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
-			path: Classes/Hook/DataHandlerHook.php
-
-		-
 			rawMessage: Cannot cast mixed to int.
 			identifier: cast.int
 			count: 5
@@ -1113,18 +1089,6 @@ parameters:
 		-
 			rawMessage: 'Call to internal method TYPO3\CMS\Core\DataHandling\DataHandler::log() from outside its root namespace TYPO3.'
 			identifier: method.internal
-			count: 1
-			path: Classes/Hook/FlexFormVaultHook.php
-
-		-
-			rawMessage: Cannot access offset 'columns' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Hook/FlexFormVaultHook.php
-
-		-
-			rawMessage: Cannot access offset string on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: Classes/Hook/FlexFormVaultHook.php
 
@@ -1537,24 +1501,6 @@ parameters:
 			path: Classes/Utility/FlexFormVaultResolver.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Utility\FlexFormVaultResolver::resolveAll() should return array<string, mixed> but returns array.'
-			identifier: return.type
-			count: 1
-			path: Classes/Utility/FlexFormVaultResolver.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Utility\FlexFormVaultResolver::resolveRecursive() has parameter $data with no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Utility/FlexFormVaultResolver.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Utility\FlexFormVaultResolver::resolveRecursive() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
-			count: 1
-			path: Classes/Utility/FlexFormVaultResolver.php
-
-		-
 			rawMessage: 'Parameter #1 $identifier of method Netresearch\NrVault\Service\VaultServiceInterface::retrieve() expects string, mixed given.'
 			identifier: argument.type
 			count: 2
@@ -1573,45 +1519,9 @@ parameters:
 			path: Classes/Utility/IdentifierValidator.php
 
 		-
-			rawMessage: 'Argument of an invalid type mixed supplied for foreach, only iterables are supported.'
-			identifier: foreach.nonIterable
-			count: 1
-			path: Classes/Utility/VaultFieldResolver.php
-
-		-
-			rawMessage: Cannot access offset 'columns' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/VaultFieldResolver.php
-
-		-
-			rawMessage: Cannot access offset 'config' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/VaultFieldResolver.php
-
-		-
-			rawMessage: Cannot access offset 'renderType' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/VaultFieldResolver.php
-
-		-
-			rawMessage: Cannot access offset string on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: Classes/Utility/VaultFieldResolver.php
-
-		-
 			rawMessage: Dead catch - Netresearch\NrVault\Exception\SecretNotFoundException is never thrown in the try block.
 			identifier: catch.neverThrown
 			count: 2
-			path: Classes/Utility/VaultFieldResolver.php
-
-		-
-			rawMessage: 'Method Netresearch\NrVault\Utility\VaultFieldResolver::getVaultFieldsForTable() should return array<string> but returns list<mixed>.'
-			identifier: return.type
-			count: 1
 			path: Classes/Utility/VaultFieldResolver.php
 
 		-
@@ -1657,6 +1567,18 @@ parameters:
 			path: Tests/Functional/Hook/TcaIntegrationTest.php
 
 		-
+			rawMessage: 'Cannot call method delete() on mixed.'
+			identifier: method.nonObject
+			count: 3
+			path: Tests/Functional/Hook/TcaIntegrationTest.php
+
+		-
+			rawMessage: 'Cannot call method store() on mixed.'
+			identifier: method.nonObject
+			count: 3
+			path: Tests/Functional/Hook/TcaIntegrationTest.php
+
+		-
 			rawMessage: 'Call to an undefined method Netresearch\NrVault\Service\VaultServiceInterface::clearCache().'
 			identifier: method.notFound
 			count: 1
@@ -1696,6 +1618,18 @@ parameters:
 			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsBool() with bool will always evaluate to true.'
 			identifier: staticMethod.alreadyNarrowedType
 			count: 3
+			path: Tests/Fuzz/IdentifierFuzzTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Fuzz\IdentifierFuzzTest has an uninitialized property $flexFormVaultResolver. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Fuzz/IdentifierFuzzTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Fuzz\IdentifierFuzzTest has an uninitialized property $vaultFieldResolver. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
 			path: Tests/Fuzz/IdentifierFuzzTest.php
 
 		-
@@ -1909,12 +1843,6 @@ parameters:
 			path: Tests/Unit/Hook/DataHandlerHookTest.php
 
 		-
-			rawMessage: Cannot access offset 'tx_test' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 12
-			path: Tests/Unit/Hook/DataHandlerHookTest.php
-
-		-
 			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $auditLogService. Give it default value or assign it in the constructor.
 			identifier: property.uninitialized
 			count: 1
@@ -1934,6 +1862,12 @@ parameters:
 
 		-
 			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Unit/Hook/DataHandlerHookTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Hook\DataHandlerHookTest has an uninitialized property $tcaSchemaFactory. Give it default value or assign it in the constructor.
 			identifier: property.uninitialized
 			count: 1
 			path: Tests/Unit/Hook/DataHandlerHookTest.php
@@ -2239,19 +2173,49 @@ parameters:
 			path: Tests/Unit/Task/OrphanCleanupTaskTest.php
 
 		-
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\FlexFormVaultResolverTest has an uninitialized property $logger. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Unit/Utility/FlexFormVaultResolverTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\FlexFormVaultResolverTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Unit/Utility/FlexFormVaultResolverTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\FlexFormVaultResolverTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Unit/Utility/FlexFormVaultResolverTest.php
+
+		-
 			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Utility\FlexFormVaultResolverTest::uuidIdentifierProvider() return type has no value type specified in iterable type array.'
 			identifier: missingType.iterableValue
 			count: 1
 			path: Tests/Unit/Utility/FlexFormVaultResolverTest.php
 
 		-
-			rawMessage: Cannot access offset 'tx_test' on mixed.
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\VaultFieldResolverTest has an uninitialized property $logger. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
 			path: Tests/Unit/Utility/VaultFieldResolverTest.php
 
 		-
-			rawMessage: 'Method Netresearch\NrVault\Tests\Unit\Utility\VaultFieldResolverTest::identifierProvider() return type has no value type specified in iterable type array.'
-			identifier: missingType.iterableValue
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\VaultFieldResolverTest has an uninitialized property $subject. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Unit/Utility/VaultFieldResolverTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\VaultFieldResolverTest has an uninitialized property $tcaSchemaFactory. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
+			count: 1
+			path: Tests/Unit/Utility/VaultFieldResolverTest.php
+
+		-
+			rawMessage: Class Netresearch\NrVault\Tests\Unit\Utility\VaultFieldResolverTest has an uninitialized property $vaultService. Give it default value or assign it in the constructor.
+			identifier: property.uninitialized
 			count: 1
 			path: Tests/Unit/Utility/VaultFieldResolverTest.php
