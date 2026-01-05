@@ -133,8 +133,15 @@ jobs:
           composer require typo3/cms-core:${{ matrix.typo3 }} --no-update
           composer install --no-progress --prefer-dist
 
-      - name: Run Unit Tests
-        run: .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --coverage-clover=coverage.xml
+      - name: Run Unit Tests with Coverage
+        run: .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --coverage-clover=coverage.xml --coverage-text --colors=never | tee coverage-summary.txt
+
+      - name: Show Coverage Summary
+        run: |
+          echo "## Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A 100 "Code Coverage Report" coverage-summary.txt >> $GITHUB_STEP_SUMMARY || cat coverage-summary.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@968872560f81e7bdde9272853e65f2507c0eca7c # v5.0.0
