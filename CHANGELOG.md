@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Enterprise Readiness**: CODEOWNERS, CODE_OF_CONDUCT.md, branch protection
+- **Supply Chain Security**: SBOM generation, Cosign signing, SLSA provenance
+- **Mermaid Diagrams**: Architecture diagrams in README
+
 ## [0.1.0] - 2026-01-05
 
 ### Added
@@ -23,9 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Secret Versioning**: Track secret changes with version history
 - **Expiration Support**: Optional expiration dates for secrets
 - **Memory Safety**: Automatic wiping of sensitive data with `sodium_memzero()`
-- **Enterprise Readiness**: CODEOWNERS, CODE_OF_CONDUCT.md, branch protection
-- **Supply Chain Security**: SBOM generation, Cosign signing, SLSA provenance
-- **Mermaid Diagrams**: Architecture diagrams in README
 
 ### Security
 - Envelope encryption prevents master key exposure during normal operations
@@ -46,4 +50,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Constructor property promotion
 - Modern PHP 8.x patterns (match, named arguments, attributes)
 
+[Unreleased]: https://github.com/netresearch/t3x-nr-vault/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/netresearch/t3x-nr-vault/releases/tag/v0.1.0
