@@ -1615,6 +1615,18 @@ parameters:
 			path: Tests/Functional/Service/VaultServiceTest.php
 
 		-
+			rawMessage: Cannot access offset 'EXTENSIONS' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Tests/Functional/Http/OAuth/OAuthIntegrationTest.php
+
+		-
+			rawMessage: Cannot access offset 'nr_vault' on mixed.
+			identifier: offsetAccess.nonOffsetAccessible
+			count: 1
+			path: Tests/Functional/Http/OAuth/OAuthIntegrationTest.php
+
+		-
 			rawMessage: 'Call to static method PHPUnit\Framework\Assert::assertIsBool() with bool will always evaluate to true.'
 			identifier: staticMethod.alreadyNarrowedType
 			count: 3

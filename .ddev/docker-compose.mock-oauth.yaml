@@ -1,0 +1,42 @@
+services:
+  mock-oauth:
+    container_name: ddev-${DDEV_SITENAME}-mock-oauth
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.10
+    restart: "no"
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
+    environment:
+      - SERVER_PORT=8080
+      - JSON_CONFIG_PATH=/config/config.json
+    volumes:
+      - "./mock-oauth:/config:ro"
+    expose:
+      - "8080"
+    # Make accessible via ddev router
+    # Access at https://nr-vault.ddev.site:9443 or http://nr-vault.ddev.site:9080
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/.well-known/openid-configuration"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Traefik router for mock-oauth
+  mock-oauth-router:
+    container_name: ddev-${DDEV_SITENAME}-mock-oauth-router
+    image: traefik:v2.10
+    restart: "no"
+    depends_on:
+      - mock-oauth
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: ${DDEV_APPROOT}
+      traefik.enable: "true"
+      traefik.http.routers.mock-oauth-${DDEV_SITENAME}-http.rule: Host(`mock-oauth.${DDEV_SITENAME}.ddev.site`)
+      traefik.http.routers.mock-oauth-${DDEV_SITENAME}-http.entrypoints: http-${DDEV_ROUTER_HTTP_PORT}
+      traefik.http.routers.mock-oauth-${DDEV_SITENAME}-https.rule: Host(`mock-oauth.${DDEV_SITENAME}.ddev.site`)
+      traefik.http.routers.mock-oauth-${DDEV_SITENAME}-https.entrypoints: https-${DDEV_ROUTER_HTTPS_PORT}
+      traefik.http.routers.mock-oauth-${DDEV_SITENAME}-https.tls: "true"
+      traefik.http.services.mock-oauth-${DDEV_SITENAME}.loadbalancer.server.port: "8080"
+    network_mode: "service:mock-oauth"

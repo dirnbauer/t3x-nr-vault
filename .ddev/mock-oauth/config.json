@@ -1,0 +1,30 @@
+{
+  "interactiveLogin": false,
+  "httpServer": "NettyWrapper",
+  "tokenCallbacks": [
+    {
+      "issuerId": "default",
+      "tokenExpiry": 3600,
+      "requestMappings": [
+        {
+          "requestParam": "grant_type",
+          "match": "client_credentials",
+          "claims": {
+            "sub": "test-client",
+            "aud": ["nr-vault-test"],
+            "scope": "read write"
+          }
+        },
+        {
+          "requestParam": "grant_type",
+          "match": "refresh_token",
+          "claims": {
+            "sub": "test-user",
+            "aud": ["nr-vault-test"],
+            "scope": "read write"
+          }
+        }
+      ]
+    }
+  ]
+}
