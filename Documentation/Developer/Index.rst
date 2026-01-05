@@ -46,6 +46,12 @@ Extending nr-vault
 Custom storage adapters
 -----------------------
 
+.. note::
+   nr-vault currently includes only the **local database adapter**. External
+   vault adapters (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault) are
+   planned for future releases. The adapter architecture below allows you to
+   implement your own custom adapters in the meantime.
+
 Implement :php:`VaultAdapterInterface` to add new storage backends:
 
 .. code-block:: php
@@ -118,6 +124,13 @@ Register in :file:`Services.yaml`:
 
 Custom master key providers
 ---------------------------
+
+.. note::
+   nr-vault includes three built-in master key providers: **typo3** (derives
+   from TYPO3's encryption key), **file** (reads from filesystem), and **env**
+   (reads from environment variable). The example below shows how to implement
+   a custom provider for enterprise key management systems like HashiCorp Vault
+   Transit or AWS KMS.
 
 Implement :php:`MasterKeyProviderInterface` for custom key sources:
 

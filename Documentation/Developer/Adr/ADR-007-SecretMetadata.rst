@@ -247,8 +247,8 @@ Metadata categories
 
 **Storage:**
 
--  ``adapter`` - Storage backend (local, hashicorp, aws, azure)
--  ``external_reference`` - Reference for external adapters
+-  ``adapter`` - Storage backend (currently: local; planned: hashicorp, aws, azure)
+-  ``external_reference`` - Reference for external adapters (reserved for future use)
 -  ``scope_pid`` - TYPO3 page for hierarchical scoping
 
 **Custom:**
