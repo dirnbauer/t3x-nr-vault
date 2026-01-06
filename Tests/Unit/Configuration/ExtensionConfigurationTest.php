@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 
 #[CoversClass(ExtensionConfiguration::class)]
@@ -268,7 +269,7 @@ final class ExtensionConfigurationTest extends TestCase
         // Skip in unit test environment where Environment::getVarPath() will fail
         try {
             \TYPO3\CMS\Core\Core\Environment::getVarPath();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             self::markTestSkipped('Requires TYPO3 Environment initialization');
         }
 
