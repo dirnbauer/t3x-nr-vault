@@ -663,4 +663,240 @@ final class VaultHttpClientTest extends TestCase
         $this->expectException(\Psr\Http\Client\ClientExceptionInterface::class);
         $authenticatedClient->sendRequest($request);
     }
+
+    #[Test]
+    public function withOAuthReturnsNewInstance(): void
+    {
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $oauthConfig = \Netresearch\NrVault\Http\OAuth\OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $oauthClient = $client->withOAuth($oauthConfig);
+
+        self::assertNotSame($client, $oauthClient);
+        self::assertInstanceOf(VaultHttpClient::class, $oauthClient);
+    }
+
+    #[Test]
+    public function withOAuthReasonCanBeCustomized(): void
+    {
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $oauthConfig = \Netresearch\NrVault\Http\OAuth\OAuthConfig::clientCredentials(
+            tokenEndpoint: 'https://auth.example.com/token',
+            clientIdSecret: 'oauth/client-id',
+            clientSecretSecret: 'oauth/client-secret',
+        );
+
+        $oauthClient = $client->withOAuth($oauthConfig, 'Custom OAuth reason');
+
+        self::assertInstanceOf(VaultHttpClient::class, $oauthClient);
+    }
+
+    #[Test]
+    public function sendRequestWithoutAuthenticationPassesUnmodified(): void
+    {
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                // No Authorization header should be added
+                self::assertFalse($request->hasHeader('Authorization'));
+                self::assertFalse($request->hasHeader('X-API-Key'));
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $request = new Request('GET', 'https://api.example.com/data');
+        $response = $client->sendRequest($request);
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function auditLogShowsNoneWhenNoAuthentication(): void
+    {
+        $this->innerClient
+            ->method('sendRequest')
+            ->willReturn(new Response(200));
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->willReturnCallback(function (
+                string $identifier,
+                string $action,
+            ): void {
+                self::assertSame('none', $identifier);
+                self::assertSame('http_call', $action);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $request = new Request('GET', 'https://api.example.com/data');
+        $client->sendRequest($request);
+    }
+
+    #[Test]
+    public function withAuthenticationDefaultHeaderNameForHeaderPlacement(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('my_api_key')
+            ->willReturn('header-secret');
+
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                // Default header name should be X-API-Key
+                self::assertSame('header-secret', $request->getHeaderLine('X-API-Key'));
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        // Header placement without custom headerName
+        $authenticatedClient = $client->withAuthentication('my_api_key', SecretPlacement::Header);
+
+        $request = new Request('GET', 'https://api.example.com/data');
+        $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function withAuthenticationInjectsBodyFieldWithEmptyBody(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('my_api_key')
+            ->willReturn('secret-value');
+
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                $body = (string) $request->getBody();
+                $decoded = json_decode($body, true);
+                self::assertSame('secret-value', $decoded['api_key']);
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $authenticatedClient = $client->withAuthentication('my_api_key', SecretPlacement::BodyField);
+
+        // JSON request with empty body
+        $request = new Request('POST', 'https://api.example.com/data', [
+            'Content-Type' => 'application/json',
+        ], '');
+
+        $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function withAuthenticationInjectsBodyFieldWithEmptyFormData(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('my_api_key')
+            ->willReturn('form-secret');
+
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                $body = (string) $request->getBody();
+                parse_str($body, $data);
+                self::assertSame('form-secret', $data['api_key']);
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $authenticatedClient = $client->withAuthentication('my_api_key', SecretPlacement::BodyField);
+
+        // Form request with empty body
+        $request = new Request('POST', 'https://api.example.com/data', [
+            'Content-Type' => 'application/x-www-form-urlencoded',
+        ], '');
+
+        $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function withReasonPreservesOtherConfiguration(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturn('secret');
+
+        $this->innerClient
+            ->method('sendRequest')
+            ->willReturn(new Response(200));
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->willReturnCallback(function (
+                string $identifier,
+                string $action,
+                bool $success,
+                ?string $error,
+                string $reason,
+            ): void {
+                self::assertSame('my_key', $identifier);
+                self::assertSame('Updated reason', $reason);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        // Chain withAuthentication and withReason
+        $authenticatedClient = $client
+            ->withAuthentication('my_key', SecretPlacement::Bearer)
+            ->withReason('Updated reason');
+
+        $request = new Request('GET', 'https://api.example.com/data');
+        $authenticatedClient->sendRequest($request);
+    }
 }
