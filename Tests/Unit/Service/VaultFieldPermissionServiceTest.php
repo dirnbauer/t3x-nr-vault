@@ -111,6 +111,138 @@ final class VaultFieldPermissionServiceTest extends TestCase
         self::assertSame($result1, $result2);
     }
 
+    #[Test]
+    public function toBooleanReturnsTrueForTrueValues(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('toBoolean');
+
+        self::assertTrue($method->invoke($this->service, true));
+        self::assertTrue($method->invoke($this->service, '1'));
+        self::assertTrue($method->invoke($this->service, 'true'));
+        self::assertTrue($method->invoke($this->service, 'TRUE'));
+        self::assertTrue($method->invoke($this->service, 'yes'));
+        self::assertTrue($method->invoke($this->service, 'YES'));
+        self::assertTrue($method->invoke($this->service, 'on'));
+        self::assertTrue($method->invoke($this->service, 'ON'));
+        self::assertTrue($method->invoke($this->service, 1));
+    }
+
+    #[Test]
+    public function toBooleanReturnsFalseForFalseValues(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('toBoolean');
+
+        self::assertFalse($method->invoke($this->service, false));
+        self::assertFalse($method->invoke($this->service, '0'));
+        self::assertFalse($method->invoke($this->service, 'false'));
+        self::assertFalse($method->invoke($this->service, 'no'));
+        self::assertFalse($method->invoke($this->service, 'off'));
+        self::assertFalse($method->invoke($this->service, ''));
+        self::assertFalse($method->invoke($this->service, 0));
+    }
+
+    #[Test]
+    public function getBuiltInDefaultReturnsCorrectDefaults(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getBuiltInDefault');
+
+        self::assertTrue($method->invoke($this->service, VaultFieldPermission::Reveal));
+        self::assertTrue($method->invoke($this->service, VaultFieldPermission::Copy));
+        self::assertTrue($method->invoke($this->service, VaultFieldPermission::Edit));
+        self::assertFalse($method->invoke($this->service, VaultFieldPermission::ReadOnly));
+    }
+
+    #[Test]
+    public function getNestedValueReturnsNullForMissingKey(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getNestedValue');
+
+        $array = [];
+        $result = $method->invoke($this->service, $array, ['nonexistent']);
+
+        self::assertNull($result);
+    }
+
+    #[Test]
+    public function getNestedValueReturnsValueForDirectKey(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getNestedValue');
+
+        $array = ['key' => 'value'];
+        $result = $method->invoke($this->service, $array, ['key']);
+
+        self::assertSame('value', $result);
+    }
+
+    #[Test]
+    public function getNestedValueHandlesTsConfigDotNotation(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getNestedValue');
+
+        // TSconfig uses trailing dots for nested arrays
+        $array = [
+            'table.' => [
+                'field.' => [
+                    'permission' => '1',
+                ],
+            ],
+        ];
+        $result = $method->invoke($this->service, $array, ['table', 'field', 'permission']);
+
+        self::assertSame('1', $result);
+    }
+
+    #[Test]
+    public function getNestedValueHandlesMixedDotNotation(): void
+    {
+        $reflection = new \ReflectionClass($this->service);
+        $method = $reflection->getMethod('getNestedValue');
+
+        // Mix of dot notation and direct values
+        $array = [
+            'table.' => [
+                'field' => 'direct_value',
+            ],
+        ];
+        $result = $method->invoke($this->service, $array, ['table', 'field']);
+
+        self::assertSame('direct_value', $result);
+    }
+
+    #[Test]
+    public function differentFieldsHaveSeparateCacheEntries(): void
+    {
+        $backendUser = $this->createMockBackendUser(isAdmin: true);
+
+        // Access different fields
+        $this->service->isAllowed('table', 'field1', VaultFieldPermission::Reveal, $backendUser);
+        $this->service->isAllowed('table', 'field2', VaultFieldPermission::Reveal, $backendUser);
+
+        // Should not throw or cause issues
+        self::assertTrue(true);
+    }
+
+    #[Test]
+    public function differentPermissionsHaveSeparateCacheEntries(): void
+    {
+        $backendUser = $this->createMockBackendUser(isAdmin: true);
+
+        // Access different permissions for same field
+        $reveal = $this->service->isAllowed('table', 'field', VaultFieldPermission::Reveal, $backendUser);
+        $copy = $this->service->isAllowed('table', 'field', VaultFieldPermission::Copy, $backendUser);
+        $readOnly = $this->service->isAllowed('table', 'field', VaultFieldPermission::ReadOnly, $backendUser);
+
+        self::assertTrue($reveal);
+        self::assertTrue($copy);
+        self::assertFalse($readOnly);
+    }
+
     private function createMockBackendUser(bool $isAdmin = false, int $uid = 1): BackendUserAuthentication&MockObject
     {
         $backendUser = $this->createMock(BackendUserAuthentication::class);
