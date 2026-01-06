@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Http;
 
+use Exception;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Netresearch\NrVault\Audit\AuditContextInterface;
@@ -511,5 +512,155 @@ final class VaultHttpClientTest extends TestCase
             ->sendRequest(new Request('GET', 'https://api.example.com'));
 
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function withAuthenticationInjectsBodyFieldJson(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('my_api_key')
+            ->willReturn('secret-value');
+
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                $body = (string) $request->getBody();
+                $decoded = json_decode($body, true);
+                self::assertSame('secret-value', $decoded['api_key']);
+                self::assertSame('existing', $decoded['field']);
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $authenticatedClient = $client->withAuthentication('my_api_key', SecretPlacement::BodyField);
+
+        $request = new Request('POST', 'https://api.example.com/data', [
+            'Content-Type' => 'application/json',
+        ], json_encode(['field' => 'existing']));
+
+        $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function withAuthenticationInjectsBodyFieldFormData(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('my_secret')
+            ->willReturn('form-secret');
+
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                $body = (string) $request->getBody();
+                parse_str($body, $data);
+                self::assertSame('form-secret', $data['api_key']);
+                self::assertSame('existing_value', $data['other_field']);
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $authenticatedClient = $client->withAuthentication('my_secret', SecretPlacement::BodyField);
+
+        $request = new Request('POST', 'https://api.example.com/data', [
+            'Content-Type' => 'application/x-www-form-urlencoded',
+        ], 'other_field=existing_value');
+
+        $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function withAuthenticationInjectsCustomBodyField(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('my_api_key')
+            ->willReturn('secret-token');
+
+        $this->innerClient
+            ->expects(self::once())
+            ->method('sendRequest')
+            ->willReturnCallback(function (RequestInterface $request): Response {
+                $body = (string) $request->getBody();
+                $decoded = json_decode($body, true);
+                self::assertSame('secret-token', $decoded['access_token']);
+
+                return new Response(200);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $authenticatedClient = $client->withAuthentication(
+            'my_api_key',
+            SecretPlacement::BodyField,
+            ['bodyField' => 'access_token'],
+        );
+
+        $request = new Request('POST', 'https://api.example.com/data', [
+            'Content-Type' => 'application/json',
+        ], '{}');
+
+        $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function auditLogsFailedRequest(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturn('secret');
+
+        $clientException = new class ('Connection failed') extends Exception implements \Psr\Http\Client\ClientExceptionInterface {};
+
+        $this->innerClient
+            ->method('sendRequest')
+            ->willThrowException($clientException);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->willReturnCallback(function (
+                string $identifier,
+                string $action,
+                bool $success,
+                ?string $error,
+            ): void {
+                self::assertSame('my_key', $identifier);
+                self::assertSame('http_call', $action);
+                self::assertFalse($success);
+                self::assertSame('Connection failed', $error);
+            });
+
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $authenticatedClient = $client->withAuthentication('my_key', SecretPlacement::Bearer);
+
+        $request = new Request('GET', 'https://api.example.com/data');
+
+        $this->expectException(\Psr\Http\Client\ClientExceptionInterface::class);
+        $authenticatedClient->sendRequest($request);
     }
 }
