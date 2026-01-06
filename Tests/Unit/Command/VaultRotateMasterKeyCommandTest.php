@@ -235,40 +235,6 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         self::assertSame(0, $exitCode);
     }
 
-    private function createKeyFile(string $name, string $content): string
-    {
-        static $root = null;
-        if ($root === null) {
-            $root = vfsStream::setup('keys');
-        }
-
-        vfsStream::newFile($name . '.key')
-            ->withContent($content)
-            ->at($root);
-
-        return vfsStream::url('keys/' . $name . '.key');
-    }
-
-    private function createTestSecret(string $identifier): Secret
-    {
-        $secret = new Secret();
-        $secret->setIdentifier($identifier);
-        $secret->setEncryptedDek('encrypted-dek');
-        $secret->setDekNonce('dek-nonce');
-
-        return $secret;
-    }
-
-    private function mockMasterKeyProvider(string $key): void
-    {
-        $provider = $this->createMock(MasterKeyProviderInterface::class);
-        $provider->method('getMasterKey')->willReturn($key);
-
-        $this->masterKeyProviderFactory
-            ->method('getAvailableProvider')
-            ->willReturn($provider);
-    }
-
     #[Test]
     public function failsWhenFirstSecretNotFound(): void
     {
@@ -497,5 +463,37 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         ]);
 
         self::assertSame(0, $exitCode);
+    }
+
+    private function createKeyFile(string $name, string $content): string
+    {
+        static $root = null;
+        if ($root === null) {
+            $root = vfsStream::setup('keys');
+        }
+        vfsStream::newFile($name . '.key')
+            ->withContent($content)
+            ->at($root);
+
+        return vfsStream::url('keys/' . $name . '.key');
+    }
+
+    private function createTestSecret(string $identifier): Secret
+    {
+        $secret = new Secret();
+        $secret->setIdentifier($identifier);
+        $secret->setEncryptedDek('encrypted-dek');
+        $secret->setDekNonce('dek-nonce');
+
+        return $secret;
+    }
+
+    private function mockMasterKeyProvider(string $key): void
+    {
+        $provider = $this->createMock(MasterKeyProviderInterface::class);
+        $provider->method('getMasterKey')->willReturn($key);
+        $this->masterKeyProviderFactory
+            ->method('getAvailableProvider')
+            ->willReturn($provider);
     }
 }

@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\Service;
 
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
+use Exception;
 use Netresearch\NrVault\Service\Detection\Severity;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -411,7 +412,7 @@ final class SecretDetectionServiceTest extends TestCase
         // Extension throws exception (no config)
         $this->extensionConfiguration->method('get')
             ->with('test_extension')
-            ->willThrowException(new \Exception('No configuration'));
+            ->willThrowException(new Exception('No configuration'));
 
         // Should not throw
         $this->service->scanExtensionConfiguration();

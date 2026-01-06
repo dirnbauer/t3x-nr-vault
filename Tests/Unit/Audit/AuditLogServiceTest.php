@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Audit;
 
+use DateTimeImmutable;
 use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogService;
@@ -327,8 +328,8 @@ final class AuditLogServiceTest extends TestCase
     #[Test]
     public function queryWithFilterAppliesDateRangeFilters(): void
     {
-        $since = new \DateTimeImmutable('2024-01-01');
-        $until = new \DateTimeImmutable('2024-12-31');
+        $since = new DateTimeImmutable('2024-01-01');
+        $until = new DateTimeImmutable('2024-12-31');
         $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(since: $since, until: $until);
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
@@ -756,7 +757,7 @@ final class AuditLogServiceTest extends TestCase
     /**
      * @param array<int, array<string, mixed>> $rows
      */
-    private function setupQueryMocksWithFilter(ExpressionBuilder&\PHPUnit\Framework\MockObject\MockObject $expressionBuilder, array $rows): void
+    private function setupQueryMocksWithFilter(ExpressionBuilder&MockObject $expressionBuilder, array $rows): void
     {
         $result = $this->createMock(Result::class);
         $result->method('fetchAllAssociative')->willReturn($rows);

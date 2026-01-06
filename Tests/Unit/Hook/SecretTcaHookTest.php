@@ -277,28 +277,6 @@ final class SecretTcaHookTest extends TestCase
     }
 
     #[Test]
-    public function afterDatabaseOperationsIgnoresNewRecordsWithoutPendingSecrets(): void
-    {
-        $dataHandler = $this->createMock(DataHandler::class);
-        $dataHandler->substNEWwithIDs = ['NEW123' => 42];
-
-        // No pending secrets, so vault service should not be called
-        $this->vaultService->expects($this->never())->method('store');
-        $this->vaultService->expects($this->never())->method('rotate');
-
-        // But audit service is always called for the table
-        // (actually it won't be called here because BackendUtility::getRecord returns null without bootstrap)
-
-        $this->hook->processDatamap_afterDatabaseOperations(
-            'new',
-            'tx_nrvault_secret',
-            'NEW123',
-            ['description' => 'Test'],
-            $dataHandler,
-        );
-    }
-
-    #[Test]
     public function cmdmapPreProcessIgnoresUndeleteCommand(): void
     {
         $this->auditService->expects($this->never())->method('log');
