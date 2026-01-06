@@ -337,4 +337,411 @@ final class SecretDetectionServiceTest extends TestCase
             'vault table' => ['tx_nrvault_secret', ['tx_nrvault_secret'], true],
         ];
     }
+
+    #[Test]
+    public function scanReturnsEmptyArrayWhenNoSecretsDetected(): void
+    {
+        // Mock database - no tables
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager->method('listTableNames')->willReturn([]);
+
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+        $this->connectionPool->method('getConnectionByName')->willReturn($connection);
+
+        // Mock package manager - no packages
+        $this->packageManager->method('getActivePackages')->willReturn([]);
+
+        $result = $this->service->scan();
+
+        self::assertIsArray($result);
+        self::assertEmpty($result);
+    }
+
+    #[Test]
+    public function scanDatabaseTablesSkipsExcludedTables(): void
+    {
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+
+        // Return tables including excluded ones
+        $schemaManager->method('listTableNames')->willReturn([
+            'tx_nrvault_secret',  // Excluded by default
+            'be_sessions',        // Excluded by default
+            'cache_pages',        // Excluded by wildcard
+            'cf_extbase_reflection', // Excluded by wildcard
+        ]);
+
+        // listTableColumns should never be called for excluded tables
+        $schemaManager->expects(self::never())->method('listTableColumns');
+
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+        $this->connectionPool->method('getConnectionByName')->willReturn($connection);
+
+        $this->service->scanDatabaseTables();
+
+        // Should complete without calling listTableColumns
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanDatabaseTablesSilentlyHandlesDatabaseException(): void
+    {
+        // Create a mock exception that extends DbalException
+        $exception = $this->createMock(\Doctrine\DBAL\Exception::class);
+        $this->connectionPool->method('getConnectionByName')
+            ->willThrowException($exception);
+
+        // Should not throw, just silently fail
+        $this->service->scanDatabaseTables();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanExtensionConfigurationScansActivePackages(): void
+    {
+        $package = $this->createMock(\TYPO3\CMS\Core\Package\Package::class);
+        $package->method('getPackageKey')->willReturn('test_extension');
+
+        $this->packageManager->method('getActivePackages')->willReturn([$package]);
+
+        // Extension throws exception (no config)
+        $this->extensionConfiguration->method('get')
+            ->with('test_extension')
+            ->willThrowException(new \Exception('No configuration'));
+
+        // Should not throw
+        $this->service->scanExtensionConfiguration();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanExtensionConfigurationDetectsSecretInConfig(): void
+    {
+        $package = $this->createMock(\TYPO3\CMS\Core\Package\Package::class);
+        $package->method('getPackageKey')->willReturn('test_ext');
+
+        $this->packageManager->method('getActivePackages')->willReturn([$package]);
+
+        // Return config with a secret-like key and plaintext value
+        $this->extensionConfiguration->method('get')
+            ->with('test_ext')
+            ->willReturn([
+                'apiKey' => 'plaintext_api_key_value_not_encrypted',
+            ]);
+
+        $this->service->scanExtensionConfiguration();
+
+        self::assertGreaterThan(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanExtensionConfigurationIgnoresVaultReferences(): void
+    {
+        $package = $this->createMock(\TYPO3\CMS\Core\Package\Package::class);
+        $package->method('getPackageKey')->willReturn('test_ext');
+
+        $this->packageManager->method('getActivePackages')->willReturn([$package]);
+
+        // Return config with vault reference
+        $this->extensionConfiguration->method('get')
+            ->with('test_ext')
+            ->willReturn([
+                'apiKey' => '%vault(my_api_key)%',
+                'password' => '01937b6e-4b6c-7abc-8def-0123456789ab', // UUID v7
+            ]);
+
+        $this->service->scanExtensionConfiguration();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanExtensionConfigurationHandlesNestedConfig(): void
+    {
+        $package = $this->createMock(\TYPO3\CMS\Core\Package\Package::class);
+        $package->method('getPackageKey')->willReturn('test_ext');
+
+        $this->packageManager->method('getActivePackages')->willReturn([$package]);
+
+        $this->extensionConfiguration->method('get')
+            ->with('test_ext')
+            ->willReturn([
+                'smtp' => [
+                    'password' => 'plaintext_password',
+                ],
+            ]);
+
+        $this->service->scanExtensionConfiguration();
+
+        self::assertGreaterThan(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanExtensionConfigurationIgnoresEmptyValues(): void
+    {
+        $package = $this->createMock(\TYPO3\CMS\Core\Package\Package::class);
+        $package->method('getPackageKey')->willReturn('test_ext');
+
+        $this->packageManager->method('getActivePackages')->willReturn([$package]);
+
+        $this->extensionConfiguration->method('get')
+            ->with('test_ext')
+            ->willReturn([
+                'password' => '',
+                'apiKey' => '',
+            ]);
+
+        $this->service->scanExtensionConfiguration();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanExtensionConfigurationIgnoresNonStringValues(): void
+    {
+        $package = $this->createMock(\TYPO3\CMS\Core\Package\Package::class);
+        $package->method('getPackageKey')->willReturn('test_ext');
+
+        $this->packageManager->method('getActivePackages')->willReturn([$package]);
+
+        $this->extensionConfiguration->method('get')
+            ->with('test_ext')
+            ->willReturn([
+                'password' => 12345,
+                'apiKey' => true,
+                'secret' => null,
+            ]);
+
+        $this->service->scanExtensionConfiguration();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanLocalConfigurationDetectsSmtpPassword(): void
+    {
+        // Set up GLOBALS for the test
+        $GLOBALS['TYPO3_CONF_VARS'] = [
+            'MAIL' => [
+                'transport_smtp_password' => 'plaintext_smtp_password',
+            ],
+            'SYS' => [
+                'encryptionKey' => str_repeat('a', 96),
+            ],
+        ];
+
+        try {
+            $this->service->scanLocalConfiguration();
+
+            self::assertGreaterThan(0, $this->service->getDetectedSecretsCount());
+            $bySeverity = $this->service->getDetectedSecretsBySeverity();
+            self::assertNotEmpty($bySeverity['high']);
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        }
+    }
+
+    #[Test]
+    public function scanLocalConfigurationIgnoresVaultSmtpPassword(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = [
+            'MAIL' => [
+                'transport_smtp_password' => '%vault(smtp_password)%',
+            ],
+        ];
+
+        try {
+            $this->service->scanLocalConfiguration();
+
+            self::assertSame(0, $this->service->getDetectedSecretsCount());
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        }
+    }
+
+    #[Test]
+    public function scanLocalConfigurationDetectsWeakEncryptionKey(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = [
+            'SYS' => [
+                'encryptionKey' => 'short_key', // Less than 32 chars
+            ],
+        ];
+
+        try {
+            $this->service->scanLocalConfiguration();
+
+            self::assertGreaterThan(0, $this->service->getDetectedSecretsCount());
+            $bySeverity = $this->service->getDetectedSecretsBySeverity();
+            self::assertNotEmpty($bySeverity['medium']);
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        }
+    }
+
+    #[Test]
+    public function scanLocalConfigurationSkipsWhenGlobalsNotSet(): void
+    {
+        unset($GLOBALS['TYPO3_CONF_VARS']);
+
+        $this->service->scanLocalConfiguration();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanLocalConfigurationIgnoresEmptySmtpPassword(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = [
+            'MAIL' => [
+                'transport_smtp_password' => '',
+            ],
+            'SYS' => [
+                'encryptionKey' => str_repeat('a', 96),
+            ],
+        ];
+
+        try {
+            $this->service->scanLocalConfiguration();
+
+            self::assertSame(0, $this->service->getDetectedSecretsCount());
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        }
+    }
+
+    #[Test]
+    public function scanLocalConfigurationIgnoresStrongEncryptionKey(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = [
+            'SYS' => [
+                'encryptionKey' => str_repeat('a', 96), // 96 chars, strong enough
+            ],
+        ];
+
+        try {
+            $this->service->scanLocalConfiguration();
+
+            self::assertSame(0, $this->service->getDetectedSecretsCount());
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        }
+    }
+
+    #[Test]
+    public function scanTableSkipsNonStringColumns(): void
+    {
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+
+        // Create column with non-string type
+        $intColumn = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
+        $intColumn->method('getName')->willReturn('password_reset_count');
+        $intColumn->method('getType')->willReturn(new \Doctrine\DBAL\Types\IntegerType());
+
+        $schemaManager->method('listTableColumns')
+            ->with('test_table')
+            ->willReturn(['password_reset_count' => $intColumn]);
+
+        $schemaManager->method('listTableNames')->willReturn(['test_table']);
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+        $this->connectionPool->method('getConnectionByName')->willReturn($connection);
+
+        $this->service->scanDatabaseTables();
+
+        // Should not detect integer columns even with secret-like names
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanTableDetectsSecretInStringColumn(): void
+    {
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+
+        // Create column with string type and secret-like name
+        $secretColumn = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
+        $secretColumn->method('getName')->willReturn('api_secret');
+        $secretColumn->method('getType')->willReturn(new \Doctrine\DBAL\Types\StringType());
+
+        $schemaManager->method('listTableNames')->willReturn(['tx_myext_config']);
+        $schemaManager->method('listTableColumns')
+            ->with('tx_myext_config')
+            ->willReturn(['api_secret' => $secretColumn]);
+
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+
+        // Mock query builder for count query
+        $queryBuilder = $this->createMock(\TYPO3\CMS\Core\Database\Query\QueryBuilder::class);
+        $expressionBuilder = $this->createMock(\TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder::class);
+        $expressionBuilder->method('isNotNull')->willReturn('api_secret IS NOT NULL');
+        $expressionBuilder->method('neq')->willReturn("api_secret != ''");
+        $queryBuilder->method('expr')->willReturn($expressionBuilder);
+        $queryBuilder->method('count')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('createNamedParameter')->willReturn("''");
+
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchOne')->willReturn(0); // No records
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool->method('getConnectionByName')->willReturn($connection);
+        $this->connectionPool->method('getQueryBuilderForTable')->willReturn($queryBuilder);
+
+        $this->service->scanDatabaseTables();
+
+        // No records, so no secrets detected
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanTableSkipsExcludedPasswordHashColumns(): void
+    {
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+
+        // Create be_users.password column
+        $passwordColumn = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
+        $passwordColumn->method('getName')->willReturn('password');
+        $passwordColumn->method('getType')->willReturn(new \Doctrine\DBAL\Types\StringType());
+
+        $schemaManager->method('listTableNames')->willReturn(['be_users']);
+        $schemaManager->method('listTableColumns')
+            ->with('be_users')
+            ->willReturn(['password' => $passwordColumn]);
+
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+        $this->connectionPool->method('getConnectionByName')->willReturn($connection);
+
+        // Query builder should NOT be called for excluded columns
+        $this->connectionPool->expects(self::never())->method('getQueryBuilderForTable');
+
+        $this->service->scanDatabaseTables();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
+
+    #[Test]
+    public function scanTableHandlesExceptionGracefully(): void
+    {
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+
+        $schemaManager->method('listTableNames')->willReturn(['test_table']);
+        $exception = $this->createMock(\Doctrine\DBAL\Exception::class);
+        $schemaManager->method('listTableColumns')
+            ->willThrowException($exception);
+
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+        $this->connectionPool->method('getConnectionByName')->willReturn($connection);
+
+        // Should not throw
+        $this->service->scanDatabaseTables();
+
+        self::assertSame(0, $this->service->getDetectedSecretsCount());
+    }
 }

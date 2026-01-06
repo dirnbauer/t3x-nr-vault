@@ -223,6 +223,454 @@ final class AuditLogServiceTest extends TestCase
         $this->subject->log('chained_secret', 'create', true, null, 'Testing hash chain');
     }
 
+    #[Test]
+    public function queryReturnsAuditLogEntries(): void
+    {
+        $this->setupQueryMocks([
+            [
+                'uid' => 1,
+                'pid' => 0,
+                'secret_identifier' => 'test_secret',
+                'action' => 'create',
+                'success' => 1,
+                'error_message' => '',
+                'reason' => 'Test',
+                'actor_uid' => 1,
+                'actor_type' => 'backend',
+                'actor_username' => 'admin',
+                'actor_role' => 'backend',
+                'ip_address' => '127.0.0.1',
+                'user_agent' => 'PHPUnit',
+                'request_id' => 'abc123',
+                'previous_hash' => '',
+                'entry_hash' => 'hash123',
+                'hash_before' => '',
+                'hash_after' => 'newhash',
+                'crdate' => time(),
+                'context' => '{}',
+            ],
+        ]);
+
+        $entries = $this->subject->query();
+
+        self::assertCount(1, $entries);
+        self::assertInstanceOf(AuditLogEntry::class, $entries[0]);
+        self::assertSame('test_secret', $entries[0]->secretIdentifier);
+    }
+
+    #[Test]
+    public function queryWithFilterAppliesSecretIdentifierFilter(): void
+    {
+        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(secretIdentifier: 'specific_secret');
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->expects(self::once())
+            ->method('eq')
+            ->with('secret_identifier', self::anything())
+            ->willReturn('secret_identifier = ?');
+
+        $this->setupQueryMocksWithFilter($expressionBuilder, []);
+
+        $this->queryBuilder
+            ->expects(self::atLeastOnce())
+            ->method('andWhere')
+            ->with('secret_identifier = ?')
+            ->willReturnSelf();
+
+        $this->subject->query($filter);
+    }
+
+    #[Test]
+    public function queryWithFilterAppliesActionFilter(): void
+    {
+        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(action: 'read');
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->expects(self::once())
+            ->method('eq')
+            ->with('action', self::anything())
+            ->willReturn('action = ?');
+
+        $this->setupQueryMocksWithFilter($expressionBuilder, []);
+
+        $this->queryBuilder
+            ->expects(self::atLeastOnce())
+            ->method('andWhere')
+            ->with('action = ?')
+            ->willReturnSelf();
+
+        $this->subject->query($filter);
+    }
+
+    #[Test]
+    public function queryWithFilterAppliesSuccessFilter(): void
+    {
+        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(success: true);
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->expects(self::once())
+            ->method('eq')
+            ->with('success', self::anything())
+            ->willReturn('success = 1');
+
+        $this->setupQueryMocksWithFilter($expressionBuilder, []);
+
+        $this->queryBuilder
+            ->expects(self::atLeastOnce())
+            ->method('andWhere')
+            ->with('success = 1')
+            ->willReturnSelf();
+
+        $this->subject->query($filter);
+    }
+
+    #[Test]
+    public function queryWithFilterAppliesDateRangeFilters(): void
+    {
+        $since = new \DateTimeImmutable('2024-01-01');
+        $until = new \DateTimeImmutable('2024-12-31');
+        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(since: $since, until: $until);
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->expects(self::once())
+            ->method('gte')
+            ->willReturn('crdate >= ?');
+        $expressionBuilder->expects(self::once())
+            ->method('lte')
+            ->willReturn('crdate <= ?');
+
+        $this->setupQueryMocksWithFilter($expressionBuilder, []);
+
+        $this->queryBuilder
+            ->expects(self::atLeastOnce())
+            ->method('andWhere')
+            ->willReturnSelf();
+
+        $this->subject->query($filter);
+    }
+
+    #[Test]
+    public function countReturnsNumberOfEntries(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn(42);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('count')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+
+        self::assertSame(42, $this->subject->count());
+    }
+
+    #[Test]
+    public function countWithFilterAppliesFilter(): void
+    {
+        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(actorUid: 5);
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->expects(self::once())
+            ->method('eq')
+            ->with('actor_uid', self::anything())
+            ->willReturn('actor_uid = 5');
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn(10);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('expr')
+            ->willReturn($expressionBuilder);
+
+        $this->queryBuilder
+            ->method('count')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('andWhere')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('createNamedParameter')
+            ->willReturn('5');
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+
+        self::assertSame(10, $this->subject->count($filter));
+    }
+
+    #[Test]
+    public function exportReturnsAllEntries(): void
+    {
+        $this->setupQueryMocks([]);
+
+        $entries = $this->subject->export();
+
+        self::assertIsArray($entries);
+    }
+
+    #[Test]
+    public function getLatestHashReturnsNullWhenEmpty(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn(false);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+
+        self::assertNull($this->subject->getLatestHash());
+    }
+
+    #[Test]
+    public function getLatestHashReturnsHashWhenExists(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn('abc123hash');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+
+        self::assertSame('abc123hash', $this->subject->getLatestHash());
+    }
+
+    #[Test]
+    public function verifyHashChainReturnsValidWhenEmpty(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn([]);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+
+        $verification = $this->subject->verifyHashChain();
+
+        self::assertTrue($verification['valid']);
+        self::assertEmpty($verification['errors']);
+    }
+
+    #[Test]
+    public function verifyHashChainWithRangeAppliesFilters(): void
+    {
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->method('gte')->willReturn('uid >= 10');
+        $expressionBuilder->method('lte')->willReturn('uid <= 50');
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn([]);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('expr')
+            ->willReturn($expressionBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->expects(self::exactly(2))
+            ->method('andWhere')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('createNamedParameter')
+            ->willReturn('?');
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+
+        $verification = $this->subject->verifyHashChain(10, 50);
+
+        self::assertTrue($verification['valid']);
+    }
+
+    #[Test]
+    public function logRecordsHashBeforeAndAfter(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['hash_before'] === 'before_hash'
+                    && $data['hash_after'] === 'after_hash'),
+            );
+
+        $this->subject->log(
+            'test_secret',
+            'update',
+            true,
+            null,
+            'Updated secret',
+            'before_hash',
+            'after_hash',
+        );
+    }
+
+    #[Test]
+    public function logRecordsContext(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $context = new \Netresearch\NrVault\Audit\GenericContext(['key' => 'value']);
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static function (array $data) use ($context): bool {
+                    $decodedContext = json_decode($data['context'], true);
+
+                    return $decodedContext === $context->toArray();
+                }),
+            );
+
+        $this->subject->log('test_secret', 'create', true, null, null, null, null, $context);
+    }
+
+    #[Test]
+    public function logRecordsActorRole(): void
+    {
+        // Set up access control service to return groups
+        $accessControlService = $this->createMock(AccessControlServiceInterface::class);
+        $accessControlService->method('getCurrentActorUid')->willReturn(1);
+        $accessControlService->method('getCurrentActorType')->willReturn('backend');
+        $accessControlService->method('getCurrentActorUsername')->willReturn('admin');
+        $accessControlService->method('getCurrentUserGroups')->willReturn([1, 2, 3]);
+
+        $subject = new AuditLogService($this->connectionPool, $accessControlService);
+
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['actor_role'] === 'groups:1,2,3'),
+            );
+
+        $subject->log('test_secret', 'read', true);
+    }
+
     private function setupDatabaseMocks(): void
     {
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
@@ -258,6 +706,96 @@ final class AuditLogServiceTest extends TestCase
         $this->queryBuilder
             ->method('setMaxResults')
             ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
+    private function setupQueryMocks(array $rows): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setFirstResult')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
+    private function setupQueryMocksWithFilter(ExpressionBuilder&\PHPUnit\Framework\MockObject\MockObject $expressionBuilder, array $rows): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('expr')
+            ->willReturn($expressionBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setFirstResult')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('createNamedParameter')
+            ->willReturn('?');
 
         $this->queryBuilder
             ->method('executeQuery')
