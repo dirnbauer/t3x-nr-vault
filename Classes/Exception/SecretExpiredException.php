@@ -15,7 +15,7 @@ final class SecretExpiredException extends VaultException
             \sprintf(
                 'Secret "%s" expired at %s',
                 $identifier,
-                date('Y-m-d H:i:s', $expiredAt),
+                \date('Y-m-d H:i:s', $expiredAt),
             ),
             1703800002,
         );

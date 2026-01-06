@@ -37,7 +37,7 @@ final class Typo3MasterKeyProvider implements MasterKeyProviderInterface
         }
 
         // Derive master key using HKDF-SHA256 with nr-vault-specific context
-        return hash_hkdf(
+        return \hash_hkdf(
             'sha256',
             $encryptionKey,
             self::KEY_LENGTH,
@@ -55,7 +55,7 @@ final class Typo3MasterKeyProvider implements MasterKeyProviderInterface
 
     public function generateMasterKey(): string
     {
-        return random_bytes(self::KEY_LENGTH);
+        return \random_bytes(self::KEY_LENGTH);
     }
 
     private function getEncryptionKey(): string

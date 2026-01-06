@@ -137,7 +137,7 @@ final class VaultSecretInputElement extends AbstractFormElement
 
         $html[] = '</div>'; // formengine-field-item
 
-        return implode(LF, $html);
+        return \implode(LF, $html);
     }
 
     /**
@@ -288,7 +288,7 @@ final class VaultSecretInputElement extends AbstractFormElement
         $html[] = '</div>'; // form-wizards-wrap
         $html[] = '</div>'; // formengine-field-item
 
-        return implode(LF, $html);
+        return \implode(LF, $html);
     }
 
     /**
