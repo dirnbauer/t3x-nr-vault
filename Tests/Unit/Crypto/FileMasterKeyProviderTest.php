@@ -37,7 +37,8 @@ final class FileMasterKeyProviderTest extends TestCase
     public function isAvailableReturnsTrueWhenFileExists(): void
     {
         $keyPath = vfsStream::url('vault/master.key');
-        file_put_contents($keyPath, base64_encode(random_bytes(32)));
+        // Use a fixed 32-byte key to avoid NUL byte issues
+        file_put_contents($keyPath, base64_encode('AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH'));
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);
         $config->method('getMasterKeySource')->willReturn($keyPath);
@@ -72,7 +73,8 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReadsAndDecodesBase64Key(): void
     {
-        $key = random_bytes(32);
+        // Use a fixed 32-byte key without NUL bytes or whitespace to avoid trim issues
+        $key = 'XXXXYYYYZZZZAAAABBBBCCCCDDDDEEEE';
         $keyPath = vfsStream::url('vault/master.key');
         file_put_contents($keyPath, base64_encode($key));
 
@@ -87,7 +89,8 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReadsRaw32ByteKey(): void
     {
-        $key = random_bytes(32);
+        // Use a fixed 32-byte key without NUL bytes or whitespace to avoid trim issues
+        $key = '12345678901234567890123456789012';
         $keyPath = vfsStream::url('vault/master.key');
         file_put_contents($keyPath, $key);
 
@@ -117,7 +120,8 @@ final class FileMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyFallsBackToAutoKeyPath(): void
     {
-        $key = random_bytes(32);
+        // Use a fixed 32-byte key without NUL bytes or whitespace to avoid trim issues
+        $key = 'AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH';
         $autoKeyPath = vfsStream::url('vault/auto.key');
         file_put_contents($autoKeyPath, base64_encode($key));
 
