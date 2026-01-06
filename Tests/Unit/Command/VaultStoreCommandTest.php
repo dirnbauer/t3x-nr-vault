@@ -182,4 +182,98 @@ final class VaultStoreCommandTest extends TestCase
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('invalid', $this->commandTester->getDisplay());
     }
+
+    #[Test]
+    public function trimsNewlineFromFileContent(): void
+    {
+        $root = vfsStream::setup('test');
+        vfsStream::newFile('secret-with-newline.txt')
+            ->withContent("secret-content\n")
+            ->at($root);
+
+        $this->vaultService
+            ->expects($this->once())
+            ->method('store')
+            ->with('file-trim-test', "secret-content\n", []);
+
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'file-trim-test',
+            '--file' => vfsStream::url('test/secret-with-newline.txt'),
+        ]);
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function ignoresMetadataWithoutEquals(): void
+    {
+        $this->vaultService
+            ->expects($this->once())
+            ->method('store')
+            ->with(
+                'metadata-no-equals',
+                'secret',
+                $this->callback(fn (array $metadata): bool => $metadata === ['valid' => 'value']),
+            );
+
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'metadata-no-equals',
+            '--value' => 'secret',
+            '--metadata' => ['valid=value', 'invalid-no-equals'],
+        ]);
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function displaysSuccessMessageWithIdentifier(): void
+    {
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'display-test-id',
+            '--value' => 'secret',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('display-test-id', $this->commandTester->getDisplay());
+        self::assertStringContainsString('stored successfully', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function handlesEmptyGroupsArray(): void
+    {
+        $this->vaultService
+            ->expects($this->once())
+            ->method('store')
+            ->with('empty-groups', 'secret', []);
+
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'empty-groups',
+            '--value' => 'secret',
+            '--groups' => [],
+        ]);
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function parsesSingleGroupCorrectly(): void
+    {
+        $this->vaultService
+            ->expects($this->once())
+            ->method('store')
+            ->with(
+                'single-group',
+                'secret',
+                $this->callback(fn (array $metadata): bool => isset($metadata['allowed_groups'])
+                    && $metadata['allowed_groups'] === [5]),
+            );
+
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'single-group',
+            '--value' => 'secret',
+            '--groups' => ['5'],
+        ]);
+
+        self::assertSame(0, $exitCode);
+    }
 }
