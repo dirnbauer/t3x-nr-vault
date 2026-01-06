@@ -194,6 +194,115 @@ final class VaultMigrateFieldCommandTest extends TestCase
         self::assertStringContainsString('cancelled', $this->commandTester->getDisplay());
     }
 
+    #[Test]
+    public function handlesVaultExceptionDuringMigration(): void
+    {
+        $this->mockTableAndFieldExist('api_key');
+        $this->mockQueryReturnsRecords('tx_myext_settings', [
+            ['uid' => 1, 'api_key' => 'secret123'],
+        ]);
+
+        $this->vaultService
+            ->method('store')
+            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Storage failed'));
+
+        $this->commandTester->setInputs(['yes']);
+        $exitCode = $this->commandTester->execute([
+            'table' => 'tx_myext_settings',
+            'field' => 'api_key',
+        ]);
+
+        self::assertSame(1, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('Failed', $display);
+        self::assertStringContainsString('Storage failed', $display);
+    }
+
+    #[Test]
+    public function showsDryRunResultsWithMultipleRecords(): void
+    {
+        $this->mockTableAndFieldExist('api_key');
+        $records = [];
+        for ($i = 1; $i <= 25; $i++) {
+            $records[] = ['uid' => $i, 'api_key' => 'secret' . $i];
+        }
+        $this->mockQueryReturnsRecords('tx_myext_settings', $records);
+
+        $exitCode = $this->commandTester->execute([
+            'table' => 'tx_myext_settings',
+            'field' => 'api_key',
+            '--dry-run' => true,
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('25 records to migrate', $display);
+        self::assertStringContainsString('and 5 more records', $display);
+    }
+
+    #[Test]
+    public function acceptsBatchSizeOption(): void
+    {
+        $this->mockTableAndFieldExist('api_key');
+        $this->mockQueryReturnsRecords('tx_myext_settings', [
+            ['uid' => 1, 'api_key' => 'secret1'],
+            ['uid' => 2, 'api_key' => 'secret2'],
+        ]);
+
+        $this->vaultService->expects($this->exactly(2))->method('store');
+
+        $this->commandTester->setInputs(['yes']);
+        $exitCode = $this->commandTester->execute([
+            'table' => 'tx_myext_settings',
+            'field' => 'api_key',
+            '--batch-size' => 1,
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Successfully migrated', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function displaysNextStepsAfterMigration(): void
+    {
+        $this->mockTableAndFieldExist('api_key');
+        $this->mockQueryReturnsRecords('tx_myext_settings', [
+            ['uid' => 1, 'api_key' => 'secret123'],
+        ]);
+
+        $this->commandTester->setInputs(['yes']);
+        $exitCode = $this->commandTester->execute([
+            'table' => 'tx_myext_settings',
+            'field' => 'api_key',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('Next Steps', $display);
+        self::assertStringContainsString('Update TCA configuration', $display);
+    }
+
+    #[Test]
+    public function displaysMigrationSummary(): void
+    {
+        $this->mockTableAndFieldExist('api_key');
+        $this->mockQueryReturnsRecords('tx_myext_settings', [
+            ['uid' => 1, 'api_key' => 'secret123'],
+            ['uid' => 2, 'api_key' => 'secret456'],
+        ]);
+
+        $this->commandTester->setInputs(['yes']);
+        $exitCode = $this->commandTester->execute([
+            'table' => 'tx_myext_settings',
+            'field' => 'api_key',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('Migration Summary', $display);
+        self::assertStringContainsString('Total records', $display);
+    }
+
     private function mockTableAndFieldExist(string $field): void
     {
         $schemaManager = $this->createMock(AbstractSchemaManager::class);
