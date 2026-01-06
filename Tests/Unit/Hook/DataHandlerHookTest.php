@@ -12,6 +12,7 @@ use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
+use ReflectionClass;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Schema\Field\FieldCollection;
@@ -434,6 +435,302 @@ final class DataHandlerHookTest extends UnitTestCase
         self::assertNotSame($fieldArray['api_key'], $fieldArray['api_secret']);
         // Non-vault field unchanged
         self::assertSame('Test Title', $fieldArray['title']);
+    }
+
+    #[Test]
+    public function preProcessFieldArrayIgnoresTablesWithoutSchema(): void
+    {
+        $this->tcaSchemaFactory->method('has')->with('unknown_table')->willReturn(false);
+
+        $fieldArray = ['field' => 'value'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'unknown_table',
+            1,
+        );
+
+        self::assertSame(['field' => 'value'], $fieldArray);
+    }
+
+    #[Test]
+    public function preProcessFieldArrayHandlesArrayWithValueIndexZero(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Format with index 0 instead of 'value' key
+        $fieldArray = [
+            'api_key' => [
+                0 => 'my-secret-key',
+                '_vault_identifier' => '',
+                '_vault_checksum' => '',
+            ],
+        ];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            1,
+        );
+
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $fieldArray['api_key']);
+    }
+
+    #[Test]
+    public function preProcessFieldArrayHandlesIntegerValue(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $fieldArray = ['api_key' => 12345];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            1,
+        );
+
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $fieldArray['api_key']);
+    }
+
+    #[Test]
+    public function preProcessFieldArraySetsEmptyStringWhenClearing(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $fieldArray = [
+            'api_key' => [
+                'value' => '',
+                '_vault_identifier' => $existingUuid,
+                '_vault_checksum' => 'existing-checksum',
+            ],
+        ];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        // Should be empty string when clearing
+        self::assertSame('', $fieldArray['api_key']);
+    }
+
+    #[Test]
+    public function cmdmapPreProcessIgnoresTablesWithoutVaultFields(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'title' => ['type' => 'input'],
+        ]);
+
+        $this->connectionPool->expects(self::never())->method('getConnectionForTable');
+
+        $this->subject->processCmdmap_preProcess(
+            'delete',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessIgnoresTablesWithoutVaultFields(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'title' => ['type' => 'input'],
+        ]);
+
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        $this->connectionPool->expects(self::never())->method('getConnectionForTable');
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function generateUuidReturnsValidUuidV7Format(): void
+    {
+        $reflection = new ReflectionClass($this->subject);
+        $method = $reflection->getMethod('generateUuid');
+
+        $uuid1 = $method->invoke($this->subject);
+        $uuid2 = $method->invoke($this->subject);
+
+        // Both should be valid UUID v7 format
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $uuid1);
+        self::assertMatchesRegularExpression(self::UUID_PATTERN, $uuid2);
+
+        // Should be different
+        self::assertNotSame($uuid1, $uuid2);
+    }
+
+    #[Test]
+    public function generateUuidIsTimeOrdered(): void
+    {
+        $reflection = new ReflectionClass($this->subject);
+        $method = $reflection->getMethod('generateUuid');
+
+        $uuids = [];
+        for ($i = 0; $i < 5; $i++) {
+            $uuids[] = $method->invoke($this->subject);
+            usleep(1000); // 1ms delay
+        }
+
+        // UUIDs should be in ascending order (time-ordered)
+        $sorted = $uuids;
+        sort($sorted);
+        self::assertSame($sorted, $uuids, 'UUIDs should be time-ordered');
+    }
+
+    #[Test]
+    public function preProcessFieldArrayHandlesNonStringNonIntValue(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Non-string, non-int value should be treated as empty
+        $fieldArray = [
+            'api_key' => [
+                'value' => ['nested' => 'array'],
+                '_vault_identifier' => '',
+                '_vault_checksum' => '',
+            ],
+        ];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            1,
+        );
+
+        // Empty value with no checksum should be removed
+        self::assertArrayNotHasKey('api_key', $fieldArray);
+    }
+
+    #[Test]
+    public function afterDatabaseOperationsHandlesStatusUpdate(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Setup pending secrets via preProcess with existing UUID
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $fieldArray = [
+            'api_key' => [
+                'value' => 'updated-secret',
+                '_vault_identifier' => $existingUuid,
+                '_vault_checksum' => 'existing-checksum',
+            ],
+        ];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        // Rotate should be called (not store)
+        $this->vaultService
+            ->expects(self::once())
+            ->method('rotate')
+            ->with($existingUuid, 'updated-secret', 'TCA field updated');
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+    }
+
+    #[Test]
+    public function afterDatabaseOperationsCleansPendingSecrets(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $fieldArray = ['api_key' => 'test-secret'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+
+        // Calling again should not trigger vault operations (pending cleaned up)
+        $this->vaultService
+            ->expects(self::never())
+            ->method('store');
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+    }
+
+    #[Test]
+    public function getVaultFieldNamesReturnsEmptyForNonExistentTable(): void
+    {
+        $this->tcaSchemaFactory->method('has')->with('nonexistent')->willReturn(false);
+
+        $reflection = new ReflectionClass($this->subject);
+        $method = $reflection->getMethod('getVaultFieldNames');
+
+        $result = $method->invoke($this->subject, 'nonexistent');
+
+        self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function getVaultFieldNamesReturnsOnlyVaultSecretFields(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+            'title' => ['type' => 'input'],
+            'password' => ['type' => 'password', 'renderType' => 'passwordGenerator'],
+            'secret' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $reflection = new ReflectionClass($this->subject);
+        $method = $reflection->getMethod('getVaultFieldNames');
+
+        $result = $method->invoke($this->subject, 'tx_test');
+
+        self::assertCount(2, $result);
+        self::assertContains('api_key', $result);
+        self::assertContains('secret', $result);
+        self::assertNotContains('title', $result);
+        self::assertNotContains('password', $result);
     }
 
     /**
