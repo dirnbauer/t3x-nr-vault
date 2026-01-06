@@ -325,4 +325,100 @@ final class EncryptionServiceTest extends TestCase
         self::assertArrayHasKey('encrypted_value', $encrypted);
         self::assertArrayHasKey('encrypted_dek', $encrypted);
     }
+
+    #[Test]
+    public function encryptAndDecryptRoundtripWithXChaCha20(): void
+    {
+        // Configure to prefer XChaCha20
+        $xchachaConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $xchachaConfig
+            ->method('preferXChaCha20')
+            ->willReturn(true);
+
+        $subject = new EncryptionService(
+            $this->masterKeyProvider,
+            $xchachaConfig,
+        );
+
+        $plaintext = 'xchacha-roundtrip-secret';
+        $identifier = 'xchacha-roundtrip';
+
+        $encrypted = $subject->encrypt($plaintext, $identifier);
+
+        $decrypted = $subject->decrypt(
+            $encrypted['encrypted_value'],
+            $encrypted['encrypted_dek'],
+            $encrypted['dek_nonce'],
+            $encrypted['value_nonce'],
+            $identifier,
+        );
+
+        self::assertEquals($plaintext, $decrypted);
+    }
+
+    #[Test]
+    public function generateDekWithXChaCha20ReturnsCorrectLength(): void
+    {
+        $xchachaConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $xchachaConfig
+            ->method('preferXChaCha20')
+            ->willReturn(true);
+
+        $subject = new EncryptionService(
+            $this->masterKeyProvider,
+            $xchachaConfig,
+        );
+
+        $dek = $subject->generateDek();
+
+        // XChaCha20-Poly1305 key should be 32 bytes
+        self::assertEquals(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES, \strlen($dek));
+    }
+
+    #[Test]
+    public function reEncryptDekWithXChaCha20(): void
+    {
+        $xchachaConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $xchachaConfig
+            ->method('preferXChaCha20')
+            ->willReturn(true);
+
+        $subject = new EncryptionService(
+            $this->masterKeyProvider,
+            $xchachaConfig,
+        );
+
+        $plaintext = 'reencrypt-xchacha';
+        $identifier = 'reencrypt-xchacha-secret';
+        $oldMasterKey = $this->testMasterKey;
+        $newMasterKey = random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES);
+
+        $encrypted = $subject->encrypt($plaintext, $identifier);
+
+        $reEncrypted = $subject->reEncryptDek(
+            $encrypted['encrypted_dek'],
+            $encrypted['dek_nonce'],
+            $identifier,
+            $oldMasterKey,
+            $newMasterKey,
+        );
+
+        self::assertArrayHasKey('encrypted_dek', $reEncrypted);
+        self::assertArrayHasKey('nonce', $reEncrypted);
+        self::assertNotEquals($encrypted['encrypted_dek'], $reEncrypted['encrypted_dek']);
+    }
+
+    #[Test]
+    public function reEncryptDekWithInvalidBase64Throws(): void
+    {
+        $this->expectException(EncryptionException::class);
+
+        $this->subject->reEncryptDek(
+            '!!!invalid!!!',
+            'also-invalid',
+            'test',
+            $this->testMasterKey,
+            random_bytes(32),
+        );
+    }
 }
