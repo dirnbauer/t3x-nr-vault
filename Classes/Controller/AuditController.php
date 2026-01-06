@@ -64,7 +64,7 @@ final readonly class AuditController
         $queryParams = $request->getQueryParams();
 
         // Merge POST body with query params (POST takes precedence for filters)
-        $filterParams = \array_merge($queryParams, $bodyArray);
+        $filterParams = array_merge($queryParams, $bodyArray);
         $filterData = $this->buildAuditFilters($filterParams);
         $filter = $filterData['filter'];
         $formData = $filterData['form'];
@@ -81,12 +81,12 @@ final readonly class AuditController
         $formattedEntries = [];
         $groupedEntries = [];
         foreach ($entries as $entry) {
-            $date = \date('Y-m-d', $entry->crdate);
+            $date = date('Y-m-d', $entry->crdate);
             $formatted = [
                 'uid' => $entry->uid,
-                'timestamp' => \date('Y-m-d H:i:s', $entry->crdate),
+                'timestamp' => date('Y-m-d H:i:s', $entry->crdate),
                 'date' => $date,
-                'time' => \date('H:i:s', $entry->crdate),
+                'time' => date('H:i:s', $entry->crdate),
                 'secretIdentifier' => $entry->secretIdentifier,
                 'action' => $entry->action,
                 'actionBadgeClass' => $this->getActionBadgeClass($entry->action),
@@ -97,7 +97,7 @@ final readonly class AuditController
                 'actorType' => $entry->actorType,
                 'ipAddress' => $entry->ipAddress,
                 'entryHash' => $entry->entryHash,
-                'entryHashShort' => \substr($entry->entryHash, 0, 8) . '...',
+                'entryHashShort' => substr($entry->entryHash, 0, 8) . '...',
             ];
             $formattedEntries[] = $formatted;
             $groupedEntries[$date][] = $formatted;
@@ -106,7 +106,7 @@ final readonly class AuditController
         $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
 
         // Build pagination URLs with filter parameters preserved
-        $baseFilterParams = \array_filter([
+        $baseFilterParams = array_filter([
             'secretIdentifier' => $formData['secretIdentifier'],
             'filterAction' => $formData['action'],
             'success' => $formData['success'],
@@ -115,11 +115,11 @@ final readonly class AuditController
         ], static fn (string $v): bool => $v !== '');
 
         $pagination = [
-            'first' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, \array_merge($baseFilterParams, ['page' => 1])),
-            'prev' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, \array_merge($baseFilterParams, ['page' => max(1, $page - 1)])),
-            'current' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, \array_merge($baseFilterParams, ['page' => $page])),
-            'next' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, \array_merge($baseFilterParams, ['page' => min($totalPages, $page + 1)])),
-            'last' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, \array_merge($baseFilterParams, ['page' => $totalPages])),
+            'first' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => 1])),
+            'prev' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => max(1, $page - 1)])),
+            'current' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => $page])),
+            'next' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => min($totalPages, $page + 1)])),
+            'last' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME, array_merge($baseFilterParams, ['page' => $totalPages])),
         ];
 
         $moduleTemplate->assignMultiple([
@@ -206,11 +206,11 @@ final readonly class AuditController
 
         // JSON: AuditLogEntry implements JsonSerializable, encode directly
         $response = new Response();
-        $response->getBody()->write(\json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
+        $response->getBody()->write(json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
 
         return $response
             ->withHeader('Content-Type', 'application/json')
-            ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . \date('Y-m-d') . '.json"');
+            ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . date('Y-m-d') . '.json"');
     }
 
     /**
@@ -275,34 +275,34 @@ final readonly class AuditController
     private function exportAsCsv(array $entries): ResponseInterface
     {
         $response = new Response();
-        $output = \fopen('php://temp', 'r+');
+        $output = fopen('php://temp', 'r+');
 
         if ($entries === []) {
-            \fwrite($output, "No data\n");
+            fwrite($output, "No data\n");
         } else {
             $first = $entries[0]->jsonSerialize();
-            \fputcsv($output, \array_keys($first), escape: '\\');
+            fputcsv($output, array_keys($first), escape: '\\');
 
             foreach ($entries as $entry) {
                 $row = $entry->jsonSerialize();
                 if (\is_array($row['context'])) {
-                    $row['context'] = \json_encode($row['context']);
+                    $row['context'] = json_encode($row['context']);
                 }
                 /** @var array<int, bool|float|int|string|null> $values */
-                $values = \array_values($row);
-                \fputcsv($output, $values, escape: '\\');
+                $values = array_values($row);
+                fputcsv($output, $values, escape: '\\');
             }
         }
 
-        \rewind($output);
-        $csv = \stream_get_contents($output);
-        \fclose($output);
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
 
         $response->getBody()->write($csv);
 
         return $response
             ->withHeader('Content-Type', 'text/csv')
-            ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . \date('Y-m-d') . '.csv"');
+            ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . date('Y-m-d') . '.csv"');
     }
 
     private function addDocHeaderButtons(ModuleTemplate $moduleTemplate): void

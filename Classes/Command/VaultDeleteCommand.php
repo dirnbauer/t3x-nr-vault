@@ -60,8 +60,9 @@ final class VaultDeleteCommand extends Command
         $reason = $input->getOption('reason');
 
         // Check if secret exists
-        $metadata = $this->vaultService->getMetadata($identifier);
-        if ($metadata === null) {
+        try {
+            $metadata = $this->vaultService->getMetadata($identifier);
+        } catch (SecretNotFoundException) {
             $io->error(\sprintf('Secret not found: %s', $identifier));
 
             return Command::FAILURE;

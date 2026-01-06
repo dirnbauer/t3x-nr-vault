@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Command;
 
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
-use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
+use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
-use Netresearch\NrVault\Domain\Repository\SecretRepository;
+use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\MasterKeyException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -34,9 +34,9 @@ final class VaultRotateMasterKeyCommand extends Command
     private const int KEY_LENGTH = 32;
 
     public function __construct(
-        private readonly SecretRepository $secretRepository,
+        private readonly SecretRepositoryInterface $secretRepository,
         private readonly EncryptionServiceInterface $encryptionService,
-        private readonly MasterKeyProviderFactory $masterKeyProviderFactory,
+        private readonly MasterKeyProviderFactoryInterface $masterKeyProviderFactory,
         private readonly ConnectionPool $connectionPool,
     ) {
         parent::__construct();

@@ -99,7 +99,7 @@ final class VaultRetrieveCommandTest extends TestCase
 
         self::assertSame(0, $exitCode);
         self::assertFileExists($outputFile);
-        self::assertSame('file-content-123', \file_get_contents($outputFile));
+        self::assertSame('file-content-123', file_get_contents($outputFile));
         self::assertStringContainsString('Secret written to', $this->commandTester->getDisplay());
     }
 

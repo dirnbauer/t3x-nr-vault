@@ -29,7 +29,7 @@ final class EncryptionServiceTest extends TestCase
         parent::setUp();
 
         // Generate a test master key (32 bytes)
-        $this->testMasterKey = \random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
+        $this->testMasterKey = random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
 
         $this->masterKeyProvider = $this->createMock(MasterKeyProviderInterface::class);
         $this->masterKeyProvider
@@ -76,7 +76,7 @@ final class EncryptionServiceTest extends TestCase
         self::assertNotEmpty($result['encrypted_value']);
 
         // Verify it's valid base64
-        $decoded = \base64_decode($result['encrypted_value'], true);
+        $decoded = base64_decode($result['encrypted_value'], true);
         self::assertNotFalse($decoded);
     }
 
@@ -144,8 +144,8 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $this->subject->encrypt($plaintext, $identifier);
 
         // Tamper with the encrypted value
-        $tamperedValue = \base64_encode(
-            \substr(\base64_decode($encrypted['encrypted_value'], true), 0, -1) . 'X',
+        $tamperedValue = base64_encode(
+            substr(base64_decode($encrypted['encrypted_value'], true), 0, -1) . 'X',
         );
 
         $this->expectException(EncryptionException::class);
@@ -201,7 +201,7 @@ final class EncryptionServiceTest extends TestCase
 
         // SHA-256 produces 64 hex characters
         self::assertEquals(64, \strlen($checksum));
-        self::assertEquals(\hash('sha256', $plaintext), $checksum);
+        self::assertEquals(hash('sha256', $plaintext), $checksum);
     }
 
     #[Test]
@@ -221,7 +221,7 @@ final class EncryptionServiceTest extends TestCase
         $plaintext = 'reencrypt-test';
         $identifier = 'reencrypt-secret';
         $oldMasterKey = $this->testMasterKey;
-        $newMasterKey = \random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
+        $newMasterKey = random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
 
         // First encrypt with old master key
         $encrypted = $this->subject->encrypt($plaintext, $identifier);
@@ -267,7 +267,7 @@ final class EncryptionServiceTest extends TestCase
     public function encryptHandlesLargePayload(): void
     {
         // 1MB of random data
-        $plaintext = \random_bytes(1024 * 1024);
+        $plaintext = random_bytes(1024 * 1024);
         $identifier = 'large-secret';
 
         $encrypted = $this->subject->encrypt($plaintext, $identifier);

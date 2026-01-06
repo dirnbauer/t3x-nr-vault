@@ -8,7 +8,7 @@ use Netresearch\NrVault\Command\VaultScanCommand;
 use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
-use Netresearch\NrVault\Service\SecretDetectionService;
+use Netresearch\NrVault\Service\SecretDetectionServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -19,7 +19,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 #[CoversClass(VaultScanCommand::class)]
 final class VaultScanCommandTest extends TestCase
 {
-    private SecretDetectionService&MockObject $detectionService;
+    private SecretDetectionServiceInterface&MockObject $detectionService;
 
     private CommandTester $commandTester;
 
@@ -27,7 +27,7 @@ final class VaultScanCommandTest extends TestCase
     {
         parent::setUp();
 
-        $this->detectionService = $this->createMock(SecretDetectionService::class);
+        $this->detectionService = $this->createMock(SecretDetectionServiceInterface::class);
 
         $command = new VaultScanCommand($this->detectionService);
 
@@ -133,8 +133,20 @@ final class VaultScanCommandTest extends TestCase
 
         self::assertSame(0, $exitCode);
         $display = $this->commandTester->getDisplay();
-        // The JSON output should contain the path
-        self::assertStringContainsString('MAIL/smtp_password', $display);
+
+        // Extract JSON from output (output includes title text before JSON)
+        self::assertMatchesRegularExpression('/\{[^}]+\}/', $display);
+        preg_match('/(\{.*\})/s', $display, $matches);
+        self::assertNotEmpty($matches[1]);
+
+        $decoded = json_decode($matches[1], true);
+        self::assertIsArray($decoded);
+        self::assertArrayHasKey('critical', $decoded);
+        self::assertNotEmpty($decoded['critical']);
+
+        // The key is "config:MAIL/smtp_password", check any entry has the path
+        $finding = reset($decoded['critical']);
+        self::assertSame('MAIL/smtp_password', $finding['path']);
     }
 
     #[Test]

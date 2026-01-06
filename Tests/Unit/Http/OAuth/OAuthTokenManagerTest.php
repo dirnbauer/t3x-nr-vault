@@ -461,7 +461,7 @@ final class OAuthTokenManagerTest extends TestCase
     private function createSuccessfulTokenResponse(array $data): ResponseInterface&MockObject
     {
         $stream = $this->createMock(StreamInterface::class);
-        $stream->method('__toString')->willReturn(\json_encode($data));
+        $stream->method('__toString')->willReturn(json_encode($data));
 
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(200);

@@ -172,7 +172,7 @@ final class VaultStoreCommandTest extends TestCase
     {
         $this->vaultService
             ->method('store')
-            ->willThrowException(ValidationException::invalidIdentifier('bad!identifier'));
+            ->willThrowException(ValidationException::invalidIdentifier('bad!identifier', 'contains invalid characters'));
 
         $exitCode = $this->commandTester->execute([
             'identifier' => 'bad!identifier',

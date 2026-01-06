@@ -170,7 +170,7 @@ final class DatabaseSecretFindingTest extends TestCase
             severity: Severity::Low,
         );
 
-        $json = \json_encode($finding);
+        $json = json_encode($finding);
 
         self::assertJson($json);
         self::assertStringContainsString('"source":"database"', $json);

@@ -36,8 +36,8 @@ final readonly class EncryptionService implements EncryptionServiceInterface
 
             // Generate nonces with algorithm-appropriate length
             $nonceLength = $this->getNonceLength();
-            $dekNonce = \random_bytes($nonceLength);
-            $valueNonce = \random_bytes($nonceLength);
+            $dekNonce = random_bytes($nonceLength);
+            $valueNonce = random_bytes($nonceLength);
 
             // Encrypt the DEK with master key
             $encryptedDek = $this->encryptWithKey($dek, $masterKey, $dekNonce, $identifier);
@@ -54,10 +54,10 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             sodium_memzero($plaintext);
 
             return [
-                'encrypted_value' => \base64_encode($encryptedValue),
-                'encrypted_dek' => \base64_encode($encryptedDek),
-                'dek_nonce' => \base64_encode($dekNonce),
-                'value_nonce' => \base64_encode($valueNonce),
+                'encrypted_value' => base64_encode($encryptedValue),
+                'encrypted_dek' => base64_encode($encryptedDek),
+                'dek_nonce' => base64_encode($dekNonce),
+                'value_nonce' => base64_encode($valueNonce),
                 'value_checksum' => $checksum,
             ];
         } catch (SodiumException $e) {
@@ -76,10 +76,10 @@ final readonly class EncryptionService implements EncryptionServiceInterface
 
         try {
             // Decode base64
-            $encryptedValueBytes = \base64_decode($encryptedValue, true);
-            $encryptedDekBytes = \base64_decode($encryptedDek, true);
-            $dekNonceBytes = \base64_decode($dekNonce, true);
-            $valueNonceBytes = \base64_decode($valueNonce, true);
+            $encryptedValueBytes = base64_decode($encryptedValue, true);
+            $encryptedDekBytes = base64_decode($encryptedDek, true);
+            $dekNonceBytes = base64_decode($dekNonce, true);
+            $valueNonceBytes = base64_decode($valueNonce, true);
 
             if ($encryptedValueBytes === false || $encryptedDekBytes === false
                 || $dekNonceBytes === false || $valueNonceBytes === false) {
@@ -105,15 +105,15 @@ final readonly class EncryptionService implements EncryptionServiceInterface
     public function generateDek(): string
     {
         if ($this->useAes256Gcm()) {
-            return \random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
+            return random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
         }
 
-        return \random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES);
+        return random_bytes(SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES);
     }
 
     public function calculateChecksum(string $plaintext): string
     {
-        return \hash('sha256', $plaintext);
+        return hash('sha256', $plaintext);
     }
 
     public function reEncryptDek(
@@ -125,8 +125,8 @@ final readonly class EncryptionService implements EncryptionServiceInterface
     ): array {
         try {
             // Decode
-            $encryptedDekBytes = \base64_decode($encryptedDek, true);
-            $dekNonceBytes = \base64_decode($dekNonce, true);
+            $encryptedDekBytes = base64_decode($encryptedDek, true);
+            $dekNonceBytes = base64_decode($dekNonce, true);
 
             if ($encryptedDekBytes === false || $dekNonceBytes === false) {
                 throw EncryptionException::decryptionFailed('Invalid base64 encoding');
@@ -136,7 +136,7 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             $dek = $this->decryptWithKey($encryptedDekBytes, $oldMasterKey, $dekNonceBytes, $identifier);
 
             // Generate new nonce with algorithm-appropriate length
-            $newNonce = \random_bytes($this->getNonceLength());
+            $newNonce = random_bytes($this->getNonceLength());
 
             // Encrypt DEK with new master key
             $newEncryptedDek = $this->encryptWithKey($dek, $newMasterKey, $newNonce, $identifier);
@@ -145,8 +145,8 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             sodium_memzero($dek);
 
             return [
-                'encrypted_dek' => \base64_encode($newEncryptedDek),
-                'nonce' => \base64_encode($newNonce),
+                'encrypted_dek' => base64_encode($newEncryptedDek),
+                'nonce' => base64_encode($newNonce),
             ];
         } catch (SodiumException $e) {
             throw EncryptionException::encryptionFailed($e->getMessage());

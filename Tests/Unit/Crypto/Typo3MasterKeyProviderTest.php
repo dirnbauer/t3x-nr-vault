@@ -177,7 +177,7 @@ final class Typo3MasterKeyProviderTest extends TestCase
         $this->expectException(MasterKeyException::class);
         $this->expectExceptionMessage('TYPO3 provider derives the key');
 
-        $provider->storeMasterKey(\random_bytes(32));
+        $provider->storeMasterKey(random_bytes(32));
     }
 
     #[Test]

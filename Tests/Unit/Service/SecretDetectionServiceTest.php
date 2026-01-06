@@ -217,8 +217,8 @@ final class SecretDetectionServiceTest extends TestCase
             'argon2i hash' => ['$argon2i$v=19$m=65536,t=4,p=1$c29tZXNhbHQ$RdescudvJCsgt3ub+b+dWRWJTmaaJObG', true],
             'argon2id hash' => ['$argon2id$v=19$m=65536,t=4,p=1$c29tZXNhbHQ$GpZ3sK6WLbDpeYfZ8bLz', true],
             // Encrypted data
-            'long base64' => [\str_repeat('YWJjZGVm', 10), true],
-            'long hex' => [\str_repeat('a1b2c3d4', 15), true],
+            'long base64' => [str_repeat('YWJjZGVm', 10), true],
+            'long hex' => [str_repeat('a1b2c3d4', 15), true],
             // Plaintext (should NOT be detected as encrypted)
             'short string' => ['abc123', false],
             'regular text' => ['Hello, World!', false],

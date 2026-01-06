@@ -84,7 +84,7 @@ final class GenericContextTest extends TestCase
         $data = ['service' => 'api', 'count' => 5];
         $context = new GenericContext($data);
 
-        $json = \json_encode($context);
+        $json = json_encode($context);
 
         self::assertEquals('{"service":"api","count":5}', $json);
     }

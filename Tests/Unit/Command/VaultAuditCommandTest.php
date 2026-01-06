@@ -119,7 +119,7 @@ final class VaultAuditCommandTest extends TestCase
         self::assertSame(0, $exitCode);
         $display = $this->commandTester->getDisplay();
         self::assertJson($display);
-        self::assertStringContainsString('"secret_identifier": "json-test"', $display);
+        self::assertStringContainsString('"secretIdentifier": "json-test"', $display);
     }
 
     #[Test]
@@ -276,7 +276,7 @@ final class VaultAuditCommandTest extends TestCase
 
         self::assertSame(0, $exitCode);
         self::assertFileExists($exportFile);
-        $content = \file_get_contents($exportFile);
+        $content = file_get_contents($exportFile);
         self::assertJson($content);
         self::assertStringContainsString('exported', $content);
     }

@@ -76,7 +76,7 @@ final class VaultSecretElement extends AbstractFormElement
             'id' => $fieldId,
             'name' => $itemName,
             'value' => '',
-            'class' => \implode(' ', [
+            'class' => implode(' ', [
                 'form-control',
                 't3js-clearable',
                 'hasDefaultValue',
@@ -163,7 +163,7 @@ final class VaultSecretElement extends AbstractFormElement
         // Hidden field for original checksum (for change detection)
         $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_checksum]" value="' . htmlspecialchars($valueChecksum) . '" />';
 
-        $resultArray['html'] = \implode(LF, $html);
+        $resultArray['html'] = implode(LF, $html);
 
         // Add JavaScript module
         $resultArray['javaScriptModules'][] = JavaScriptModuleInstruction::create(

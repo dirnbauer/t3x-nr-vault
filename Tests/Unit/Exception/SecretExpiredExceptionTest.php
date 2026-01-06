@@ -16,7 +16,7 @@ final class SecretExpiredExceptionTest extends TestCase
     #[Test]
     public function extendsVaultException(): void
     {
-        $exception = SecretExpiredException::forIdentifier('test', \time());
+        $exception = SecretExpiredException::forIdentifier('test', time());
 
         self::assertInstanceOf(VaultException::class, $exception);
     }

@@ -6,7 +6,7 @@ namespace Netresearch\NrVault\Command;
 
 use Netresearch\NrVault\Service\Detection\SecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
-use Netresearch\NrVault\Service\SecretDetectionService;
+use Netresearch\NrVault\Service\SecretDetectionServiceInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
@@ -31,7 +31,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class VaultScanCommand extends Command
 {
     public function __construct(
-        private readonly SecretDetectionService $detectionService,
+        private readonly SecretDetectionServiceInterface $detectionService,
     ) {
         parent::__construct();
     }
@@ -113,7 +113,7 @@ final class VaultScanCommand extends Command
 
         $format = $input->getOption('format');
         $excludeTables = array_filter(
-            array_map(trim(...), explode(',', (string) $input->getOption('exclude'))),
+            array_map(\trim(...), explode(',', (string) $input->getOption('exclude'))),
         );
         $minSeverity = $input->getOption('severity');
         $databaseOnly = $input->getOption('database-only');

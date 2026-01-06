@@ -46,7 +46,7 @@ final class VaultRetrieveCommand extends Command
             )
             ->addOption(
                 'no-newline',
-                'n',
+                null,
                 InputOption::VALUE_NONE,
                 'Do not append newline to output',
             )

@@ -11,7 +11,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 /**
  * Repository for secret entities.
  */
-final readonly class SecretRepository
+final readonly class SecretRepository implements SecretRepositoryInterface
 {
     private const string TABLE_NAME = 'tx_nrvault_secret';
 

@@ -189,7 +189,7 @@ final class VaultServiceTest extends TestCase
     public function retrieveThrowsExceptionForExpiredSecret(): void
     {
         $secret = $this->createSecretEntity('expired');
-        $secret->setExpiresAt(\time() - 3600); // Expired 1 hour ago
+        $secret->setExpiresAt(time() - 3600); // Expired 1 hour ago
 
         $this->adapter
             ->method('retrieve')

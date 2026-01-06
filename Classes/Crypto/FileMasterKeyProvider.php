@@ -28,7 +28,7 @@ final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
     {
         $path = $this->getKeyPath();
 
-        return $path !== '' && \file_exists($path) && \is_readable($path);
+        return $path !== '' && file_exists($path) && is_readable($path);
     }
 
     public function getMasterKey(): string
@@ -39,35 +39,35 @@ final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
             throw MasterKeyException::notFound('No path configured');
         }
 
-        if (!\file_exists($path)) {
+        if (!file_exists($path)) {
             // Try auto-generated key path for development
             $autoPath = $this->configuration->getAutoKeyPath();
-            if (\file_exists($autoPath) && \is_readable($autoPath)) {
+            if (file_exists($autoPath) && is_readable($autoPath)) {
                 $path = $autoPath;
             } else {
                 throw MasterKeyException::notFound($path);
             }
         }
 
-        if (!\is_readable($path)) {
+        if (!is_readable($path)) {
             throw MasterKeyException::notFound($path . ' (not readable)');
         }
 
-        $key = \file_get_contents($path);
+        $key = file_get_contents($path);
         if ($key === false) {
             throw MasterKeyException::notFound($path);
         }
 
         // Handle base64-encoded keys
         if (\strlen($key) !== self::KEY_LENGTH) {
-            $decoded = \base64_decode($key, true);
+            $decoded = base64_decode($key, true);
             if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
                 $key = $decoded;
             }
         }
 
         // Trim any whitespace (newlines from file)
-        $key = \trim($key);
+        $key = trim($key);
 
         if (\strlen($key) !== self::KEY_LENGTH) {
             throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
@@ -88,23 +88,23 @@ final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
         }
 
         $dir = \dirname($path);
-        if (!\is_dir($dir) && (!\mkdir($dir, 0o700, true) && !\is_dir($dir))) {
+        if (!is_dir($dir) && (!mkdir($dir, 0o700, true) && !is_dir($dir))) {
             throw MasterKeyException::cannotStore("Cannot create directory: {$dir}");
         }
 
         // Store as base64 for easier handling
-        $result = \file_put_contents($path, \base64_encode($key));
+        $result = file_put_contents($path, base64_encode($key));
         if ($result === false) {
             throw MasterKeyException::cannotStore("Cannot write to: {$path}");
         }
 
         // Secure the file permissions
-        \chmod($path, 0o400);
+        chmod($path, 0o400);
     }
 
     public function generateMasterKey(): string
     {
-        return \random_bytes(self::KEY_LENGTH);
+        return random_bytes(self::KEY_LENGTH);
     }
 
     private function getKeyPath(): string

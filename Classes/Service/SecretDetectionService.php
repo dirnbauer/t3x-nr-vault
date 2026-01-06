@@ -25,7 +25,7 @@ use TYPO3\CMS\Core\SingletonInterface;
  * for values that appear to be unencrypted secrets based on naming patterns
  * and known API key formats.
  */
-final class SecretDetectionService implements SingletonInterface
+final class SecretDetectionService implements SecretDetectionServiceInterface, SingletonInterface
 {
     /**
      * Table.column combinations that should be excluded (contain hashes, not secrets).

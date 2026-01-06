@@ -6,10 +6,10 @@ namespace Netresearch\NrVault\Tests\Unit\Command;
 
 use Netresearch\NrVault\Command\VaultRotateMasterKeyCommand;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
-use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
+use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
-use Netresearch\NrVault\Domain\Repository\SecretRepository;
+use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -23,11 +23,11 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 #[CoversClass(VaultRotateMasterKeyCommand::class)]
 final class VaultRotateMasterKeyCommandTest extends TestCase
 {
-    private SecretRepository&MockObject $secretRepository;
+    private SecretRepositoryInterface&MockObject $secretRepository;
 
     private EncryptionServiceInterface&MockObject $encryptionService;
 
-    private MasterKeyProviderFactory&MockObject $masterKeyProviderFactory;
+    private MasterKeyProviderFactoryInterface&MockObject $masterKeyProviderFactory;
 
     private ConnectionPool&MockObject $connectionPool;
 
@@ -37,9 +37,9 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     {
         parent::setUp();
 
-        $this->secretRepository = $this->createMock(SecretRepository::class);
+        $this->secretRepository = $this->createMock(SecretRepositoryInterface::class);
         $this->encryptionService = $this->createMock(EncryptionServiceInterface::class);
-        $this->masterKeyProviderFactory = $this->createMock(MasterKeyProviderFactory::class);
+        $this->masterKeyProviderFactory = $this->createMock(MasterKeyProviderFactoryInterface::class);
         $this->connectionPool = $this->createMock(ConnectionPool::class);
 
         $command = new VaultRotateMasterKeyCommand(
@@ -71,15 +71,15 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function warnsWhenNoSecretsFound(): void
     {
-        $this->mockMasterKeyProvider(\str_repeat('a', 32));
+        $this->mockMasterKeyProvider(str_repeat('a', 32));
 
         $this->secretRepository
             ->method('findIdentifiers')
             ->willReturn([]);
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
         ]);
 
         self::assertSame(0, $exitCode);
@@ -89,7 +89,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function failsWhenKeysAreIdentical(): void
     {
-        $keyContent = \str_repeat('x', 32);
+        $keyContent = str_repeat('x', 32);
 
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', $keyContent),
@@ -103,15 +103,15 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function failsWithoutConfirmOption(): void
     {
-        $this->mockMasterKeyProvider(\str_repeat('a', 32));
+        $this->mockMasterKeyProvider(str_repeat('a', 32));
 
         $this->secretRepository
             ->method('findIdentifiers')
             ->willReturn(['secret-1']);
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
         ]);
 
         self::assertSame(1, $exitCode);
@@ -121,7 +121,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function dryRunShowsNoChanges(): void
     {
-        $secret = $this->createMockSecret('test-secret');
+        $secret = $this->createTestSecret('test-secret');
 
         $this->secretRepository
             ->method('findIdentifiers')
@@ -139,8 +139,8 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
             ]);
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
             '--dry-run' => true,
         ]);
 
@@ -155,7 +155,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     {
         $exitCode = $this->commandTester->execute([
             '--old-key' => '/nonexistent/key.file',
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
         ]);
 
         self::assertSame(1, $exitCode);
@@ -167,7 +167,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     {
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', 'short'),
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
         ]);
 
         self::assertSame(1, $exitCode);
@@ -177,7 +177,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function failsWhenDecryptionFails(): void
     {
-        $secret = $this->createMockSecret('failing-secret');
+        $secret = $this->createTestSecret('failing-secret');
 
         $this->secretRepository
             ->method('findIdentifiers')
@@ -192,8 +192,8 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
             ->willThrowException(EncryptionException::decryptionFailed());
 
         $exitCode = $this->commandTester->execute([
-            '--old-key' => $this->createKeyFile('old', \str_repeat('a', 32)),
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
             '--confirm' => true,
         ]);
 
@@ -204,10 +204,10 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
     #[Test]
     public function handlesBase64EncodedKeys(): void
     {
-        $rawKey = \str_repeat('k', 32);
-        $base64Key = \base64_encode($rawKey);
+        $rawKey = str_repeat('k', 32);
+        $base64Key = base64_encode($rawKey);
 
-        $secret = $this->createMockSecret('b64-secret');
+        $secret = $this->createTestSecret('b64-secret');
 
         $this->secretRepository
             ->method('findIdentifiers')
@@ -227,7 +227,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         // Base64 keys should work
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', $base64Key),
-            '--new-key' => $this->createKeyFile('new', \str_repeat('b', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
             '--dry-run' => true,
         ]);
 
@@ -248,12 +248,12 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         return vfsStream::url('keys/' . $name . '.key');
     }
 
-    private function createMockSecret(string $identifier): Secret&MockObject
+    private function createTestSecret(string $identifier): Secret
     {
-        $secret = $this->createMock(Secret::class);
-        $secret->method('getIdentifier')->willReturn($identifier);
-        $secret->method('getEncryptedDek')->willReturn('encrypted-dek');
-        $secret->method('getDekNonce')->willReturn('dek-nonce');
+        $secret = new Secret();
+        $secret->setIdentifier($identifier);
+        $secret->setEncryptedDek('encrypted-dek');
+        $secret->setDekNonce('dek-nonce');
 
         return $secret;
     }

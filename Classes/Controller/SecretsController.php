@@ -69,7 +69,7 @@ final readonly class SecretsController
         // Get filter parameters from POST body (filter form uses POST to avoid iframe issues)
         $body = $request->getParsedBody() ?? [];
         $filters = [
-            'identifier' => \trim((string) ($body['identifier'] ?? '')),
+            'identifier' => trim((string) ($body['identifier'] ?? '')),
             'status' => (string) ($body['status'] ?? ''),
             'owner' => (int) ($body['owner'] ?? 0),
         ];
@@ -96,10 +96,10 @@ final readonly class SecretsController
                 'identifier' => $secret->identifier,
                 'owner_uid' => $ownerUid,
                 'owner_name' => $userCache[$ownerUid] ?? 'User #' . $ownerUid,
-                'created' => \date('Y-m-d H:i:s', $secret->createdAt),
-                'updated' => \date('Y-m-d H:i:s', $secret->updatedAt),
+                'created' => date('Y-m-d H:i:s', $secret->createdAt),
+                'updated' => date('Y-m-d H:i:s', $secret->updatedAt),
                 'read_count' => $secret->readCount,
-                'last_read' => $secret->lastReadAt !== null ? \date('Y-m-d H:i:s', $secret->lastReadAt) : '-',
+                'last_read' => $secret->lastReadAt !== null ? date('Y-m-d H:i:s', $secret->lastReadAt) : '-',
                 'description' => $secret->description,
                 'hidden' => false,
             ];
@@ -238,7 +238,7 @@ final readonly class SecretsController
             $queryBuilder
                 ->update('tx_nrvault_secret')
                 ->set('hidden', $newState)
-                ->set('tstamp', \time())
+                ->set('tstamp', time())
                 ->where(
                     $queryBuilder->expr()->eq('identifier', $queryBuilder->createNamedParameter($identifier)),
                     $queryBuilder->expr()->eq('deleted', 0),
@@ -296,7 +296,7 @@ final readonly class SecretsController
     {
         $body = $request->getParsedBody();
         $identifier = (string) ($body['identifier'] ?? '');
-        $reason = \trim((string) ($body['reason'] ?? ''));
+        $reason = trim((string) ($body['reason'] ?? ''));
 
         if ($identifier === '') {
             $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
@@ -380,7 +380,7 @@ final readonly class SecretsController
      */
     private function getUsernameCache(array $secrets): array
     {
-        $userIds = \array_unique(\array_filter(\array_map(
+        $userIds = array_unique(array_filter(array_map(
             static fn (SecretMetadata $s): int => $s->ownerUid,
             $secrets,
         )));
@@ -417,7 +417,7 @@ final readonly class SecretsController
      */
     private function getOwnerOptions(array $secrets, array $userCache): array
     {
-        $ownerIds = \array_unique(\array_filter(\array_map(
+        $ownerIds = array_unique(array_filter(array_map(
             static fn (SecretMetadata $s): int => $s->ownerUid,
             $secrets,
         )));
@@ -428,7 +428,7 @@ final readonly class SecretsController
                 'name' => $userCache[$uid] ?? 'User #' . $uid,
             ];
         }
-        \usort($options, static fn (array $a, array $b): int => \strcasecmp($a['name'], $b['name']));
+        usort($options, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return $options;
     }

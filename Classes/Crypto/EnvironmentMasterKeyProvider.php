@@ -27,7 +27,7 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
     public function isAvailable(): bool
     {
         $varName = $this->getEnvVarName();
-        $value = \getenv($varName);
+        $value = getenv($varName);
 
         return $value !== false && $value !== '';
     }
@@ -35,7 +35,7 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
     public function getMasterKey(): string
     {
         $varName = $this->getEnvVarName();
-        $value = \getenv($varName);
+        $value = getenv($varName);
 
         if ($value === false || $value === '') {
             throw MasterKeyException::environmentVariableNotSet($varName);
@@ -44,7 +44,7 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
         // Handle base64-encoded keys
         $key = $value;
         if (\strlen($key) !== self::KEY_LENGTH) {
-            $decoded = \base64_decode($value, true);
+            $decoded = base64_decode($value, true);
             if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
                 $key = $decoded;
             }
@@ -67,7 +67,7 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
 
     public function generateMasterKey(): string
     {
-        return \random_bytes(self::KEY_LENGTH);
+        return random_bytes(self::KEY_LENGTH);
     }
 
     private function getEnvVarName(): string

@@ -51,7 +51,7 @@ final class VaultRotateCommandTest extends TestCase
         $this->vaultService
             ->method('getMetadata')
             ->with('nonexistent')
-            ->willReturn(null);
+            ->willThrowException(SecretNotFoundException::forIdentifier('nonexistent'));
 
         $exitCode = $this->commandTester->execute([
             'identifier' => 'nonexistent',

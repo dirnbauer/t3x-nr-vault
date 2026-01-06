@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Adapter;
 
 use Netresearch\NrVault\Domain\Model\Secret;
-use Netresearch\NrVault\Domain\Repository\SecretRepository;
+use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 
 /**
  * Local database adapter with envelope encryption.
@@ -13,7 +13,7 @@ use Netresearch\NrVault\Domain\Repository\SecretRepository;
 final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
 {
     public function __construct(
-        private SecretRepository $secretRepository,
+        private SecretRepositoryInterface $secretRepository,
     ) {}
 
     public function getIdentifier(): string

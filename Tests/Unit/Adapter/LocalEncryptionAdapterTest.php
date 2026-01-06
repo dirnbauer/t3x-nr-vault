@@ -7,7 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Adapter;
 use Netresearch\NrVault\Adapter\LocalEncryptionAdapter;
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
-use Netresearch\NrVault\Domain\Repository\SecretRepository;
+use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,7 +18,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function implementsVaultAdapterInterface(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $adapter = new LocalEncryptionAdapter($repository);
 
         self::assertInstanceOf(VaultAdapterInterface::class, $adapter);
@@ -27,7 +27,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function getIdentifierReturnsLocal(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $adapter = new LocalEncryptionAdapter($repository);
 
         self::assertEquals('local', $adapter->getIdentifier());
@@ -36,7 +36,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function isAvailableAlwaysReturnsTrue(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $adapter = new LocalEncryptionAdapter($repository);
 
         self::assertTrue($adapter->isAvailable());
@@ -48,7 +48,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $secret = new Secret();
         $secret->setIdentifier('test');
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->expects(self::once())
             ->method('save')
             ->with($secret);
@@ -63,7 +63,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $secret = new Secret();
         $secret->setIdentifier('test');
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->expects(self::once())
             ->method('findByIdentifier')
             ->with('test')
@@ -78,7 +78,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function retrieveReturnsNullWhenNotFound(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn(null);
 
         $adapter = new LocalEncryptionAdapter($repository);
@@ -92,7 +92,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $secret = new Secret();
         $secret->setIdentifier('test');
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')
             ->with('test')
             ->willReturn($secret);
@@ -107,7 +107,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function deleteDoesNothingWhenSecretNotFound(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn(null);
         $repository->expects(self::never())->method('delete');
 
@@ -118,7 +118,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function existsDelegatesToRepository(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->expects(self::once())
             ->method('exists')
             ->with('test')
@@ -135,7 +135,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $identifiers = ['secret-1', 'secret-2', 'secret-3'];
         $filters = ['context' => 'payment'];
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->expects(self::once())
             ->method('findIdentifiers')
             ->with($filters)
@@ -149,7 +149,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function getMetadataReturnsNullWhenSecretNotFound(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn(null);
 
         $adapter = new LocalEncryptionAdapter($repository);
@@ -171,7 +171,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $secret->setMetadata(['service' => 'stripe']);
         $secret->setAdapter('local');
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn($secret);
 
         $adapter = new LocalEncryptionAdapter($repository);
@@ -196,7 +196,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $secret->setIdentifier('test');
         $secret->setExpiresAt(0);
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn($secret);
 
         $adapter = new LocalEncryptionAdapter($repository);
@@ -208,7 +208,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     #[Test]
     public function updateMetadataDoesNothingWhenSecretNotFound(): void
     {
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn(null);
         $repository->expects(self::never())->method('save');
 
@@ -223,7 +223,7 @@ final class LocalEncryptionAdapterTest extends TestCase
         $secret->setIdentifier('test');
         $secret->setMetadata(['existing' => 'value']);
 
-        $repository = $this->createMock(SecretRepository::class);
+        $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->method('findByIdentifier')->willReturn($secret);
         $repository->expects(self::once())->method('save')->with($secret);
 
