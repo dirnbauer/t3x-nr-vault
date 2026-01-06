@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Service;
 
+use Doctrine\DBAL\Result;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Service\Detection\Severity;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -343,7 +345,7 @@ final class SecretDetectionServiceTest extends TestCase
     {
         // Mock database - no tables
         $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
         $schemaManager->method('listTableNames')->willReturn([]);
 
         $connection->method('createSchemaManager')->willReturn($schemaManager);
@@ -362,7 +364,7 @@ final class SecretDetectionServiceTest extends TestCase
     public function scanDatabaseTablesSkipsExcludedTables(): void
     {
         $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
 
         // Return tables including excluded ones
         $schemaManager->method('listTableNames')->willReturn([
@@ -635,7 +637,7 @@ final class SecretDetectionServiceTest extends TestCase
     public function scanTableSkipsNonStringColumns(): void
     {
         $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
 
         // Create column with non-string type
         $intColumn = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
@@ -660,7 +662,7 @@ final class SecretDetectionServiceTest extends TestCase
     public function scanTableDetectsSecretInStringColumn(): void
     {
         $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
 
         // Create column with string type and secret-like name
         $secretColumn = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
@@ -685,7 +687,7 @@ final class SecretDetectionServiceTest extends TestCase
         $queryBuilder->method('where')->willReturnSelf();
         $queryBuilder->method('createNamedParameter')->willReturn("''");
 
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchOne')->willReturn(0); // No records
         $queryBuilder->method('executeQuery')->willReturn($result);
 
@@ -702,7 +704,7 @@ final class SecretDetectionServiceTest extends TestCase
     public function scanTableSkipsExcludedPasswordHashColumns(): void
     {
         $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
 
         // Create be_users.password column
         $passwordColumn = $this->createMock(\Doctrine\DBAL\Schema\Column::class);
@@ -729,7 +731,7 @@ final class SecretDetectionServiceTest extends TestCase
     public function scanTableHandlesExceptionGracefully(): void
     {
         $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $schemaManager = $this->createMock(\Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
 
         $schemaManager->method('listTableNames')->willReturn(['test_table']);
         $exception = $this->createMock(\Doctrine\DBAL\Exception::class);

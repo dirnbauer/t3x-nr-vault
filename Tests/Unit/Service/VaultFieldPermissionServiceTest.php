@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 #[CoversClass(VaultFieldPermissionService::class)]
@@ -114,7 +115,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function toBooleanReturnsTrueForTrueValues(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('toBoolean');
 
         self::assertTrue($method->invoke($this->service, true));
@@ -131,7 +132,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function toBooleanReturnsFalseForFalseValues(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('toBoolean');
 
         self::assertFalse($method->invoke($this->service, false));
@@ -146,7 +147,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function getBuiltInDefaultReturnsCorrectDefaults(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('getBuiltInDefault');
 
         self::assertTrue($method->invoke($this->service, VaultFieldPermission::Reveal));
@@ -158,7 +159,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function getNestedValueReturnsNullForMissingKey(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('getNestedValue');
 
         $array = [];
@@ -170,7 +171,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function getNestedValueReturnsValueForDirectKey(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('getNestedValue');
 
         $array = ['key' => 'value'];
@@ -182,7 +183,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function getNestedValueHandlesTsConfigDotNotation(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('getNestedValue');
 
         // TSconfig uses trailing dots for nested arrays
@@ -201,7 +202,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function getNestedValueHandlesMixedDotNotation(): void
     {
-        $reflection = new \ReflectionClass($this->service);
+        $reflection = new ReflectionClass($this->service);
         $method = $reflection->getMethod('getNestedValue');
 
         // Mix of dot notation and direct values
