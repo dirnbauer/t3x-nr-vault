@@ -17,9 +17,17 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
 {
     private const string TEST_ENV_VAR = 'NR_VAULT_TEST_KEY_12345';
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Clean up environment variable before each test
+        putenv(self::TEST_ENV_VAR);
+    }
+
     protected function tearDown(): void
     {
         putenv(self::TEST_ENV_VAR);
+        parent::tearDown();
     }
 
     #[Test]
@@ -75,7 +83,8 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     #[Test]
     public function getMasterKeyReturnsRawKeyWhen32Bytes(): void
     {
-        $key = random_bytes(32);
+        // Use a fixed 32-byte key without NUL bytes (which would truncate in env vars)
+        $key = 'abcdefghijklmnopqrstuvwxyz123456';
         putenv(self::TEST_ENV_VAR . '=' . $key);
 
         $config = $this->createMock(ExtensionConfigurationInterface::class);

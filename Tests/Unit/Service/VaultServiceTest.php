@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Service;
 
+use DateTimeImmutable;
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
@@ -451,6 +452,213 @@ final class VaultServiceTest extends TestCase
         // This test verifies clearCache doesn't throw
         $this->subject->clearCache();
         $this->expectNotToPerformAssertions();
+    }
+
+    #[Test]
+    public function storeWithAllOptions(): void
+    {
+        $identifier = 'fullOptions';
+        $secretValue = 'test-secret';
+
+        $this->encryptionService
+            ->method('encrypt')
+            ->willReturn([
+                'encrypted_value' => 'enc',
+                'encrypted_dek' => 'dek',
+                'dek_nonce' => 'n1',
+                'value_nonce' => 'n2',
+                'value_checksum' => 'cs',
+            ]);
+
+        $this->adapter->method('retrieve')->willReturn(null);
+
+        $expiresAt = new DateTimeImmutable('+1 day');
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static fn (Secret $s): bool => $s->getOwnerUid() === 5
+                && $s->getDescription() === 'Test description'
+                && $s->getContext() === 'testing'
+                && $s->getScopePid() === 100
+                && $s->isFrontendAccessible() === true
+                && $s->getExpiresAt() === $expiresAt->getTimestamp()));
+
+        $this->subject->store($identifier, $secretValue, [
+            'owner' => 5,
+            'groups' => [1, 2, 3],
+            'context' => 'testing',
+            'description' => 'Test description',
+            'metadata' => ['key' => 'value'],
+            'scopePid' => 100,
+            'expiresAt' => $expiresAt,
+            'frontendAccessible' => true,
+        ]);
+    }
+
+    #[Test]
+    public function storeWithIntegerExpiresAt(): void
+    {
+        $identifier = 'intExpires';
+        $secretValue = 'test-secret';
+        $expiresTimestamp = time() + 3600;
+
+        $this->encryptionService
+            ->method('encrypt')
+            ->willReturn([
+                'encrypted_value' => 'enc',
+                'encrypted_dek' => 'dek',
+                'dek_nonce' => 'n1',
+                'value_nonce' => 'n2',
+                'value_checksum' => 'cs',
+            ]);
+
+        $this->adapter->method('retrieve')->willReturn(null);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static fn (Secret $s): bool => $s->getExpiresAt() === $expiresTimestamp));
+
+        $this->subject->store($identifier, $secretValue, [
+            'expiresAt' => $expiresTimestamp,
+        ]);
+    }
+
+    #[Test]
+    public function storeUpdatesExistingSecret(): void
+    {
+        $identifier = 'existing';
+        $secretValue = 'new-value';
+
+        $existing = $this->createSecretEntity($identifier);
+        $existing->setUid(42);
+        $existing->setCrdate(1000);
+        $existing->setVersion(2);
+
+        $this->encryptionService
+            ->method('encrypt')
+            ->willReturn([
+                'encrypted_value' => 'enc',
+                'encrypted_dek' => 'dek',
+                'dek_nonce' => 'n1',
+                'value_nonce' => 'n2',
+                'value_checksum' => 'cs',
+            ]);
+
+        $this->adapter->method('retrieve')->willReturn($existing);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static fn (Secret $s): bool => $s->getUid() === 42
+                && $s->getCrdate() === 1000
+                && $s->getVersion() === 2));
+
+        $this->subject->store($identifier, $secretValue);
+    }
+
+    #[Test]
+    public function getMetadataThrowsAccessDenied(): void
+    {
+        $secret = $this->createSecretEntity('restricted');
+
+        $this->adapter->method('retrieve')->willReturn($secret);
+        $this->accessControlService->method('canRead')->willReturn(false);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->with('restricted', 'access_denied', false, 'Metadata access denied');
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->subject->getMetadata('restricted');
+    }
+
+    #[Test]
+    public function listWithPattern(): void
+    {
+        $secret = $this->createSecretEntity('api-key-1');
+
+        $this->adapter
+            ->method('list')
+            ->with(['pattern' => 'api-*'])
+            ->willReturn(['api-key-1']);
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(true);
+
+        $result = $this->subject->list('api-*');
+
+        self::assertCount(1, $result);
+        self::assertEquals('api-key-1', $result[0]->identifier);
+    }
+
+    #[Test]
+    public function retrieveWithCacheEnabled(): void
+    {
+        // Create service with cache enabled
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
+        $this->configuration->method('isCacheEnabled')->willReturn(true);
+
+        $subject = new VaultService(
+            $this->adapter,
+            $this->encryptionService,
+            $this->accessControlService,
+            $this->auditLogService,
+            $this->configuration,
+        );
+
+        $secret = $this->createSecretEntity('cached');
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(true);
+
+        $this->encryptionService
+            ->expects(self::once()) // Only once due to caching
+            ->method('decrypt')
+            ->willReturn('cached-value');
+
+        // First call - should decrypt
+        $result1 = $subject->retrieve('cached');
+        // Second call - should use cache
+        $result2 = $subject->retrieve('cached');
+
+        self::assertSame('cached-value', $result1);
+        self::assertSame('cached-value', $result2);
+    }
+
+    #[Test]
+    public function retrieveLogsDecryptionFailure(): void
+    {
+        $secret = $this->createSecretEntity('failDecrypt');
+
+        $this->adapter->method('retrieve')->willReturn($secret);
+        $this->accessControlService->method('canRead')->willReturn(true);
+
+        $this->encryptionService
+            ->method('decrypt')
+            ->willThrowException(new \Netresearch\NrVault\Exception\EncryptionException('Decrypt failed', 1234567890));
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->with('failDecrypt', 'read', false, self::stringContains('Decrypt failed'));
+
+        $this->expectException(\Netresearch\NrVault\Exception\EncryptionException::class);
+
+        $this->subject->retrieve('failDecrypt');
     }
 
     private function createSecretEntity(string $identifier): Secret
