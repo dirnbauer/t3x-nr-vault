@@ -145,4 +145,144 @@ final class FlexFormVaultResolverTest extends UnitTestCase
             'too short' => ['01937b6e-4b6c-7abc-8def', false],
         ];
     }
+
+    #[Test]
+    public function resolveAllResolvesNestedVaultIdentifiers(): void
+    {
+        $identifier1 = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $identifier2 = '01937b6f-0000-7000-8000-000000000000';
+
+        $this->vaultService
+            ->expects(self::exactly(2))
+            ->method('retrieve')
+            ->willReturnMap([
+                [$identifier1, 'secret1'],
+                [$identifier2, 'secret2'],
+            ]);
+
+        $settings = [
+            'title' => 'Test',
+            'nested' => [
+                'apiKey' => $identifier1,
+                'deeper' => [
+                    'apiSecret' => $identifier2,
+                ],
+            ],
+        ];
+
+        $result = $this->subject->resolveAll($settings);
+
+        self::assertSame('Test', $result['title']);
+        self::assertSame('secret1', $result['nested']['apiKey']);
+        self::assertSame('secret2', $result['nested']['deeper']['apiSecret']);
+    }
+
+    #[Test]
+    public function resolveSettingsReturnsNullForSecretNotFound(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+
+        $settings = [
+            'apiKey' => $identifier,
+        ];
+
+        $result = $this->subject->resolveSettings($settings, ['apiKey']);
+
+        self::assertNull($result['apiKey']);
+    }
+
+    #[Test]
+    public function resolveSettingsLogsErrorForVaultException(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+
+        $this->logger
+            ->expects(self::once())
+            ->method('error')
+            ->with('Failed to resolve FlexForm vault field', self::callback(function (array $context) use ($identifier) {
+                return $context['field'] === 'apiKey'
+                    && $context['identifier'] === $identifier
+                    && str_contains($context['error'], 'Decryption failed');
+            }));
+
+        $settings = [
+            'apiKey' => $identifier,
+        ];
+
+        $result = $this->subject->resolveSettings($settings, ['apiKey']);
+
+        self::assertNull($result['apiKey']);
+    }
+
+    #[Test]
+    public function resolveSettingsThrowsWhenThrowOnErrorIsTrue(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+
+        $settings = [
+            'apiKey' => $identifier,
+        ];
+
+        $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+        $this->subject->resolveSettings($settings, ['apiKey'], true);
+    }
+
+    #[Test]
+    public function resolveAllLogsErrorForVaultException(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+
+        $this->logger
+            ->expects(self::once())
+            ->method('error')
+            ->with('Failed to resolve vault identifier', self::callback(function (array $context) use ($identifier) {
+                return $context['key'] === 'apiKey'
+                    && $context['identifier'] === $identifier
+                    && str_contains($context['error'], 'Decryption failed');
+            }));
+
+        $settings = [
+            'apiKey' => $identifier,
+        ];
+
+        $result = $this->subject->resolveAll($settings);
+
+        self::assertNull($result['apiKey']);
+    }
+
+    #[Test]
+    public function resolveAllHandlesSecretNotFoundException(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+
+        $settings = [
+            'nested' => [
+                'apiKey' => $identifier,
+            ],
+        ];
+
+        $result = $this->subject->resolveAll($settings);
+
+        self::assertNull($result['nested']['apiKey']);
+    }
 }
