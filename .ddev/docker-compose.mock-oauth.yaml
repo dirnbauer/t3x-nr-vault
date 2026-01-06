@@ -25,7 +25,7 @@ services:
   # Traefik router for mock-oauth
   mock-oauth-router:
     container_name: ddev-${DDEV_SITENAME}-mock-oauth-router
-    image: traefik:v2.10
+    image: traefik:v2.11
     restart: "no"
     depends_on:
       - mock-oauth
