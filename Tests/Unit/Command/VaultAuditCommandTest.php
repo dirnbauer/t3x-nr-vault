@@ -307,4 +307,212 @@ final class VaultAuditCommandTest extends TestCase
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Audit query failed', $this->commandTester->getDisplay());
     }
+
+    #[Test]
+    public function filtersBySinceDate(): void
+    {
+        $this->auditLogService
+            ->expects($this->once())
+            ->method('query')
+            ->with(
+                $this->callback(fn ($filter) => $filter !== null && $filter->since !== null),
+                50,
+                0,
+            )
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--since' => '2024-01-01',
+        ]);
+    }
+
+    #[Test]
+    public function filtersByUntilDate(): void
+    {
+        $this->auditLogService
+            ->expects($this->once())
+            ->method('query')
+            ->with(
+                $this->callback(fn ($filter) => $filter !== null && $filter->until !== null),
+                50,
+                0,
+            )
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--until' => '2024-12-31 23:59:59',
+        ]);
+    }
+
+    #[Test]
+    public function filtersBySuccessStatus(): void
+    {
+        $this->auditLogService
+            ->expects($this->once())
+            ->method('query')
+            ->with(
+                $this->callback(fn ($filter) => $filter !== null && $filter->success === true),
+                50,
+                0,
+            )
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--success' => 'true',
+        ]);
+    }
+
+    #[Test]
+    public function showsFailedEntriesInTable(): void
+    {
+        $entry = AuditLogEntry::fromDatabaseRow([
+            'uid' => 1,
+            'crdate' => 1704067200,
+            'secret_identifier' => 'failed-secret',
+            'action' => 'read',
+            'success' => 0,
+            'actor_uid' => 1,
+            'actor_username' => 'hacker',
+            'actor_type' => 'be_user',
+            'ip_address' => '192.168.1.100',
+            'entry_hash' => 'failhash',
+            'previous_hash' => '',
+            'context' => '{}',
+        ]);
+
+        $this->auditLogService
+            ->method('query')
+            ->willReturn([$entry]);
+
+        $exitCode = $this->commandTester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('failed-secret', $display);
+        self::assertStringContainsString('✗', $display);
+    }
+
+    #[Test]
+    public function outputsMultipleEntriesAsJson(): void
+    {
+        $entries = [
+            AuditLogEntry::fromDatabaseRow([
+                'uid' => 1,
+                'crdate' => 1704067200,
+                'secret_identifier' => 'secret-1',
+                'action' => 'create',
+                'success' => 1,
+                'actor_uid' => 1,
+                'actor_username' => 'admin',
+                'actor_type' => 'be_user',
+                'ip_address' => '127.0.0.1',
+                'entry_hash' => 'hash1',
+                'previous_hash' => '',
+                'context' => '{}',
+            ]),
+            AuditLogEntry::fromDatabaseRow([
+                'uid' => 2,
+                'crdate' => 1704153600,
+                'secret_identifier' => 'secret-2',
+                'action' => 'read',
+                'success' => 1,
+                'actor_uid' => 2,
+                'actor_username' => 'editor',
+                'actor_type' => 'be_user',
+                'ip_address' => '10.0.0.1',
+                'entry_hash' => 'hash2',
+                'previous_hash' => 'hash1',
+                'context' => '{}',
+            ]),
+        ];
+
+        $this->auditLogService
+            ->method('query')
+            ->willReturn($entries);
+
+        $exitCode = $this->commandTester->execute([
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertJson($display);
+        $decoded = json_decode($display, true);
+        self::assertCount(2, $decoded);
+    }
+
+    #[Test]
+    public function handlesInvalidSinceDate(): void
+    {
+        $this->auditLogService
+            ->expects($this->once())
+            ->method('query')
+            ->with(null, 50, 0)
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--since' => 'not-a-valid-date',
+        ]);
+    }
+
+    #[Test]
+    public function combinesMultipleFilters(): void
+    {
+        $this->auditLogService
+            ->expects($this->once())
+            ->method('query')
+            ->with(
+                $this->callback(fn ($filter) => $filter !== null
+                    && $filter->secretIdentifier === 'multi-filter'
+                    && $filter->action === 'read'
+                    && $filter->actorUid === 5),
+                100,
+                0,
+            )
+            ->willReturn([]);
+
+        $this->commandTester->execute([
+            '--identifier' => 'multi-filter',
+            '--action' => 'read',
+            '--actor' => '5',
+            '--limit' => '100',
+        ]);
+    }
+
+    #[Test]
+    public function exportsToCsvFormat(): void
+    {
+        $root = vfsStream::setup('exports');
+
+        $entry = AuditLogEntry::fromDatabaseRow([
+            'uid' => 1,
+            'crdate' => 1704067200,
+            'secret_identifier' => 'csv-export',
+            'action' => 'read',
+            'success' => 1,
+            'actor_uid' => 1,
+            'actor_username' => 'admin',
+            'actor_type' => 'be_user',
+            'ip_address' => '127.0.0.1',
+            'entry_hash' => 'csvhash',
+            'previous_hash' => '',
+            'context' => '{}',
+        ]);
+
+        $this->auditLogService
+            ->method('query')
+            ->willReturn([$entry]);
+
+        $exportFile = vfsStream::url('exports/audit.csv');
+
+        $exitCode = $this->commandTester->execute([
+            '--export' => $exportFile,
+            '--format' => 'csv',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertFileExists($exportFile);
+        $content = file_get_contents($exportFile);
+        self::assertStringContainsString('csv-export', $content);
+    }
 }
