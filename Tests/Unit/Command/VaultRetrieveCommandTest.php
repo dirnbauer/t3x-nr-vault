@@ -147,4 +147,53 @@ final class VaultRetrieveCommandTest extends TestCase
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Retrieval failed', $this->commandTester->getDisplay());
     }
+
+    #[Test]
+    public function acceptsReasonOption(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->with('test-secret')
+            ->willReturn('value');
+
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'test-secret',
+            '--reason' => 'Security audit',
+        ]);
+
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function outputWrittenToStdoutWithNewlineByDefault(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturn('secret-value');
+
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'test',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString("secret-value\n", $display);
+    }
+
+    #[Test]
+    public function failsWhenOutputFileDirectoryDoesNotExist(): void
+    {
+        $this->vaultService
+            ->method('retrieve')
+            ->willReturn('secret-value');
+
+        // Try to write to a non-existent directory
+        $exitCode = $this->commandTester->execute([
+            'identifier' => 'test',
+            '--output' => '/non/existent/directory/file.txt',
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Failed to write to file', $this->commandTester->getDisplay());
+    }
 }
