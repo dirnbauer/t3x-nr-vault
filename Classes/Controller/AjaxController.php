@@ -201,7 +201,7 @@ final readonly class AjaxController
         }
 
         try {
-            $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+            $decoded = \json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 
             if (\is_array($decoded)) {
                 /** @var array<string, mixed> $decoded */
