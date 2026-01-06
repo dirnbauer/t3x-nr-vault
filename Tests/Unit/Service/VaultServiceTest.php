@@ -661,6 +661,148 @@ final class VaultServiceTest extends TestCase
         $this->subject->retrieve('failDecrypt');
     }
 
+    #[Test]
+    public function deleteLogsAccessDeniedWhenNoPermission(): void
+    {
+        $secret = $this->createSecretEntity('protected');
+
+        $this->adapter->method('retrieve')->willReturn($secret);
+        $this->accessControlService->method('canDelete')->willReturn(false);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->with('protected', 'access_denied', false, 'Delete access denied');
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->subject->delete('protected');
+    }
+
+    #[Test]
+    public function rotateLogsAccessDeniedWhenNoPermission(): void
+    {
+        $secret = $this->createSecretEntity('protected');
+
+        $this->adapter->method('retrieve')->willReturn($secret);
+        $this->accessControlService->method('canWrite')->willReturn(false);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->with('protected', 'access_denied', false, 'Rotate access denied');
+
+        $this->expectException(AccessDeniedException::class);
+
+        $this->subject->rotate('protected', 'newValue');
+    }
+
+    #[Test]
+    public function clearCacheWipesSecureMemory(): void
+    {
+        // Enable cache for this test
+        $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
+        $this->configuration->method('isCacheEnabled')->willReturn(true);
+
+        $subject = new VaultService(
+            $this->adapter,
+            $this->encryptionService,
+            $this->accessControlService,
+            $this->auditLogService,
+            $this->configuration,
+        );
+
+        $secret = $this->createSecretEntity('cached');
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(true);
+
+        $this->encryptionService
+            ->method('decrypt')
+            ->willReturn('secret-value');
+
+        // First retrieve to populate cache
+        $subject->retrieve('cached');
+
+        // Clear cache should not throw
+        $subject->clearCache();
+
+        // Verify by retrieving again - should call decrypt again
+        $this->encryptionService
+            ->expects(self::once())
+            ->method('decrypt')
+            ->willReturn('secret-value');
+
+        $subject->retrieve('cached');
+    }
+
+    #[Test]
+    public function retrieveLogsExpiredSecretAccess(): void
+    {
+        $secret = $this->createSecretEntity('expired');
+        $secret->setExpiresAt(time() - 3600);
+
+        $this->adapter
+            ->method('retrieve')
+            ->willReturn($secret);
+
+        $this->accessControlService
+            ->method('canRead')
+            ->willReturn(true);
+
+        $this->auditLogService
+            ->expects(self::once())
+            ->method('log')
+            ->with('expired', 'read', false, 'Secret has expired');
+
+        $this->expectException(SecretExpiredException::class);
+
+        $this->subject->retrieve('expired');
+    }
+
+    #[Test]
+    public function listHandlesEmptyPattern(): void
+    {
+        $this->adapter
+            ->method('list')
+            ->with([])
+            ->willReturn([]);
+
+        $result = $this->subject->list(null);
+
+        self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function storeWithGroupsOption(): void
+    {
+        $this->encryptionService
+            ->method('encrypt')
+            ->willReturn([
+                'encrypted_value' => 'enc',
+                'encrypted_dek' => 'dek',
+                'dek_nonce' => 'n1',
+                'value_nonce' => 'n2',
+                'value_checksum' => 'cs',
+            ]);
+
+        $this->adapter->method('retrieve')->willReturn(null);
+
+        $this->adapter
+            ->expects(self::once())
+            ->method('store')
+            ->with(self::callback(static fn (Secret $s): bool => $s->getAllowedGroups() === [1, 2, 3]));
+
+        $this->subject->store('test', 'secret', [
+            'groups' => [1, 2, 3],
+        ]);
+    }
+
     private function createSecretEntity(string $identifier): Secret
     {
         $secret = new Secret();
