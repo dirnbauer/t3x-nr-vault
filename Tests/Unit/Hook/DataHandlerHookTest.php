@@ -733,6 +733,340 @@ final class DataHandlerHookTest extends UnitTestCase
         self::assertNotContains('password', $result);
     }
 
+    #[Test]
+    public function cmdmapPreProcessDeletesVaultSecretSuccessfully(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        // Mock database connection
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => $existingUuid]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->with('tx_test')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::once())
+            ->method('delete')
+            ->with($existingUuid, 'Record deleted');
+
+        $this->subject->processCmdmap_preProcess(
+            'delete',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPreProcessLogsVaultExceptionOnDelete(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        // Mock database connection
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => $existingUuid]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->with('tx_test')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->method('delete')
+            ->willThrowException(new VaultException('Delete failed'));
+
+        $this->dataHandler
+            ->expects(self::once())
+            ->method('log')
+            ->with(
+                'tx_test',
+                42,
+                3,
+                0,
+                1,
+                self::stringContains('api_key'),
+            );
+
+        $this->subject->processCmdmap_preProcess(
+            'delete',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPreProcessSkipsDeleteWhenRecordNotFound(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock database connection - record not found
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(false);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->with('tx_test')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('delete');
+
+        $this->subject->processCmdmap_preProcess(
+            'delete',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPreProcessSkipsDeleteWhenVaultIdentifierEmpty(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock database connection - vault field is empty
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => '']);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->with('tx_test')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('delete');
+
+        $this->subject->processCmdmap_preProcess(
+            'delete',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessCopiesVaultSecretSuccessfully(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $sourceUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        // Mock copy mapping
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        // Mock database connection
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => $sourceUuid]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->with('tx_test')
+            ->willReturn($connection);
+
+        // Retrieve source secret
+        $this->vaultService
+            ->method('retrieve')
+            ->with($sourceUuid)
+            ->willReturn('the-secret-value');
+
+        // Store new secret with new UUID
+        $this->vaultService
+            ->expects(self::once())
+            ->method('store')
+            ->with(
+                self::matchesRegularExpression(self::UUID_PATTERN),
+                'the-secret-value',
+                self::callback(static fn (array $options): bool => $options['table'] === 'tx_test'
+                    && $options['field'] === 'api_key'
+                    && $options['uid'] === 100
+                    && $options['source'] === 'record_copy'),
+            );
+
+        // Update the copied record
+        $connection
+            ->expects(self::once())
+            ->method('update')
+            ->with(
+                'tx_test',
+                self::callback(static fn (array $updates): bool => isset($updates['api_key'])
+                    && preg_match(self::UUID_PATTERN, $updates['api_key']) === 1),
+                ['uid' => 100],
+            );
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessSkipsCopyWhenSourceRecordNotFound(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        // Mock database connection - source record not found
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(false);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('retrieve');
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessSkipsCopyWhenSourceValueNull(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $sourceUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        // Mock database connection
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => $sourceUuid]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        // Retrieve returns null (secret not found in vault)
+        $this->vaultService
+            ->method('retrieve')
+            ->with($sourceUuid)
+            ->willReturn(null);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('store');
+
+        // No update should happen
+        $connection
+            ->expects(self::never())
+            ->method('update');
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessLogsVaultExceptionOnCopy(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $sourceUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        // Mock database connection
+        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
+        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => $sourceUuid]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new VaultException('Retrieve failed'));
+
+        $this->dataHandler
+            ->expects(self::once())
+            ->method('log')
+            ->with(
+                'tx_test',
+                100,
+                1,
+                0,
+                1,
+                self::stringContains('api_key'),
+            );
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
     /**
      * Create a mock TcaSchema for a table with given fields.
      *

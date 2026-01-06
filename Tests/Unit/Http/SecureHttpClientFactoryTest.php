@@ -158,4 +158,86 @@ final class SecureHttpClientFactoryTest extends TestCase
 
         self::assertInstanceOf(ClientInterface::class, $client);
     }
+
+    #[Test]
+    public function createWithNonIntegerTimeoutUsesDefault(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = [
+            'timeout' => 'not-an-integer',
+            'connect_timeout' => 'also-not-an-integer',
+        ];
+
+        $client = $this->factory->create();
+
+        // Should not throw and use defaults
+        self::assertInstanceOf(ClientInterface::class, $client);
+    }
+
+    #[Test]
+    public function createWithNonStringVersionUsesDefault(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = [
+            'version' => 123, // Not a string
+        ];
+
+        $client = $this->factory->create();
+
+        // Should not throw and use default '1.1'
+        self::assertInstanceOf(ClientInterface::class, $client);
+    }
+
+    #[Test]
+    public function createWithHttpsProxyFromEnvironment(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = [];
+
+        // Set environment variable
+        $originalHttpsProxy = getenv('HTTPS_PROXY');
+        putenv('HTTPS_PROXY=http://proxy.example.com:8080');
+
+        try {
+            $client = $this->factory->create();
+            self::assertInstanceOf(ClientInterface::class, $client);
+        } finally {
+            // Restore original
+            if ($originalHttpsProxy === false) {
+                putenv('HTTPS_PROXY');
+            } else {
+                putenv('HTTPS_PROXY=' . $originalHttpsProxy);
+            }
+        }
+    }
+
+    #[Test]
+    public function createWithNoProxyFromEnvironment(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = [];
+
+        // Set environment variables
+        $originalNoProxy = getenv('NO_PROXY');
+        putenv('NO_PROXY=localhost,127.0.0.1,.local');
+
+        try {
+            $client = $this->factory->create();
+            self::assertInstanceOf(ClientInterface::class, $client);
+        } finally {
+            // Restore original
+            if ($originalNoProxy === false) {
+                putenv('NO_PROXY');
+            } else {
+                putenv('NO_PROXY=' . $originalNoProxy);
+            }
+        }
+    }
+
+    #[Test]
+    public function isHostAllowedReturnsFalseWhenNoPatternMatches(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP'] = [
+            'allowed_hosts' => ['specific.example.com', '*.other.com'],
+        ];
+
+        // Neither exact match nor wildcard match
+        self::assertFalse($this->factory->isHostAllowed('different.domain.org'));
+    }
 }

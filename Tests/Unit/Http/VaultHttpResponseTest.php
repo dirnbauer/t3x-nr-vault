@@ -357,4 +357,136 @@ final class VaultHttpResponseTest extends TestCase
 
         self::assertSame($psrResponse, $response->getPsrResponse());
     }
+
+    #[Test]
+    public function getBodyStreamReturnsStreamInterface(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame($stream, $response->getBodyStream());
+    }
+
+    #[Test]
+    public function getHeadersReturnsAllHeaders(): void
+    {
+        $headers = [
+            'Content-Type' => ['application/json'],
+            'X-Custom' => ['value1', 'value2'],
+        ];
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeaders')->willReturn($headers);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame($headers, $response->getHeaders());
+    }
+
+    #[Test]
+    public function hasHeaderReturnsTrueWhenExists(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('hasHeader')->with('Content-Type')->willReturn(true);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertTrue($response->hasHeader('Content-Type'));
+    }
+
+    #[Test]
+    public function hasHeaderReturnsFalseWhenMissing(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('hasHeader')->with('X-Missing')->willReturn(false);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertFalse($response->hasHeader('X-Missing'));
+    }
+
+    #[Test]
+    public function getContentTypeReturnsNullWhenMissing(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')->with('Content-Type')->willReturn([]);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertNull($response->getContentType());
+    }
+
+    #[Test]
+    public function getContentLengthReturnsNullWhenMissing(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')->with('Content-Length')->willReturn([]);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertNull($response->getContentLength());
+    }
+
+    #[Test]
+    public function isJsonReturnsFalseWhenNoContentType(): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getHeader')->with('Content-Type')->willReturn([]);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertFalse($response->isJson());
+    }
+
+    #[Test]
+    #[DataProvider('nonSuccessfulStatusCodesProvider')]
+    public function isSuccessfulReturnsFalseForNon2xxCodes(int $statusCode): void
+    {
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getStatusCode')->willReturn($statusCode);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertFalse($response->isSuccessful());
+    }
+
+    public static function nonSuccessfulStatusCodesProvider(): iterable
+    {
+        yield '199 below range' => [199];
+        yield '300 redirect' => [300];
+        yield '404 client error' => [404];
+        yield '500 server error' => [500];
+    }
+
+    #[Test]
+    public function jsonGetReturnsDefaultForObjectModeJson(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('{"key": "value"}');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        // jsonGet works in associative array mode internally
+        self::assertSame('value', $response->jsonGet('key'));
+    }
+
+    #[Test]
+    public function jsonGetHandlesMissingIntermediateKey(): void
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('__toString')->willReturn('{"a": {"b": "value"}}');
+
+        $psrResponse = $this->createMock(ResponseInterface::class);
+        $psrResponse->method('getBody')->willReturn($stream);
+
+        $response = new VaultHttpResponse($psrResponse);
+
+        self::assertSame('default', $response->jsonGet('a.c.d', 'default'));
+    }
 }
