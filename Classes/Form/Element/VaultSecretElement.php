@@ -118,6 +118,12 @@ final class VaultSecretElement extends AbstractFormElement
         // Build HTML
         $html = [];
         $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
+
+        // Render field information (description/help text)
+        $fieldInformationResult = $this->renderFieldInformation();
+        $html[] = $fieldInformationResult['html'];
+        $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldInformationResult, false);
+
         $html[] = '<div class="form-wizards-wrap">';
         $html[] = '<div class="form-wizards-element">';
         $html[] = '<div class="form-control-wrap" style="max-width: ' . $width . 'px">';

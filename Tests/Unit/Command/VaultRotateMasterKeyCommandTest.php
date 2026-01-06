@@ -18,6 +18,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 #[CoversClass(VaultRotateMasterKeyCommand::class)]
@@ -266,5 +267,235 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         $this->masterKeyProviderFactory
             ->method('getAvailableProvider')
             ->willReturn($provider);
+    }
+
+    #[Test]
+    public function failsWhenFirstSecretNotFound(): void
+    {
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn(['nonexistent-secret']);
+
+        $this->secretRepository
+            ->method('findByIdentifier')
+            ->willReturn(null);
+
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--confirm' => true,
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Failed to load first secret', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function usesDefaultKeyWhenOldKeyNotProvided(): void
+    {
+        $this->mockMasterKeyProvider(str_repeat('d', 32));
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn([]);
+
+        $exitCode = $this->commandTester->execute([
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+        ]);
+
+        // Success (no secrets) means the default key was used
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function usesDefaultKeyWhenNewKeyNotProvided(): void
+    {
+        $this->mockMasterKeyProvider(str_repeat('d', 32));
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn([]);
+
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+        ]);
+
+        // Success (no secrets) means the default key was used
+        self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function successfulRotationWithConfirm(): void
+    {
+        $secret = $this->createTestSecret('test-secret');
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn(['test-secret']);
+
+        $this->secretRepository
+            ->method('findByIdentifier')
+            ->willReturn($secret);
+
+        $this->encryptionService
+            ->method('reEncryptDek')
+            ->willReturn([
+                'encrypted_dek' => 'new-encrypted-dek',
+                'nonce' => 'new-nonce',
+            ]);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())->method('beginTransaction');
+        $connection->expects(self::once())->method('commit');
+        $connection->expects(self::never())->method('rollBack');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $this->secretRepository
+            ->expects(self::once())
+            ->method('save')
+            ->with($secret);
+
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--confirm' => true,
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertStringContainsString('Successfully rotated', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function rollsBackOnPartialFailure(): void
+    {
+        $secret1 = $this->createTestSecret('secret-1');
+        $secret2 = $this->createTestSecret('secret-2');
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn(['secret-1', 'secret-2']);
+
+        $this->secretRepository
+            ->method('findByIdentifier')
+            ->willReturnCallback(static function (string $id) use ($secret1, $secret2) {
+                return $id === 'secret-1' ? $secret1 : $secret2;
+            });
+
+        $callCount = 0;
+        $this->encryptionService
+            ->method('reEncryptDek')
+            ->willReturnCallback(static function () use (&$callCount): array {
+                ++$callCount;
+                if ($callCount === 1) {
+                    // First call (verification) succeeds
+                    return ['encrypted_dek' => 'new', 'nonce' => 'n'];
+                }
+                if ($callCount === 2) {
+                    // Second call succeeds
+                    return ['encrypted_dek' => 'new', 'nonce' => 'n'];
+                }
+
+                // Third call (secret-2) fails
+                throw EncryptionException::decryptionFailed();
+            });
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())->method('beginTransaction');
+        $connection->expects(self::once())->method('rollBack');
+        $connection->expects(self::never())->method('commit');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--confirm' => true,
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('rolled back', $this->commandTester->getDisplay());
+    }
+
+    #[Test]
+    public function skipsSecretNotFoundDuringRotation(): void
+    {
+        $secret = $this->createTestSecret('existing-secret');
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn(['existing-secret', 'missing-secret']);
+
+        $callCount = 0;
+        $this->secretRepository
+            ->method('findByIdentifier')
+            ->willReturnCallback(function (string $id) use ($secret, &$callCount) {
+                ++$callCount;
+                // Return secret for verification
+                if ($callCount <= 2 && $id === 'existing-secret') {
+                    return $secret;
+                }
+
+                // Return null for missing-secret
+                return $id === 'existing-secret' ? $secret : null;
+            });
+
+        $this->encryptionService
+            ->method('reEncryptDek')
+            ->willReturn(['encrypted_dek' => 'new', 'nonce' => 'n']);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())->method('beginTransaction');
+        $connection->expects(self::once())->method('rollBack');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--confirm' => true,
+        ]);
+
+        // Fails because of 'Not found' error
+        self::assertSame(1, $exitCode);
+    }
+
+    #[Test]
+    public function handlesKeyWithTrailingNewline(): void
+    {
+        $rawKey = str_repeat('t', 32);
+        $keyWithNewline = $rawKey . "\n";
+
+        $secret = $this->createTestSecret('test-secret');
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn(['test-secret']);
+
+        $this->secretRepository
+            ->method('findByIdentifier')
+            ->willReturn($secret);
+
+        $this->encryptionService
+            ->method('reEncryptDek')
+            ->willReturn([
+                'encrypted_dek' => 'new-dek',
+                'nonce' => 'new-nonce',
+            ]);
+
+        // Key with trailing newline should be trimmed
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', $keyWithNewline),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--dry-run' => true,
+        ]);
+
+        self::assertSame(0, $exitCode);
     }
 }
