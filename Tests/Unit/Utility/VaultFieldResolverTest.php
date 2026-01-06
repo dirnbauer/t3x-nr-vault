@@ -186,6 +186,163 @@ final class VaultFieldResolverTest extends UnitTestCase
         self::assertNull($result);
     }
 
+    #[Test]
+    public function resolveSingleReturnsSecretValue(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $secretValue = 'my-secret-value';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($secretValue);
+
+        $result = $this->subject->resolve($identifier);
+
+        self::assertSame($secretValue, $result);
+    }
+
+    #[Test]
+    public function resolveSingleReturnsNullForSecretNotFound(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+
+        $result = $this->subject->resolve($identifier);
+
+        self::assertNull($result);
+    }
+
+    #[Test]
+    public function resolveFieldsResolvesVaultIdentifiers(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $secretValue = 'my-api-key';
+
+        $this->vaultService
+            ->expects(self::once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($secretValue);
+
+        $data = [
+            'title' => 'Test',
+            'api_key' => $identifier,
+        ];
+
+        $result = $this->subject->resolveFields($data, ['api_key']);
+
+        self::assertSame('Test', $result['title']);
+        self::assertSame($secretValue, $result['api_key']);
+    }
+
+    #[Test]
+    public function resolveFieldsReturnsNullForSecretNotFound(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+
+        $data = [
+            'api_key' => $identifier,
+        ];
+
+        $result = $this->subject->resolveFields($data, ['api_key']);
+
+        self::assertNull($result['api_key']);
+    }
+
+    #[Test]
+    public function resolveFieldsLogsErrorForVaultException(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+
+        $this->logger
+            ->expects(self::once())
+            ->method('error')
+            ->with('Failed to resolve vault field', self::callback(function (array $context) use ($identifier) {
+                return $context['field'] === 'api_key'
+                    && $context['identifier'] === $identifier
+                    && str_contains($context['error'], 'Decryption failed');
+            }));
+
+        $data = [
+            'api_key' => $identifier,
+        ];
+
+        $result = $this->subject->resolveFields($data, ['api_key']);
+
+        self::assertNull($result['api_key']);
+    }
+
+    #[Test]
+    public function resolveFieldsThrowsWhenThrowOnErrorIsTrue(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->method('retrieve')
+            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+
+        $data = [
+            'api_key' => $identifier,
+        ];
+
+        $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+        $this->subject->resolveFields($data, ['api_key'], true);
+    }
+
+    #[Test]
+    public function resolveRecordResolvesVaultFields(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $secretValue = 'resolved-secret';
+
+        $this->mockTcaSchemaForTable('tx_test', [
+            'title' => ['type' => 'input'],
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $this->vaultService
+            ->expects(self::once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($secretValue);
+
+        $record = [
+            'title' => 'Test Record',
+            'api_key' => $identifier,
+        ];
+
+        $result = $this->subject->resolveRecord('tx_test', $record);
+
+        self::assertSame('Test Record', $result['title']);
+        self::assertSame($secretValue, $result['api_key']);
+    }
+
+    #[Test]
+    public function resolveRecordReturnsRecordUnchangedIfNoVaultFields(): void
+    {
+        $this->tcaSchemaFactory->method('has')->with('tx_nonexistent')->willReturn(false);
+
+        $record = [
+            'title' => 'Test',
+        ];
+
+        $result = $this->subject->resolveRecord('tx_nonexistent', $record);
+
+        self::assertSame($record, $result);
+    }
+
     /**
      * @param array<string, array<string, mixed>> $fields
      */
