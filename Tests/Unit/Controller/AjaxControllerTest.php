@@ -17,6 +17,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
+use RuntimeException;
 
 #[CoversClass(AjaxController::class)]
 final class AjaxControllerTest extends TestCase
@@ -148,7 +149,7 @@ final class AjaxControllerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \RuntimeException('Unexpected error'));
+            ->willThrowException(new RuntimeException('Unexpected error'));
 
         $response = $this->subject->revealAction($request);
 
@@ -341,7 +342,7 @@ final class AjaxControllerTest extends TestCase
 
         $this->vaultService
             ->method('rotate')
-            ->willThrowException(new \RuntimeException('Unexpected error'));
+            ->willThrowException(new RuntimeException('Unexpected error'));
 
         $response = $this->subject->rotateAction($request);
 
