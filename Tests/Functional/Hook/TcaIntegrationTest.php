@@ -221,17 +221,17 @@ final class TcaIntegrationTest extends FunctionalTestCase
         $connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $connection = $connectionPool->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME);
 
+        // Use SQLite-compatible syntax (also works with MySQL)
         $connection->executeStatement('
             CREATE TABLE IF NOT EXISTS tx_nrvault_test (
-                uid INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-                pid INT(11) UNSIGNED DEFAULT 0 NOT NULL,
-                deleted TINYINT(1) UNSIGNED DEFAULT 0 NOT NULL,
-                crdate INT(11) UNSIGNED DEFAULT 0 NOT NULL,
-                tstamp INT(11) UNSIGNED DEFAULT 0 NOT NULL,
+                uid INTEGER PRIMARY KEY AUTOINCREMENT,
+                pid INTEGER DEFAULT 0 NOT NULL,
+                deleted INTEGER DEFAULT 0 NOT NULL,
+                crdate INTEGER DEFAULT 0 NOT NULL,
+                tstamp INTEGER DEFAULT 0 NOT NULL,
                 title VARCHAR(255) DEFAULT \'\' NOT NULL,
                 api_key VARCHAR(255) DEFAULT \'\' NOT NULL,
-                api_secret VARCHAR(255) DEFAULT \'\' NOT NULL,
-                PRIMARY KEY (uid)
+                api_secret VARCHAR(255) DEFAULT \'\' NOT NULL
             )
         ');
     }
