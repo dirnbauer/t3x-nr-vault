@@ -148,6 +148,7 @@ jobs:
         if: success()
         with:
           files: coverage.xml
+          flags: unit
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
@@ -169,6 +170,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: sodium, json, pdo, pdo_sqlite
           tools: composer:v2
+          coverage: xdebug
 
       - name: Get Composer cache directory
         id: composer-cache
@@ -186,5 +188,14 @@ jobs:
           composer require typo3/cms-core:${{ matrix.typo3 }} --no-update
           composer install --no-progress --prefer-dist
 
-      - name: Run Functional Tests
-        run: .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Functional
+      - name: Run Functional Tests with Coverage
+        run: .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --coverage-clover=coverage-functional.xml --colors=never
+
+      - name: Upload functional coverage to Codecov
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        if: success()
+        with:
+          files: coverage-functional.xml
+          flags: functional
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
