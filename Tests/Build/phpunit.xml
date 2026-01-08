@@ -32,6 +32,15 @@
         </include>
         <exclude>
             <directory>../../Classes/Exception</directory>
+            <!-- Backend controllers depend on final TYPO3 classes that cannot be mocked in unit tests -->
+            <!-- They are tested through functional tests instead -->
+            <file>../../Classes/Controller/AuditController.php</file>
+            <file>../../Classes/Controller/MigrationController.php</file>
+            <file>../../Classes/Controller/OverviewController.php</file>
+            <file>../../Classes/Controller/SecretsController.php</file>
+            <!-- Form elements also depend on final TYPO3 classes -->
+            <file>../../Classes/Form/Element/VaultSecretElement.php</file>
+            <file>../../Classes/Form/Element/VaultSecretInputElement.php</file>
         </exclude>
     </source>
 
