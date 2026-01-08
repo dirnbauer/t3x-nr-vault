@@ -1,7 +1,7 @@
 services:
   mock-oauth:
     container_name: ddev-${DDEV_SITENAME}-mock-oauth
-    image: ghcr.io/navikt/mock-oauth2-server:3.0.1
+    image: ghcr.io/navikt/mock-oauth2-server:3.0.1@sha256:4f3660e5f3586b81fe2e0d42d0c9fcd3c8c64268db0d3ade261dadd70d27020b
     restart: "no"
     labels:
       com.ddev.site-name: ${DDEV_SITENAME}
@@ -25,7 +25,7 @@ services:
   # Traefik router for mock-oauth
   mock-oauth-router:
     container_name: ddev-${DDEV_SITENAME}-mock-oauth-router
-    image: traefik:v3.6
+    image: traefik:v3.6@sha256:82d3d16dde0474a51fef00b28de143d48b67f7a27453224d5e7b5aaefff26a97
     restart: "no"
     depends_on:
       - mock-oauth
