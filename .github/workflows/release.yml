@@ -88,7 +88,7 @@ jobs:
         run: |
           cd dist
           for file in *.tar.gz *.zip *.spdx.json checksums-*.txt; do
-            cosign sign-blob --yes "$file" --output-signature "${file}.sig" --output-certificate "${file}.pem"
+            cosign sign-blob --yes "$file" --bundle "${file}.bundle"
           done
 
       - name: Generate build provenance attestation
@@ -110,7 +110,6 @@ jobs:
             dist/*.zip
             dist/*.spdx.json
             dist/checksums-*.txt
-            dist/*.sig
-            dist/*.pem
+            dist/*.bundle
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
