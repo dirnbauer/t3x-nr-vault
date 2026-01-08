@@ -42,7 +42,7 @@ and audit logging.
    :gap: 4
    :card-height: 100
 
-   .. card:: :octicon:`book` Introduction
+   .. card:: 📖 Introduction
 
       Learn what nr-vault provides and why you need it for secure secrets
       management in TYPO3.
@@ -50,7 +50,7 @@ and audit logging.
       .. card-footer:: :ref:`Read more <introduction>`
          :button-style: btn btn-primary stretched-link
 
-   .. card:: :octicon:`download` Installation
+   .. card:: 📥 Installation
 
       Install the extension via Composer and set up your master key for
       encryption.
@@ -58,7 +58,7 @@ and audit logging.
       .. card-footer:: :ref:`Read more <installation>`
          :button-style: btn btn-secondary stretched-link
 
-   .. card:: :octicon:`gear` Configuration
+   .. card:: ⚙️ Configuration
 
       Configure storage adapters, master key providers, access control,
       and extension settings.
@@ -66,14 +66,14 @@ and audit logging.
       .. card-footer:: :ref:`Read more <configuration>`
          :button-style: btn btn-secondary stretched-link
 
-   .. card:: :octicon:`terminal` Usage
+   .. card:: 💻 Usage
 
       Manage secrets through the backend module, CLI commands, and PHP API.
 
       .. card-footer:: :ref:`Read more <usage>`
          :button-style: btn btn-secondary stretched-link
 
-   .. card:: :octicon:`shield-lock` Security
+   .. card:: 🔒 Security
 
       Understand the encryption architecture, audit logging, and security
       best practices.
@@ -81,7 +81,7 @@ and audit logging.
       .. card-footer:: :ref:`Read more <security>`
          :button-style: btn btn-secondary stretched-link
 
-   .. card:: :octicon:`code` Developer
+   .. card:: 👨‍💻 Developer
 
       API reference, TCA integration, extending nr-vault with custom adapters,
       and events.
