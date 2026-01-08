@@ -1,68 +1,82 @@
-# nr-vault Makefile - DDEV-based development
+# nr-vault Makefile
+# Docker-based testing following TYPO3 core conventions
+# Use runTests.sh for CI-compatible containerized test execution
 
-.PHONY: help up down test unit functional lint phpstan cs fix ci clean shell docs docs-open
+.PHONY: help test unit functional lint phpstan cs fix ci clean docs docs-open
 
 .DEFAULT_GOAL := help
+
+RUNTESTS = Build/Scripts/runTests.sh
 
 help:
 	@echo "nr-vault Development Commands"
 	@echo ""
-	@echo "  make up         Start environment and install TYPO3"
-	@echo "  make down       Stop environment"
-	@echo "  make shell      Open shell in container"
+	@echo "  Testing (Docker-based, CI-compatible):"
+	@echo "    make test       Run unit tests (default: PHP 8.5, SQLite)"
+	@echo "    make unit       Run unit tests"
+	@echo "    make functional Run functional tests (SQLite)"
+	@echo "    make func-maria Run functional tests (MariaDB 10.11)"
+	@echo "    make func-mysql Run functional tests (MySQL 8.0)"
+	@echo "    make func-pg    Run functional tests (PostgreSQL 16)"
 	@echo ""
-	@echo "  make test       Run all tests"
-	@echo "  make unit       Run unit tests"
-	@echo "  make functional Run functional tests"
+	@echo "  Quality (Docker-based):"
+	@echo "    make lint       Check PHP syntax"
+	@echo "    make phpstan    Run static analysis"
+	@echo "    make cs         Check code style"
+	@echo "    make fix        Fix code style"
+	@echo "    make rector     Apply Rector rules"
 	@echo ""
-	@echo "  make lint       Check PHP syntax"
-	@echo "  make phpstan    Run static analysis"
-	@echo "  make cs         Check code style"
-	@echo "  make fix        Fix code style"
+	@echo "  Documentation:"
+	@echo "    make docs       Render documentation"
+	@echo "    make docs-open  Render and open documentation"
 	@echo ""
-	@echo "  make docs       Render documentation"
-	@echo "  make docs-open  Render and open documentation"
+	@echo "  CI/Maintenance:"
+	@echo "    make ci         Run all CI checks"
+	@echo "    make clean      Remove build artifacts"
+	@echo "    make update     Update Docker images"
 	@echo ""
-	@echo "  make ci         Run all CI checks"
-	@echo "  make clean      Remove build artifacts"
+	@echo "  Options (via runTests.sh directly):"
+	@echo "    ./$(RUNTESTS) -h           Show all options"
+	@echo "    ./$(RUNTESTS) -p 8.4 -s unit   Run with PHP 8.4"
+	@echo "    ./$(RUNTESTS) -x -s unit       Run with Xdebug"
 
-# === Environment ===
-up:
-	ddev start
-	ddev install-v14
-	$(MAKE) docs
-
-down:
-	ddev stop
-
-shell:
-	ddev ssh
-
-# === Testing (runs in container) ===
-test: unit functional
+# === Testing ===
+test: unit
 
 unit:
-	ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --no-coverage
+	$(RUNTESTS) -s unit
 
 functional:
-	ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Functional
+	$(RUNTESTS) -s functional
 
-# === Quality (runs in container) ===
+func-maria:
+	$(RUNTESTS) -s functional -d mariadb
+
+func-mysql:
+	$(RUNTESTS) -s functional -d mysql
+
+func-pg:
+	$(RUNTESTS) -s functional -d postgres
+
+# === Quality ===
 lint:
-	ddev exec find Classes Tests -name '*.php' -print0 | xargs -0 -n1 php -l
+	$(RUNTESTS) -s lint
 
 phpstan:
-	ddev exec .Build/bin/phpstan analyse
+	$(RUNTESTS) -s phpstan
 
 cs:
-	ddev exec .Build/bin/php-cs-fixer fix --dry-run --diff
+	$(RUNTESTS) -s cgl -n
 
 fix:
-	ddev exec .Build/bin/php-cs-fixer fix
+	$(RUNTESTS) -s cgl
+
+rector:
+	$(RUNTESTS) -s rector
 
 # === Documentation ===
 docs:
-	docker run --rm -v "$$(pwd)":/project -t ghcr.io/typo3-documentation/render-guides:latest --config=Documentation
+	$(RUNTESTS) -s renderDocumentation
 
 docs-open: docs
 	@echo "Opening documentation..."
@@ -74,6 +88,7 @@ ci: lint cs phpstan unit
 
 # === Maintenance ===
 clean:
-	rm -rf .Build/vendor .Build/bin .Build/public .Build/var
-	rm -rf Tests/Build/.phpunit.cache var/
-	rm -rf Documentation-GENERATED-temp
+	$(RUNTESTS) -s clean
+
+update:
+	$(RUNTESTS) -u

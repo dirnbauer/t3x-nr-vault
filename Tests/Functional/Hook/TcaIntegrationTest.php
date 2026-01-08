@@ -30,6 +30,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 #[CoversClass(VaultFieldResolver::class)]
 #[Group('wip')]
+#[Group('not-sqlite')]
 final class TcaIntegrationTest extends FunctionalTestCase
 {
     private const string SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
