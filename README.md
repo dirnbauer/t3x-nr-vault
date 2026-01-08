@@ -11,20 +11,37 @@
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/netresearch/t3x-nr-vault)](https://github.com/netresearch/t3x-nr-vault/releases)
 
-A TYPO3 v14 extension providing centralized, secure storage for API keys, credentials, and other secrets with encryption at rest, access control, audit logging, and a secure HTTP client.
+*Enterprise-grade secret management without enterprise-grade complexity.*
 
-## Problem Statement
+## The Problem
 
-TYPO3 lacks a proper secrets management solution. Current approaches are inadequate:
+Your TYPO3 site integrates with Stripe, SendGrid, Google Maps, and a dozen other services. **Where are those API keys right now?**
 
-| Approach | Problem |
-|----------|---------|
-| TCA `type=password` | Hashes by default (irreversible) or stores plaintext |
-| Extension configuration | Stored in `LocalConfiguration.php` (often in git) |
-| Environment variables | Not suitable for multi-user, runtime-configurable secrets |
-| Database plaintext | No encryption, exposed in backups, SQL injection risk |
+Probably in plain text in `LocalConfiguration.php`, unencrypted in a database field, or hardcoded somewhere accessible to every backend user.
 
-Every extension that needs to store API keys reinvents this wheel, often insecurely.
+If your database leaks, your secrets leak. If you need to rotate a compromised key, you're editing config files and redeploying.
+
+## How Secrets Are Typically Stored
+
+| Method | Security | Operational Reality |
+|--------|----------|---------------------|
+| **External Services** (HashiCorp Vault, AWS SM) | ⭐⭐⭐⭐⭐ | Infrastructure cost, network access, auth to service |
+| **Environment Variables** | ⭐⭐⭐ | Deployment/host access required, restart to change, **no rotation UI, no audit trail** |
+| **Files outside webroot** | ⭐⭐⭐ | Deployment/host access required, **hard to rotate, no management interface** |
+| **nr-vault (encrypted DB)** | ⭐⭐⭐⭐ | Runtime manageable via TYPO3 backend, rotate anytime, full audit trail |
+| **Plain text in config/DB** | ⭐ | ❌ No protection |
+
+## Why nr-vault?
+
+All "more secure" methods require either external infrastructure, deployment pipelines, or server access. And they all lack a management UI and audit trail.
+
+| Challenge | Env Vars / Files | nr-vault |
+|-----------|------------------|----------|
+| **Rotate a compromised API key** | Call DevOps, redeploy, restart | Click in backend, done |
+| **See who accessed a secret** | Check deploy logs (if any) | Full audit log with timestamps |
+| **Emergency credential revocation** | Wait for deployment pipeline | Immediate via backend module |
+| **Non-technical editor updates SMTP password** | Create support ticket | Self-service in backend |
+| **Compliance audit: prove access history** | Manually correlate logs | Export tamper-evident audit trail |
 
 ## Solution
 
