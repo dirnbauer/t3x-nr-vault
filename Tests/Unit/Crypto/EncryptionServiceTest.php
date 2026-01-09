@@ -48,19 +48,19 @@ final class EncryptionServiceTest extends TestCase
     }
 
     #[Test]
-    public function encryptReturnsExpectedArrayStructure(): void
+    public function encryptReturnsExpectedDtoStructure(): void
     {
         $plaintext = 'my-secret-api-key-12345';
         $identifier = 'test-secret';
 
         $result = $this->subject->encrypt($plaintext, $identifier);
 
-        self::assertIsArray($result);
-        self::assertArrayHasKey('encrypted_value', $result);
-        self::assertArrayHasKey('encrypted_dek', $result);
-        self::assertArrayHasKey('dek_nonce', $result);
-        self::assertArrayHasKey('value_nonce', $result);
-        self::assertArrayHasKey('value_checksum', $result);
+        self::assertInstanceOf(\Netresearch\NrVault\Crypto\EncryptedData::class, $result);
+        self::assertNotEmpty($result->encryptedValue);
+        self::assertNotEmpty($result->encryptedDek);
+        self::assertNotEmpty($result->dekNonce);
+        self::assertNotEmpty($result->valueNonce);
+        self::assertNotEmpty($result->valueChecksum);
     }
 
     #[Test]
@@ -72,11 +72,11 @@ final class EncryptionServiceTest extends TestCase
         $result = $this->subject->encrypt($plaintext, $identifier);
 
         // Encrypted value should be base64 encoded and different from plaintext
-        self::assertNotEquals($plaintext, $result['encrypted_value']);
-        self::assertNotEmpty($result['encrypted_value']);
+        self::assertNotEquals($plaintext, $result->encryptedValue);
+        self::assertNotEmpty($result->encryptedValue);
 
         // Verify it's valid base64
-        $decoded = base64_decode($result['encrypted_value'], true);
+        $decoded = base64_decode($result->encryptedValue, true);
         self::assertNotFalse($decoded);
     }
 
@@ -90,11 +90,11 @@ final class EncryptionServiceTest extends TestCase
         $result2 = $this->subject->encrypt($plaintext, $identifier);
 
         // Each encryption should use unique nonces
-        self::assertNotEquals($result1['dek_nonce'], $result2['dek_nonce']);
-        self::assertNotEquals($result1['value_nonce'], $result2['value_nonce']);
+        self::assertNotEquals($result1->dekNonce, $result2->dekNonce);
+        self::assertNotEquals($result1->valueNonce, $result2->valueNonce);
 
         // Each encryption generates a new DEK
-        self::assertNotEquals($result1['encrypted_dek'], $result2['encrypted_dek']);
+        self::assertNotEquals($result1->encryptedDek, $result2->encryptedDek);
     }
 
     #[Test]
@@ -106,10 +106,10 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $this->subject->encrypt($plaintext, $identifier);
 
         $decrypted = $this->subject->decrypt(
-            $encrypted['encrypted_value'],
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedValue,
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             $identifier,
         );
 
@@ -127,10 +127,10 @@ final class EncryptionServiceTest extends TestCase
         $this->expectException(EncryptionException::class);
 
         $this->subject->decrypt(
-            $encrypted['encrypted_value'],
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedValue,
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             'wrong-identifier', // Different AAD
         );
     }
@@ -145,16 +145,16 @@ final class EncryptionServiceTest extends TestCase
 
         // Tamper with the encrypted value
         $tamperedValue = base64_encode(
-            substr(base64_decode($encrypted['encrypted_value'], true), 0, -1) . 'X',
+            substr(base64_decode($encrypted->encryptedValue, true), 0, -1) . 'X',
         );
 
         $this->expectException(EncryptionException::class);
 
         $this->subject->decrypt(
             $tamperedValue,
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             $identifier,
         );
     }
@@ -228,18 +228,18 @@ final class EncryptionServiceTest extends TestCase
 
         // Re-encrypt DEK with new master key
         $reEncrypted = $this->subject->reEncryptDek(
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
             $identifier,
             $oldMasterKey,
             $newMasterKey,
         );
 
-        self::assertArrayHasKey('encrypted_dek', $reEncrypted);
-        self::assertArrayHasKey('nonce', $reEncrypted);
+        self::assertNotEmpty($reEncrypted->encryptedDek);
+        self::assertNotEmpty($reEncrypted->nonce);
 
         // The new encrypted DEK should be different
-        self::assertNotEquals($encrypted['encrypted_dek'], $reEncrypted['encrypted_dek']);
+        self::assertNotEquals($encrypted->encryptedDek, $reEncrypted->encryptedDek);
     }
 
     #[Test]
@@ -250,13 +250,13 @@ final class EncryptionServiceTest extends TestCase
 
         $encrypted = $this->subject->encrypt($plaintext, $identifier);
 
-        self::assertNotEmpty($encrypted['encrypted_value']);
+        self::assertNotEmpty($encrypted->encryptedValue);
 
         $decrypted = $this->subject->decrypt(
-            $encrypted['encrypted_value'],
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedValue,
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             $identifier,
         );
 
@@ -273,10 +273,10 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $this->subject->encrypt($plaintext, $identifier);
 
         $decrypted = $this->subject->decrypt(
-            $encrypted['encrypted_value'],
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedValue,
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             $identifier,
         );
 
@@ -292,10 +292,10 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $this->subject->encrypt($plaintext, $identifier);
 
         $decrypted = $this->subject->decrypt(
-            $encrypted['encrypted_value'],
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedValue,
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             $identifier,
         );
 
@@ -322,8 +322,8 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $subject->encrypt($plaintext, $identifier);
 
         // Should still work with XChaCha20
-        self::assertArrayHasKey('encrypted_value', $encrypted);
-        self::assertArrayHasKey('encrypted_dek', $encrypted);
+        self::assertNotEmpty($encrypted->encryptedValue);
+        self::assertNotEmpty($encrypted->encryptedDek);
     }
 
     #[Test]
@@ -346,10 +346,10 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $subject->encrypt($plaintext, $identifier);
 
         $decrypted = $subject->decrypt(
-            $encrypted['encrypted_value'],
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
-            $encrypted['value_nonce'],
+            $encrypted->encryptedValue,
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
+            $encrypted->valueNonce,
             $identifier,
         );
 
@@ -396,16 +396,16 @@ final class EncryptionServiceTest extends TestCase
         $encrypted = $subject->encrypt($plaintext, $identifier);
 
         $reEncrypted = $subject->reEncryptDek(
-            $encrypted['encrypted_dek'],
-            $encrypted['dek_nonce'],
+            $encrypted->encryptedDek,
+            $encrypted->dekNonce,
             $identifier,
             $oldMasterKey,
             $newMasterKey,
         );
 
-        self::assertArrayHasKey('encrypted_dek', $reEncrypted);
-        self::assertArrayHasKey('nonce', $reEncrypted);
-        self::assertNotEquals($encrypted['encrypted_dek'], $reEncrypted['encrypted_dek']);
+        self::assertNotEmpty($reEncrypted->encryptedDek);
+        self::assertNotEmpty($reEncrypted->nonce);
+        self::assertNotEquals($encrypted->encryptedDek, $reEncrypted->encryptedDek);
     }
 
     #[Test]

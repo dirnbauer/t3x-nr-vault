@@ -124,7 +124,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         return $this->query($filter, PHP_INT_MAX, 0);
     }
 
-    public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array
+    public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): HashChainVerificationResult
     {
         $queryBuilder = $this->getConnection()->createQueryBuilder();
         $queryBuilder
@@ -171,10 +171,9 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $previousHash = (string) $row['entry_hash'];
         }
 
-        return [
-            'valid' => $errors === [],
-            'errors' => $errors,
-        ];
+        return $errors === []
+            ? HashChainVerificationResult::valid()
+            : HashChainVerificationResult::invalid($errors);
     }
 
     public function getLatestHash(): ?string

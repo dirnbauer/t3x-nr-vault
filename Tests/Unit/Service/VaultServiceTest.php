@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
+use Netresearch\NrVault\Crypto\EncryptedData;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Exception\AccessDeniedException;
@@ -73,13 +74,7 @@ final class VaultServiceTest extends TestCase
             ->expects(self::once())
             ->method('encrypt')
             ->with($secretValue, $identifier)
-            ->willReturn([
-                'encrypted_value' => 'enc_value',
-                'encrypted_dek' => 'enc_dek',
-                'dek_nonce' => 'nonce1',
-                'value_nonce' => 'nonce2',
-                'value_checksum' => 'checksum',
-            ]);
+            ->willReturn(new EncryptedData('enc_value', 'enc_dek', 'nonce1', 'nonce2', 'checksum'));
 
         $this->adapter
             ->method('retrieve')
@@ -283,13 +278,7 @@ final class VaultServiceTest extends TestCase
             ->expects(self::once())
             ->method('encrypt')
             ->with($newSecret, $identifier)
-            ->willReturn([
-                'encrypted_value' => 'new_enc',
-                'encrypted_dek' => 'new_dek',
-                'dek_nonce' => 'new_nonce1',
-                'value_nonce' => 'new_nonce2',
-                'value_checksum' => 'new_checksum',
-            ]);
+            ->willReturn(new EncryptedData('new_enc', 'new_dek', 'new_nonce1', 'new_nonce2', 'new_checksum'));
 
         $this->adapter
             ->expects(self::once())
@@ -419,11 +408,11 @@ final class VaultServiceTest extends TestCase
 
         $result = $this->subject->getMetadata($identifier);
 
-        self::assertEquals($identifier, $result['identifier']);
-        self::assertEquals('Test description', $result['description']);
-        self::assertEquals('testing', $result['context']);
-        self::assertEquals(3, $result['version']);
-        self::assertEquals(['key' => 'value'], $result['metadata']);
+        self::assertEquals($identifier, $result->identifier);
+        self::assertEquals('Test description', $result->description);
+        self::assertEquals('testing', $result->context);
+        self::assertEquals(3, $result->version);
+        self::assertEquals(['key' => 'value'], $result->metadata);
     }
 
     #[Test]
@@ -462,13 +451,7 @@ final class VaultServiceTest extends TestCase
 
         $this->encryptionService
             ->method('encrypt')
-            ->willReturn([
-                'encrypted_value' => 'enc',
-                'encrypted_dek' => 'dek',
-                'dek_nonce' => 'n1',
-                'value_nonce' => 'n2',
-                'value_checksum' => 'cs',
-            ]);
+            ->willReturn(new EncryptedData('enc', 'dek', 'n1', 'n2', 'cs'));
 
         $this->adapter->method('retrieve')->willReturn(null);
 
@@ -505,13 +488,7 @@ final class VaultServiceTest extends TestCase
 
         $this->encryptionService
             ->method('encrypt')
-            ->willReturn([
-                'encrypted_value' => 'enc',
-                'encrypted_dek' => 'dek',
-                'dek_nonce' => 'n1',
-                'value_nonce' => 'n2',
-                'value_checksum' => 'cs',
-            ]);
+            ->willReturn(new EncryptedData('enc', 'dek', 'n1', 'n2', 'cs'));
 
         $this->adapter->method('retrieve')->willReturn(null);
 
@@ -538,13 +515,7 @@ final class VaultServiceTest extends TestCase
 
         $this->encryptionService
             ->method('encrypt')
-            ->willReturn([
-                'encrypted_value' => 'enc',
-                'encrypted_dek' => 'dek',
-                'dek_nonce' => 'n1',
-                'value_nonce' => 'n2',
-                'value_checksum' => 'cs',
-            ]);
+            ->willReturn(new EncryptedData('enc', 'dek', 'n1', 'n2', 'cs'));
 
         $this->adapter->method('retrieve')->willReturn($existing);
 
@@ -783,13 +754,7 @@ final class VaultServiceTest extends TestCase
     {
         $this->encryptionService
             ->method('encrypt')
-            ->willReturn([
-                'encrypted_value' => 'enc',
-                'encrypted_dek' => 'dek',
-                'dek_nonce' => 'n1',
-                'value_nonce' => 'n2',
-                'value_checksum' => 'cs',
-            ]);
+            ->willReturn(new EncryptedData('enc', 'dek', 'n1', 'n2', 'cs'));
 
         $this->adapter->method('retrieve')->willReturn(null);
 

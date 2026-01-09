@@ -168,7 +168,7 @@ final readonly class SecretsController
             );
         }
 
-        $uid = $metadata['uid'] ?? 0;
+        $uid = $metadata->uid;
         if ($uid === 0) {
             $this->addFlashMessage('Secret UID not found', ContextualFeedbackSeverity::ERROR);
 

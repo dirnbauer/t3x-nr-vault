@@ -202,8 +202,8 @@ final class VaultRotateMasterKeyCommand extends Command
                     );
 
                     // Update the secret
-                    $secret->setEncryptedDek($reEncrypted['encrypted_dek']);
-                    $secret->setDekNonce($reEncrypted['nonce']);
+                    $secret->setEncryptedDek($reEncrypted->encryptedDek);
+                    $secret->setDekNonce($reEncrypted->nonce);
                     $this->secretRepository->save($secret);
 
                     ++$successCount;

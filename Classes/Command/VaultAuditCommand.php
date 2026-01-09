@@ -201,7 +201,7 @@ final class VaultAuditCommand extends Command
 
         $result = $this->auditLogService->verifyHashChain();
 
-        if ($result['valid']) {
+        if ($result->isValid()) {
             $io->success('Hash chain is valid - no tampering detected');
 
             return Command::SUCCESS;
@@ -209,13 +209,13 @@ final class VaultAuditCommand extends Command
 
         $io->error('Hash chain verification FAILED - possible tampering detected');
 
-        if (!empty($result['errors'])) {
+        if ($result->getErrorCount() > 0) {
             $io->table(
                 ['Entry UID', 'Error'],
                 array_map(
                     fn ($uid, $error): array => [$uid, $error],
-                    array_keys($result['errors']),
-                    array_values($result['errors']),
+                    array_keys($result->errors),
+                    array_values($result->errors),
                 ),
             );
         }

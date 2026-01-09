@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Command;
 
 use Netresearch\NrVault\Command\VaultRotateCommand;
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -67,7 +68,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'my-secret']);
+            ->willReturn($this->createSecretDetails('my-secret'));
 
         $this->vaultService
             ->expects($this->once())
@@ -88,7 +89,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'rotated']);
+            ->willReturn($this->createSecretDetails('rotated'));
 
         $this->vaultService
             ->expects($this->once())
@@ -114,7 +115,7 @@ final class VaultRotateCommandTest extends TestCase
 
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'file-rotate']);
+            ->willReturn($this->createSecretDetails('file-rotate'));
 
         $this->vaultService
             ->expects($this->once())
@@ -134,7 +135,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'no-value']);
+            ->willReturn($this->createSecretDetails('no-value'));
 
         $exitCode = $this->commandTester->execute(
             ['identifier' => 'no-value'],
@@ -150,7 +151,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'file-missing']);
+            ->willReturn($this->createSecretDetails('file-missing'));
 
         $exitCode = $this->commandTester->execute([
             'identifier' => 'file-missing',
@@ -166,7 +167,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'gone']);
+            ->willReturn($this->createSecretDetails('gone'));
 
         $this->vaultService
             ->method('rotate')
@@ -186,7 +187,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'error']);
+            ->willReturn($this->createSecretDetails('error'));
 
         $this->vaultService
             ->method('rotate')
@@ -206,7 +207,7 @@ final class VaultRotateCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn(['identifier' => 'show-details']);
+            ->willReturn($this->createSecretDetails('show-details'));
 
         $this->vaultService
             ->method('rotate');
@@ -221,5 +222,27 @@ final class VaultRotateCommandTest extends TestCase
         self::assertStringContainsString('show-details', $display);
         self::assertStringContainsString('Scheduled rotation', $display);
         self::assertStringContainsString('Rotated at', $display);
+    }
+
+    private function createSecretDetails(string $identifier): SecretDetails
+    {
+        return new SecretDetails(
+            uid: 1,
+            identifier: $identifier,
+            description: 'Test secret',
+            ownerUid: 1,
+            groups: [],
+            context: 'default',
+            frontendAccessible: false,
+            version: 1,
+            createdAt: 1704067200,
+            updatedAt: 1704067200,
+            expiresAt: null,
+            lastRotatedAt: null,
+            readCount: 0,
+            lastReadAt: null,
+            metadata: [],
+            scopePid: 0,
+        );
     }
 }

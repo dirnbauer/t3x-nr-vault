@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\Command;
 
 use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Audit\HashChainVerificationResult;
 use Netresearch\NrVault\Command\VaultAuditCommand;
 use Netresearch\NrVault\Exception\VaultException;
 use org\bovigo\vfs\vfsStream;
@@ -213,7 +214,7 @@ final class VaultAuditCommandTest extends TestCase
     {
         $this->auditLogService
             ->method('verifyHashChain')
-            ->willReturn(['valid' => true, 'errors' => []]);
+            ->willReturn(HashChainVerificationResult::valid());
 
         $exitCode = $this->commandTester->execute([
             '--verify' => true,
@@ -228,10 +229,7 @@ final class VaultAuditCommandTest extends TestCase
     {
         $this->auditLogService
             ->method('verifyHashChain')
-            ->willReturn([
-                'valid' => false,
-                'errors' => [123 => 'Hash mismatch'],
-            ]);
+            ->willReturn(HashChainVerificationResult::invalid([123 => 'Hash mismatch']));
 
         $exitCode = $this->commandTester->execute([
             '--verify' => true,

@@ -17,6 +17,7 @@ use Netresearch\NrVault\Adapter\VaultAdapterInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Event\SecretAccessedEvent;
@@ -69,11 +70,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             // Build secret entity
             $secretEntity = new Secret();
             $secretEntity->setIdentifier($identifier);
-            $secretEntity->setEncryptedValue($encrypted['encrypted_value']);
-            $secretEntity->setEncryptedDek($encrypted['encrypted_dek']);
-            $secretEntity->setDekNonce($encrypted['dek_nonce']);
-            $secretEntity->setValueNonce($encrypted['value_nonce']);
-            $secretEntity->setValueChecksum($encrypted['value_checksum']);
+            $secretEntity->setEncryptedValue($encrypted->encryptedValue);
+            $secretEntity->setEncryptedDek($encrypted->encryptedDek);
+            $secretEntity->setDekNonce($encrypted->dekNonce);
+            $secretEntity->setValueNonce($encrypted->valueNonce);
+            $secretEntity->setValueChecksum($encrypted->valueChecksum);
             $secretEntity->setAdapter('local');
 
             // Apply options
@@ -141,7 +142,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 null,
                 null,
                 $isNew ? null : $existing->getValueChecksum(),
-                $encrypted['value_checksum'],
+                $encrypted->valueChecksum,
             );
 
             // Dispatch PSR-14 event
@@ -301,11 +302,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             $encrypted = $this->encryptionService->encrypt($newSecret, $identifier);
 
             // Update secret
-            $secret->setEncryptedValue($encrypted['encrypted_value']);
-            $secret->setEncryptedDek($encrypted['encrypted_dek']);
-            $secret->setDekNonce($encrypted['dek_nonce']);
-            $secret->setValueNonce($encrypted['value_nonce']);
-            $secret->setValueChecksum($encrypted['value_checksum']);
+            $secret->setEncryptedValue($encrypted->encryptedValue);
+            $secret->setEncryptedDek($encrypted->encryptedDek);
+            $secret->setDekNonce($encrypted->dekNonce);
+            $secret->setValueNonce($encrypted->valueNonce);
+            $secret->setValueChecksum($encrypted->valueChecksum);
             $secret->incrementVersion();
             $secret->setLastRotatedAt(time());
 
@@ -320,7 +321,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 null,
                 $reason,
                 $hashBefore,
-                $encrypted['value_checksum'],
+                $encrypted->valueChecksum,
             );
 
             // Dispatch PSR-14 event
@@ -377,7 +378,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         return $secrets;
     }
 
-    public function getMetadata(string $identifier): array
+    public function getMetadata(string $identifier): SecretDetails
     {
         $secret = $this->adapter->retrieve($identifier);
         if (!$secret instanceof Secret) {
@@ -391,24 +392,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             throw AccessDeniedException::forIdentifier($identifier, 'insufficient permissions');
         }
 
-        return [
-            'uid' => $secret->getUid(),
-            'identifier' => $secret->getIdentifier(),
-            'description' => $secret->getDescription(),
-            'owner' => $secret->getOwnerUid(),
-            'owner_uid' => $secret->getOwnerUid(),
-            'groups' => $secret->getAllowedGroups(),
-            'context' => $secret->getContext(),
-            'frontend_accessible' => $secret->isFrontendAccessible(),
-            'version' => $secret->getVersion(),
-            'createdAt' => $secret->getCrdate(),
-            'updatedAt' => $secret->getTstamp(),
-            'expiresAt' => $secret->getExpiresAt() ?: null,
-            'expires_at' => $secret->getExpiresAt() ?: null,
-            'lastRotatedAt' => $secret->getLastRotatedAt() ?: null,
-            'metadata' => $secret->getMetadata(),
-            'scopePid' => $secret->getScopePid(),
-        ];
+        return SecretDetails::fromSecret($secret);
     }
 
     public function http(): VaultHttpClientInterface

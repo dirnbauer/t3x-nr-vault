@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Controller;
 
 use Netresearch\NrVault\Controller\AjaxController;
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
@@ -240,7 +241,7 @@ final class AjaxControllerTest extends TestCase
         $this->vaultService
             ->method('getMetadata')
             ->with($identifier)
-            ->willReturn(['version' => 2]);
+            ->willReturn($this->createSecretDetails($identifier, version: 2));
 
         $response = $this->subject->rotateAction($request);
 
@@ -365,7 +366,7 @@ final class AjaxControllerTest extends TestCase
 
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn([]);
+            ->willReturn($this->createSecretDetails('test-id', version: 1));
 
         $response = $this->subject->rotateAction($request);
 
@@ -475,5 +476,27 @@ final class AjaxControllerTest extends TestCase
         $request->method('getParsedBody')->willReturn($body);
 
         return $request;
+    }
+
+    private function createSecretDetails(string $identifier, int $version = 1): SecretDetails
+    {
+        return new SecretDetails(
+            uid: 1,
+            identifier: $identifier,
+            description: 'Test secret',
+            ownerUid: 1,
+            groups: [],
+            context: 'default',
+            frontendAccessible: false,
+            version: $version,
+            createdAt: 1704067200,
+            updatedAt: 1704067200,
+            expiresAt: null,
+            lastRotatedAt: null,
+            readCount: 0,
+            lastReadAt: null,
+            metadata: [],
+            scopePid: 0,
+        );
     }
 }

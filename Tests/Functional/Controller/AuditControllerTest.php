@@ -103,9 +103,8 @@ final class AuditControllerTest extends FunctionalTestCase
 
         $result = $auditLogService->verifyHashChain();
 
-        self::assertIsArray($result);
-        self::assertArrayHasKey('valid', $result);
-        self::assertTrue($result['valid']);
+        self::assertInstanceOf(\Netresearch\NrVault\Audit\HashChainVerificationResult::class, $result);
+        self::assertTrue($result->valid);
     }
 
     #[Test]

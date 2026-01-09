@@ -168,9 +168,9 @@ final readonly class AuditController
         $result = $this->auditLogService->verifyHashChain();
 
         $moduleTemplate->assignMultiple([
-            'valid' => $result['valid'],
-            'errors' => $result['errors'],
-            'message' => $result['valid']
+            'valid' => $result->valid,
+            'errors' => $result->errors,
+            'message' => $result->isValid()
                 ? $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid'),
         ]);

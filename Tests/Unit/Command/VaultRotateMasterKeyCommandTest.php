@@ -8,6 +8,7 @@ use Netresearch\NrVault\Command\VaultRotateMasterKeyCommand;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
+use Netresearch\NrVault\Crypto\ReEncryptedDek;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
@@ -134,10 +135,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
 
         $this->encryptionService
             ->method('reEncryptDek')
-            ->willReturn([
-                'encrypted_dek' => 'new-dek',
-                'nonce' => 'new-nonce',
-            ]);
+            ->willReturn(new ReEncryptedDek('new-dek', 'new-nonce'));
 
         $exitCode = $this->commandTester->execute([
             '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
@@ -220,10 +218,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
 
         $this->encryptionService
             ->method('reEncryptDek')
-            ->willReturn([
-                'encrypted_dek' => 'new-dek',
-                'nonce' => 'new-nonce',
-            ]);
+            ->willReturn(new ReEncryptedDek('new-dek', 'new-nonce'));
 
         // Base64 keys should work
         $exitCode = $this->commandTester->execute([
@@ -305,10 +300,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
 
         $this->encryptionService
             ->method('reEncryptDek')
-            ->willReturn([
-                'encrypted_dek' => 'new-encrypted-dek',
-                'nonce' => 'new-nonce',
-            ]);
+            ->willReturn(new ReEncryptedDek('new-encrypted-dek', 'new-nonce'));
 
         $connection = $this->createMock(Connection::class);
         $connection->expects(self::once())->method('beginTransaction');
@@ -353,15 +345,15 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         $callCount = 0;
         $this->encryptionService
             ->method('reEncryptDek')
-            ->willReturnCallback(static function () use (&$callCount): array {
+            ->willReturnCallback(static function () use (&$callCount): ReEncryptedDek {
                 ++$callCount;
                 if ($callCount === 1) {
                     // First call (verification) succeeds
-                    return ['encrypted_dek' => 'new', 'nonce' => 'n'];
+                    return new ReEncryptedDek('new', 'n');
                 }
                 if ($callCount === 2) {
                     // Second call succeeds
-                    return ['encrypted_dek' => 'new', 'nonce' => 'n'];
+                    return new ReEncryptedDek('new', 'n');
                 }
 
                 // Third call (secret-2) fails
@@ -412,7 +404,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
 
         $this->encryptionService
             ->method('reEncryptDek')
-            ->willReturn(['encrypted_dek' => 'new', 'nonce' => 'n']);
+            ->willReturn(new ReEncryptedDek('new', 'n'));
 
         $connection = $this->createMock(Connection::class);
         $connection->expects(self::once())->method('beginTransaction');
@@ -450,10 +442,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
 
         $this->encryptionService
             ->method('reEncryptDek')
-            ->willReturn([
-                'encrypted_dek' => 'new-dek',
-                'nonce' => 'new-nonce',
-            ]);
+            ->willReturn(new ReEncryptedDek('new-dek', 'new-nonce'));
 
         // Key with trailing newline should be trimmed
         $exitCode = $this->commandTester->execute([

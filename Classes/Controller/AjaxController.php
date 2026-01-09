@@ -132,7 +132,7 @@ final readonly class AjaxController
             return new JsonResponse([
                 'success' => true,
                 'message' => 'Secret rotated successfully',
-                'version' => $updatedMetadata['version'] ?? 1,
+                'version' => $updatedMetadata->version,
             ]);
         } catch (SecretNotFoundException) {
             return new JsonResponse([

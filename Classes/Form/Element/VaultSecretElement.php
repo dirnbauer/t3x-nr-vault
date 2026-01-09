@@ -46,15 +46,11 @@ final class VaultSecretElement extends AbstractFormElement
 
         // Check if secret exists in vault (UUID is non-empty)
         $hasValue = false;
-        $valueChecksum = '';
         if ($vaultIdentifier !== '') {
             try {
                 $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
                 $metadata = $vaultService->getMetadata($vaultIdentifier);
-                if ($metadata !== null) {
-                    $hasValue = true;
-                    $valueChecksum = $metadata['value_checksum'] ?? '';
-                }
+                $hasValue = true;
             } catch (Throwable) {
                 // Secret doesn't exist yet
             }
@@ -85,7 +81,6 @@ final class VaultSecretElement extends AbstractFormElement
             'data-formengine-input-name' => $itemName,
             'data-vault-identifier' => $vaultIdentifier,
             'data-vault-has-value' => $hasValue ? '1' : '0',
-            'data-vault-checksum' => $valueChecksum,
             'data-vault-can-reveal' => $permissions['reveal'] ? '1' : '0',
             'data-vault-can-copy' => $permissions['copy'] ? '1' : '0',
             'data-vault-can-edit' => $permissions['edit'] ? '1' : '0',
@@ -165,9 +160,6 @@ final class VaultSecretElement extends AbstractFormElement
 
         // Hidden field to track vault identifier
         $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
-
-        // Hidden field for original checksum (for change detection)
-        $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_checksum]" value="' . htmlspecialchars($valueChecksum) . '" />';
 
         $resultArray['html'] = implode(LF, $html);
 

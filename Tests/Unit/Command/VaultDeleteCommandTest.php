@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Command;
 
 use Netresearch\NrVault\Command\VaultDeleteCommand;
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -66,11 +67,12 @@ final class VaultDeleteCommandTest extends TestCase
         $this->vaultService
             ->method('getMetadata')
             ->with('to-delete')
-            ->willReturn([
-                'crdate' => 1704067200,
-                'read_count' => 5,
-                'last_read_at' => 1704150000,
-            ]);
+            ->willReturn($this->createSecretDetails(
+                identifier: 'to-delete',
+                createdAt: 1704067200,
+                readCount: 5,
+                lastReadAt: 1704150000,
+            ));
 
         $this->vaultService
             ->expects($this->once())
@@ -91,11 +93,10 @@ final class VaultDeleteCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn([
-                'crdate' => 1704067200,
-                'read_count' => 0,
-                'last_read_at' => null,
-            ]);
+            ->willReturn($this->createSecretDetails(
+                identifier: 'force-delete',
+                createdAt: 1704067200,
+            ));
 
         $this->vaultService
             ->expects($this->once())
@@ -116,11 +117,10 @@ final class VaultDeleteCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn([
-                'crdate' => 1704067200,
-                'read_count' => 0,
-                'last_read_at' => null,
-            ]);
+            ->willReturn($this->createSecretDetails(
+                identifier: 'cancelled',
+                createdAt: 1704067200,
+            ));
 
         $this->vaultService
             ->expects($this->never())
@@ -140,11 +140,10 @@ final class VaultDeleteCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn([
-                'crdate' => 1704067200,
-                'read_count' => 0,
-                'last_read_at' => null,
-            ]);
+            ->willReturn($this->createSecretDetails(
+                identifier: 'gone',
+                createdAt: 1704067200,
+            ));
 
         $this->vaultService
             ->method('delete')
@@ -164,11 +163,10 @@ final class VaultDeleteCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn([
-                'crdate' => 1704067200,
-                'read_count' => 0,
-                'last_read_at' => null,
-            ]);
+            ->willReturn($this->createSecretDetails(
+                identifier: 'error',
+                createdAt: 1704067200,
+            ));
 
         $this->vaultService
             ->method('delete')
@@ -188,11 +186,12 @@ final class VaultDeleteCommandTest extends TestCase
     {
         $this->vaultService
             ->method('getMetadata')
-            ->willReturn([
-                'crdate' => 1704067200,
-                'read_count' => 10,
-                'last_read_at' => 1704150000,
-            ]);
+            ->willReturn($this->createSecretDetails(
+                identifier: 'show-metadata',
+                createdAt: 1704067200,
+                readCount: 10,
+                lastReadAt: 1704150000,
+            ));
 
         $this->commandTester->setInputs(['no']);
         $this->commandTester->execute([
@@ -203,5 +202,31 @@ final class VaultDeleteCommandTest extends TestCase
         self::assertStringContainsString('Secret to be deleted', $display);
         self::assertStringContainsString('show-metadata', $display);
         self::assertStringContainsString('10', $display);
+    }
+
+    private function createSecretDetails(
+        string $identifier = 'test-secret',
+        int $createdAt = 1704067200,
+        int $readCount = 0,
+        ?int $lastReadAt = null,
+    ): SecretDetails {
+        return new SecretDetails(
+            uid: 1,
+            identifier: $identifier,
+            description: 'Test secret',
+            ownerUid: 1,
+            groups: [],
+            context: 'default',
+            frontendAccessible: false,
+            version: 1,
+            createdAt: $createdAt,
+            updatedAt: $createdAt,
+            expiresAt: null,
+            lastRotatedAt: null,
+            readCount: $readCount,
+            lastReadAt: $lastReadAt,
+            metadata: [],
+            scopePid: 0,
+        );
     }
 }

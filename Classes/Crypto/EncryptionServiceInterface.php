@@ -18,16 +18,8 @@ interface EncryptionServiceInterface
      * @param string $identifier Secret identifier (used as AAD)
      *
      * @throws EncryptionException If encryption fails
-     *
-     * @return array{
-     *     encrypted_value: string,
-     *     encrypted_dek: string,
-     *     dek_nonce: string,
-     *     value_nonce: string,
-     *     value_checksum: string,
-     * }
      */
-    public function encrypt(string $plaintext, string $identifier): array;
+    public function encrypt(string $plaintext, string $identifier): EncryptedData;
 
     /**
      * Decrypt a secret value.
@@ -74,8 +66,6 @@ interface EncryptionServiceInterface
      * @param string $identifier Secret identifier
      * @param string $oldMasterKey Previous master key
      * @param string $newMasterKey New master key
-     *
-     * @return array{encrypted_dek: string, nonce: string}
      */
     public function reEncryptDek(
         string $encryptedDek,
@@ -83,5 +73,5 @@ interface EncryptionServiceInterface
         string $identifier,
         string $oldMasterKey,
         string $newMasterKey,
-    ): array;
+    ): ReEncryptedDek;
 }

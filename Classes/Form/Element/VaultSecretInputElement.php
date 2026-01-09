@@ -302,9 +302,9 @@ final class VaultSecretInputElement extends AbstractFormElement
 
         try {
             $vaultService = GeneralUtility::makeInstance(VaultServiceInterface::class);
-            $metadata = $vaultService->getMetadata($identifier);
+            $vaultService->getMetadata($identifier);
 
-            return $metadata !== null;
+            return true;
         } catch (Throwable) {
             return false;
         }

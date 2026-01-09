@@ -74,9 +74,9 @@ final class VaultDeleteCommand extends Command
             ['Property', 'Value'],
             [
                 ['Identifier', $identifier],
-                ['Created', date('Y-m-d H:i:s', $metadata['crdate'] ?? 0)],
-                ['Read count', $metadata['read_count'] ?? 0],
-                ['Last read', $metadata['last_read_at'] ? date('Y-m-d H:i:s', $metadata['last_read_at']) : 'Never'],
+                ['Created', date('Y-m-d H:i:s', $metadata->createdAt)],
+                ['Read count', (string) $metadata->readCount],
+                ['Last read', $metadata->lastReadAt !== null ? date('Y-m-d H:i:s', $metadata->lastReadAt) : 'Never'],
             ],
         );
 

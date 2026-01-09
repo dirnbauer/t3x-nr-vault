@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Service;
 
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\EncryptionException;
@@ -79,26 +80,12 @@ interface VaultServiceInterface
     public function list(?string $pattern = null): array;
 
     /**
-     * Get metadata about a secret.
+     * Get detailed metadata about a secret.
      *
      * @throws SecretNotFoundException If secret doesn't exist
      * @throws AccessDeniedException If current user lacks permission
-     *
-     * @return array{
-     *     identifier: string,
-     *     description: string,
-     *     owner: int,
-     *     groups: int[],
-     *     context: string,
-     *     version: int,
-     *     createdAt: int,
-     *     updatedAt: int,
-     *     expiresAt: ?int,
-     *     lastRotatedAt: ?int,
-     *     metadata: array,
-     * }
      */
-    public function getMetadata(string $identifier): array;
+    public function getMetadata(string $identifier): SecretDetails;
 
     /**
      * Get the Vault HTTP Client for making authenticated API calls.

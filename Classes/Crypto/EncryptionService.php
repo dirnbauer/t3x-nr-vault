@@ -26,7 +26,7 @@ final readonly class EncryptionService implements EncryptionServiceInterface
         private ExtensionConfigurationInterface $configuration,
     ) {}
 
-    public function encrypt(string $plaintext, string $identifier): array
+    public function encrypt(string $plaintext, string $identifier): EncryptedData
     {
         $masterKey = $this->masterKeyProvider->getMasterKey();
 
@@ -53,13 +53,13 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             sodium_memzero($masterKey);
             sodium_memzero($plaintext);
 
-            return [
-                'encrypted_value' => base64_encode($encryptedValue),
-                'encrypted_dek' => base64_encode($encryptedDek),
-                'dek_nonce' => base64_encode($dekNonce),
-                'value_nonce' => base64_encode($valueNonce),
-                'value_checksum' => $checksum,
-            ];
+            return EncryptedData::fromRaw(
+                encryptedValue: $encryptedValue,
+                encryptedDek: $encryptedDek,
+                dekNonce: $dekNonce,
+                valueNonce: $valueNonce,
+                valueChecksum: $checksum,
+            );
         } catch (SodiumException $e) {
             throw EncryptionException::encryptionFailed($e->getMessage());
         }
@@ -122,7 +122,7 @@ final readonly class EncryptionService implements EncryptionServiceInterface
         string $identifier,
         string $oldMasterKey,
         string $newMasterKey,
-    ): array {
+    ): ReEncryptedDek {
         try {
             // Decode
             $encryptedDekBytes = base64_decode($encryptedDek, true);
@@ -144,10 +144,10 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             // Securely wipe
             sodium_memzero($dek);
 
-            return [
-                'encrypted_dek' => base64_encode($newEncryptedDek),
-                'nonce' => base64_encode($newNonce),
-            ];
+            return ReEncryptedDek::fromRaw(
+                encryptedDek: $newEncryptedDek,
+                nonce: $newNonce,
+            );
         } catch (SodiumException $e) {
             throw EncryptionException::encryptionFailed($e->getMessage());
         }

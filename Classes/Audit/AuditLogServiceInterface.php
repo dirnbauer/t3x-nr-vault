@@ -63,10 +63,8 @@ interface AuditLogServiceInterface
 
     /**
      * Verify hash chain integrity.
-     *
-     * @return array{valid: bool, errors: array<int, string>}
      */
-    public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array;
+    public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): HashChainVerificationResult;
 
     /**
      * Get the hash of the most recent audit log entry.

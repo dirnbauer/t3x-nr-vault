@@ -544,8 +544,8 @@ final class AuditLogServiceTest extends TestCase
 
         $verification = $this->subject->verifyHashChain();
 
-        self::assertTrue($verification['valid']);
-        self::assertEmpty($verification['errors']);
+        self::assertTrue($verification->valid);
+        self::assertEmpty($verification->errors);
     }
 
     #[Test]
@@ -597,7 +597,7 @@ final class AuditLogServiceTest extends TestCase
 
         $verification = $this->subject->verifyHashChain(10, 50);
 
-        self::assertTrue($verification['valid']);
+        self::assertTrue($verification->valid);
     }
 
     #[Test]
