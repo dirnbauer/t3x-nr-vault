@@ -70,20 +70,37 @@ This creates the following tables:
 Master key setup
 ================
 
-Before using nr-vault, you must configure a master key. See the
-:ref:`configuration` section for details on master key providers.
+nr-vault requires a master encryption key to protect your secrets. There are
+three options, from simplest to most configurable:
 
-.. warning::
+.. _installation-master-key-typo3:
 
-   Never commit master keys to version control. Store them securely
-   outside the web root.
+Option 1: TYPO3 encryption key (default, zero configuration)
+------------------------------------------------------------
 
-.. _installation-master-key-quickstart:
+**This is the recommended default.** nr-vault automatically derives a master key
+from TYPO3's built-in encryption key (:php:`$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']`).
 
-Quick start with environment variable
--------------------------------------
+**No configuration required** - nr-vault works immediately after installation.
 
-The fastest way to get started is using an environment variable:
+Benefits:
+
+-  Zero setup - works out of the box
+-  Unique per TYPO3 installation
+-  Already secured by TYPO3's configuration protection
+
+.. note::
+
+   If you later rotate TYPO3's encryption key, use the
+   :ref:`vault:rotate-master-key <command-rotate-master-key>` command first
+   to re-encrypt all secrets with the new key.
+
+.. _installation-master-key-env:
+
+Option 2: Environment variable
+------------------------------
+
+For containerized deployments or when you need explicit control:
 
 1. Generate a master key:
 
@@ -99,8 +116,35 @@ The fastest way to get started is using an environment variable:
 
       export NR_VAULT_MASTER_KEY="your-generated-key"
 
-3. Configure the extension to use the environment provider
-   (see :ref:`configuration`).
+3. Configure the extension in :guilabel:`Admin Tools > Settings > Extension Configuration`:
+
+   -  :confval:`masterKeyProvider <ext-nrvault-masterKeyProvider>`: ``env``
+   -  :confval:`masterKeySource <ext-nrvault-masterKeySource>`: ``NR_VAULT_MASTER_KEY``
+
+.. _installation-master-key-file:
+
+Option 3: Key file
+------------------
+
+For maximum security, store the key in a file outside the web root:
+
+.. code-block:: bash
+   :caption: Create secure key file
+
+   openssl rand -base64 32 > /secure/path/vault.key
+   chmod 0400 /secure/path/vault.key
+
+Configure the extension:
+
+-  :confval:`masterKeyProvider <ext-nrvault-masterKeyProvider>`: ``file``
+-  :confval:`masterKeySource <ext-nrvault-masterKeySource>`: ``/secure/path/vault.key``
+
+.. warning::
+
+   For file and environment providers: never commit master keys to version
+   control. Store them securely outside the web root.
+
+See :ref:`configuration-master-key-providers` for detailed information on each provider.
 
 .. _installation-verify:
 
