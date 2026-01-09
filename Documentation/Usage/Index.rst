@@ -17,6 +17,12 @@ Access the vault through the TYPO3 backend:
 2. The overview shows statistics and quick-start examples.
 3. Navigate to :guilabel:`Secrets` to manage your secrets.
 
+.. figure:: /Images/VaultOverview.png
+   :alt: Vault module overview showing statistics and quick start guide
+   :class: with-shadow
+
+   The vault overview displays key metrics and provides quick-start code examples
+
 .. _usage-creating-secrets:
 
 Creating secrets
@@ -56,6 +62,12 @@ Click :guilabel:`Reveal` to temporarily show a secret value.
 .. note::
 
    Revealing a secret creates an audit log entry.
+
+.. figure:: /Images/SecretsList.png
+   :alt: Secrets list view showing secret identifiers, contexts, and metadata
+   :class: with-shadow
+
+   The secrets list provides filtering, bulk actions, and quick access to secret operations
 
 .. _usage-site-configuration:
 
@@ -244,6 +256,12 @@ View the audit log:
 
    # Export to JSON
    vendor/bin/typo3 vault:audit --format=json > audit.json
+
+.. figure:: /Images/AuditLog.png
+   :alt: Audit log showing secret access history with timestamps, actors, and IP addresses
+   :class: with-shadow
+
+   The audit log tracks all secret operations with tamper-evident hash chains
 
 .. _usage-cli-vault-rotate-master-key:
 

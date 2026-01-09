@@ -134,6 +134,12 @@ TYPO3-native integration
    TCA field type, site configuration support, TypoScript integration, CLI
    commands. Works the way TYPO3 developers expect.
 
+.. figure:: /Images/VaultOverview.png
+   :alt: nr-vault backend module showing vault overview with statistics and quick start guide
+   :class: with-shadow
+
+   The vault backend module provides an intuitive interface for managing secrets
+
 .. _introduction-use-cases:
 
 Use cases
