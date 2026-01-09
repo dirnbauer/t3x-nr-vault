@@ -7,17 +7,13 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    # Run weekly on Monday at 00:00 UTC
-    - cron: '0 0 * * 1'
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   # Note: CodeQL does not support PHP. Using PHPStan for static analysis in tests workflow.
-  # Additional security scanning is done via composer audit below.
+  # OpenSSF Scorecard is handled by the dedicated scorecard.yml workflow.
 
   dependency-review:
     name: Dependency Review
@@ -32,33 +28,6 @@ jobs:
         with:
           fail-on-severity: high
           deny-licenses: GPL-3.0, AGPL-3.0
-
-  scorecard:
-    name: OpenSSF Scorecard
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
-    permissions:
-      security-events: write
-      id-token: write
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Run Scorecard analysis
-        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
-        with:
-          results_file: results.sarif
-          results_format: sarif
-          publish_results: true
-        continue-on-error: true
-
-      - name: Upload results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@5d4e8d1aca955e8d8589aabd499c5cae939e33c7 # v4.31.9
-        if: always()
-        with:
-          sarif_file: results.sarif
-        continue-on-error: true
 
   security-audit:
     name: Security Audit
