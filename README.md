@@ -10,6 +10,7 @@
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg)](https://phpstan.org/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/netresearch/t3x-nr-vault)](https://github.com/netresearch/t3x-nr-vault/releases)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 *Enterprise-grade secret management without enterprise-grade complexity.*
 
