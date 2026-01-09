@@ -27,6 +27,8 @@ services:
     container_name: ddev-${DDEV_SITENAME}-mock-oauth-router
     image: traefik:v3.6@sha256:82d3d16dde0474a51fef00b28de143d48b67f7a27453224d5e7b5aaefff26a97
     restart: "no"
+    networks: !reset
+      - default
     depends_on:
       - mock-oauth
     labels:
@@ -39,4 +41,3 @@ services:
       traefik.http.routers.mock-oauth-${DDEV_SITENAME}-https.entrypoints: https-${DDEV_ROUTER_HTTPS_PORT}
       traefik.http.routers.mock-oauth-${DDEV_SITENAME}-https.tls: "true"
       traefik.http.services.mock-oauth-${DDEV_SITENAME}.loadbalancer.server.port: "8080"
-    network_mode: "service:mock-oauth"
