@@ -137,7 +137,7 @@ final class VaultServiceTest extends FunctionalTestCase
         // Store original
         $this->subject->store($identifier, $originalValue);
         $metadataBefore = $this->subject->getMetadata($identifier);
-        self::assertEquals(1, $metadataBefore['version']);
+        self::assertEquals(1, $metadataBefore->version);
 
         // Rotate
         $this->subject->rotate($identifier, $rotatedValue, 'Scheduled rotation');
@@ -147,8 +147,8 @@ final class VaultServiceTest extends FunctionalTestCase
         self::assertEquals($rotatedValue, $retrieved);
 
         $metadataAfter = $this->subject->getMetadata($identifier);
-        self::assertEquals(2, $metadataAfter['version']);
-        self::assertNotNull($metadataAfter['lastRotatedAt']);
+        self::assertEquals(2, $metadataAfter->version);
+        self::assertNotNull($metadataAfter->lastRotatedAt);
     }
 
     #[Test]
@@ -183,11 +183,11 @@ final class VaultServiceTest extends FunctionalTestCase
 
         $metadata = $this->subject->getMetadata($identifier);
 
-        self::assertEquals($identifier, $metadata['identifier']);
-        self::assertEquals('Test secret for metadata', $metadata['description']);
-        self::assertEquals('testing', $metadata['context']);
-        self::assertEquals(['environment' => 'test'], $metadata['metadata']);
-        self::assertEquals(1, $metadata['version']);
+        self::assertEquals($identifier, $metadata->identifier);
+        self::assertEquals('Test secret for metadata', $metadata->description);
+        self::assertEquals('testing', $metadata->context);
+        self::assertEquals(['environment' => 'test'], $metadata->metadata);
+        self::assertEquals(1, $metadata->version);
     }
 
     #[Test]
@@ -208,8 +208,8 @@ final class VaultServiceTest extends FunctionalTestCase
 
         // Verify metadata is available
         $metadata = $this->subject->getMetadata($identifier);
-        self::assertEquals($identifier, $metadata['identifier']);
-        self::assertEquals(1, $metadata['version']);
+        self::assertEquals($identifier, $metadata->identifier);
+        self::assertEquals(1, $metadata->version);
     }
 
     #[Test]

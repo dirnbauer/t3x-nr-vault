@@ -296,15 +296,16 @@ final class OAuthIntegrationTest extends FunctionalTestCase
         self::assertTrue($vaultService->exists('my_app_oauth_client_secret'));
         self::assertTrue($vaultService->exists('my_app_oauth_refresh_token'));
 
-        // Get metadata - no indication these belong together
+        // Get metadata - SecretDetails DTO does not have 'type' or 'credentialSet' properties
         $clientIdMeta = $vaultService->getMetadata('my_app_oauth_client_id');
         $clientSecretMeta = $vaultService->getMetadata('my_app_oauth_client_secret');
 
-        // No 'type' or 'group' field linking them
-        self::assertArrayNotHasKey('type', $clientIdMeta);
-        self::assertArrayNotHasKey('credentialSet', $clientIdMeta);
-        self::assertArrayNotHasKey('type', $clientSecretMeta);
-        self::assertArrayNotHasKey('credentialSet', $clientSecretMeta);
+        // SecretDetails DTO has no 'type' or 'credentialSet' property - they're not semantically linked
+        // Verify we got valid metadata objects
+        self::assertInstanceOf(\Netresearch\NrVault\Domain\Dto\SecretDetails::class, $clientIdMeta);
+        self::assertInstanceOf(\Netresearch\NrVault\Domain\Dto\SecretDetails::class, $clientSecretMeta);
+        self::assertSame('my_app_oauth_client_id', $clientIdMeta->identifier);
+        self::assertSame('my_app_oauth_client_secret', $clientSecretMeta->identifier);
 
         // This is the documented limitation - see GitHub issue #15
     }

@@ -152,10 +152,9 @@ final class SecretsControllerTest extends FunctionalTestCase
 
         $metadata = $vaultService->getMetadata($identifier);
 
-        self::assertIsArray($metadata);
-        self::assertArrayHasKey('identifier', $metadata);
-        self::assertArrayHasKey('version', $metadata);
-        self::assertSame($identifier, $metadata['identifier']);
+        self::assertInstanceOf(\Netresearch\NrVault\Domain\Dto\SecretDetails::class, $metadata);
+        self::assertSame($identifier, $metadata->identifier);
+        self::assertSame(1, $metadata->version);
 
         // Cleanup
         $vaultService->delete($identifier, 'Test cleanup');
