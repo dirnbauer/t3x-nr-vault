@@ -142,11 +142,14 @@ Options:
             - composerNormalize: "composer normalize"
             - composerUpdate: "composer update"
             - composerValidate: "composer validate"
+            - e2e: Playwright E2E tests
             - functional: PHP functional tests
+            - functionalCoverage: PHP functional tests with coverage
             - lint: PHP linting
             - phpstan: PHPStan static analysis
             - phpstanBaseline: Generate PHPStan baseline
             - unit: PHP unit tests (default)
+            - unitCoverage: PHP unit tests with coverage
             - rector: Apply Rector rules
             - renderDocumentation: Render documentation
             - testRenderDocumentation: Test documentation rendering
@@ -223,14 +226,23 @@ Examples:
     # Run unit tests using PHP 8.5
     ./Build/Scripts/runTests.sh -s unit
 
+    # Run unit tests with code coverage
+    ./Build/Scripts/runTests.sh -s unitCoverage
+
     # Run functional tests using PHP 8.5 and SQLite (default)
     ./Build/Scripts/runTests.sh -s functional
+
+    # Run functional tests with code coverage
+    ./Build/Scripts/runTests.sh -s functionalCoverage
 
     # Run functional tests using PHP 8.4 and MariaDB 10.11 using pdo_mysql
     ./Build/Scripts/runTests.sh -p 8.4 -s functional -d mariadb -i 10.11 -a pdo_mysql
 
     # Run functional tests on postgres with xdebug
     ./Build/Scripts/runTests.sh -x -s functional -d postgres -- Tests/Functional/SomeTest.php
+
+    # Run E2E tests
+    ./Build/Scripts/runTests.sh -s e2e
 EOF
 }
 
@@ -446,6 +458,15 @@ case ${TEST_SUITE} in
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name composer-command-${SUFFIX} -e COMPOSER_CACHE_DIR=.Build/.cache/composer -e COMPOSER_ROOT_VERSION=${COMPOSER_ROOT_VERSION} ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;
+    e2e)
+        # E2E tests use Playwright and run against a TYPO3 instance
+        # Requires npm/npx to be available in the container
+        IMAGE_NODE="docker.io/node:22-alpine"
+        TYPO3_BASE_URL="${TYPO3_BASE_URL:-https://nr-vault.ddev.site}"
+        COMMAND="npm ci && npx playwright install chromium --with-deps && npx playwright test $*"
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name e2e-${SUFFIX} -e TYPO3_BASE_URL="${TYPO3_BASE_URL}" -e CI="${CI:-}" ${IMAGE_NODE} /bin/sh -c "${COMMAND}"
+        SUITE_EXIT_CODE=$?
+        ;;
     functional)
         CONTAINER_PARAMS=""
         COMMAND=(.Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --exclude-group not-${DBMS} ${EXTRA_TEST_OPTIONS} "$@")
@@ -481,6 +502,15 @@ case ${TEST_SUITE} in
                 SUITE_EXIT_CODE=$?
                 ;;
         esac
+        ;;
+    functionalCoverage)
+        mkdir -p .Build/coverage
+        COMMAND=(.Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --coverage-clover=.Build/coverage/functional.xml --coverage-html=.Build/coverage/html-functional --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        # Functional coverage only runs with SQLite for simplicity
+        mkdir -p "${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/"
+        CONTAINERPARAMS="-e typo3DatabaseDriver=pdo_sqlite --tmpfs ${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/:rw,noexec,nosuid"
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${CONTAINERPARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
+        SUITE_EXIT_CODE=$?
         ;;
     lint)
         COMMAND="find . -name \\*.php ! -path \"./.Build/\\*\" -print0 | xargs -0 -n1 -P4 php -dxdebug.mode=off -l >/dev/null"
@@ -521,6 +551,12 @@ case ${TEST_SUITE} in
     unit)
         COMMAND=(.Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit ${EXTRA_TEST_OPTIONS} "$@")
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${IMAGE_PHP} "${COMMAND[@]}"
+        SUITE_EXIT_CODE=$?
+        ;;
+    unitCoverage)
+        mkdir -p .Build/coverage
+        COMMAND=(.Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --coverage-clover=.Build/coverage/unit.xml --coverage-html=.Build/coverage/html-unit --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;
     update)
