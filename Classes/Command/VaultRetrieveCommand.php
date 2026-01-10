@@ -61,7 +61,8 @@ final class VaultRetrieveCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $identifier = $input->getArgument('identifier');
+        $identifierArg = $input->getArgument('identifier');
+        $identifier = \is_string($identifierArg) ? $identifierArg : '';
 
         try {
             $value = $this->vaultService->retrieve($identifier);
@@ -70,8 +71,18 @@ final class VaultRetrieveCommand extends Command
                 throw new SecretNotFoundException($identifier, 9236747158);
             }
 
-            $outputFile = $input->getOption('output');
+            $outputFileOption = $input->getOption('output');
+            $outputFile = \is_string($outputFileOption) ? $outputFileOption : null;
             if ($outputFile !== null) {
+                // Check if parent directory exists
+                $directory = \dirname($outputFile);
+                if (!is_dir($directory)) {
+                    $io->error(\sprintf('Failed to write to file: %s', $outputFile));
+                    sodium_memzero($value);
+
+                    return Command::FAILURE;
+                }
+
                 // Write to file with restricted permissions
                 $result = file_put_contents($outputFile, $value);
                 if ($result === false) {

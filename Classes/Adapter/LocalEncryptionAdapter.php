@@ -55,6 +55,9 @@ final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
         return $this->secretRepository->findIdentifiers($filters);
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getMetadata(string $identifier): ?array
     {
         $secret = $this->secretRepository->findByIdentifier($identifier);

@@ -116,7 +116,9 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $this->applyFilter($queryBuilder, $filter);
         }
 
-        return (int) $queryBuilder->executeQuery()->fetchOne();
+        $result = $queryBuilder->executeQuery()->fetchOne();
+
+        return is_numeric($result) ? (int) $result : 0;
     }
 
     public function export(?AuditLogFilter $filter = null): array
@@ -149,26 +151,39 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         $previousHash = '';
 
         foreach ($rows as $row) {
+            $rowUid = $row['uid'] ?? 0;
+            $uid = is_numeric($rowUid) ? (int) $rowUid : 0;
+            $rowSecretId = $row['secret_identifier'] ?? '';
+            $secretId = \is_string($rowSecretId) ? $rowSecretId : '';
+            $rowAction = $row['action'] ?? '';
+            $actionStr = \is_string($rowAction) ? $rowAction : '';
+            $rowActorUid = $row['actor_uid'] ?? 0;
+            $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
+            $rowCrdate = $row['crdate'] ?? 0;
+            $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
+
             $expectedHash = $this->calculateEntryHash(
-                (int) $row['uid'],
-                (string) $row['secret_identifier'],
-                (string) $row['action'],
-                (int) $row['actor_uid'],
-                (int) $row['crdate'],
+                $uid,
+                $secretId,
+                $actionStr,
+                $actorUid,
+                $crdate,
                 $previousHash,
             );
 
             // Verify previous_hash matches
-            if ($row['previous_hash'] !== $previousHash) {
-                $errors[(int) $row['uid']] = 'Previous hash mismatch - chain broken';
+            $rowPrevHash = $row['previous_hash'] ?? '';
+            if ($rowPrevHash !== $previousHash) {
+                $errors[$uid] = 'Previous hash mismatch - chain broken';
             }
 
             // Verify entry_hash is correct
-            if ($row['entry_hash'] !== $expectedHash) {
-                $errors[(int) $row['uid']] = 'Entry hash mismatch - possible tampering';
+            $rowEntryHash = $row['entry_hash'] ?? '';
+            if ($rowEntryHash !== $expectedHash) {
+                $errors[$uid] = 'Entry hash mismatch - possible tampering';
             }
 
-            $previousHash = (string) $row['entry_hash'];
+            $previousHash = \is_string($rowEntryHash) ? $rowEntryHash : '';
         }
 
         return $errors === []
@@ -187,7 +202,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             ->executeQuery()
             ->fetchOne();
 
-        return $hash !== false ? (string) $hash : null;
+        return $hash !== false && \is_string($hash) ? $hash : null;
     }
 
     /**
@@ -286,20 +301,25 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     private function getClientIp(): string
     {
         $request = $this->getServerRequest();
-        if (!$request instanceof ServerRequest) {
+        if ($request === null) {
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
-        return (string) ($request->getServerParams()['REMOTE_ADDR'] ?? '');
+        /** @phpstan-ignore method.internalClass */
+        $serverParams = $request->getServerParams();
+        $remoteAddr = $serverParams['REMOTE_ADDR'] ?? '';
+
+        return \is_string($remoteAddr) ? $remoteAddr : '';
     }
 
     private function getUserAgent(): string
     {
         $request = $this->getServerRequest();
-        if (!$request instanceof ServerRequest) {
+        if ($request === null) {
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
+        /** @phpstan-ignore method.internalClass */
         $userAgent = $request->getHeaderLine('User-Agent');
         if (\strlen($userAgent) > 500) {
             return substr($userAgent, 0, 500);
@@ -311,11 +331,12 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     private function getRequestId(): string
     {
         $request = $this->getServerRequest();
-        if (!$request instanceof ServerRequest) {
+        if ($request === null) {
             return '';
         }
 
         // Try to get request ID from header
+        /** @phpstan-ignore method.internalClass */
         $requestId = $request->getHeaderLine('X-Request-Id');
         if ($requestId !== '') {
             return $requestId;
@@ -325,9 +346,18 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         return bin2hex(random_bytes(16));
     }
 
+    /**
+     * @phpstan-ignore return.internalClass
+     */
     private function getServerRequest(): ?ServerRequest
     {
-        return $GLOBALS['TYPO3_REQUEST'] ?? null;
+        $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
+        /** @phpstan-ignore instanceof.internalClass */
+        if ($request instanceof ServerRequest) {
+            return $request;
+        }
+
+        return null;
     }
 
     private function getConnection(): Connection

@@ -208,22 +208,25 @@ final readonly class MigrationController
         );
 
         $parsedBody = $request->getParsedBody();
-        $selectedSecrets = $parsedBody['selected'] ?? [];
+        $parsedBodyArray = \is_array($parsedBody) ? $parsedBody : [];
+        $selectedSecrets = $parsedBodyArray['selected'] ?? [];
 
-        if (empty($selectedSecrets)) {
+        if (!\is_array($selectedSecrets) || $selectedSecrets === []) {
             $this->addFlashMessage(
                 'No secrets selected for migration.',
                 'Selection Required',
                 ContextualFeedbackSeverity::WARNING,
             );
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse($this->buildUri('review'));
         }
 
         // Parse selected secrets (format: "table.column")
         $migrations = [];
         foreach ($selectedSecrets as $key) {
-            if (preg_match('/^database:([^.]+)\.([^.]+)$/', (string) $key, $matches)) {
+            $keyString = \is_string($key) || is_numeric($key) ? (string) $key : '';
+            if (preg_match('/^database:([^.]+)\.([^.]+)$/', $keyString, $matches)) {
                 $table = $matches[1];
                 $column = $matches[2];
                 $migrations[] = [
@@ -248,16 +251,21 @@ final readonly class MigrationController
     private function executeAction(ServerRequestInterface $request): ResponseInterface
     {
         $parsedBody = $request->getParsedBody();
-        $migrations = $parsedBody['migrations'] ?? [];
-        $clearOriginals = (bool) ($parsedBody['clearOriginals'] ?? false);
+        $parsedBodyArray = \is_array($parsedBody) ? $parsedBody : [];
+        $migrations = $parsedBodyArray['migrations'] ?? [];
+        $clearOriginalsValue = $parsedBodyArray['clearOriginals'] ?? false;
+        $clearOriginals = \is_string($clearOriginalsValue) || \is_int($clearOriginalsValue)
+            ? (bool) $clearOriginalsValue
+            : false;
 
-        if (empty($migrations)) {
+        if (!\is_array($migrations) || $migrations === []) {
             $this->addFlashMessage(
                 'No migrations configured.',
                 'Configuration Required',
                 ContextualFeedbackSeverity::ERROR,
             );
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse($this->buildUri('scan'));
         }
 
@@ -266,9 +274,15 @@ final readonly class MigrationController
         $totalFailed = 0;
 
         foreach ($migrations as $migration) {
-            $table = $migration['table'] ?? '';
-            $column = $migration['column'] ?? '';
-            $identifierPattern = $migration['identifierPattern'] ?? '';
+            if (!\is_array($migration)) {
+                continue;
+            }
+            $tableVal = $migration['table'] ?? '';
+            $table = \is_string($tableVal) ? $tableVal : '';
+            $columnVal = $migration['column'] ?? '';
+            $column = \is_string($columnVal) ? $columnVal : '';
+            $identifierPatternVal = $migration['identifierPattern'] ?? '';
+            $identifierPattern = \is_string($identifierPatternVal) ? $identifierPatternVal : '';
             if (empty($table)) {
                 continue;
             }
@@ -296,13 +310,17 @@ final readonly class MigrationController
         }
 
         // Store results in session for verify step
-        $GLOBALS['BE_USER']->setAndSaveSessionData('vault_migration_results', [
-            'results' => $results,
-            'totalMigrated' => $totalMigrated,
-            'totalFailed' => $totalFailed,
-            'clearOriginals' => $clearOriginals,
-        ]);
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        if (\is_object($beUser) && method_exists($beUser, 'setAndSaveSessionData')) {
+            $beUser->setAndSaveSessionData('vault_migration_results', [
+                'results' => $results,
+                'totalMigrated' => $totalMigrated,
+                'totalFailed' => $totalFailed,
+                'clearOriginals' => $clearOriginals,
+            ]);
+        }
 
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         return new RedirectResponse($this->buildUri('verify'));
     }
 
@@ -322,15 +340,25 @@ final readonly class MigrationController
         );
 
         // Get results from session
-        $sessionData = $GLOBALS['BE_USER']->getSessionData('vault_migration_results') ?? [];
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+        $sessionData = [];
+        if (\is_object($beUser) && method_exists($beUser, 'getSessionData')) {
+            $sessionDataRaw = $beUser->getSessionData('vault_migration_results');
+            $sessionData = \is_array($sessionDataRaw) ? $sessionDataRaw : [];
+        }
 
-        $results = $sessionData['results'] ?? [];
-        $totalMigrated = $sessionData['totalMigrated'] ?? 0;
-        $totalFailed = $sessionData['totalFailed'] ?? 0;
-        $clearOriginals = $sessionData['clearOriginals'] ?? false;
+        $results = \is_array($sessionData['results'] ?? null) ? $sessionData['results'] : [];
+        $totalMigratedVal = $sessionData['totalMigrated'] ?? 0;
+        $totalMigrated = is_numeric($totalMigratedVal) ? (int) $totalMigratedVal : 0;
+        $totalFailedVal = $sessionData['totalFailed'] ?? 0;
+        $totalFailed = is_numeric($totalFailedVal) ? (int) $totalFailedVal : 0;
+        $clearOriginalsVal = $sessionData['clearOriginals'] ?? false;
+        $clearOriginals = \is_bool($clearOriginalsVal) ? $clearOriginalsVal : (bool) $clearOriginalsVal;
 
         // Clear session data
-        $GLOBALS['BE_USER']->setAndSaveSessionData('vault_migration_results', null);
+        if (\is_object($beUser) && method_exists($beUser, 'setAndSaveSessionData')) {
+            $beUser->setAndSaveSessionData('vault_migration_results', null);
+        }
 
         if ($totalMigrated > 0) {
             $this->addFlashMessage(
@@ -385,8 +413,10 @@ final readonly class MigrationController
                 ->fetchAllAssociative();
 
             foreach ($rows as $row) {
-                $uid = (int) $row['uid'];
-                $value = (string) $row[$column];
+                $uidVal = $row['uid'] ?? 0;
+                $uid = is_numeric($uidVal) ? (int) $uidVal : 0;
+                $valueVal = $row[$column] ?? '';
+                $value = \is_string($valueVal) ? $valueVal : '';
 
                 // Skip if already looks like a vault identifier
                 if ($this->looksLikeVaultIdentifier($value)) {
@@ -480,7 +510,10 @@ final readonly class MigrationController
 
     private function getLanguageService(): LanguageService
     {
-        return $GLOBALS['LANG'];
+        /** @var LanguageService $lang */
+        $lang = $GLOBALS['LANG'];
+
+        return $lang;
     }
 
     /**

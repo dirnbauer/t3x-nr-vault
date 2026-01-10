@@ -111,11 +111,14 @@ final class VaultScanCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        $format = $input->getOption('format');
+        $formatOption = $input->getOption('format');
+        $format = \is_string($formatOption) ? $formatOption : 'table';
+        $excludeOption = $input->getOption('exclude');
         $excludeTables = array_filter(
-            array_map(\trim(...), explode(',', (string) $input->getOption('exclude'))),
+            array_map(\trim(...), explode(',', \is_string($excludeOption) ? $excludeOption : '')),
         );
-        $minSeverity = $input->getOption('severity');
+        $severityOption = $input->getOption('severity');
+        $minSeverity = \is_string($severityOption) ? $severityOption : 'low';
         $databaseOnly = $input->getOption('database-only');
         $configOnly = $input->getOption('config-only');
 

@@ -176,17 +176,21 @@ final class OAuthTokenManager
                 ), 2477018617);
             }
 
+            /** @var array<string, mixed>|null $body */
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
-            if (!isset($body['access_token'])) {
+            if (!\is_array($body) || !isset($body['access_token'])) {
                 throw new VaultException('OAuth response missing access_token', 9878610721);
             }
 
-            $expiresIn = $body['expires_in'] ?? 3600;
+            $accessToken = \is_string($body['access_token']) ? $body['access_token'] : '';
+            $tokenType = \is_string($body['token_type'] ?? null) ? $body['token_type'] : 'Bearer';
+            $scope = isset($body['scope']) && \is_string($body['scope']) ? $body['scope'] : null;
+            $expiresIn = \is_int($body['expires_in'] ?? null) ? $body['expires_in'] : 3600;
             $expiresAt = new DateTimeImmutable('+' . $expiresIn . ' seconds');
 
             // Store new refresh token if provided
-            if (isset($body['refresh_token']) && $config->refreshTokenSecret !== null) {
+            if (isset($body['refresh_token']) && \is_string($body['refresh_token']) && $config->refreshTokenSecret !== null) {
                 $this->vaultService->store($config->refreshTokenSecret, $body['refresh_token'], [
                     'source' => 'oauth_refresh',
                 ]);
@@ -194,14 +198,14 @@ final class OAuthTokenManager
 
             $this->logger?->info('OAuth token obtained successfully', [
                 'expires_in' => $expiresIn,
-                'token_type' => $body['token_type'] ?? 'Bearer',
+                'token_type' => $tokenType,
             ]);
 
             return new OAuthToken(
-                accessToken: $body['access_token'],
-                tokenType: $body['token_type'] ?? 'Bearer',
+                accessToken: $accessToken,
+                tokenType: $tokenType,
                 expiresAt: $expiresAt,
-                scope: $body['scope'] ?? null,
+                scope: $scope,
             );
         } catch (ClientExceptionInterface $e) {
             // Clear credentials from memory on error

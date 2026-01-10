@@ -40,6 +40,8 @@ final class DataHandlerHook
     /**
      * Called before database operations.
      * Extracts vault field values and generates UUIDs for new secrets.
+     *
+     * @param array<string, mixed> $fieldArray
      */
     public function processDatamap_preProcessFieldArray(
         array &$fieldArray,
@@ -96,6 +98,8 @@ final class DataHandlerHook
     /**
      * Called after database operations.
      * Stores vault secrets with the generated UUIDs.
+     *
+     * @param array<string, mixed> $fieldArray
      */
     public function processDatamap_afterDatabaseOperations(
         string $status,
@@ -105,10 +109,11 @@ final class DataHandlerHook
         DataHandler $dataHandler,
     ): void {
         // Get actual UID for new records
-        $uid = $id;
+        $uidRaw = $id;
         if ($status === 'new') {
-            $uid = $dataHandler->substNEWwithIDs[$id] ?? $id;
+            $uidRaw = $dataHandler->substNEWwithIDs[$id] ?? $id;
         }
+        $uid = is_numeric($uidRaw) ? (int) $uidRaw : 0;
 
         // Process pending secrets for this record
         $pendingForRecord = $this->pendingSecrets[$table][$id] ?? [];
@@ -130,7 +135,7 @@ final class DataHandlerHook
                     $this->vaultService->store($vaultIdentifier, $secretValue, [
                         'table' => $table,
                         'field' => $fieldName,
-                        'uid' => (int) $uid,
+                        'uid' => $uid,
                         'source' => 'tca_field',
                     ]);
                 } else {
@@ -138,11 +143,12 @@ final class DataHandlerHook
                     $this->vaultService->rotate($vaultIdentifier, $secretValue, 'TCA field updated');
                 }
             } catch (VaultException $e) {
+                /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
-                    (int) $uid,
+                    $uid,
                     $status === 'new' ? 1 : 2,
-                    0,
+                    null,
                     1,
                     'Vault error for field "' . $fieldName . '": ' . $e->getMessage(),
                 );
@@ -190,18 +196,19 @@ final class DataHandlerHook
 
         foreach ($vaultFields as $fieldName) {
             $vaultIdentifier = $record[$fieldName] ?? '';
-            if ($vaultIdentifier === '') {
+            if (!\is_string($vaultIdentifier) || $vaultIdentifier === '') {
                 continue;
             }
 
             try {
                 $this->vaultService->delete($vaultIdentifier, 'Record deleted');
             } catch (VaultException $e) {
+                /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
                     (int) $id,
                     3,
-                    0,
+                    null,
                     1,
                     'Vault error during delete for field "' . $fieldName . '": ' . $e->getMessage(),
                 );
@@ -225,10 +232,12 @@ final class DataHandlerHook
             return;
         }
 
-        $newId = $dataHandler->copyMappingArray[$table][$id] ?? null;
-        if ($newId === null) {
+        /** @phpstan-ignore property.internal */
+        $newIdRaw = $dataHandler->copyMappingArray[$table][$id] ?? null;
+        if ($newIdRaw === null) {
             return;
         }
+        $newId = is_numeric($newIdRaw) ? (int) $newIdRaw : 0;
 
         $vaultFields = $this->getVaultFieldNames($table);
         if ($vaultFields === []) {
@@ -253,7 +262,7 @@ final class DataHandlerHook
 
         foreach ($vaultFields as $fieldName) {
             $sourceIdentifier = $sourceRecord[$fieldName] ?? '';
-            if ($sourceIdentifier === '') {
+            if (!\is_string($sourceIdentifier) || $sourceIdentifier === '') {
                 continue;
             }
 
@@ -271,7 +280,7 @@ final class DataHandlerHook
                 $this->vaultService->store($newIdentifier, $sourceValue, [
                     'table' => $table,
                     'field' => $fieldName,
-                    'uid' => (int) $newId,
+                    'uid' => $newId,
                     'source' => 'record_copy',
                     'copied_from' => $sourceIdentifier,
                 ]);
@@ -279,11 +288,12 @@ final class DataHandlerHook
                 // Track update for the copied record
                 $updates[$fieldName] = $newIdentifier;
             } catch (VaultException $e) {
+                /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
-                    (int) $newId,
+                    $newId,
                     1,
-                    0,
+                    null,
                     1,
                     'Vault error during copy for field "' . $fieldName . '": ' . $e->getMessage(),
                 );
@@ -292,7 +302,7 @@ final class DataHandlerHook
 
         // Update copied record with new UUIDs
         if ($updates !== []) {
-            $connection->update($table, $updates, ['uid' => (int) $newId]);
+            $connection->update($table, $updates, ['uid' => $newId]);
         }
     }
 

@@ -182,7 +182,9 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
             try {
                 $config = $this->extensionConfiguration->get($extKey);
                 if (\is_array($config)) {
-                    $this->scanConfigArray($config, "extension:{$extKey}");
+                    /** @var array<string, mixed> $configArray */
+                    $configArray = $config;
+                    $this->scanConfigArray($configArray, "extension:{$extKey}");
                 }
             } catch (Exception) {
                 // Extension has no configuration - skip
@@ -199,11 +201,15 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
             return;
         }
 
+        /** @var array<string, mixed> $typo3ConfVars */
+        $typo3ConfVars = $GLOBALS['TYPO3_CONF_VARS'];
+
         // Check MAIL configuration
-        $mailConfig = $GLOBALS['TYPO3_CONF_VARS']['MAIL'] ?? [];
-        if (!empty($mailConfig['transport_smtp_password'])) {
-            $value = $mailConfig['transport_smtp_password'];
-            if (!$this->looksLikeVaultIdentifier($value)) {
+        /** @var array<string, mixed> $mailConfig */
+        $mailConfig = \is_array($typo3ConfVars['MAIL'] ?? null) ? $typo3ConfVars['MAIL'] : [];
+        $smtpPassword = $mailConfig['transport_smtp_password'] ?? '';
+        if (\is_string($smtpPassword) && $smtpPassword !== '') {
+            if (!$this->looksLikeVaultIdentifier($smtpPassword)) {
                 $finding = new ConfigSecretFinding(
                     path: 'MAIL.transport_smtp_password',
                     severity: Severity::High,
@@ -214,8 +220,10 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         }
 
         // Check SYS encryptionKey if it looks weak
-        $encryptionKey = $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] ?? '';
-        if (!empty($encryptionKey) && \strlen((string) $encryptionKey) < 32) {
+        /** @var array<string, mixed> $sysConfig */
+        $sysConfig = \is_array($typo3ConfVars['SYS'] ?? null) ? $typo3ConfVars['SYS'] : [];
+        $encryptionKey = $sysConfig['encryptionKey'] ?? '';
+        if (\is_string($encryptionKey) && $encryptionKey !== '' && \strlen($encryptionKey) < 32) {
             $finding = new ConfigSecretFinding(
                 path: 'SYS.encryptionKey',
                 severity: Severity::Medium,
@@ -269,6 +277,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
             $columns = $schemaManager->listTableColumns($tableName);
 
             foreach ($columns as $column) {
+                /** @phpstan-ignore method.internalClass */
                 $columnName = $column->getName();
                 $columnType = $column->getType();
 
@@ -330,7 +339,8 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                 $patterns = [];
 
                 foreach ($samples as $row) {
-                    $value = (string) $row[$columnName];
+                    $rawValue = $row[$columnName] ?? '';
+                    $value = \is_string($rawValue) || is_numeric($rawValue) ? (string) $rawValue : '';
 
                     // Skip if it looks like a vault identifier
                     if ($this->looksLikeVaultIdentifier($value)) {
@@ -352,10 +362,11 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                 }
 
                 if ($plaintextCount > 0) {
+                    $recordCount = is_numeric($count) ? (int) $count : 0;
                     $finding = new DatabaseSecretFinding(
                         table: $tableName,
                         column: $columnName,
-                        recordCount: (int) $count,
+                        recordCount: $recordCount,
                         plaintextCount: $plaintextCount,
                         severity: $this->calculateSeverity($columnName, array_keys($patterns)),
                         patterns: array_keys($patterns),
@@ -378,7 +389,9 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
     {
         foreach ($config as $key => $value) {
             if (\is_array($value)) {
-                $this->scanConfigArray($value, "{$prefix}.{$key}");
+                /** @var array<string, mixed> $valueArray */
+                $valueArray = $value;
+                $this->scanConfigArray($valueArray, "{$prefix}.{$key}");
                 continue;
             }
             if (!\is_string($value)) {
@@ -414,7 +427,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function isSecretColumn(string $columnName): bool
     {
-        return array_any(self::COLUMN_NAME_PATTERNS, fn ($pattern): int|false => preg_match($pattern, $columnName));
+        return array_any(self::COLUMN_NAME_PATTERNS, static fn (string $pattern): bool => preg_match($pattern, $columnName) === 1);
     }
 
     /**
@@ -423,7 +436,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function isSecretConfigKey(string $key): bool
     {
-        return array_any(self::EXT_CONFIG_KEY_PATTERNS, fn ($pattern): int|false => preg_match($pattern, $key));
+        return array_any(self::EXT_CONFIG_KEY_PATTERNS, static fn (string $pattern): bool => preg_match($pattern, $key) === 1);
     }
 
     /**

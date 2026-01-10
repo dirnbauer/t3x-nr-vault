@@ -26,25 +26,43 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class VaultSecretInputElement extends AbstractFormElement
 {
+    private const LINE_FEED = "\n";
+
+    /**
+     * @return array<string, mixed>
+     */
     public function render(): array
     {
+        /** @var array<string, mixed> $resultArray */
         $resultArray = $this->initializeResultArray();
 
-        $parameterArray = $this->data['parameterArray'];
-        $config = $parameterArray['fieldConf']['config'];
-        $itemName = $parameterArray['itemFormElName'];
+        /** @var array<string, mixed> $formData */
+        $formData = $this->data;
+        /** @var array<string, mixed> $parameterArray */
+        $parameterArray = \is_array($formData['parameterArray'] ?? null) ? $formData['parameterArray'] : [];
+        /** @var array<string, mixed> $fieldConf */
+        $fieldConf = \is_array($parameterArray['fieldConf'] ?? null) ? $parameterArray['fieldConf'] : [];
+        /** @var array<string, mixed> $config */
+        $config = \is_array($fieldConf['config'] ?? null) ? $fieldConf['config'] : [];
+        $itemName = \is_string($parameterArray['itemFormElName'] ?? null) ? $parameterArray['itemFormElName'] : '';
 
         $fieldId = StringUtility::getUniqueId('formengine-vault-input-');
-        $width = $this->formMaxWidth($config['size'] ?? 50);
+        $sizeValue = $config['size'] ?? 50;
+        $width = $this->formMaxWidth(is_numeric($sizeValue) ? (int) $sizeValue : 50);
 
         // Determine if this is a new or existing record
-        $uid = $this->data['databaseRow']['uid'] ?? 0;
-        $isNewRecord = $uid === 0 || $uid === 'NEW' || str_starts_with((string) $uid, 'NEW');
+        /** @var array<string, mixed> $databaseRow */
+        $databaseRow = \is_array($formData['databaseRow'] ?? null) ? $formData['databaseRow'] : [];
+        $uid = $databaseRow['uid'] ?? 0;
+        $uidString = \is_string($uid) || \is_int($uid) ? (string) $uid : '0';
+        $isNewRecord = $uid === 0 || $uidString === 'NEW' || str_starts_with($uidString, 'NEW');
 
         // Get the secret identifier from the record
-        $identifier = $this->data['databaseRow']['identifier'] ?? '';
-        if (\is_array($identifier)) {
-            $identifier = $identifier[0] ?? '';
+        $identifierRaw = $databaseRow['identifier'] ?? '';
+        if (\is_array($identifierRaw)) {
+            $identifier = \is_string($identifierRaw[0] ?? null) ? $identifierRaw[0] : '';
+        } else {
+            $identifier = \is_string($identifierRaw) ? $identifierRaw : '';
         }
 
         // Check if secret exists in vault for existing records
@@ -63,15 +81,20 @@ final class VaultSecretInputElement extends AbstractFormElement
         $resultArray['html'] = $html;
 
         // Add JavaScript module
-        $resultArray['javaScriptModules'][] = JavaScriptModuleInstruction::create(
+        /** @var list<JavaScriptModuleInstruction> $javaScriptModules */
+        $javaScriptModules = \is_array($resultArray['javaScriptModules'] ?? null) ? $resultArray['javaScriptModules'] : [];
+        $javaScriptModules[] = JavaScriptModuleInstruction::create(
             '@netresearch/nr-vault/vault-secret-input.js',
         );
+        $resultArray['javaScriptModules'] = $javaScriptModules;
 
         return $resultArray;
     }
 
     /**
      * Render input for new record - simple password field.
+     *
+     * @param array<string, mixed> $config
      */
     private function renderNewRecordInput(
         string $fieldId,
@@ -106,8 +129,9 @@ final class VaultSecretInputElement extends AbstractFormElement
             $attributes['required'] = 'required';
         }
 
-        if ($config['max'] ?? 0) {
-            $attributes['maxlength'] = (string) (int) $config['max'];
+        $maxValue = $config['max'] ?? 0;
+        if (is_numeric($maxValue) && (int) $maxValue > 0) {
+            $attributes['maxlength'] = (string) (int) $maxValue;
         }
 
         $html = [];
@@ -137,11 +161,13 @@ final class VaultSecretInputElement extends AbstractFormElement
 
         $html[] = '</div>'; // formengine-field-item
 
-        return implode(LF, $html);
+        return implode(self::LINE_FEED, $html);
     }
 
     /**
      * Render input for existing record - masked display with reveal and rotate options.
+     *
+     * @param array<string, mixed> $config
      */
     private function renderExistingRecordInput(
         string $fieldId,
@@ -251,8 +277,9 @@ final class VaultSecretInputElement extends AbstractFormElement
             'data-dashlane-ignore' => 'true',
         ];
 
-        if ($config['max'] ?? 0) {
-            $inputAttributes['maxlength'] = (string) (int) $config['max'];
+        $maxValue = $config['max'] ?? 0;
+        if (is_numeric($maxValue) && (int) $maxValue > 0) {
+            $inputAttributes['maxlength'] = (string) (int) $maxValue;
         }
 
         $html[] = '<div class="input-group">';
@@ -288,7 +315,7 @@ final class VaultSecretInputElement extends AbstractFormElement
         $html[] = '</div>'; // form-wizards-wrap
         $html[] = '</div>'; // formengine-field-item
 
-        return implode(LF, $html);
+        return implode(self::LINE_FEED, $html);
     }
 
     /**

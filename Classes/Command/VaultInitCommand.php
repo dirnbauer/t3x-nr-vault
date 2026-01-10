@@ -65,10 +65,11 @@ final class VaultInitCommand extends Command
         }
 
         // Determine output location
-        $outputFile = $input->getOption('output');
+        $outputFileOption = $input->getOption('output');
+        $outputFile = \is_string($outputFileOption) ? $outputFileOption : null;
         $outputEnv = $input->getOption('env');
 
-        if ($outputFile === null && !$outputEnv) {
+        if ($outputFile === null && $outputEnv === false) {
             // Use configured source (file path) or default
             $source = $this->configuration->getMasterKeySource();
             // Only use source if it looks like a path (contains / or \)
@@ -79,7 +80,7 @@ final class VaultInitCommand extends Command
         }
 
         // Check if key already exists
-        if ($outputFile !== null && file_exists($outputFile) && !$input->getOption('force')) {
+        if ($outputFile !== null && $outputFile !== '' && file_exists($outputFile) && !$input->getOption('force')) {
             $io->error(\sprintf(
                 'Master key already exists at: %s' . PHP_EOL .
                 'Use --force to overwrite (WARNING: existing secrets will become unrecoverable)',
@@ -92,7 +93,7 @@ final class VaultInitCommand extends Command
         // Generate master key using sodium
         $masterKey = sodium_crypto_secretbox_keygen();
 
-        if ($outputEnv) {
+        if ($outputEnv !== false) {
             // Output as environment variable format
             $encoded = sodium_bin2base64($masterKey, SODIUM_BASE64_VARIANT_ORIGINAL);
             $io->writeln('Add the following to your environment:');
@@ -102,7 +103,8 @@ final class VaultInitCommand extends Command
             $io->warning('Store this key securely! It cannot be recovered if lost.');
         } else {
             // Ensure directory exists
-            $dir = \dirname((string) $outputFile);
+            $outputFilePath = $outputFile ?? '';
+            $dir = \dirname($outputFilePath);
             if (!is_dir($dir) && !mkdir($dir, 0o700, true)) {
                 $io->error(\sprintf('Failed to create directory: %s', $dir));
                 sodium_memzero($masterKey);
@@ -111,22 +113,22 @@ final class VaultInitCommand extends Command
             }
 
             // Write key to file with restrictive permissions
-            $result = file_put_contents($outputFile, $masterKey);
+            $result = file_put_contents($outputFilePath, $masterKey);
             if ($result === false) {
-                $io->error(\sprintf('Failed to write master key to: %s', $outputFile));
+                $io->error(\sprintf('Failed to write master key to: %s', $outputFilePath));
                 sodium_memzero($masterKey);
 
                 return Command::FAILURE;
             }
 
             // Set restrictive permissions (owner read/write only)
-            chmod($outputFile, 0o600);
+            chmod($outputFilePath, 0o600);
 
-            $io->success(\sprintf('Master key generated and saved to: %s', $outputFile));
+            $io->success(\sprintf('Master key generated and saved to: %s', $outputFilePath));
             $io->table(
                 ['Property', 'Value'],
                 [
-                    ['Key file', $outputFile],
+                    ['Key file', $outputFilePath],
                     ['Permissions', '0600 (owner read/write only)'],
                     ['Algorithm', 'XSalsa20-Poly1305 (sodium_crypto_secretbox)'],
                     ['Key length', \strlen($masterKey) . ' bytes'],

@@ -44,6 +44,7 @@ final readonly class AjaxController
         $identifier = $this->getIdentifierFromRequest($request);
 
         if ($identifier === '') {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'No identifier provided',
@@ -53,31 +54,40 @@ final readonly class AjaxController
         try {
             $secret = $this->vaultService->retrieve($identifier);
 
+            // retrieve() returns null when secret not found
+            if ($secret === null) {
+                /** @phpstan-ignore new.internalClass, method.internalClass */
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'Secret not found',
+                ], 404);
+            }
+
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => true,
                 'secret' => $secret,
             ]);
-        } catch (SecretNotFoundException) {
-            return new JsonResponse([
-                'success' => false,
-                'error' => 'Secret not found',
-            ], 404);
         } catch (AccessDeniedException) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Access denied',
             ], 403);
         } catch (SecretExpiredException) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Secret has expired',
             ], 410);
         } catch (EncryptionException $e) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Decryption failed: ' . $e->getMessage(),
             ], 500);
         } catch (Exception $e) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Failed to retrieve secret: ' . $e->getMessage(),
@@ -98,6 +108,7 @@ final readonly class AjaxController
     {
         // Only accept POST
         if ($request->getMethod() !== 'POST') {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Method not allowed',
@@ -109,6 +120,7 @@ final readonly class AjaxController
         $newSecret = isset($body['secret']) && \is_string($body['secret']) ? $body['secret'] : '';
 
         if ($identifier === '') {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'No identifier provided',
@@ -116,6 +128,7 @@ final readonly class AjaxController
         }
 
         if ($newSecret === '') {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'No secret value provided',
@@ -129,32 +142,38 @@ final readonly class AjaxController
             // Get updated metadata
             $updatedMetadata = $this->vaultService->getMetadata($identifier);
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => true,
                 'message' => 'Secret rotated successfully',
                 'version' => $updatedMetadata->version,
             ]);
         } catch (SecretNotFoundException) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Secret not found',
             ], 404);
         } catch (AccessDeniedException) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Access denied',
             ], 403);
         } catch (ValidationException $e) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Validation error: ' . $e->getMessage(),
             ], 400);
         } catch (EncryptionException $e) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Encryption failed: ' . $e->getMessage(),
             ], 500);
         } catch (Exception $e) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Failed to rotate secret: ' . $e->getMessage(),

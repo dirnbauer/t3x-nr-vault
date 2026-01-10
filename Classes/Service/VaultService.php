@@ -54,6 +54,9 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
+    /**
+     * @param array<string, mixed> $options
+     */
     public function store(string $identifier, string $secret, array $options = []): void
     {
         // Validate identifier
@@ -79,21 +82,31 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
 
             // Apply options
             if (isset($options['owner'])) {
-                $secretEntity->setOwnerUid((int) $options['owner']);
+                $ownerRaw = $options['owner'];
+                $secretEntity->setOwnerUid(is_numeric($ownerRaw) ? (int) $ownerRaw : 0);
             } else {
                 $secretEntity->setOwnerUid($this->accessControlService->getCurrentActorUid());
             }
 
             if (isset($options['groups'])) {
-                $secretEntity->setAllowedGroups((array) $options['groups']);
+                /** @var list<int> $groups */
+                $groups = [];
+                if (\is_array($options['groups'])) {
+                    foreach ($options['groups'] as $groupId) {
+                        $groups[] = \is_int($groupId) ? $groupId : (is_numeric($groupId) ? (int) $groupId : 0);
+                    }
+                }
+                $secretEntity->setAllowedGroups($groups);
             }
 
             if (isset($options['context'])) {
-                $secretEntity->setContext((string) $options['context']);
+                $contextRaw = $options['context'];
+                $secretEntity->setContext(\is_string($contextRaw) || is_numeric($contextRaw) ? (string) $contextRaw : '');
             }
 
             if (isset($options['description'])) {
-                $secretEntity->setDescription((string) $options['description']);
+                $descRaw = $options['description'];
+                $secretEntity->setDescription(\is_string($descRaw) || is_numeric($descRaw) ? (string) $descRaw : '');
             }
 
             if (isset($options['metadata'])) {
@@ -103,7 +116,8 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             }
 
             if (isset($options['scopePid'])) {
-                $secretEntity->setScopePid((int) $options['scopePid']);
+                $scopePidRaw = $options['scopePid'];
+                $secretEntity->setScopePid(is_numeric($scopePidRaw) ? (int) $scopePidRaw : 0);
             }
 
             if (isset($options['expiresAt'])) {
@@ -111,7 +125,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
                 if ($expiresAt instanceof DateTimeInterface) {
                     $expiresAt = $expiresAt->getTimestamp();
                 }
-                $secretEntity->setExpiresAt((int) $expiresAt);
+                $secretEntity->setExpiresAt(is_numeric($expiresAt) ? (int) $expiresAt : 0);
             }
 
             if (isset($options['frontendAccessible'])) {

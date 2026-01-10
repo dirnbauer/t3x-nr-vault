@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Utility;
 
-use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
@@ -62,17 +61,18 @@ final readonly class VaultFieldResolver
                 continue;
             }
 
+            // isVaultIdentifier guarantees value is a string - cast safely
+            $identifier = \is_string($value) ? $value : '';
+
             try {
-                $data[$field] = $this->vaultService->retrieve($value);
-            } catch (SecretNotFoundException) {
-                $data[$field] = null;
+                $data[$field] = $this->vaultService->retrieve($identifier);
             } catch (VaultException $e) {
                 if ($throwOnError) {
                     throw $e;
                 }
                 $this->logger->error('Failed to resolve vault field', [
                     'field' => $field,
-                    'identifier' => $value,
+                    'identifier' => $identifier,
                     'error' => $e->getMessage(),
                 ]);
                 $data[$field] = null;
@@ -87,8 +87,6 @@ final readonly class VaultFieldResolver
      *
      * @param string $identifier The vault identifier (UUID)
      *
-     * @throws VaultException On vault errors (if identifier is valid but retrieval fails)
-     *
      * @return string|null The secret value, or null if not found or invalid identifier
      */
     public function resolve(string $identifier): ?string
@@ -99,7 +97,7 @@ final readonly class VaultFieldResolver
 
         try {
             return $this->vaultService->retrieve($identifier);
-        } catch (SecretNotFoundException) {
+        } catch (VaultException) {
             return null;
         }
     }

@@ -68,8 +68,10 @@ final class VaultRotateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $identifier = $input->getArgument('identifier');
-        $reason = $input->getOption('reason');
+        $identifierArg = $input->getArgument('identifier');
+        $identifier = \is_string($identifierArg) ? $identifierArg : '';
+        $reasonOption = $input->getOption('reason');
+        $reason = \is_string($reasonOption) ? $reasonOption : 'Manual rotation via CLI';
 
         // Check if secret exists
         try {
@@ -121,15 +123,15 @@ final class VaultRotateCommand extends Command
     {
         // Option 1: From --value option
         $value = $input->getOption('value');
-        if ($value !== null) {
+        if (\is_string($value)) {
             return $value;
         }
 
         // Option 2: From stdin
-        if ($input->getOption('stdin')) {
-            $value = file_get_contents('php://stdin');
-            if ($value !== false) {
-                return rtrim($value, "\n\r");
+        if ($input->getOption('stdin') !== false) {
+            $stdinValue = file_get_contents('php://stdin');
+            if ($stdinValue !== false) {
+                return rtrim($stdinValue, "\n\r");
             }
 
             return null;
@@ -137,15 +139,15 @@ final class VaultRotateCommand extends Command
 
         // Option 3: From file
         $file = $input->getOption('file');
-        if ($file !== null) {
+        if (\is_string($file)) {
             if (!file_exists($file)) {
                 $io->error(\sprintf('File not found: %s', $file));
 
                 return null;
             }
-            $value = file_get_contents($file);
-            if ($value !== false) {
-                return $value;
+            $fileValue = file_get_contents($file);
+            if ($fileValue !== false) {
+                return $fileValue;
             }
 
             return null;
@@ -153,7 +155,9 @@ final class VaultRotateCommand extends Command
 
         // Option 4: Interactive prompt (hidden input)
         if ($input->isInteractive()) {
-            return $io->askHidden('Enter new secret value');
+            $hiddenInput = $io->askHidden('Enter new secret value');
+
+            return \is_string($hiddenInput) ? $hiddenInput : null;
         }
 
         return null;

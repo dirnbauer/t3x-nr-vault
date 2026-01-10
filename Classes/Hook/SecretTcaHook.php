@@ -26,7 +26,7 @@ final class SecretTcaHook
     /**
      * Pending secrets to store after database operations.
      *
-     * @var array<string, string> Map of temporary ID => secret value
+     * @var array<string, mixed> Map of temporary ID => secret value
      */
     private array $pendingSecrets = [];
 
@@ -38,6 +38,8 @@ final class SecretTcaHook
     /**
      * Called before database operations.
      * Prevents identifier changes on existing records.
+     *
+     * @param array<string, mixed> $fieldArray
      */
     public function processDatamap_preProcessFieldArray(
         array &$fieldArray,
@@ -53,17 +55,19 @@ final class SecretTcaHook
         if (!str_starts_with((string) $id, 'NEW') && isset($fieldArray['identifier'])) {
             // Get the original identifier
             $originalRecord = BackendUtility::getRecord(self::TABLE, (int) $id, 'identifier');
-            if ($originalRecord !== null && $fieldArray['identifier'] !== $originalRecord['identifier']) {
+            $originalIdentifier = \is_string($originalRecord['identifier'] ?? null) ? $originalRecord['identifier'] : '';
+            if ($originalRecord !== null && $fieldArray['identifier'] !== $originalIdentifier) {
                 // Identifier change attempted - revert to original
+                /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     self::TABLE,
                     (int) $id,
                     2,
-                    0,
+                    null,
                     1,
                     'Vault secret identifier cannot be changed after creation',
                 );
-                $fieldArray['identifier'] = $originalRecord['identifier'];
+                $fieldArray['identifier'] = $originalIdentifier;
             }
         }
 
@@ -92,6 +96,8 @@ final class SecretTcaHook
     /**
      * Called after database operations.
      * Handles secret encryption and audit logging.
+     *
+     * @param array<string, mixed> $fieldArray
      */
     public function processDatamap_afterDatabaseOperations(
         string $status,
@@ -105,19 +111,20 @@ final class SecretTcaHook
         }
 
         // Get actual UID for new records
-        $uid = $id;
+        $uidRaw = $id;
         $originalId = (string) $id;
         if ($status === 'new') {
-            $uid = $dataHandler->substNEWwithIDs[$id] ?? $id;
+            $uidRaw = $dataHandler->substNEWwithIDs[$id] ?? $id;
         }
+        $uid = is_numeric($uidRaw) ? (int) $uidRaw : 0;
 
         // Get the secret identifier for operations
-        $record = BackendUtility::getRecord(self::TABLE, (int) $uid, 'identifier,owner_uid,allowed_groups,scope_pid');
+        $record = BackendUtility::getRecord(self::TABLE, $uid, 'identifier,owner_uid,allowed_groups,scope_pid');
         if ($record === null) {
             return;
         }
 
-        $identifier = $record['identifier'];
+        $identifier = \is_string($record['identifier'] ?? null) ? $record['identifier'] : '';
         $secretStored = false;
 
         // Handle pending secret encryption
@@ -125,32 +132,42 @@ final class SecretTcaHook
             $secretValue = $this->pendingSecrets[$originalId];
             unset($this->pendingSecrets[$originalId]);
 
-            try {
-                // Build options from record data
-                $options = [
-                    'ownerUid' => (int) ($record['owner_uid'] ?? 0),
-                    'allowedGroups' => $record['allowed_groups'] ?? '',
-                    'scopePid' => (int) ($record['scope_pid'] ?? 0),
-                ];
+            // Ensure secretValue is a string
+            if (!\is_string($secretValue)) {
+                $secretValue = '';
+            }
 
-                if ($status === 'new') {
-                    // New record - store the secret
-                    $this->vaultService->store($identifier, $secretValue, $options);
-                    $secretStored = true;
-                } else {
-                    // Existing record - rotate the secret
-                    $this->vaultService->rotate($identifier, $secretValue);
-                    $secretStored = true;
+            if ($secretValue !== '') {
+                try {
+                    // Build options from record data
+                    $ownerUidRaw = $record['owner_uid'] ?? 0;
+                    $scopePidRaw = $record['scope_pid'] ?? 0;
+                    $options = [
+                        'ownerUid' => is_numeric($ownerUidRaw) ? (int) $ownerUidRaw : 0,
+                        'allowedGroups' => $record['allowed_groups'] ?? '',
+                        'scopePid' => is_numeric($scopePidRaw) ? (int) $scopePidRaw : 0,
+                    ];
+
+                    if ($status === 'new') {
+                        // New record - store the secret
+                        $this->vaultService->store($identifier, $secretValue, $options);
+                        $secretStored = true;
+                    } else {
+                        // Existing record - rotate the secret
+                        $this->vaultService->rotate($identifier, $secretValue);
+                        $secretStored = true;
+                    }
+                } catch (Throwable $e) {
+                    /** @phpstan-ignore method.internal */
+                    $dataHandler->log(
+                        self::TABLE,
+                        $uid,
+                        2,
+                        null,
+                        1,
+                        'Failed to store secret: ' . $e->getMessage(),
+                    );
                 }
-            } catch (Throwable $e) {
-                $dataHandler->log(
-                    self::TABLE,
-                    (int) $uid,
-                    2,
-                    0,
-                    1,
-                    'Failed to store secret: ' . $e->getMessage(),
-                );
             }
         }
 
@@ -179,11 +196,12 @@ final class SecretTcaHook
             );
         } catch (Throwable $e) {
             // Don't fail the save if audit logging fails
+            /** @phpstan-ignore method.internal */
             $dataHandler->log(
                 self::TABLE,
-                (int) $uid,
+                $uid,
                 2,
-                0,
+                null,
                 1,
                 'Audit logging failed: ' . $e->getMessage(),
             );
@@ -208,9 +226,14 @@ final class SecretTcaHook
             return;
         }
 
+        $recordIdentifier = \is_string($record['identifier'] ?? null) ? $record['identifier'] : '';
+        if ($recordIdentifier === '') {
+            return;
+        }
+
         try {
             $this->auditService->log(
-                $record['identifier'],
+                $recordIdentifier,
                 'delete',
                 true,
                 null,

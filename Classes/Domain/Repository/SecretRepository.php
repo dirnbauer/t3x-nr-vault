@@ -41,7 +41,8 @@ final readonly class SecretRepository implements SecretRepositoryInterface
         $secret = Secret::fromDatabaseRow($row);
 
         // Load groups from MM table
-        $groups = $this->loadGroupsForSecret((int) $row['uid']);
+        $uid = $row['uid'] ?? 0;
+        $groups = $this->loadGroupsForSecret(is_numeric($uid) ? (int) $uid : 0);
         if ($groups !== []) {
             $secret->setAllowedGroups($groups);
         }
@@ -90,7 +91,7 @@ final readonly class SecretRepository implements SecretRepositoryInterface
             ->executeQuery()
             ->fetchOne();
 
-        return (int) $count > 0;
+        return (is_numeric($count) ? (int) $count : 0) > 0;
     }
 
     public function save(Secret $secret): void
@@ -102,7 +103,8 @@ final readonly class SecretRepository implements SecretRepositoryInterface
             // Insert new secret
             $data['crdate'] = time();
             $connection->insert(self::TABLE_NAME, $data);
-            $secret->setUid((int) $connection->lastInsertId());
+            $lastId = $connection->lastInsertId();
+            $secret->setUid(is_numeric($lastId) ? (int) $lastId : 0);
         } else {
             // Update existing secret
             $connection->update(
@@ -175,7 +177,8 @@ final readonly class SecretRepository implements SecretRepositoryInterface
         $identifiers = [];
 
         while ($row = $result->fetchAssociative()) {
-            $identifiers[] = (string) $row['identifier'];
+            $identifier = $row['identifier'] ?? '';
+            $identifiers[] = \is_string($identifier) ? $identifier : '';
         }
 
         return $identifiers;
@@ -198,10 +201,14 @@ final readonly class SecretRepository implements SecretRepositoryInterface
 
         // Find secret UIDs that have any of the specified groups
         $mmQuery = $connection->createQueryBuilder();
+        $intGroupUids = [];
+        foreach ($groupUids as $gid) {
+            $intGroupUids[] = (int) $gid;
+        }
         $secretUids = $mmQuery
             ->select('DISTINCT uid_local')
             ->from(self::MM_TABLE_NAME)
-            ->where($mmQuery->expr()->in('uid_foreign', array_map(intval(...), $groupUids)))
+            ->where($mmQuery->expr()->in('uid_foreign', $intGroupUids))
             ->executeQuery()
             ->fetchFirstColumn();
 
@@ -209,12 +216,16 @@ final readonly class SecretRepository implements SecretRepositoryInterface
             return [];
         }
 
+        $intSecretUids = [];
+        foreach ($secretUids as $sid) {
+            $intSecretUids[] = is_numeric($sid) ? (int) $sid : 0;
+        }
         $queryBuilder = $connection->createQueryBuilder();
         $rows = $queryBuilder
             ->select('*')
             ->from(self::TABLE_NAME)
             ->where(
-                $queryBuilder->expr()->in('uid', array_map(intval(...), $secretUids)),
+                $queryBuilder->expr()->in('uid', $intSecretUids),
                 $queryBuilder->expr()->eq('deleted', 0),
             )
             ->executeQuery()
@@ -223,7 +234,8 @@ final readonly class SecretRepository implements SecretRepositoryInterface
         $secrets = [];
         foreach ($rows as $row) {
             $secret = Secret::fromDatabaseRow($row);
-            $groups = $this->loadGroupsForSecret((int) $row['uid']);
+            $rowUid = $row['uid'] ?? 0;
+            $groups = $this->loadGroupsForSecret(is_numeric($rowUid) ? (int) $rowUid : 0);
             if ($groups !== []) {
                 $secret->setAllowedGroups($groups);
             }
@@ -288,12 +300,14 @@ final readonly class SecretRepository implements SecretRepositoryInterface
     {
         $queryBuilder = $this->getConnection()->createQueryBuilder();
 
-        return (int) $queryBuilder
+        $count = $queryBuilder
             ->count('uid')
             ->from(self::TABLE_NAME)
             ->where($queryBuilder->expr()->eq('deleted', 0))
             ->executeQuery()
             ->fetchOne();
+
+        return is_numeric($count) ? (int) $count : 0;
     }
 
     /**
@@ -312,7 +326,13 @@ final readonly class SecretRepository implements SecretRepositoryInterface
             ->executeQuery()
             ->fetchAllAssociative();
 
-        return array_map(fn (array $row): int => (int) $row['uid_foreign'], $rows);
+        $groups = [];
+        foreach ($rows as $row) {
+            $uidForeign = $row['uid_foreign'] ?? 0;
+            $groups[] = is_numeric($uidForeign) ? (int) $uidForeign : 0;
+        }
+
+        return $groups;
     }
 
     /**

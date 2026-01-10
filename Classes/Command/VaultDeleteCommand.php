@@ -56,8 +56,10 @@ final class VaultDeleteCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $identifier = $input->getArgument('identifier');
-        $reason = $input->getOption('reason');
+        $identifierArg = $input->getArgument('identifier');
+        $identifier = \is_string($identifierArg) ? $identifierArg : '';
+        $reasonOption = $input->getOption('reason');
+        $reason = \is_string($reasonOption) ? $reasonOption : 'Manual deletion via CLI';
 
         // Check if secret exists
         try {

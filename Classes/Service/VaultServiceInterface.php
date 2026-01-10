@@ -23,14 +23,14 @@ interface VaultServiceInterface
      *
      * @param string $identifier Unique identifier for the secret
      * @param string $secret The secret value to store
-     * @param array $options Optional configuration:
-     *                       - owner: int - BE user UID who owns this secret
-     *                       - groups: int[] - BE user group UIDs allowed to access
-     *                       - context: string - Permission scoping
-     *                       - expiresAt: int|\DateTimeInterface|null - When secret expires
-     *                       - metadata: array - Custom metadata
-     *                       - description: string - Human-readable description
-     *                       - scopePid: int - Page ID for multi-site scoping
+     * @param array<string, mixed> $options Optional configuration:
+     *                                      - owner: int - BE user UID who owns this secret
+     *                                      - groups: int[] - BE user group UIDs allowed to access
+     *                                      - context: string - Permission scoping
+     *                                      - expiresAt: int|\DateTimeInterface|null - When secret expires
+     *                                      - metadata: array - Custom metadata
+     *                                      - description: string - Human-readable description
+     *                                      - scopePid: int - Page ID for multi-site scoping
      *
      * @throws ValidationException If identifier is invalid
      * @throws EncryptionException If encryption fails

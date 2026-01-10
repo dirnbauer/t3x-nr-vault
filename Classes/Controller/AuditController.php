@@ -64,12 +64,14 @@ final readonly class AuditController
         $queryParams = $request->getQueryParams();
 
         // Merge POST body with query params (POST takes precedence for filters)
+        /** @var array<string, mixed> $filterParams */
         $filterParams = array_merge($queryParams, $bodyArray);
         $filterData = $this->buildAuditFilters($filterParams);
         $filter = $filterData['filter'];
         $formData = $filterData['form'];
 
-        $page = max(1, (int) ($filterParams['page'] ?? 1));
+        $pageVal = $filterParams['page'] ?? 1;
+        $page = max(1, is_numeric($pageVal) ? (int) $pageVal : 1);
         $limit = 50;
         $offset = ($page - 1) * $limit;
 
@@ -149,6 +151,7 @@ final readonly class AuditController
     public function verifyChainAction(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->isAdmin()) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
                 (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             );
@@ -190,12 +193,15 @@ final readonly class AuditController
     public function exportAction(ServerRequestInterface $request): ResponseInterface
     {
         if (!$this->isAdmin()) {
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse(['success' => false, 'error' => 'Access denied'], 403);
         }
 
         $queryParams = $request->getQueryParams();
-        $format = $queryParams['format'] ?? 'json';
+        $formatVal = $queryParams['format'] ?? 'json';
+        $format = \is_string($formatVal) ? $formatVal : 'json';
 
+        /** @var array<string, mixed> $queryParams */
         $filterData = $this->buildAuditFilters($queryParams);
 
         $entries = $this->auditLogService->export($filterData['filter']);
@@ -205,9 +211,12 @@ final readonly class AuditController
         }
 
         // JSON: AuditLogEntry implements JsonSerializable, encode directly
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         $response = new Response();
+        /** @phpstan-ignore method.internalClass */
         $response->getBody()->write(json_encode($entries, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
 
+        /** @phpstan-ignore-next-line method.internalClass */
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . date('Y-m-d') . '.json"');
@@ -223,41 +232,54 @@ final readonly class AuditController
     private function buildAuditFilters(array $queryParams): array
     {
         // Form values for repopulation (always strings for form fields)
+        $secretIdVal = $queryParams['secretIdentifier'] ?? '';
+        $filterActionVal = $queryParams['filterAction'] ?? '';
+        $successFormVal = $queryParams['success'] ?? '';
+        $sinceFormVal = $queryParams['since'] ?? '';
+        $untilFormVal = $queryParams['until'] ?? '';
+
         $formData = [
-            'secretIdentifier' => (string) ($queryParams['secretIdentifier'] ?? ''),
-            'action' => (string) ($queryParams['filterAction'] ?? ''),
-            'success' => (string) ($queryParams['success'] ?? ''),
-            'since' => (string) ($queryParams['since'] ?? ''),
-            'until' => (string) ($queryParams['until'] ?? ''),
+            'secretIdentifier' => \is_string($secretIdVal) ? $secretIdVal : '',
+            'action' => \is_string($filterActionVal) ? $filterActionVal : '',
+            'success' => \is_string($successFormVal) || \is_int($successFormVal) ? (string) $successFormVal : '',
+            'since' => \is_string($sinceFormVal) ? $sinceFormVal : '',
+            'until' => \is_string($untilFormVal) ? $untilFormVal : '',
         ];
 
         // Parse dates
         $since = null;
-        if (!empty($queryParams['since'])) {
+        $sinceValue = $queryParams['since'] ?? '';
+        if (\is_string($sinceValue) && $sinceValue !== '') {
             try {
-                $since = new DateTimeImmutable($queryParams['since']);
+                $since = new DateTimeImmutable($sinceValue);
             } catch (Exception) {
             }
         }
 
         $until = null;
-        if (!empty($queryParams['until'])) {
+        $untilValue = $queryParams['until'] ?? '';
+        if (\is_string($untilValue) && $untilValue !== '') {
             try {
-                $until = new DateTimeImmutable($queryParams['until']);
+                $until = new DateTimeImmutable($untilValue);
             } catch (Exception) {
             }
         }
 
         // Parse success filter
         $success = null;
-        if (isset($queryParams['success']) && $queryParams['success'] !== '') {
-            $success = (bool) (int) $queryParams['success'];
+        $successValue = $queryParams['success'] ?? '';
+        if (\is_string($successValue) && $successValue !== '') {
+            $success = (bool) (int) $successValue;
         }
 
+        $secretIdentifierVal = $queryParams['secretIdentifier'] ?? '';
+        $actionVal = $queryParams['filterAction'] ?? '';
+        $actorUidVal = $queryParams['actorUid'] ?? '';
+
         $filter = new AuditLogFilter(
-            secretIdentifier: empty($queryParams['secretIdentifier']) ? null : (string) $queryParams['secretIdentifier'],
-            action: empty($queryParams['filterAction']) ? null : (string) $queryParams['filterAction'],
-            actorUid: empty($queryParams['actorUid']) ? null : (int) $queryParams['actorUid'],
+            secretIdentifier: \is_string($secretIdentifierVal) && $secretIdentifierVal !== '' ? $secretIdentifierVal : null,
+            action: \is_string($actionVal) && $actionVal !== '' ? $actionVal : null,
+            actorUid: is_numeric($actorUidVal) ? (int) $actorUidVal : null,
             success: $success,
             since: $since,
             until: $until,
@@ -274,8 +296,17 @@ final readonly class AuditController
      */
     private function exportAsCsv(array $entries): ResponseInterface
     {
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         $response = new Response();
         $output = fopen('php://temp', 'r+');
+
+        if ($output === false) {
+            /** @phpstan-ignore method.internalClass */
+            $response->getBody()->write('Failed to create output stream');
+
+            /** @phpstan-ignore-next-line method.internalClass */
+            return $response->withHeader('Content-Type', 'text/plain');
+        }
 
         if ($entries === []) {
             fwrite($output, "No data\n");
@@ -298,8 +329,10 @@ final readonly class AuditController
         $csv = stream_get_contents($output);
         fclose($output);
 
-        $response->getBody()->write($csv);
+        /** @phpstan-ignore method.internalClass */
+        $response->getBody()->write(\is_string($csv) ? $csv : '');
 
+        /** @phpstan-ignore-next-line method.internalClass */
         return $response
             ->withHeader('Content-Type', 'text/csv')
             ->withHeader('Content-Disposition', 'attachment; filename="vault-audit-' . date('Y-m-d') . '.csv"');
@@ -352,12 +385,18 @@ final readonly class AuditController
     private function isAdmin(): bool
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!\is_object($backendUser) || !method_exists($backendUser, 'isAdmin')) {
+            return false;
+        }
 
-        return $backendUser !== null && $backendUser->isAdmin();
+        return (bool) $backendUser->isAdmin();
     }
 
     private function getLanguageService(): LanguageService
     {
-        return $GLOBALS['LANG'];
+        /** @var LanguageService $lang */
+        $lang = $GLOBALS['LANG'];
+
+        return $lang;
     }
 }

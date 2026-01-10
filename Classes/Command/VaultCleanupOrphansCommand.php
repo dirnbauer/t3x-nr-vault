@@ -75,15 +75,18 @@ final class VaultCleanupOrphansCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $dryRun = $input->getOption('dry-run');
-        $retentionDays = (int) $input->getOption('retention-days');
-        $tableFilter = $input->getOption('table');
-        $batchSize = (int) $input->getOption('batch-size');
+        $retentionDaysOption = $input->getOption('retention-days');
+        $retentionDays = is_numeric($retentionDaysOption) ? (int) $retentionDaysOption : 0;
+        $tableFilterOption = $input->getOption('table');
+        $tableFilter = \is_string($tableFilterOption) ? $tableFilterOption : null;
+        $batchSizeOption = $input->getOption('batch-size');
+        $batchSize = is_numeric($batchSizeOption) ? (int) $batchSizeOption : 100;
 
         $io->title('Vault Orphan Cleanup');
         $io->text([
-            \sprintf('Mode: <info>%s</info>', $dryRun ? 'Dry Run' : 'Live'),
+            \sprintf('Mode: <info>%s</info>', $dryRun !== false ? 'Dry Run' : 'Live'),
             \sprintf('Retention: <info>%d days</info>', $retentionDays),
-            $tableFilter ? \sprintf('Table filter: <info>%s</info>', $tableFilter) : '',
+            $tableFilter !== null ? \sprintf('Table filter: <info>%s</info>', $tableFilter) : '',
         ]);
 
         // Get all TCA-sourced secrets
@@ -106,16 +109,20 @@ final class VaultCleanupOrphansCommand extends Command
         $orphans = [];
         $retentionCutoff = $retentionDays > 0 ? time() - ($retentionDays * 86400) : PHP_INT_MAX;
 
-        foreach (array_chunk($secrets, $batchSize) as $batch) {
+        $effectiveBatchSize = $batchSize > 0 ? $batchSize : 100;
+        foreach (array_chunk($secrets, $effectiveBatchSize) as $batch) {
             foreach ($batch as $secret) {
                 $identifier = $secret['identifier'];
                 $metadata = $secret['metadata'];
                 $createdAt = $secret['created_at'] ?? 0;
 
                 // Get table/field/uid from metadata (UUIDs don't encode this)
-                $table = $metadata['table'] ?? '';
-                $field = $metadata['field'] ?? $metadata['flexField'] ?? '';
-                $uid = (int) ($metadata['uid'] ?? 0);
+                $tableValue = $metadata['table'] ?? '';
+                $table = \is_string($tableValue) ? $tableValue : '';
+                $fieldValue = $metadata['field'] ?? $metadata['flexField'] ?? '';
+                $field = \is_string($fieldValue) ? $fieldValue : '';
+                $uidValue = $metadata['uid'] ?? 0;
+                $uid = is_numeric($uidValue) ? (int) $uidValue : 0;
 
                 if ($table === '' || $uid === 0) {
                     $progressBar->advance();
@@ -210,7 +217,7 @@ final class VaultCleanupOrphansCommand extends Command
     /**
      * Get all secrets that were created from TCA fields.
      *
-     * @return array<int, array{identifier: string, metadata: array, created_at: int}>
+     * @return array<int, array{identifier: string, metadata: array<string, mixed>, created_at: int}>
      */
     private function getTcaSecrets(?string $tableFilter): array
     {

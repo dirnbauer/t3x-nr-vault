@@ -66,7 +66,12 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
             return 0;
         }
 
-        return (int) ($backendUser->user['uid'] ?? 0);
+        /** @phpstan-ignore property.internal */
+        $userRecord = $backendUser->user;
+        /** @var array<string, mixed> $userRecordTyped */
+        $userRecordTyped = \is_array($userRecord) ? $userRecord : [];
+
+        return \is_int($userRecordTyped['uid'] ?? null) ? $userRecordTyped['uid'] : 0;
     }
 
     public function getCurrentActorType(): string
@@ -80,6 +85,7 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
             return 'cli';
         }
 
+        /** @phpstan-ignore constant.notFound */
         if (\defined('TYPO3_cliMode') && \TYPO3_CLIMODE) {
             return 'cli';
         }
@@ -91,7 +97,12 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
     {
         $backendUser = $this->getBackendUser();
         if ($backendUser instanceof BackendUserAuthentication) {
-            return (string) ($backendUser->user['username'] ?? 'Unknown');
+            /** @phpstan-ignore property.internal */
+            $userRecord = $backendUser->user;
+            /** @var array<string, mixed> $userRecordTyped */
+            $userRecordTyped = \is_array($userRecord) ? $userRecord : [];
+
+            return \is_string($userRecordTyped['username'] ?? null) ? $userRecordTyped['username'] : 'Unknown';
         }
 
         // No backend user - check context
@@ -109,9 +120,16 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
             return [];
         }
 
+        /** @phpstan-ignore nullCoalesce.property */
         $groups = $backendUser->userGroupsUID ?? [];
 
-        return array_map(intval(...), $groups);
+        /** @var list<int> $result */
+        $result = [];
+        foreach ($groups as $groupId) {
+            $result[] = \is_int($groupId) ? $groupId : (is_numeric($groupId) ? (int) $groupId : 0);
+        }
+
+        return $result;
     }
 
     /**
@@ -179,7 +197,11 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
         }
 
         // Owner access
-        $currentUserUid = (int) ($backendUser->user['uid'] ?? 0);
+        /** @phpstan-ignore property.internal */
+        $userRecord = $backendUser->user;
+        /** @var array<string, mixed> $userRecordTyped */
+        $userRecordTyped = \is_array($userRecord) ? $userRecord : [];
+        $currentUserUid = \is_int($userRecordTyped['uid'] ?? null) ? $userRecordTyped['uid'] : 0;
         if ($secret->getOwnerUid() === $currentUserUid) {
             return true;
         }
@@ -198,6 +220,8 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
 
     private function getBackendUser(): ?BackendUserAuthentication
     {
-        return $GLOBALS['BE_USER'] ?? null;
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+
+        return $beUser instanceof BackendUserAuthentication ? $beUser : null;
     }
 }

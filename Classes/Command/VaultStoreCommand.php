@@ -72,7 +72,8 @@ final class VaultStoreCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $identifier = $input->getArgument('identifier');
+        $identifierArg = $input->getArgument('identifier');
+        $identifier = \is_string($identifierArg) ? $identifierArg : '';
 
         // Get secret value from various sources
         $value = $this->getSecretValue($input, $io);
@@ -83,12 +84,17 @@ final class VaultStoreCommand extends Command
         }
 
         // Parse metadata
-        $metadata = $this->parseMetadata($input->getOption('metadata'));
+        $metadataOption = $input->getOption('metadata');
+        $metadataPairs = \is_array($metadataOption) ? $metadataOption : [];
+        $metadata = $this->parseMetadata($metadataPairs);
 
         // Add groups to metadata if specified
         $groups = $input->getOption('groups');
-        if (!empty($groups)) {
-            $metadata['allowed_groups'] = array_map(intval(...), $groups);
+        if (\is_array($groups) && $groups !== []) {
+            $metadata['allowed_groups'] = array_map(
+                static fn (mixed $v): int => is_numeric($v) ? (int) $v : 0,
+                $groups,
+            );
         }
 
         try {
@@ -110,15 +116,15 @@ final class VaultStoreCommand extends Command
     {
         // Option 1: From --value option
         $value = $input->getOption('value');
-        if ($value !== null) {
+        if (\is_string($value)) {
             return $value;
         }
 
         // Option 2: From stdin
-        if ($input->getOption('stdin')) {
-            $value = file_get_contents('php://stdin');
-            if ($value !== false) {
-                return rtrim($value, "\n\r");
+        if ($input->getOption('stdin') !== false) {
+            $stdinValue = file_get_contents('php://stdin');
+            if ($stdinValue !== false) {
+                return rtrim($stdinValue, "\n\r");
             }
 
             return null;
@@ -126,15 +132,15 @@ final class VaultStoreCommand extends Command
 
         // Option 3: From file
         $file = $input->getOption('file');
-        if ($file !== null) {
+        if (\is_string($file)) {
             if (!file_exists($file)) {
                 $io->error(\sprintf('File not found: %s', $file));
 
                 return null;
             }
-            $value = file_get_contents($file);
-            if ($value !== false) {
-                return $value;
+            $fileValue = file_get_contents($file);
+            if ($fileValue !== false) {
+                return $fileValue;
             }
 
             return null;
@@ -142,18 +148,26 @@ final class VaultStoreCommand extends Command
 
         // Option 4: Interactive prompt (hidden input)
         if ($input->isInteractive()) {
-            return $io->askHidden('Enter secret value');
+            $hiddenInput = $io->askHidden('Enter secret value');
+
+            return \is_string($hiddenInput) ? $hiddenInput : null;
         }
 
         return null;
     }
 
+    /**
+     * @param array<int|string, mixed> $pairs
+     *
+     * @return array<string, string>
+     */
     private function parseMetadata(array $pairs): array
     {
         $metadata = [];
         foreach ($pairs as $pair) {
-            if (str_contains((string) $pair, '=')) {
-                [$key, $value] = explode('=', (string) $pair, 2);
+            $pairStr = \is_string($pair) ? $pair : '';
+            if (str_contains($pairStr, '=')) {
+                [$key, $value] = explode('=', $pairStr, 2);
                 $metadata[trim($key)] = trim($value);
             }
         }

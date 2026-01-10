@@ -138,7 +138,18 @@ final readonly class VaultHttpResponse
             return $associative ? [] : null;
         }
 
-        return json_decode($body, $associative, 512, JSON_THROW_ON_ERROR);
+        $decoded = json_decode($body, $associative, 512, JSON_THROW_ON_ERROR);
+
+        if ($associative) {
+            if (!\is_array($decoded)) {
+                return [];
+            }
+
+            /** @var array<string, mixed> $decoded */
+            return $decoded;
+        }
+
+        return \is_object($decoded) ? $decoded : null;
     }
 
     /**
@@ -205,6 +216,7 @@ final readonly class VaultHttpResponse
      */
     public function getHeaders(): array
     {
+        /** @phpstan-ignore return.type */
         return $this->response->getHeaders();
     }
 

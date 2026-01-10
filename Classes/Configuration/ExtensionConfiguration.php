@@ -30,12 +30,16 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
 
     private const string EXTENSION_KEY = 'nr_vault';
 
+    /** @var array<string, mixed> */
     private array $configuration;
 
     public function __construct(
         private readonly Typo3ExtensionConfiguration $extensionConfiguration,
     ) {
-        $this->configuration = $this->extensionConfiguration->get(self::EXTENSION_KEY) ?? [];
+        $config = $this->extensionConfiguration->get(self::EXTENSION_KEY);
+        /** @var array<string, mixed> $configArray */
+        $configArray = \is_array($config) ? $config : [];
+        $this->configuration = $configArray;
     }
 
     /**
@@ -43,7 +47,9 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getStorageAdapter(): string
     {
-        return (string) ($this->configuration['storageAdapter'] ?? self::DEFAULT_STORAGE_ADAPTER);
+        $val = $this->configuration['storageAdapter'] ?? self::DEFAULT_STORAGE_ADAPTER;
+
+        return \is_string($val) ? $val : self::DEFAULT_STORAGE_ADAPTER;
     }
 
     /**
@@ -51,7 +57,9 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getMasterKeyProvider(): string
     {
-        return (string) ($this->configuration['masterKeyProvider'] ?? self::DEFAULT_MASTER_KEY_PROVIDER);
+        $val = $this->configuration['masterKeyProvider'] ?? self::DEFAULT_MASTER_KEY_PROVIDER;
+
+        return \is_string($val) ? $val : self::DEFAULT_MASTER_KEY_PROVIDER;
     }
 
     /**
@@ -59,7 +67,9 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getMasterKeySource(): string
     {
-        return (string) ($this->configuration['masterKeySource'] ?? self::DEFAULT_MASTER_KEY_SOURCE);
+        $val = $this->configuration['masterKeySource'] ?? self::DEFAULT_MASTER_KEY_SOURCE;
+
+        return \is_string($val) ? $val : self::DEFAULT_MASTER_KEY_SOURCE;
     }
 
     /**
@@ -67,7 +77,9 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAuditLogRetention(): int
     {
-        return (int) ($this->configuration['auditLogRetention'] ?? self::DEFAULT_AUDIT_LOG_RETENTION);
+        $val = $this->configuration['auditLogRetention'] ?? self::DEFAULT_AUDIT_LOG_RETENTION;
+
+        return is_numeric($val) ? (int) $val : self::DEFAULT_AUDIT_LOG_RETENTION;
     }
 
     /**
@@ -87,10 +99,20 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
     {
         $groups = $this->configuration['cliAccessGroups'] ?? [];
         if (\is_string($groups)) {
-            $groups = array_filter(array_map(intval(...), explode(',', $groups)));
+            return array_filter(array_map(
+                static fn (string $v): int => (int) trim($v),
+                explode(',', $groups),
+            ));
         }
 
-        return array_map(intval(...), (array) $groups);
+        if (\is_array($groups)) {
+            return array_map(
+                static fn (mixed $v): int => is_numeric($v) ? (int) $v : 0,
+                $groups,
+            );
+        }
+
+        return [];
     }
 
     /**
@@ -116,7 +138,14 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getHashiCorpConfig(): array
     {
-        return (array) ($this->configuration['hashicorp'] ?? []);
+        $config = $this->configuration['hashicorp'] ?? [];
+
+        if (!\is_array($config)) {
+            return [];
+        }
+
+        /** @var array{address?: string, path?: string, authMethod?: string, token?: string} $config */
+        return $config;
     }
 
     /**
@@ -126,7 +155,14 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
      */
     public function getAwsConfig(): array
     {
-        return (array) ($this->configuration['aws'] ?? []);
+        $config = $this->configuration['aws'] ?? [];
+
+        if (!\is_array($config)) {
+            return [];
+        }
+
+        /** @var array{region?: string, secretPrefix?: string} $config */
+        return $config;
     }
 
     /**

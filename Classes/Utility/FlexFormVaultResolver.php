@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Utility;
 
-use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
@@ -61,17 +60,18 @@ final readonly class FlexFormVaultResolver
                 continue;
             }
 
+            // isVaultIdentifier guarantees value is a string - cast safely
+            $identifier = \is_string($value) ? $value : '';
+
             try {
-                $settings[$field] = $this->vaultService->retrieve($value);
-            } catch (SecretNotFoundException) {
-                $settings[$field] = null;
+                $settings[$field] = $this->vaultService->retrieve($identifier);
             } catch (VaultException $e) {
                 if ($throwOnError) {
                     throw $e;
                 }
                 $this->logger->error('Failed to resolve FlexForm vault field', [
                     'field' => $field,
-                    'identifier' => $value,
+                    'identifier' => $identifier,
                     'error' => $e->getMessage(),
                 ]);
                 $settings[$field] = null;
@@ -128,14 +128,15 @@ final readonly class FlexFormVaultResolver
                 /** @var array<string, mixed> $value */
                 $data[$key] = $this->resolveRecursive($value);
             } elseif ($this->isVaultIdentifier($value)) {
+                // isVaultIdentifier guarantees value is a string - cast safely
+                $identifier = \is_string($value) ? $value : '';
+
                 try {
-                    $data[$key] = $this->vaultService->retrieve($value);
-                } catch (SecretNotFoundException) {
-                    $data[$key] = null;
+                    $data[$key] = $this->vaultService->retrieve($identifier);
                 } catch (VaultException $e) {
                     $this->logger->error('Failed to resolve vault identifier', [
                         'key' => $key,
-                        'identifier' => $value,
+                        'identifier' => $identifier,
                         'error' => $e->getMessage(),
                     ]);
                     $data[$key] = null;

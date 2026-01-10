@@ -114,12 +114,14 @@ final readonly class SiteConfigurationVaultProcessor implements SiteConfiguratio
         $resolved = [];
 
         foreach ($configuration as $key => $value) {
+            $keyStr = \is_string($key) ? $key : (string) $key;
             if (\is_array($value)) {
-                $resolved[$key] = $this->resolveVaultReferences($value, $site);
+                /** @var array<string, mixed> $value */
+                $resolved[$keyStr] = $this->resolveVaultReferences($value, $site);
             } elseif (\is_string($value) && $this->isVaultReference($value)) {
-                $resolved[$key] = $this->resolveVaultReference($value, $site);
+                $resolved[$keyStr] = $this->resolveVaultReference($value, $site);
             } else {
-                $resolved[$key] = $value;
+                $resolved[$keyStr] = $value;
             }
         }
 

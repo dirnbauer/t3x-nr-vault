@@ -54,11 +54,15 @@ interface VaultAdapterInterface
 
     /**
      * Get metadata for a secret without decrypting value.
+     *
+     * @return array<string, mixed>|null
      */
     public function getMetadata(string $identifier): ?array;
 
     /**
      * Update metadata without changing the secret value.
+     *
+     * @param array<string, mixed> $metadata
      */
     public function updateMetadata(string $identifier, array $metadata): void;
 }

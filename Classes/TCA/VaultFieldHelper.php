@@ -109,11 +109,14 @@ final class VaultFieldHelper
      */
     public static function getSecureFieldConfig(string $label, array $options = []): array
     {
-        return self::getFieldConfig(array_merge([
+        /** @var array{label?: string, description?: string, size?: int, required?: bool, placeholder?: string, displayCond?: string, l10n_mode?: string, exclude?: bool} $mergedOptions */
+        $mergedOptions = array_merge([
             'label' => $label,
             'exclude' => true,
             'l10n_mode' => 'exclude',
-        ], $options));
+        ], $options);
+
+        return self::getFieldConfig($mergedOptions);
     }
 
     /**
@@ -136,15 +139,18 @@ final class VaultFieldHelper
      * Add vault field columns to an existing TCA array.
      *
      * @param array<string, mixed> $tca Existing TCA configuration
-     * @param array<string, array<string, mixed>> $vaultFields Map of field names to options
+     * @param array<string, array{label?: string, description?: string, size?: int, required?: bool, placeholder?: string, displayCond?: string, l10n_mode?: string, exclude?: bool}> $vaultFields Map of field names to options
      *
      * @return array<string, mixed> Modified TCA with vault fields added
      */
     public static function addVaultFields(array $tca, array $vaultFields): array
     {
+        /** @var array<string, mixed> $columns */
+        $columns = \is_array($tca['columns'] ?? null) ? $tca['columns'] : [];
         foreach ($vaultFields as $fieldName => $options) {
-            $tca['columns'][$fieldName] = self::getFieldConfig($options);
+            $columns[$fieldName] = self::getFieldConfig($options);
         }
+        $tca['columns'] = $columns;
 
         return $tca;
     }
@@ -158,6 +164,13 @@ final class VaultFieldHelper
      */
     public static function isVaultField(array $fieldConfig): bool
     {
-        return ($fieldConfig['config']['renderType'] ?? '') === 'vaultSecret';
+        /** @var array<string, mixed>|mixed $config */
+        $config = $fieldConfig['config'] ?? [];
+        if (!\is_array($config)) {
+            return false;
+        }
+        $renderType = $config['renderType'] ?? '';
+
+        return $renderType === 'vaultSecret';
     }
 }

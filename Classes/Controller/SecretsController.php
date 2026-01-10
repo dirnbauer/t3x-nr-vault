@@ -67,11 +67,15 @@ final readonly class SecretsController
         $this->addDocHeaderButtons($moduleTemplate);
 
         // Get filter parameters from POST body (filter form uses POST to avoid iframe issues)
-        $body = $request->getParsedBody() ?? [];
+        $bodyRaw = $request->getParsedBody();
+        $body = \is_array($bodyRaw) ? $bodyRaw : [];
+        $identifierVal = $body['identifier'] ?? '';
+        $statusVal = $body['status'] ?? '';
+        $ownerVal = $body['owner'] ?? 0;
         $filters = [
-            'identifier' => trim((string) ($body['identifier'] ?? '')),
-            'status' => (string) ($body['status'] ?? ''),
-            'owner' => (int) ($body['owner'] ?? 0),
+            'identifier' => \is_string($identifierVal) ? trim($identifierVal) : '',
+            'status' => \is_string($statusVal) ? $statusVal : '',
+            'owner' => is_numeric($ownerVal) ? (int) $ownerVal : 0,
         ];
 
         $secrets = $this->vaultService->list();
@@ -139,6 +143,7 @@ final readonly class SecretsController
             'returnUrl' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         ]);
 
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         return new RedirectResponse((string) $editUrl);
     }
 
@@ -148,11 +153,13 @@ final readonly class SecretsController
     public function editAction(ServerRequestInterface $request): ResponseInterface
     {
         $queryParams = $request->getQueryParams();
-        $identifier = (string) ($queryParams['identifier'] ?? '');
+        $identifierVal = $queryParams['identifier'] ?? '';
+        $identifier = \is_string($identifierVal) ? $identifierVal : '';
 
         if ($identifier === '') {
             $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
                 (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             );
@@ -163,6 +170,7 @@ final readonly class SecretsController
         } catch (SecretNotFoundException) {
             $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
                 (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             );
@@ -172,6 +180,7 @@ final readonly class SecretsController
         if ($uid === 0) {
             $this->addFlashMessage('Secret UID not found', ContextualFeedbackSeverity::ERROR);
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
                 (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             );
@@ -187,6 +196,7 @@ final readonly class SecretsController
             'returnUrl' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         ]);
 
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         return new RedirectResponse((string) $editUrl);
     }
 
@@ -197,16 +207,20 @@ final readonly class SecretsController
      */
     public function toggleAction(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $identifier = (string) ($body['identifier'] ?? '');
+        $bodyRaw = $request->getParsedBody();
+        $body = \is_array($bodyRaw) ? $bodyRaw : [];
+        $identifierVal = $body['identifier'] ?? '';
+        $identifier = \is_string($identifierVal) ? $identifierVal : '';
         $isAjax = $this->isAjaxRequest($request);
 
         if ($identifier === '') {
             if ($isAjax) {
+                /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse(['success' => false, 'error' => 'No secret identifier provided'], 400);
             }
             $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
                 (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             );
@@ -262,6 +276,7 @@ final readonly class SecretsController
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.enabled.success');
 
             if ($isAjax) {
+                /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse([
                     'success' => true,
                     'hidden' => (bool) $newState,
@@ -273,17 +288,20 @@ final readonly class SecretsController
         } catch (SecretNotFoundException) {
             $this->auditLogService->log($identifier, 'update', false, 'Secret not found');
             if ($isAjax) {
+                /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse(['success' => false, 'error' => 'Secret not found: ' . $identifier], 404);
             }
             $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
         } catch (Exception $e) {
             $this->auditLogService->log($identifier, 'update', false, $e->getMessage());
             if ($isAjax) {
+                /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
             }
             $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
         }
 
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         return new RedirectResponse(
             (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         );
@@ -294,13 +312,17 @@ final readonly class SecretsController
      */
     public function deleteAction(ServerRequestInterface $request): ResponseInterface
     {
-        $body = $request->getParsedBody();
-        $identifier = (string) ($body['identifier'] ?? '');
-        $reason = trim((string) ($body['reason'] ?? ''));
+        $bodyRaw = $request->getParsedBody();
+        $body = \is_array($bodyRaw) ? $bodyRaw : [];
+        $identifierVal = $body['identifier'] ?? '';
+        $identifier = \is_string($identifierVal) ? $identifierVal : '';
+        $reasonVal = $body['reason'] ?? '';
+        $reason = \is_string($reasonVal) ? trim($reasonVal) : '';
 
         if ($identifier === '') {
             $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
 
+            /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
                 (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
             );
@@ -321,6 +343,7 @@ final readonly class SecretsController
             $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
         }
 
+        /** @phpstan-ignore new.internalClass, method.internalClass */
         return new RedirectResponse(
             (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
         );
@@ -362,13 +385,19 @@ final readonly class SecretsController
     private function isAdmin(): bool
     {
         $backendUser = $GLOBALS['BE_USER'] ?? null;
+        if (!\is_object($backendUser) || !method_exists($backendUser, 'isAdmin')) {
+            return false;
+        }
 
-        return $backendUser !== null && $backendUser->isAdmin();
+        return (bool) $backendUser->isAdmin();
     }
 
     private function getLanguageService(): LanguageService
     {
-        return $GLOBALS['LANG'];
+        /** @var LanguageService $lang */
+        $lang = $GLOBALS['LANG'];
+
+        return $lang;
     }
 
     /**
@@ -400,8 +429,11 @@ final readonly class SecretsController
 
         $cache = [];
         while ($row = $result->fetchAssociative()) {
-            $displayName = $row['realName'] !== '' ? $row['realName'] : $row['username'];
-            $cache[(int) $row['uid']] = $displayName;
+            $realName = $row['realName'] ?? '';
+            $username = $row['username'] ?? '';
+            $displayName = (\is_string($realName) && $realName !== '') ? $realName : (\is_string($username) ? $username : '');
+            $uidVal = $row['uid'] ?? 0;
+            $cache[is_numeric($uidVal) ? (int) $uidVal : 0] = $displayName;
         }
 
         return $cache;

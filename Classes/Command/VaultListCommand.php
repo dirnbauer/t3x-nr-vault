@@ -59,7 +59,8 @@ final class VaultListCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $pattern = $input->getOption('pattern');
         $format = $input->getOption('format');
-        $limit = (int) $input->getOption('limit');
+        $limitOption = $input->getOption('limit');
+        $limit = is_numeric($limitOption) ? (int) $limitOption : 100;
 
         try {
             $secrets = $this->vaultService->list(\is_string($pattern) ? $pattern : null);

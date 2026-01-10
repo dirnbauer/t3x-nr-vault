@@ -22,27 +22,43 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class VaultSecretElement extends AbstractFormElement
 {
+    private const LINE_FEED = "\n";
+
+    /**
+     * @return array<string, mixed>
+     */
     public function render(): array
     {
+        /** @var array<string, mixed> $resultArray */
         $resultArray = $this->initializeResultArray();
 
-        $parameterArray = $this->data['parameterArray'];
-        $config = $parameterArray['fieldConf']['config'];
+        /** @var array<string, mixed> $data */
+        $data = $this->data;
+        /** @var array<string, mixed> $parameterArray */
+        $parameterArray = \is_array($data['parameterArray'] ?? null) ? $data['parameterArray'] : [];
+        $fieldConf = \is_array($parameterArray['fieldConf'] ?? null) ? $parameterArray['fieldConf'] : [];
+        /** @var array<string, mixed> $config */
+        $config = \is_array($fieldConf['config'] ?? null) ? $fieldConf['config'] : [];
 
-        $itemName = $parameterArray['itemFormElName'];
+        $itemNameValue = $parameterArray['itemFormElName'] ?? '';
+        $itemName = \is_string($itemNameValue) ? $itemNameValue : '';
 
         $fieldId = StringUtility::getUniqueId('formengine-vault-');
-        $width = $this->formMaxWidth($config['size'] ?? 30);
+        $sizeValue = $config['size'] ?? 30;
+        $width = $this->formMaxWidth(is_numeric($sizeValue) ? (int) $sizeValue : 30);
 
-        $table = $this->data['tableName'];
-        $field = $this->data['fieldName'];
+        $tableValue = $data['tableName'] ?? '';
+        $table = \is_string($tableValue) ? $tableValue : '';
+        $fieldValue = $data['fieldName'] ?? '';
+        $field = \is_string($fieldValue) ? $fieldValue : '';
 
         // Get field permissions from TSconfig
         $permissionService = GeneralUtility::makeInstance(VaultFieldPermissionService::class);
         $permissions = $permissionService->getPermissions($table, $field);
 
         // UUID is stored directly in the field value
-        $vaultIdentifier = (string) ($parameterArray['itemFormElValue'] ?? '');
+        $itemFormElValue = $parameterArray['itemFormElValue'] ?? '';
+        $vaultIdentifier = \is_string($itemFormElValue) ? $itemFormElValue : '';
 
         // Check if secret exists in vault (UUID is non-empty)
         $hasValue = false;
@@ -63,7 +79,8 @@ final class VaultSecretElement extends AbstractFormElement
                 'LLL:EXT:nr_vault/Resources/Private/Language/locallang.xlf:vault_secret.placeholder_exists',
             ) ?: '••••••••';
         } else {
-            $placeholder = $config['placeholder'] ?? '';
+            $placeholderValue = $config['placeholder'] ?? '';
+            $placeholder = \is_string($placeholderValue) ? $placeholderValue : '';
         }
 
         // Build attributes
@@ -97,12 +114,14 @@ final class VaultSecretElement extends AbstractFormElement
             $attributes['placeholder'] = $placeholder;
         }
 
-        if ($config['max'] ?? 0) {
-            $attributes['maxlength'] = (string) (int) $config['max'];
+        $maxValue = $config['max'] ?? 0;
+        if (is_numeric($maxValue) && (int) $maxValue > 0) {
+            $attributes['maxlength'] = (string) (int) $maxValue;
         }
 
         // Apply readOnly from TCA config or TSconfig permissions
-        if (($config['readOnly'] ?? false) || $permissions['readOnly'] || !$permissions['edit']) {
+        $readOnlyConfig = $config['readOnly'] ?? false;
+        if ($readOnlyConfig || $permissions['readOnly'] || !$permissions['edit']) {
             $attributes['readonly'] = 'readonly';
         }
 
@@ -115,8 +134,10 @@ final class VaultSecretElement extends AbstractFormElement
         $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
 
         // Render field information (description/help text)
+        /** @var array<string, mixed> $fieldInformationResult */
         $fieldInformationResult = $this->renderFieldInformation();
-        $html[] = $fieldInformationResult['html'];
+        $html[] = \is_string($fieldInformationResult['html'] ?? null) ? $fieldInformationResult['html'] : '';
+        /** @var array<string, mixed> $resultArray */
         $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldInformationResult, false);
 
         $html[] = '<div class="form-wizards-wrap">';
@@ -151,8 +172,10 @@ final class VaultSecretElement extends AbstractFormElement
         $html[] = '</div>'; // form-wizards-element
 
         // Render field wizards
+        /** @var array<string, mixed> $fieldWizardResult */
         $fieldWizardResult = $this->renderFieldWizard();
-        $html[] = $fieldWizardResult['html'];
+        $html[] = \is_string($fieldWizardResult['html'] ?? null) ? $fieldWizardResult['html'] : '';
+        /** @var array<string, mixed> $resultArray */
         $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldWizardResult, false);
 
         $html[] = '</div>'; // form-wizards-wrap
@@ -161,12 +184,15 @@ final class VaultSecretElement extends AbstractFormElement
         // Hidden field to track vault identifier
         $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
 
-        $resultArray['html'] = implode(LF, $html);
+        $resultArray['html'] = implode(self::LINE_FEED, $html);
 
         // Add JavaScript module
-        $resultArray['javaScriptModules'][] = JavaScriptModuleInstruction::create(
+        /** @var list<JavaScriptModuleInstruction> $javaScriptModules */
+        $javaScriptModules = \is_array($resultArray['javaScriptModules'] ?? null) ? $resultArray['javaScriptModules'] : [];
+        $javaScriptModules[] = JavaScriptModuleInstruction::create(
             '@netresearch/nr-vault/vault-secret-element.js',
         );
+        $resultArray['javaScriptModules'] = $javaScriptModules;
 
         return $resultArray;
     }

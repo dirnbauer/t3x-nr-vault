@@ -88,7 +88,8 @@ final class IdentifierValidator
         $identifier = strtolower($input);
 
         // Replace invalid characters with underscores
-        $identifier = preg_replace('/[^a-z0-9_]/', '_', $identifier);
+        $replaced = preg_replace('/[^a-z0-9_]/', '_', $identifier);
+        $identifier = \is_string($replaced) ? $replaced : $identifier;
 
         // Ensure starts with letter
         if ($identifier !== '' && !ctype_alpha($identifier[0])) {
@@ -96,10 +97,11 @@ final class IdentifierValidator
         }
 
         // Remove consecutive underscores
-        $identifier = preg_replace('/_+/', '_', $identifier);
+        $replaced = preg_replace('/_+/', '_', $identifier);
+        $identifier = \is_string($replaced) ? $replaced : $identifier;
 
         // Trim underscores
-        $identifier = trim((string) $identifier, '_');
+        $identifier = trim($identifier, '_');
 
         // Enforce length limits
         if (\strlen($identifier) < self::MIN_LENGTH) {

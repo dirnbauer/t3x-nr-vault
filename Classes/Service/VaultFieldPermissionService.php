@@ -52,9 +52,9 @@ final class VaultFieldPermissionService implements SingletonInterface
         VaultFieldPermission $permission,
         ?BackendUserAuthentication $backendUser = null,
     ): bool {
-        $backendUser ??= $GLOBALS['BE_USER'] ?? null;
+        $backendUser ??= $this->getBackendUser();
 
-        if ($backendUser === null) {
+        if (!$backendUser instanceof BackendUserAuthentication) {
             return false;
         }
 
@@ -65,7 +65,12 @@ final class VaultFieldPermissionService implements SingletonInterface
             return $permission !== VaultFieldPermission::ReadOnly;
         }
 
-        $cacheKey = \sprintf('%s:%s:%s:%d', $table, $field, $permission->value, $backendUser->user['uid'] ?? 0);
+        /** @phpstan-ignore property.internal */
+        $userRecord = $backendUser->user;
+        /** @var array<string, mixed> $userRecordTyped */
+        $userRecordTyped = \is_array($userRecord) ? $userRecord : [];
+        $uid = \is_int($userRecordTyped['uid'] ?? null) ? $userRecordTyped['uid'] : 0;
+        $cacheKey = \sprintf('%s:%s:%s:%d', $table, $field, $permission->value, $uid);
 
         if (isset($this->permissionCache[$cacheKey])) {
             return $this->permissionCache[$cacheKey];
@@ -150,8 +155,18 @@ final class VaultFieldPermissionService implements SingletonInterface
     private function getVaultTsConfig(): array
     {
         $pageTsConfig = BackendUtility::getPagesTSconfig(0);
+        /** @var array<string, mixed> $vaultConfig */
+        $vaultConfig = \is_array($pageTsConfig['vault.'] ?? null) ? $pageTsConfig['vault.'] : [];
 
-        return $pageTsConfig['vault.']['permissions.'] ?? [];
+        /** @phpstan-ignore return.type */
+        return \is_array($vaultConfig['permissions.'] ?? null) ? $vaultConfig['permissions.'] : [];
+    }
+
+    private function getBackendUser(): ?BackendUserAuthentication
+    {
+        $beUser = $GLOBALS['BE_USER'] ?? null;
+
+        return $beUser instanceof BackendUserAuthentication ? $beUser : null;
     }
 
     /**
@@ -163,6 +178,9 @@ final class VaultFieldPermissionService implements SingletonInterface
         $current = $array;
 
         foreach ($keys as $key) {
+            if (!\is_array($current)) {
+                return null;
+            }
             // Try with trailing dot (TSconfig convention for nested)
             if (isset($current[$key . '.'])) {
                 $current = $current[$key . '.'];

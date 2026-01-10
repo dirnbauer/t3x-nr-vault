@@ -185,12 +185,15 @@ final readonly class EncryptionService implements EncryptionServiceInterface
 
     /**
      * Get the nonce length for the current algorithm.
+     *
+     * @return int<1, max>
      */
     private function getNonceLength(): int
     {
-        return $this->useAes256Gcm()
+        // Constants are always positive, but we ensure it for type safety
+        return max(1, $this->useAes256Gcm()
             ? SODIUM_CRYPTO_AEAD_AES256GCM_NPUBBYTES
-            : SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES;
+            : SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
     }
 
     /**

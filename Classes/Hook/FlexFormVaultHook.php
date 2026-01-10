@@ -33,6 +33,8 @@ final class FlexFormVaultHook
     /**
      * Called before database operations.
      * Scans FlexForm fields for vault secrets.
+     *
+     * @param array<string, mixed> $fieldArray
      */
     public function processDatamap_preProcessFieldArray(
         array &$fieldArray,
@@ -67,20 +69,25 @@ final class FlexFormVaultHook
                 continue;
             }
 
+            /** @var array<string, mixed> $flexData */
+            $flexData = $fieldArray[$fieldName];
             // Process the FlexForm data array
             $this->processFlexFormData(
-                $fieldArray[$fieldName],
+                $flexData,
                 $table,
                 $id,
                 $fieldName,
                 ['config' => $fieldConfig],
             );
+            $fieldArray[$fieldName] = $flexData;
         }
     }
 
     /**
      * Called after database operations.
      * Stores vault secrets with the correct record UID for FlexForm fields.
+     *
+     * @param array<string, mixed> $fieldArray
      */
     public function processDatamap_afterDatabaseOperations(
         string $status,
@@ -90,16 +97,17 @@ final class FlexFormVaultHook
         DataHandler $dataHandler,
     ): void {
         // Get actual UID for new records
-        $uid = $id;
+        $uidRaw = $id;
         if ($status === 'new') {
-            $uid = $dataHandler->substNEWwithIDs[$id] ?? $id;
+            $uidRaw = $dataHandler->substNEWwithIDs[$id] ?? $id;
         }
+        $uid = is_numeric($uidRaw) ? (int) $uidRaw : 0;
 
         // Process pending FlexForm secrets
         $pendingForRecord = $this->pendingFlexSecrets[$table][$id] ?? [];
 
         foreach ($pendingForRecord as $secretData) {
-            $this->storeFlexFormSecret($secretData, $table, (int) $uid, $dataHandler);
+            $this->storeFlexFormSecret($secretData, $table, $uid, $dataHandler);
         }
 
         // Clean up
@@ -108,6 +116,9 @@ final class FlexFormVaultHook
 
     /**
      * Process FlexForm data array recursively to find vault fields.
+     *
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $flexFieldConfig
      */
     private function processFlexFormData(
         array &$data,
@@ -234,11 +245,12 @@ final class FlexFormVaultHook
                 $this->vaultService->rotate($vaultIdentifier, $secretData['value'], 'FlexForm field updated');
             }
         } catch (VaultException $e) {
+            /** @phpstan-ignore method.internal */
             $dataHandler->log(
                 $table,
                 $uid,
                 2,
-                0,
+                null,
                 1,
                 'Vault error for FlexForm field "' . $secretData['fieldPath'] . '": ' . $e->getMessage(),
             );
@@ -272,6 +284,11 @@ final class FlexFormVaultHook
 
     /**
      * Get the FlexForm data structure.
+     *
+     * @param array<string, mixed> $fieldConfig
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>|null
      */
     private function getFlexFormDataStructure(array $fieldConfig, array $data): ?array
     {
@@ -283,6 +300,7 @@ final class FlexFormVaultHook
                 $data,
             );
 
+            /** @phpstan-ignore return.type */
             return $this->flexFormTools->parseDataStructureByIdentifier($dataStructureIdentifier);
         } catch (Exception) {
             return null;
