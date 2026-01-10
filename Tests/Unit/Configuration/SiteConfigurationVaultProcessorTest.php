@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Configuration;
 use Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -16,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Site\Entity\Site;
 
 #[CoversClass(SiteConfigurationVaultProcessor::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class SiteConfigurationVaultProcessorTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;

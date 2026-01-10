@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Http;
 use JsonException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\VaultHttpResponse;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -15,6 +16,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 #[CoversClass(VaultHttpResponse::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultHttpResponseTest extends TestCase
 {
     #[Test]

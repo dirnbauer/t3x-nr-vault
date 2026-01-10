@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Domain\Repository;
 use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -17,6 +18,7 @@ use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 
 #[CoversClass(SecretRepository::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class SecretRepositoryTest extends TestCase
 {
     private SecretRepository $subject;

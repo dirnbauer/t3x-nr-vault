@@ -12,6 +12,7 @@ use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -21,6 +22,7 @@ use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 
 #[CoversClass(AjaxController::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class AjaxControllerTest extends TestCase
 {
     private AjaxController $subject;
@@ -78,7 +80,7 @@ final class AjaxControllerTest extends TestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new SecretNotFoundException($identifier, 1234567890));
+            ->willReturn(null);
 
         $response = $this->subject->revealAction($request);
 

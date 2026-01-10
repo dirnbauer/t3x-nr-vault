@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\Service;
 
 use Netresearch\NrVault\Service\VaultFieldPermission;
 use Netresearch\NrVault\Service\VaultFieldPermissionService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -14,6 +15,7 @@ use ReflectionClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 #[CoversClass(VaultFieldPermissionService::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultFieldPermissionServiceTest extends TestCase
 {
     private VaultFieldPermissionService $service;

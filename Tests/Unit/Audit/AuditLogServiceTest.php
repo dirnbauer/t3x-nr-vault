@@ -9,6 +9,7 @@ use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogService;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -20,17 +21,18 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 
 #[CoversClass(AuditLogService::class)]
 #[CoversClass(AuditLogEntry::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class AuditLogServiceTest extends TestCase
 {
-    private AuditLogService $subject;
+    private ?AuditLogService $subject = null;
 
-    private ConnectionPool&MockObject $connectionPool;
+    private (ConnectionPool&MockObject)|null $connectionPool = null;
 
-    private AccessControlServiceInterface&MockObject $accessControlService;
+    private (AccessControlServiceInterface&MockObject)|null $accessControlService = null;
 
-    private QueryBuilder&MockObject $queryBuilder;
+    private (QueryBuilder&MockObject)|null $queryBuilder = null;
 
-    private Connection&MockObject $connection;
+    private (Connection&MockObject)|null $connection = null;
 
     protected function setUp(): void
     {
@@ -54,6 +56,8 @@ final class AuditLogServiceTest extends TestCase
             ->method('getCurrentUserGroups')
             ->willReturn([]);
 
+        self::assertNotNull($this->connectionPool);
+        self::assertNotNull($this->accessControlService);
         $this->subject = new AuditLogService(
             $this->connectionPool,
             $this->accessControlService,
@@ -76,7 +80,7 @@ final class AuditLogServiceTest extends TestCase
                     && $data['actor_type'] === 'backend'),
             );
 
-        $this->subject->log('test_secret', 'create', true, null, 'Test secret stored');
+        $this->getSubject()->log('test_secret', 'create', true, null, 'Test secret stored');
     }
 
     #[Test]
@@ -93,7 +97,7 @@ final class AuditLogServiceTest extends TestCase
                     && $data['secret_identifier'] === 'api_key'),
             );
 
-        $this->subject->log('api_key', 'read', true);
+        $this->getSubject()->log('api_key', 'read', true);
     }
 
     #[Test]
@@ -110,7 +114,7 @@ final class AuditLogServiceTest extends TestCase
                     && $data['secret_identifier'] === 'old_secret'),
             );
 
-        $this->subject->log('old_secret', 'delete', true, null, 'Cleanup');
+        $this->getSubject()->log('old_secret', 'delete', true, null, 'Cleanup');
     }
 
     #[Test]
@@ -127,7 +131,7 @@ final class AuditLogServiceTest extends TestCase
                     && $data['secret_identifier'] === 'rotated_secret'),
             );
 
-        $this->subject->log('rotated_secret', 'rotate', true, null, 'Annual rotation');
+        $this->getSubject()->log('rotated_secret', 'rotate', true, null, 'Annual rotation');
     }
 
     #[Test]
@@ -145,7 +149,7 @@ final class AuditLogServiceTest extends TestCase
                     && $data['success'] === 0),
             );
 
-        $this->subject->log('restricted_secret', 'access_denied', false, 'Permission denied');
+        $this->getSubject()->log('restricted_secret', 'access_denied', false, 'Permission denied');
     }
 
     #[Test]
@@ -166,7 +170,7 @@ final class AuditLogServiceTest extends TestCase
                     && isset($data['user_agent'], $data['request_id'])),
             );
 
-        $this->subject->log('context_test', 'create', true, null, 'Testing context');
+        $this->getSubject()->log('context_test', 'create', true, null, 'Testing context');
 
         // Cleanup
         unset($_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
@@ -221,7 +225,7 @@ final class AuditLogServiceTest extends TestCase
                 self::callback(static fn (array $data): bool => $data['previous_hash'] === 'previous_hash_abc123'),
             );
 
-        $this->subject->log('chained_secret', 'create', true, null, 'Testing hash chain');
+        $this->getSubject()->log('chained_secret', 'create', true, null, 'Testing hash chain');
     }
 
     #[Test]
@@ -252,7 +256,7 @@ final class AuditLogServiceTest extends TestCase
             ],
         ]);
 
-        $entries = $this->subject->query();
+        $entries = $this->getSubject()->query();
 
         self::assertCount(1, $entries);
         self::assertInstanceOf(AuditLogEntry::class, $entries[0]);
@@ -278,7 +282,7 @@ final class AuditLogServiceTest extends TestCase
             ->with('secret_identifier = ?')
             ->willReturnSelf();
 
-        $this->subject->query($filter);
+        $this->getSubject()->query($filter);
     }
 
     #[Test]
@@ -300,7 +304,7 @@ final class AuditLogServiceTest extends TestCase
             ->with('action = ?')
             ->willReturnSelf();
 
-        $this->subject->query($filter);
+        $this->getSubject()->query($filter);
     }
 
     #[Test]
@@ -322,7 +326,7 @@ final class AuditLogServiceTest extends TestCase
             ->with('success = 1')
             ->willReturnSelf();
 
-        $this->subject->query($filter);
+        $this->getSubject()->query($filter);
     }
 
     #[Test]
@@ -347,7 +351,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('andWhere')
             ->willReturnSelf();
 
-        $this->subject->query($filter);
+        $this->getSubject()->query($filter);
     }
 
     #[Test]
@@ -376,7 +380,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('executeQuery')
             ->willReturn($result);
 
-        self::assertSame(42, $this->subject->count());
+        self::assertSame(42, $this->getSubject()->count());
     }
 
     #[Test]
@@ -425,7 +429,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('executeQuery')
             ->willReturn($result);
 
-        self::assertSame(10, $this->subject->count($filter));
+        self::assertSame(10, $this->getSubject()->count($filter));
     }
 
     #[Test]
@@ -433,7 +437,7 @@ final class AuditLogServiceTest extends TestCase
     {
         $this->setupQueryMocks([]);
 
-        $entries = $this->subject->export();
+        $entries = $this->getSubject()->export();
 
         self::assertIsArray($entries);
     }
@@ -472,7 +476,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('executeQuery')
             ->willReturn($result);
 
-        self::assertNull($this->subject->getLatestHash());
+        self::assertNull($this->getSubject()->getLatestHash());
     }
 
     #[Test]
@@ -509,7 +513,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('executeQuery')
             ->willReturn($result);
 
-        self::assertSame('abc123hash', $this->subject->getLatestHash());
+        self::assertSame('abc123hash', $this->getSubject()->getLatestHash());
     }
 
     #[Test]
@@ -542,7 +546,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('executeQuery')
             ->willReturn($result);
 
-        $verification = $this->subject->verifyHashChain();
+        $verification = $this->getSubject()->verifyHashChain();
 
         self::assertTrue($verification->valid);
         self::assertEmpty($verification->errors);
@@ -595,7 +599,7 @@ final class AuditLogServiceTest extends TestCase
             ->method('executeQuery')
             ->willReturn($result);
 
-        $verification = $this->subject->verifyHashChain(10, 50);
+        $verification = $this->getSubject()->verifyHashChain(10, 50);
 
         self::assertTrue($verification->valid);
     }
@@ -614,7 +618,7 @@ final class AuditLogServiceTest extends TestCase
                     && $data['hash_after'] === 'after_hash'),
             );
 
-        $this->subject->log(
+        $this->getSubject()->log(
             'test_secret',
             'update',
             true,
@@ -644,7 +648,7 @@ final class AuditLogServiceTest extends TestCase
                 }),
             );
 
-        $this->subject->log('test_secret', 'create', true, null, null, null, null, $context);
+        $this->getSubject()->log('test_secret', 'create', true, null, null, null, null, $context);
     }
 
     #[Test]
@@ -670,6 +674,34 @@ final class AuditLogServiceTest extends TestCase
             );
 
         $subject->log('test_secret', 'read', true);
+    }
+
+    private function getSubject(): AuditLogService
+    {
+        self::assertNotNull($this->subject);
+
+        return $this->subject;
+    }
+
+    private function getQueryBuilder(): QueryBuilder&MockObject
+    {
+        self::assertNotNull($this->queryBuilder);
+
+        return $this->queryBuilder;
+    }
+
+    private function getConnection(): Connection&MockObject
+    {
+        self::assertNotNull($this->connection);
+
+        return $this->connection;
+    }
+
+    private function getConnectionPool(): ConnectionPool&MockObject
+    {
+        self::assertNotNull($this->connectionPool);
+
+        return $this->connectionPool;
     }
 
     private function setupDatabaseMocks(): void

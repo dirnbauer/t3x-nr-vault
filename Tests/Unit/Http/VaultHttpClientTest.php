@@ -14,6 +14,7 @@ use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -22,6 +23,7 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 
 #[CoversClass(VaultHttpClient::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultHttpClientTest extends TestCase
 {
     /** @phpstan-ignore property.uninitialized */

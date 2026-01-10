@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Security;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Security\AccessControlService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -14,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 #[CoversClass(AccessControlService::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class AccessControlServiceTest extends TestCase
 {
     private AccessControlService $subject;

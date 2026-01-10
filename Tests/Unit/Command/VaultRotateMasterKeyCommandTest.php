@@ -13,6 +13,7 @@ use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -23,6 +24,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
 #[CoversClass(VaultRotateMasterKeyCommand::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultRotateMasterKeyCommandTest extends TestCase
 {
     private SecretRepositoryInterface&MockObject $secretRepository;

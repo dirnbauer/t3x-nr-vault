@@ -11,12 +11,14 @@ use Netresearch\NrVault\Crypto\MasterKeyProviderFactory;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Crypto\Typo3MasterKeyProvider;
 use Netresearch\NrVault\Exception\ConfigurationException;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(MasterKeyProviderFactory::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class MasterKeyProviderFactoryTest extends TestCase
 {
     private MasterKeyProviderFactory $subject;

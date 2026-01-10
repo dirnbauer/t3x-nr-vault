@@ -17,15 +17,17 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(VaultService::class)]
 final class VaultServiceTest extends FunctionalTestCase
 {
+    /** @var list<string> */
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    /** @var list<string> */
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
 
-    private VaultServiceInterface $subject;
+    private ?VaultServiceInterface $subject = null;
 
     private ?string $masterKeyPath = null;
 
@@ -44,6 +46,9 @@ final class VaultServiceTest extends FunctionalTestCase
         chmod($this->masterKeyPath, 0o600);
 
         // Configure extension to use file-based master key
+        if (!isset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'])) {
+            $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] = [];
+        }
         $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_vault'] = [
             'masterKeySource' => $this->masterKeyPath,
             'autoKeyPath' => $this->masterKeyPath,
@@ -55,7 +60,9 @@ final class VaultServiceTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
 
         // Get properly wired service from container
-        $this->subject = $this->get(VaultServiceInterface::class);
+        $service = $this->get(VaultServiceInterface::class);
+        self::assertInstanceOf(VaultServiceInterface::class, $service);
+        $this->subject = $service;
     }
 
     #[Override]
@@ -84,13 +91,13 @@ final class VaultServiceTest extends FunctionalTestCase
         $secretValue = 'my-super-secret-api-key-12345';
 
         // Store the secret
-        $this->subject->store($identifier, $secretValue);
+        $this->getSubject()->store($identifier, $secretValue);
 
         // Verify it exists
-        self::assertTrue($this->subject->exists($identifier));
+        self::assertTrue($this->getSubject()->exists($identifier));
 
         // Retrieve and verify value
-        $retrieved = $this->subject->retrieve($identifier);
+        $retrieved = $this->getSubject()->retrieve($identifier);
         self::assertEquals($secretValue, $retrieved);
     }
 
@@ -102,12 +109,12 @@ final class VaultServiceTest extends FunctionalTestCase
         $updatedValue = 'updated-value';
 
         // Store original
-        $this->subject->store($identifier, $originalValue);
-        self::assertEquals($originalValue, $this->subject->retrieve($identifier));
+        $this->getSubject()->store($identifier, $originalValue);
+        self::assertEquals($originalValue, $this->getSubject()->retrieve($identifier));
 
         // Update with new value
-        $this->subject->store($identifier, $updatedValue);
-        self::assertEquals($updatedValue, $this->subject->retrieve($identifier));
+        $this->getSubject()->store($identifier, $updatedValue);
+        self::assertEquals($updatedValue, $this->getSubject()->retrieve($identifier));
     }
 
     #[Test]
@@ -117,14 +124,14 @@ final class VaultServiceTest extends FunctionalTestCase
         $secretValue = 'delete-me';
 
         // Store and verify
-        $this->subject->store($identifier, $secretValue);
-        self::assertTrue($this->subject->exists($identifier));
+        $this->getSubject()->store($identifier, $secretValue);
+        self::assertTrue($this->getSubject()->exists($identifier));
 
         // Delete
-        $this->subject->delete($identifier, 'Test cleanup');
+        $this->getSubject()->delete($identifier, 'Test cleanup');
 
         // Verify deleted
-        self::assertFalse($this->subject->exists($identifier));
+        self::assertFalse($this->getSubject()->exists($identifier));
     }
 
     #[Test]
@@ -135,18 +142,18 @@ final class VaultServiceTest extends FunctionalTestCase
         $rotatedValue = 'rotated-new-value';
 
         // Store original
-        $this->subject->store($identifier, $originalValue);
-        $metadataBefore = $this->subject->getMetadata($identifier);
+        $this->getSubject()->store($identifier, $originalValue);
+        $metadataBefore = $this->getSubject()->getMetadata($identifier);
         self::assertEquals(1, $metadataBefore->version);
 
         // Rotate
-        $this->subject->rotate($identifier, $rotatedValue, 'Scheduled rotation');
+        $this->getSubject()->rotate($identifier, $rotatedValue, 'Scheduled rotation');
 
         // Verify new value and incremented version
-        $retrieved = $this->subject->retrieve($identifier);
+        $retrieved = $this->getSubject()->retrieve($identifier);
         self::assertEquals($rotatedValue, $retrieved);
 
-        $metadataAfter = $this->subject->getMetadata($identifier);
+        $metadataAfter = $this->getSubject()->getMetadata($identifier);
         self::assertEquals(2, $metadataAfter->version);
         self::assertNotNull($metadataAfter->lastRotatedAt);
     }
@@ -155,12 +162,12 @@ final class VaultServiceTest extends FunctionalTestCase
     public function listReturnsStoredSecrets(): void
     {
         // Store multiple secrets
-        $this->subject->store('list_test_1', 'value1');
-        $this->subject->store('list_test_2', 'value2');
-        $this->subject->store('list_test_3', 'value3');
+        $this->getSubject()->store('list_test_1', 'value1');
+        $this->getSubject()->store('list_test_2', 'value2');
+        $this->getSubject()->store('list_test_3', 'value3');
 
         // List all
-        $secrets = $this->subject->list();
+        $secrets = $this->getSubject()->list();
 
         // Verify at least our test secrets are returned
         $identifiers = array_column($secrets, 'identifier');
@@ -175,13 +182,13 @@ final class VaultServiceTest extends FunctionalTestCase
         $identifier = 'metadata_test';
         $secretValue = 'metadata-test-value';
 
-        $this->subject->store($identifier, $secretValue, [
+        $this->getSubject()->store($identifier, $secretValue, [
             'description' => 'Test secret for metadata',
             'context' => 'testing',
             'metadata' => ['environment' => 'test'],
         ]);
 
-        $metadata = $this->subject->getMetadata($identifier);
+        $metadata = $this->getSubject()->getMetadata($identifier);
 
         self::assertEquals($identifier, $metadata->identifier);
         self::assertEquals('Test secret for metadata', $metadata->description);
@@ -197,17 +204,17 @@ final class VaultServiceTest extends FunctionalTestCase
         $secretValue = 'This is my secret value that should be encrypted';
 
         // Store the secret
-        $this->subject->store($identifier, $secretValue);
+        $this->getSubject()->store($identifier, $secretValue);
 
         // Verify secret was stored
-        self::assertTrue($this->subject->exists($identifier));
+        self::assertTrue($this->getSubject()->exists($identifier));
 
         // Verify we can retrieve the plaintext correctly (proves encryption/decryption works)
-        $retrieved = $this->subject->retrieve($identifier);
+        $retrieved = $this->getSubject()->retrieve($identifier);
         self::assertEquals($secretValue, $retrieved);
 
         // Verify metadata is available
-        $metadata = $this->subject->getMetadata($identifier);
+        $metadata = $this->getSubject()->getMetadata($identifier);
         self::assertEquals($identifier, $metadata->identifier);
         self::assertEquals(1, $metadata->version);
     }
@@ -215,7 +222,7 @@ final class VaultServiceTest extends FunctionalTestCase
     #[Test]
     public function httpClientIsAccessible(): void
     {
-        $httpClient = $this->subject->http();
+        $httpClient = $this->getSubject()->http();
 
         self::assertNotNull($httpClient);
     }
@@ -226,11 +233,23 @@ final class VaultServiceTest extends FunctionalTestCase
         $identifier = 'cache_test';
         $secretValue = 'cache-test-value';
 
-        $this->subject->store($identifier, $secretValue);
-        $this->subject->clearCache();
+        $subject = $this->getSubject();
+        $subject->store($identifier, $secretValue);
+
+        // clearCache is implementation detail - only available on VaultService
+        if ($subject instanceof VaultService) {
+            $subject->clearCache();
+        }
 
         // Should still be retrievable from database
-        $retrieved = $this->subject->retrieve($identifier);
+        $retrieved = $subject->retrieve($identifier);
         self::assertEquals($secretValue, $retrieved);
+    }
+
+    private function getSubject(): VaultServiceInterface
+    {
+        self::assertNotNull($this->subject, 'VaultServiceInterface not initialized');
+
+        return $this->subject;
     }
 }

@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Hook;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Hook\SecretTcaHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -15,6 +16,7 @@ use ReflectionClass;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 
 #[CoversClass(SecretTcaHook::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class SecretTcaHookTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;

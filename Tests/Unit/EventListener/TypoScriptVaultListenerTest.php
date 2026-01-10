@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\EventListener;
 
 use Netresearch\NrVault\EventListener\TypoScriptVaultListener;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -16,6 +17,7 @@ use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 use TYPO3\CMS\Frontend\ContentObject\Event\AfterStdWrapFunctionsExecutedEvent;
 
 #[CoversClass(TypoScriptVaultListener::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class TypoScriptVaultListenerTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;

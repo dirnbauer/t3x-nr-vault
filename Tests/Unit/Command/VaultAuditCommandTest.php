@@ -10,6 +10,7 @@ use Netresearch\NrVault\Audit\HashChainVerificationResult;
 use Netresearch\NrVault\Command\VaultAuditCommand;
 use Netresearch\NrVault\Exception\VaultException;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -18,6 +19,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(VaultAuditCommand::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultAuditCommandTest extends TestCase
 {
     private AuditLogServiceInterface&MockObject $auditLogService;

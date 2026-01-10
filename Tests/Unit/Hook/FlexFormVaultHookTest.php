@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Hook;
 use InvalidArgumentException;
 use Netresearch\NrVault\Hook\FlexFormVaultHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -19,6 +20,7 @@ use TYPO3\CMS\Core\Schema\TcaSchema;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 
 #[CoversClass(FlexFormVaultHook::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class FlexFormVaultHookTest extends TestCase
 {
     private TcaSchemaFactory&MockObject $tcaSchemaFactory;

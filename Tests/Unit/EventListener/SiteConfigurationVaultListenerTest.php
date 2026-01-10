@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\EventListener;
 
 use Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessorInterface;
 use Netresearch\NrVault\EventListener\SiteConfigurationVaultListener;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -13,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Configuration\Event\SiteConfigurationLoadedEvent;
 
 #[CoversClass(SiteConfigurationVaultListener::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class SiteConfigurationVaultListenerTest extends TestCase
 {
     private SiteConfigurationVaultProcessorInterface&MockObject $processor;

@@ -17,6 +17,7 @@ use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,6 +33,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 #[CoversClass(OAuthTokenManager::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class OAuthTokenManagerTest extends TestCase
 {
     private OAuthTokenManager $subject;

@@ -8,6 +8,7 @@ use Netresearch\NrVault\Command\VaultListCommand;
 use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -16,6 +17,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(VaultListCommand::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultListCommandTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;

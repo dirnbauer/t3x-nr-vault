@@ -9,6 +9,7 @@ use Netresearch\NrVault\Exception\ValidationException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -17,6 +18,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(VaultStoreCommand::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultStoreCommandTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;

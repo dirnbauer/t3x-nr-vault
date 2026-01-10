@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Configuration;
 
 use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -13,6 +14,7 @@ use Throwable;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 
 #[CoversClass(ExtensionConfiguration::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class ExtensionConfigurationTest extends TestCase
 {
     private Typo3ExtensionConfiguration&MockObject $typo3Config;

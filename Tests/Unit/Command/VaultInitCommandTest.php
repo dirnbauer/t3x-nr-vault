@@ -7,6 +7,7 @@ namespace Netresearch\NrVault\Tests\Unit\Command;
 use Netresearch\NrVault\Command\VaultInitCommand;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use org\bovigo\vfs\vfsStream;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -15,6 +16,7 @@ use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
 #[CoversClass(VaultInitCommand::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultInitCommandTest extends TestCase
 {
     private ExtensionConfigurationInterface&MockObject $configuration;

@@ -10,6 +10,7 @@ use Netresearch\NrVault\Command\VaultCleanupOrphansCommand;
 use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -23,6 +24,7 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
 
 #[CoversClass(VaultCleanupOrphansCommand::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class VaultCleanupOrphansCommandTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;
