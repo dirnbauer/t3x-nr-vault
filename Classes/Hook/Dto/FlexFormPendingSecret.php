@@ -70,7 +70,7 @@ readonly class FlexFormPendingSecret
      */
     public function getFullPath(): string
     {
-        return sprintf('%s/%s/%s', $this->flexField, $this->sheet, $this->fieldPath);
+        return \sprintf('%s/%s/%s', $this->flexField, $this->sheet, $this->fieldPath);
     }
 
     /**

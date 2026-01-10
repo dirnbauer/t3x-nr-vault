@@ -37,7 +37,7 @@ readonly class OrphanReference
      */
     public function getLocation(): string
     {
-        return sprintf('%s.%s (uid=%d)', $this->table, $this->field, $this->uid);
+        return \sprintf('%s.%s (uid=%d)', $this->table, $this->field, $this->uid);
     }
 
     /**
