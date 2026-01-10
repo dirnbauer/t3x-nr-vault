@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Adapter;
 
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 
@@ -50,7 +51,7 @@ final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
         return $this->secretRepository->exists($identifier);
     }
 
-    public function list(array $filters = []): array
+    public function list(?SecretFilters $filters = null): array
     {
         return $this->secretRepository->findIdentifiers($filters);
     }

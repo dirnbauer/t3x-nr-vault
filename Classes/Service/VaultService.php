@@ -18,6 +18,7 @@ use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Dto\SecretDetails;
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Event\SecretAccessedEvent;
@@ -356,10 +357,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
 
     public function list(?string $pattern = null): array
     {
-        $filters = [];
-        if ($pattern !== null) {
-            $filters['pattern'] = $pattern;
-        }
+        $filters = $pattern !== null ? new SecretFilters(prefix: $pattern) : null;
 
         $identifiers = $this->adapter->list($filters);
 

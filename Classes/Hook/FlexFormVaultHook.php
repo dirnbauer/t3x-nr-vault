@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Hook;
 
 use Exception;
 use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Hook\Dto\FlexFormPendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -21,7 +22,7 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
  */
 final class FlexFormVaultHook
 {
-    /** @var array<string, array<string|int, list<array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool}>>> */
+    /** @var array<string, array<string|int, list<FlexFormPendingSecret>>> */
     private array $pendingFlexSecrets = [];
 
     public function __construct(
@@ -194,15 +195,22 @@ final class FlexFormVaultHook
                 $vaultIdentifier = $isNewSecret ? $this->generateUuid() : $existingIdentifier;
 
                 // Store for post-processing
-                $this->pendingFlexSecrets[$table][$id][] = [
-                    'flexField' => $flexFieldName,
-                    'sheet' => (string) $sheetName,
-                    'fieldPath' => (string) $fieldPath,
-                    'value' => $secretValue,
-                    'identifier' => $vaultIdentifier,
-                    'originalChecksum' => $originalChecksum,
-                    'isNew' => $isNewSecret,
-                ];
+                $this->pendingFlexSecrets[$table][$id][] = $isNewSecret
+                    ? FlexFormPendingSecret::createNew(
+                        $flexFieldName,
+                        (string) $sheetName,
+                        (string) $fieldPath,
+                        $secretValue,
+                        $vaultIdentifier,
+                    )
+                    : FlexFormPendingSecret::createUpdate(
+                        $flexFieldName,
+                        (string) $sheetName,
+                        (string) $fieldPath,
+                        $secretValue,
+                        $vaultIdentifier,
+                        $originalChecksum,
+                    );
 
                 // Store UUID in FlexForm (or empty if clearing)
                 $fieldData['vDEF'] = $secretValue !== '' ? $vaultIdentifier : '';
@@ -212,37 +220,32 @@ final class FlexFormVaultHook
 
     /**
      * Store a FlexForm vault secret.
-     *
-     * @param array{flexField: string, sheet: string, fieldPath: string, value: string, identifier: string, originalChecksum: string, isNew: bool} $secretData
      */
     private function storeFlexFormSecret(
-        array $secretData,
+        FlexFormPendingSecret $pending,
         string $table,
         int $uid,
         DataHandler $dataHandler,
     ): void {
-        $vaultIdentifier = $secretData['identifier'];
-        $isNew = $secretData['isNew'];
-
         try {
-            if ($secretData['value'] === '') {
+            if ($pending->value === '') {
                 // Delete secret if cleared
-                if ($secretData['originalChecksum'] !== '') {
-                    $this->vaultService->delete($vaultIdentifier, 'FlexForm field cleared');
+                if ($pending->originalChecksum !== '') {
+                    $this->vaultService->delete($pending->identifier, 'FlexForm field cleared');
                 }
-            } elseif ($isNew) {
+            } elseif ($pending->isNew) {
                 // New secret with new UUID
-                $this->vaultService->store($vaultIdentifier, $secretData['value'], [
+                $this->vaultService->store($pending->identifier, $pending->value, [
                     'table' => $table,
-                    'flexField' => $secretData['flexField'],
-                    'sheet' => $secretData['sheet'],
-                    'fieldPath' => $secretData['fieldPath'],
+                    'flexField' => $pending->flexField,
+                    'sheet' => $pending->sheet,
+                    'fieldPath' => $pending->fieldPath,
                     'uid' => $uid,
                     'source' => 'flexform_field',
                 ]);
             } else {
                 // Update existing
-                $this->vaultService->rotate($vaultIdentifier, $secretData['value'], 'FlexForm field updated');
+                $this->vaultService->rotate($pending->identifier, $pending->value, 'FlexForm field updated');
             }
         } catch (VaultException $e) {
             /** @phpstan-ignore method.internal */
@@ -252,7 +255,7 @@ final class FlexFormVaultHook
                 2,
                 null,
                 1,
-                'Vault error for FlexForm field "' . $secretData['fieldPath'] . '": ' . $e->getMessage(),
+                'Vault error for FlexForm field "' . $pending->fieldPath . '": ' . $e->getMessage(),
             );
         }
     }

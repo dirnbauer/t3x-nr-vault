@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Configuration;
 
+use Netresearch\NrVault\Configuration\Dto\AwsSecretsConfig;
+use Netresearch\NrVault\Configuration\Dto\VaultServerConfig;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -133,36 +135,32 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
 
     /**
      * Get HashiCorp Vault configuration.
-     *
-     * @return array{address?: string, path?: string, authMethod?: string, token?: string}
      */
-    public function getHashiCorpConfig(): array
+    public function getHashiCorpConfig(): VaultServerConfig
     {
         $config = $this->configuration['hashicorp'] ?? [];
 
         if (!\is_array($config)) {
-            return [];
+            return new VaultServerConfig();
         }
 
         /** @var array{address?: string, path?: string, authMethod?: string, token?: string} $config */
-        return $config;
+        return VaultServerConfig::fromArray($config);
     }
 
     /**
      * Get AWS Secrets Manager configuration.
-     *
-     * @return array{region?: string, secretPrefix?: string}
      */
-    public function getAwsConfig(): array
+    public function getAwsConfig(): AwsSecretsConfig
     {
         $config = $this->configuration['aws'] ?? [];
 
         if (!\is_array($config)) {
-            return [];
+            return new AwsSecretsConfig();
         }
 
         /** @var array{region?: string, secretPrefix?: string} $config */
-        return $config;
+        return AwsSecretsConfig::fromArray($config);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Domain\Repository;
 
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -135,11 +136,9 @@ final readonly class SecretRepository implements SecretRepositoryInterface
     /**
      * Find all secrets matching filters.
      *
-     * @param array{owner?: int, prefix?: string, context?: string, scopePid?: int} $filters
-     *
      * @return string[]
      */
-    public function findIdentifiers(array $filters = []): array
+    public function findIdentifiers(?SecretFilters $filters = null): array
     {
         $queryBuilder = $this->getConnection()->createQueryBuilder();
         $queryBuilder
@@ -147,28 +146,30 @@ final readonly class SecretRepository implements SecretRepositoryInterface
             ->from(self::TABLE_NAME)
             ->where($queryBuilder->expr()->eq('deleted', 0));
 
-        if (isset($filters['owner'])) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('owner_uid', $queryBuilder->createNamedParameter($filters['owner'], Connection::PARAM_INT)),
-            );
-        }
+        if ($filters !== null) {
+            if ($filters->owner !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq('owner_uid', $queryBuilder->createNamedParameter($filters->owner, Connection::PARAM_INT)),
+                );
+            }
 
-        if (isset($filters['prefix'])) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->like('identifier', $queryBuilder->createNamedParameter($filters['prefix'] . '%')),
-            );
-        }
+            if ($filters->prefix !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->like('identifier', $queryBuilder->createNamedParameter($filters->prefix . '%')),
+                );
+            }
 
-        if (isset($filters['context'])) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('context', $queryBuilder->createNamedParameter($filters['context'])),
-            );
-        }
+            if ($filters->context !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq('context', $queryBuilder->createNamedParameter($filters->context)),
+                );
+            }
 
-        if (isset($filters['scopePid'])) {
-            $queryBuilder->andWhere(
-                $queryBuilder->expr()->eq('scope_pid', $queryBuilder->createNamedParameter($filters['scopePid'], Connection::PARAM_INT)),
-            );
+            if ($filters->scopePid !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq('scope_pid', $queryBuilder->createNamedParameter($filters->scopePid, Connection::PARAM_INT)),
+                );
+            }
         }
 
         $queryBuilder->orderBy('identifier', 'ASC');

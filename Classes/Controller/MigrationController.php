@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Controller;
 
 use Doctrine\DBAL\Exception as DbalException;
 use Exception;
+use Netresearch\NrVault\Domain\Dto\MigrationResult;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -295,17 +296,11 @@ final readonly class MigrationController
 
             try {
                 $result = $this->migrateColumn($table, $column, $identifierPattern);
-                $results[] = $result;
-                $totalMigrated += $result['migrated'];
-                $totalFailed += $result['failed'];
+                $results[] = $result->toArray();
+                $totalMigrated += $result->migrated;
+                $totalFailed += $result->failed;
             } catch (Exception $e) {
-                $results[] = [
-                    'table' => $table,
-                    'column' => $column,
-                    'migrated' => 0,
-                    'failed' => 0,
-                    'error' => $e->getMessage(),
-                ];
+                $results[] = MigrationResult::error($table, $column, $e->getMessage())->toArray();
             }
         }
 
@@ -388,14 +383,12 @@ final readonly class MigrationController
 
     /**
      * Migrate a single database column to the vault.
-     *
-     * @return array{table: string, column: string, migrated: int, failed: int, skipped: int, error?: string}
      */
     private function migrateColumn(
         string $table,
         string $column,
         string $identifierPattern,
-    ): array {
+    ): MigrationResult {
         $migrated = 0;
         $failed = 0;
         $skipped = 0;
@@ -453,23 +446,10 @@ final readonly class MigrationController
                 }
             }
         } catch (DbalException $e) {
-            return [
-                'table' => $table,
-                'column' => $column,
-                'migrated' => 0,
-                'failed' => 0,
-                'skipped' => 0,
-                'error' => $e->getMessage(),
-            ];
+            return MigrationResult::error($table, $column, $e->getMessage());
         }
 
-        return [
-            'table' => $table,
-            'column' => $column,
-            'migrated' => $migrated,
-            'failed' => $failed,
-            'skipped' => $skipped,
-        ];
+        return MigrationResult::withFailures($table, $column, $migrated, $failed, $skipped);
     }
 
     /**

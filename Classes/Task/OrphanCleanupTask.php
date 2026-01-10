@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Task;
 
+use Netresearch\NrVault\Domain\Dto\OrphanReference;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -110,14 +111,14 @@ final class OrphanCleanupTask extends AbstractTask
             $createdAt = $secret->createdAt;
 
             // Parse identifier
-            $parsed = $this->parseIdentifier($identifier);
-            if ($parsed === null) {
+            $reference = $this->parseIdentifier($identifier);
+            if ($reference === null) {
                 continue;
             }
 
             // Check if record still exists
             // Only include if older than retention period
-            if (!$this->recordExists($connectionPool, $parsed['table'], $parsed['uid']) && $createdAt < $retentionCutoff) {
+            if (!$this->recordExists($connectionPool, $reference->table, $reference->uid) && $createdAt < $retentionCutoff) {
                 $orphans[] = $identifier;
             }
         }
@@ -160,10 +161,7 @@ final class OrphanCleanupTask extends AbstractTask
         return implode(', ', $info);
     }
 
-    /**
-     * @return array{table: string, field: string, uid: int}|null
-     */
-    private function parseIdentifier(string $identifier): ?array
+    private function parseIdentifier(string $identifier): ?OrphanReference
     {
         $parts = explode('__', $identifier);
         if (\count($parts) !== 3) {
@@ -176,11 +174,11 @@ final class OrphanCleanupTask extends AbstractTask
             return null;
         }
 
-        return [
-            'table' => $table,
-            'field' => $field,
-            'uid' => (int) $uidStr,
-        ];
+        return new OrphanReference(
+            table: $table,
+            field: $field,
+            uid: (int) $uidStr,
+        );
     }
 
     private function recordExists(ConnectionPool $connectionPool, string $table, int $uid): bool

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Hook;
 
 use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Hook\Dto\PendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -27,7 +28,7 @@ final class DataHandlerHook
     /**
      * Pending secrets to be stored after database operations.
      *
-     * @var array<string, array<string|int, array<string, array{value: string, identifier: string, originalChecksum: string, isNew: bool}>>>
+     * @var array<string, array<string|int, array<string, PendingSecret>>>
      */
     private array $pendingSecrets = [];
 
@@ -83,12 +84,9 @@ final class DataHandlerHook
             $vaultIdentifier = $isNewSecret ? $this->generateUuid() : $existingIdentifier;
 
             // Store pending secret for post-processing
-            $this->pendingSecrets[$table][$id][$fieldName] = [
-                'value' => $secretValue,
-                'identifier' => $vaultIdentifier,
-                'originalChecksum' => $originalChecksum,
-                'isNew' => $isNewSecret,
-            ];
+            $this->pendingSecrets[$table][$id][$fieldName] = $isNewSecret
+                ? PendingSecret::createNew($secretValue, $vaultIdentifier)
+                : PendingSecret::createUpdate($secretValue, $vaultIdentifier, $originalChecksum);
 
             // Store UUID in the database field (empty string if clearing)
             $fieldArray[$fieldName] = $secretValue !== '' ? $vaultIdentifier : '';
@@ -118,11 +116,11 @@ final class DataHandlerHook
         // Process pending secrets for this record
         $pendingForRecord = $this->pendingSecrets[$table][$id] ?? [];
 
-        foreach ($pendingForRecord as $fieldName => $secretData) {
-            $secretValue = $secretData['value'];
-            $vaultIdentifier = $secretData['identifier'];
-            $originalChecksum = $secretData['originalChecksum'];
-            $isNew = $secretData['isNew'];
+        foreach ($pendingForRecord as $fieldName => $pending) {
+            $secretValue = $pending->value;
+            $vaultIdentifier = $pending->identifier;
+            $originalChecksum = $pending->originalChecksum;
+            $isNew = $pending->isNew;
 
             try {
                 if ($secretValue === '') {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Configuration;
 
+use Netresearch\NrVault\Configuration\Dto\AwsSecretsConfig;
+use Netresearch\NrVault\Configuration\Dto\VaultServerConfig;
+
 /**
  * Interface for extension configuration access.
  */
@@ -53,17 +56,13 @@ interface ExtensionConfigurationInterface
 
     /**
      * Get HashiCorp Vault configuration.
-     *
-     * @return array{address?: string, path?: string, authMethod?: string, token?: string}
      */
-    public function getHashiCorpConfig(): array;
+    public function getHashiCorpConfig(): VaultServerConfig;
 
     /**
      * Get AWS Secrets Manager configuration.
-     *
-     * @return array{region?: string, secretPrefix?: string}
      */
-    public function getAwsConfig(): array;
+    public function getAwsConfig(): AwsSecretsConfig;
 
     /**
      * Get the auto-generated key storage path (for development).

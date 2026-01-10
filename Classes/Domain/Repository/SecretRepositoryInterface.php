@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Domain\Repository;
 
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 
 /**
@@ -22,9 +23,7 @@ interface SecretRepositoryInterface
     public function delete(Secret $secret): void;
 
     /**
-     * @param array<string, mixed> $filters
-     *
      * @return list<string>
      */
-    public function findIdentifiers(array $filters = []): array;
+    public function findIdentifiers(?SecretFilters $filters = null): array;
 }

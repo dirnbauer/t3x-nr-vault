@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Adapter;
 
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 
 /**
@@ -46,11 +47,9 @@ interface VaultAdapterInterface
     /**
      * List all secret identifiers.
      *
-     * @param array{owner?: int, prefix?: string, context?: string, scopePid?: int} $filters
-     *
      * @return string[]
      */
-    public function list(array $filters = []): array;
+    public function list(?SecretFilters $filters = null): array;
 
     /**
      * Get metadata for a secret without decrypting value.
