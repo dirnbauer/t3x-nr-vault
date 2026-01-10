@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Exception;
 
 use Netresearch\NrVault\Exception\VaultException;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
-#[CoversClass(VaultException::class)]
+#[CoversNothing]
 final class VaultExceptionTest extends TestCase
 {
     #[Test]

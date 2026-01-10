@@ -6,11 +6,11 @@ namespace Netresearch\NrVault\Tests\Unit\Exception;
 
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\VaultException;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(AccessDeniedException::class)]
+#[CoversNothing]
 final class AccessDeniedExceptionTest extends TestCase
 {
     #[Test]

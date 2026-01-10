@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Controller;
 
-use Netresearch\NrVault\Controller\SecretsController;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Imaging\IconSize;
@@ -14,9 +13,9 @@ use TYPO3\CMS\Core\Imaging\IconSize;
  * Unit tests for SecretsController.
  *
  * These tests verify the controller's code correctness without requiring
- * a full TYPO3 bootstrap.
+ * a full TYPO3 bootstrap. Controller itself is tested via functional tests.
  */
-#[CoversClass(SecretsController::class)]
+#[CoversNothing]
 final class VaultControllerTest extends TestCase
 {
     #[Test]

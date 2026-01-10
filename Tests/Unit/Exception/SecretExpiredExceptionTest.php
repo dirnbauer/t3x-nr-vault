@@ -6,11 +6,11 @@ namespace Netresearch\NrVault\Tests\Unit\Exception;
 
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\VaultException;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(SecretExpiredException::class)]
+#[CoversNothing]
 final class SecretExpiredExceptionTest extends TestCase
 {
     #[Test]
