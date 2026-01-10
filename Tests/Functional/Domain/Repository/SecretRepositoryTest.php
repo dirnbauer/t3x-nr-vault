@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Functional\Domain\Repository;
 
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
@@ -17,6 +18,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 #[CoversClass(SecretRepository::class)]
 #[CoversClass(Secret::class)]
+#[CoversClass(SecretFilters::class)]
 final class SecretRepositoryTest extends FunctionalTestCase
 {
     protected array $testExtensionsToLoad = [
@@ -219,7 +221,7 @@ final class SecretRepositoryTest extends FunctionalTestCase
         $secret2->setCruserId(1);
         $this->subject->save($secret2);
 
-        $apiSecrets = $this->subject->findIdentifiers(['context' => 'api']);
+        $apiSecrets = $this->subject->findIdentifiers(new SecretFilters(context: 'api'));
 
         self::assertContains('context_api', $apiSecrets);
         self::assertNotContains('context_db', $apiSecrets);

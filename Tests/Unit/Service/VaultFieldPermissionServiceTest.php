@@ -246,6 +246,21 @@ final class VaultFieldPermissionServiceTest extends TestCase
         self::assertFalse($readOnly);
     }
 
+    #[Test]
+    public function getNestedValueReturnsNullForNonArrayCurrent(): void
+    {
+        $reflection = new ReflectionClass($this->service);
+        $method = $reflection->getMethod('getNestedValue');
+
+        // When traversing leads to a non-array value before reaching end of keys
+        $array = [
+            'key.' => 'not_an_array',
+        ];
+        $result = $method->invoke($this->service, $array, ['key', 'nested']);
+
+        self::assertNull($result);
+    }
+
     private function createMockBackendUser(bool $isAdmin = false, int $uid = 1): BackendUserAuthentication&MockObject
     {
         $backendUser = $this->createMock(BackendUserAuthentication::class);
