@@ -146,14 +146,24 @@ jobs:
           grep -A 100 "Code Coverage Report" coverage-summary.txt >> $GITHUB_STEP_SUMMARY || cat coverage-summary.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
+      - name: Verify coverage file exists
+        run: |
+          if [ -f coverage.xml ]; then
+            echo "Coverage file exists"
+            head -20 coverage.xml
+          else
+            echo "ERROR: coverage.xml not found!"
+            exit 1
+          fi
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
-        if: success()
         with:
           files: coverage.xml
           flags: unit
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+          fail_ci_if_error: true
+          verbose: true
 
   functional-tests:
     name: Functional Tests
