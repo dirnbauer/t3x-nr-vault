@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Domain\Repository;
 
 use Doctrine\DBAL\Result;
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -275,7 +276,7 @@ final class SecretRepositoryTest extends TestCase
             ->method('andWhere')
             ->willReturnSelf();
 
-        $this->subject->findIdentifiers(['owner' => 1]);
+        $this->subject->findIdentifiers(new SecretFilters(owner: 1));
     }
 
     #[Test]
@@ -296,7 +297,7 @@ final class SecretRepositoryTest extends TestCase
             ->method('like')
             ->willReturn('identifier LIKE ?');
 
-        $this->subject->findIdentifiers(['prefix' => 'api-']);
+        $this->subject->findIdentifiers(new SecretFilters(prefix: 'api-'));
     }
 
     #[Test]

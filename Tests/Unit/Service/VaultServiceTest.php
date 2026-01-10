@@ -10,6 +10,7 @@ use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\EncryptedData;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
@@ -556,7 +557,7 @@ final class VaultServiceTest extends TestCase
 
         $this->adapter
             ->method('list')
-            ->with(['pattern' => 'api-*'])
+            ->with(self::callback(static fn ($filters): bool => $filters instanceof SecretFilters && $filters->prefix === 'api-*'))
             ->willReturn(['api-key-1']);
 
         $this->adapter
@@ -743,7 +744,7 @@ final class VaultServiceTest extends TestCase
     {
         $this->adapter
             ->method('list')
-            ->with([])
+            ->with(null)
             ->willReturn([]);
 
         $result = $this->subject->list(null);

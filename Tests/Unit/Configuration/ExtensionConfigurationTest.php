@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Configuration;
 
+use Netresearch\NrVault\Configuration\Dto\AwsSecretsConfig;
+use Netresearch\NrVault\Configuration\Dto\VaultServerConfig;
 use Netresearch\NrVault\Configuration\ExtensionConfiguration;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -206,15 +208,20 @@ final class ExtensionConfigurationTest extends TestCase
     }
 
     #[Test]
-    public function getHashiCorpConfigReturnsEmptyArrayByDefault(): void
+    public function getHashiCorpConfigReturnsEmptyConfigByDefault(): void
     {
         $this->typo3Config->method('get')
             ->with('nr_vault')
             ->willReturn([]);
 
         $config = new ExtensionConfiguration($this->typo3Config);
+        $hashiCorpConfig = $config->getHashiCorpConfig();
 
-        self::assertSame([], $config->getHashiCorpConfig());
+        self::assertInstanceOf(VaultServerConfig::class, $hashiCorpConfig);
+        self::assertSame('', $hashiCorpConfig->address);
+        self::assertSame('', $hashiCorpConfig->path);
+        self::assertSame('', $hashiCorpConfig->authMethod);
+        self::assertSame('', $hashiCorpConfig->token);
     }
 
     #[Test]
@@ -231,20 +238,27 @@ final class ExtensionConfigurationTest extends TestCase
             ->willReturn(['hashicorp' => $hashicorpConfig]);
 
         $config = new ExtensionConfiguration($this->typo3Config);
+        $result = $config->getHashiCorpConfig();
 
-        self::assertSame($hashicorpConfig, $config->getHashiCorpConfig());
+        self::assertInstanceOf(VaultServerConfig::class, $result);
+        self::assertSame('https://vault.example.com', $result->address);
+        self::assertSame('secret/data', $result->path);
+        self::assertSame('token', $result->authMethod);
     }
 
     #[Test]
-    public function getAwsConfigReturnsEmptyArrayByDefault(): void
+    public function getAwsConfigReturnsEmptyConfigByDefault(): void
     {
         $this->typo3Config->method('get')
             ->with('nr_vault')
             ->willReturn([]);
 
         $config = new ExtensionConfiguration($this->typo3Config);
+        $awsConfig = $config->getAwsConfig();
 
-        self::assertSame([], $config->getAwsConfig());
+        self::assertInstanceOf(AwsSecretsConfig::class, $awsConfig);
+        self::assertSame('', $awsConfig->region);
+        self::assertSame('', $awsConfig->secretPrefix);
     }
 
     #[Test]
@@ -260,8 +274,11 @@ final class ExtensionConfigurationTest extends TestCase
             ->willReturn(['aws' => $awsConfig]);
 
         $config = new ExtensionConfiguration($this->typo3Config);
+        $result = $config->getAwsConfig();
 
-        self::assertSame($awsConfig, $config->getAwsConfig());
+        self::assertInstanceOf(AwsSecretsConfig::class, $result);
+        self::assertSame('eu-west-1', $result->region);
+        self::assertSame('myapp/', $result->secretPrefix);
     }
 
     #[Test]

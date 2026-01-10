@@ -6,6 +6,7 @@ namespace Netresearch\NrVault\Tests\Unit\Adapter;
 
 use Netresearch\NrVault\Adapter\LocalEncryptionAdapter;
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;
+use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -135,7 +136,7 @@ final class LocalEncryptionAdapterTest extends TestCase
     public function listDelegatesToRepository(): void
     {
         $identifiers = ['secret-1', 'secret-2', 'secret-3'];
-        $filters = ['context' => 'payment'];
+        $filters = new SecretFilters(context: 'payment');
 
         $repository = $this->createMock(SecretRepositoryInterface::class);
         $repository->expects(self::once())
