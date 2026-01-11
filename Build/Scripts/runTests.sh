@@ -150,6 +150,8 @@ Options:
             - phpstanBaseline: Generate PHPStan baseline
             - unit: PHP unit tests (default)
             - unitCoverage: PHP unit tests with coverage
+            - fuzz: PHP fuzz tests
+            - mutation: Mutation testing with Infection
             - rector: Apply Rector rules
             - renderDocumentation: Render documentation
             - testRenderDocumentation: Test documentation rendering
@@ -557,6 +559,16 @@ case ${TEST_SUITE} in
         mkdir -p .Build/coverage
         COMMAND=(.Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --coverage-clover=.Build/coverage/unit.xml --coverage-html=.Build/coverage/html-unit --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${IMAGE_PHP} "${COMMAND[@]}"
+        SUITE_EXIT_CODE=$?
+        ;;
+    fuzz)
+        COMMAND=(.Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Fuzz ${EXTRA_TEST_OPTIONS} "$@")
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name fuzz-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${IMAGE_PHP} "${COMMAND[@]}"
+        SUITE_EXIT_CODE=$?
+        ;;
+    mutation)
+        COMMAND=(.Build/bin/infection --configuration=infection.json5 --threads=4 "$@")
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name mutation-${SUFFIX} -e XDEBUG_MODE=coverage ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;
     update)

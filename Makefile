@@ -2,7 +2,7 @@
 # Docker-based testing following TYPO3 core conventions
 # Use runTests.sh for CI-compatible containerized test execution
 
-.PHONY: help test unit functional lint phpstan cs fix ci clean docs docs-open
+.PHONY: help all check test unit functional e2e fuzz mutation lint phpstan cs fix rector docs docs-open clean update
 
 .DEFAULT_GOAL := help
 
@@ -11,54 +11,62 @@ RUNTESTS = Build/Scripts/runTests.sh
 help:
 	@echo "nr-vault Development Commands"
 	@echo ""
-	@echo "  Testing (Docker-based, CI-compatible):"
-	@echo "    make test       Run unit tests (default: PHP 8.5, SQLite)"
+	@echo "  Quick Start:"
+	@echo "    make all        Run EVERYTHING (checks + tests + mutation)"
+	@echo "    make check      Run ALL quality checks (lint, cs, phpstan)"
+	@echo "    make test       Run ALL tests (unit, functional, e2e, fuzz)"
+	@echo ""
+	@echo "  Individual Tests:"
 	@echo "    make unit       Run unit tests"
 	@echo "    make functional Run functional tests (SQLite)"
-	@echo "    make func-maria Run functional tests (MariaDB 10.11)"
-	@echo "    make func-mysql Run functional tests (MySQL 8.0)"
-	@echo "    make func-pg    Run functional tests (PostgreSQL 16)"
+	@echo "    make e2e        Run E2E tests (Playwright, requires DDEV)"
+	@echo "    make fuzz       Run fuzz tests"
+	@echo "    make mutation   Run mutation tests (slow)"
 	@echo ""
-	@echo "  Quality (Docker-based):"
+	@echo "  Individual Checks:"
 	@echo "    make lint       Check PHP syntax"
 	@echo "    make phpstan    Run static analysis"
 	@echo "    make cs         Check code style"
+	@echo ""
+	@echo "  Fixes:"
 	@echo "    make fix        Fix code style"
 	@echo "    make rector     Apply Rector rules"
 	@echo ""
-	@echo "  Documentation:"
+	@echo "  Other:"
 	@echo "    make docs       Render documentation"
-	@echo "    make docs-open  Render and open documentation"
-	@echo ""
-	@echo "  CI/Maintenance:"
-	@echo "    make ci         Run all CI checks"
 	@echo "    make clean      Remove build artifacts"
 	@echo "    make update     Update Docker images"
+
+# === Main Targets ===
+all: check test mutation
 	@echo ""
-	@echo "  Options (via runTests.sh directly):"
-	@echo "    ./$(RUNTESTS) -h           Show all options"
-	@echo "    ./$(RUNTESTS) -p 8.4 -s unit   Run with PHP 8.4"
-	@echo "    ./$(RUNTESTS) -x -s unit       Run with Xdebug"
+	@echo "=== ALL CHECKS, TESTS AND MUTATION PASSED ==="
 
-# === Testing ===
-test: unit
+check: lint cs phpstan
+	@echo ""
+	@echo "=== ALL QUALITY CHECKS PASSED ==="
 
+test: unit functional fuzz e2e
+	@echo ""
+	@echo "=== ALL TESTS PASSED ==="
+
+# === Individual Tests ===
 unit:
 	$(RUNTESTS) -s unit
 
 functional:
 	$(RUNTESTS) -s functional
 
-func-maria:
-	$(RUNTESTS) -s functional -d mariadb
+e2e:
+	$(RUNTESTS) -s e2e
 
-func-mysql:
-	$(RUNTESTS) -s functional -d mysql
+fuzz:
+	$(RUNTESTS) -s fuzz
 
-func-pg:
-	$(RUNTESTS) -s functional -d postgres
+mutation:
+	$(RUNTESTS) -s mutation
 
-# === Quality ===
+# === Individual Checks ===
 lint:
 	$(RUNTESTS) -s lint
 
@@ -68,6 +76,7 @@ phpstan:
 cs:
 	$(RUNTESTS) -s cgl -n
 
+# === Fixes ===
 fix:
 	$(RUNTESTS) -s cgl
 
@@ -77,14 +86,6 @@ rector:
 # === Documentation ===
 docs:
 	$(RUNTESTS) -s renderDocumentation
-
-docs-open: docs
-	@echo "Opening documentation..."
-	@xdg-open Documentation-GENERATED-temp/Index.html 2>/dev/null || open Documentation-GENERATED-temp/Index.html 2>/dev/null || echo "Open Documentation-GENERATED-temp/Index.html in your browser"
-
-# === CI ===
-ci: lint cs phpstan unit
-	@echo "All CI checks passed!"
 
 # === Maintenance ===
 clean:
