@@ -27,6 +27,27 @@ waitFor() {
     fi
 }
 
+waitForHttp() {
+    local URL=${1}
+    local MAX_ATTEMPTS=${2:-30}
+    local TESTCOMMAND="
+        COUNT=0;
+        while ! wget -q --spider ${URL} 2>/dev/null; do
+            if [ \"\${COUNT}\" -gt ${MAX_ATTEMPTS} ]; then
+              echo \"HTTP endpoint ${URL} not available after ${MAX_ATTEMPTS} attempts. Aborting.\";
+              exit 1;
+            fi;
+            sleep 1;
+            COUNT=\$((COUNT + 1));
+        done;
+        echo \"HTTP endpoint ${URL} is ready.\";
+    "
+    ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name wait-for-http-${SUFFIX} ${IMAGE_ALPINE} /bin/sh -c "${TESTCOMMAND}"
+    if [[ $? -gt 0 ]]; then
+        kill -SIGINT -$$
+    fi
+}
+
 cleanUp() {
     ATTACHED_CONTAINERS=$(${CONTAINER_BIN} ps --filter network=${NETWORK} --format='{{.Names}}' 2>/dev/null)
     for ATTACHED_CONTAINER in ${ATTACHED_CONTAINERS}; do
@@ -142,8 +163,9 @@ Options:
             - composerNormalize: "composer normalize"
             - composerUpdate: "composer update"
             - composerValidate: "composer validate"
-            - e2e: Playwright E2E tests
+            - e2e: Playwright E2E tests (requires running TYPO3, see below)
             - functional: PHP functional tests
+            - functionalParallel: PHP functional tests in parallel (faster)
             - functionalCoverage: PHP functional tests with coverage
             - lint: PHP linting
             - phpstan: PHPStan static analysis
@@ -243,8 +265,22 @@ Examples:
     # Run functional tests on postgres with xdebug
     ./Build/Scripts/runTests.sh -x -s functional -d postgres -- Tests/Functional/SomeTest.php
 
-    # Run E2E tests
-    ./Build/Scripts/runTests.sh -s e2e
+    # Run E2E tests (requires running TYPO3 instance)
+    # Option 1: Start ddev first
+    ddev start && ./Build/Scripts/runTests.sh -s e2e
+
+    # Option 2: Provide custom TYPO3 URL
+    TYPO3_BASE_URL=https://my-typo3.local ./Build/Scripts/runTests.sh -s e2e
+
+E2E Tests:
+    E2E tests require a running TYPO3 instance with the extension installed.
+    The easiest way is to use ddev:
+        1. ddev start
+        2. ./Build/Scripts/runTests.sh -s e2e
+
+    For CI, you can:
+        - Use ddev in GitHub Actions (recommended)
+        - Set TYPO3_BASE_URL to point to a test instance
 EOF
 }
 
@@ -387,6 +423,7 @@ IMAGE_MARIADB="docker.io/mariadb:${DBMS_VERSION}"
 IMAGE_MYSQL="docker.io/mysql:${DBMS_VERSION}"
 IMAGE_POSTGRES="docker.io/postgres:${DBMS_VERSION}-alpine"
 IMAGE_DOCS="ghcr.io/typo3-documentation/render-guides:latest"
+IMAGE_MOCK_OAUTH="ghcr.io/navikt/mock-oauth2-server:3.0.1"
 
 # Set $1 to first mass argument, this is the optional test file or test directory to execute
 shift $((OPTIND - 1))
@@ -464,24 +501,80 @@ case ${TEST_SUITE} in
         SUITE_EXIT_CODE=$?
         ;;
     e2e)
-        # E2E tests use Playwright and run against a TYPO3 instance
-        # Requires npm/npx to be available in the container
-        IMAGE_NODE="docker.io/node:22-alpine"
-        TYPO3_BASE_URL="${TYPO3_BASE_URL:-https://nr-vault.ddev.site}"
-        COMMAND="npm ci && npx playwright install chromium --with-deps && npx playwright test $*"
-        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name e2e-${SUFFIX} -e TYPO3_BASE_URL="${TYPO3_BASE_URL}" -e CI="${CI:-}" ${IMAGE_NODE} /bin/sh -c "${COMMAND}"
+        # E2E tests require a running TYPO3 instance
+        IMAGE_PLAYWRIGHT="mcr.microsoft.com/playwright:v1.57.0-noble"
+
+        # Detect TYPO3 URL: explicit env var > ddev > default
+        if [ -n "${TYPO3_BASE_URL:-}" ]; then
+            echo "Using TYPO3_BASE_URL from environment: ${TYPO3_BASE_URL}"
+        elif type "ddev" >/dev/null 2>&1 && ddev describe >/dev/null 2>&1; then
+            # Use v14 subdomain for TYPO3 v14 testing
+            TYPO3_BASE_URL="https://v14.nr-vault.ddev.site"
+            echo "Using ddev TYPO3 URL: ${TYPO3_BASE_URL}"
+        else
+            TYPO3_BASE_URL="https://v14.nr-vault.ddev.site"
+            echo "Warning: No TYPO3 instance detected."
+            echo "E2E tests require a running TYPO3 instance with the extension installed."
+            echo ""
+            echo "Options:"
+            echo "  1. Start ddev: ddev start"
+            echo "  2. Set TYPO3_BASE_URL: TYPO3_BASE_URL=https://your-typo3.local $0 -s e2e"
+            echo ""
+            echo "Attempting to connect to default: ${TYPO3_BASE_URL}"
+        fi
+
+        mkdir -p .Build/.cache/npm
+
+        # For ddev, connect to ddev network and add host entries for routing
+        DDEV_PARAMS=""
+        if type "ddev" >/dev/null 2>&1 && ddev describe >/dev/null 2>&1; then
+            # Get ddev-router IP address
+            ROUTER_IP=$(${CONTAINER_BIN} inspect ddev-router --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null)
+            if [ -n "${ROUTER_IP}" ]; then
+                # Connect to ddev's shared network where traefik router lives
+                DDEV_PARAMS="--network ddev_default"
+                # Add host entries so ddev hostnames resolve to ddev-router IP
+                DDEV_PARAMS="${DDEV_PARAMS} --add-host nr-vault.ddev.site:${ROUTER_IP}"
+                DDEV_PARAMS="${DDEV_PARAMS} --add-host v14.nr-vault.ddev.site:${ROUTER_IP}"
+                DDEV_PARAMS="${DDEV_PARAMS} --add-host docs.nr-vault.ddev.site:${ROUTER_IP}"
+                DDEV_PARAMS="${DDEV_PARAMS} --add-host mock-oauth.nr-vault.ddev.site:${ROUTER_IP}"
+                echo "Connecting to ddev network (router IP: ${ROUTER_IP})"
+            fi
+        fi
+
+        COMMAND="npm ci && npx playwright test $*"
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} ${DDEV_PARAMS} --name e2e-${SUFFIX} \
+            -e TYPO3_BASE_URL="${TYPO3_BASE_URL}" \
+            -e CI="${CI:-}" \
+            -e npm_config_cache="${ROOT_DIR}/.Build/.cache/npm" \
+            ${IMAGE_PLAYWRIGHT} /bin/bash -c "${COMMAND}"
         SUITE_EXIT_CODE=$?
         ;;
     functional)
         CONTAINER_PARAMS=""
         COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --exclude-group not-${DBMS} ${EXTRA_TEST_OPTIONS} "$@")
+
+        # Start mock OAuth server for OAuth integration tests
+        MOCK_OAUTH_CONTAINER="mock-oauth-${SUFFIX}"
+        MOCK_OAUTH_URL="http://${MOCK_OAUTH_CONTAINER}:8080"
+        echo "Starting mock OAuth server..."
+        ${CONTAINER_BIN} run --rm ${CI_PARAMS} --name ${MOCK_OAUTH_CONTAINER} --network ${NETWORK} -d \
+            -e SERVER_PORT=8080 \
+            -e JSON_CONFIG_PATH=/config/config.json \
+            -v "${ROOT_DIR}/.ddev/mock-oauth:/config:ro" \
+            ${IMAGE_MOCK_OAUTH} >/dev/null
+        waitFor ${MOCK_OAUTH_CONTAINER} 8080
+
+        # Common OAuth params for all database backends
+        OAUTH_PARAMS="-e MOCK_OAUTH_URL=${MOCK_OAUTH_URL}"
+
         case ${DBMS} in
             mariadb)
                 echo "Using driver: ${DATABASE_DRIVER}"
                 ${CONTAINER_BIN} run --rm ${CI_PARAMS} --name mariadb-func-${SUFFIX} --network ${NETWORK} -d -e MYSQL_ROOT_PASSWORD=funcp --tmpfs /var/lib/mysql/:rw,noexec,nosuid ${IMAGE_MARIADB} >/dev/null
                 waitFor mariadb-func-${SUFFIX} 3306
                 CONTAINERPARAMS="-e typo3DatabaseDriver=${DATABASE_DRIVER} -e typo3DatabaseName=func_test -e typo3DatabaseUsername=root -e typo3DatabaseHost=mariadb-func-${SUFFIX} -e typo3DatabasePassword=funcp"
-                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
+                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${OAUTH_PARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
                 SUITE_EXIT_CODE=$?
                 ;;
             mysql)
@@ -489,21 +582,21 @@ case ${TEST_SUITE} in
                 ${CONTAINER_BIN} run --rm ${CI_PARAMS} --name mysql-func-${SUFFIX} --network ${NETWORK} -d -e MYSQL_ROOT_PASSWORD=funcp --tmpfs /var/lib/mysql/:rw,noexec,nosuid ${IMAGE_MYSQL} >/dev/null
                 waitFor mysql-func-${SUFFIX} 3306
                 CONTAINERPARAMS="-e typo3DatabaseDriver=${DATABASE_DRIVER} -e typo3DatabaseName=func_test -e typo3DatabaseUsername=root -e typo3DatabaseHost=mysql-func-${SUFFIX} -e typo3DatabasePassword=funcp"
-                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
+                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${OAUTH_PARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
                 SUITE_EXIT_CODE=$?
                 ;;
             postgres)
                 ${CONTAINER_BIN} run --rm ${CI_PARAMS} --name postgres-func-${SUFFIX} --network ${NETWORK} -d -e POSTGRES_PASSWORD=funcp -e POSTGRES_USER=funcu --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid ${IMAGE_POSTGRES} >/dev/null
                 waitFor postgres-func-${SUFFIX} 5432
                 CONTAINERPARAMS="-e typo3DatabaseDriver=pdo_pgsql -e typo3DatabaseName=bamboo -e typo3DatabaseUsername=funcu -e typo3DatabaseHost=postgres-func-${SUFFIX} -e typo3DatabasePassword=funcp"
-                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
+                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${OAUTH_PARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
                 SUITE_EXIT_CODE=$?
                 ;;
             sqlite)
                 # create sqlite tmpfs mount typo3temp/var/tests/functional-sqlite-dbs/ to avoid permission issues
                 mkdir -p "${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/"
                 CONTAINERPARAMS="-e typo3DatabaseDriver=pdo_sqlite --tmpfs ${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/:rw,noexec,nosuid"
-                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
+                ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} ${OAUTH_PARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
                 SUITE_EXIT_CODE=$?
                 ;;
         esac
@@ -512,10 +605,52 @@ case ${TEST_SUITE} in
         mkdir -p .Build/coverage
         # Coverage requires xdebug, no JIT
         COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --coverage-clover=.Build/coverage/functional.xml --coverage-html=.Build/coverage/html-functional --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+
+        # Start mock OAuth server for OAuth integration tests
+        MOCK_OAUTH_CONTAINER="mock-oauth-${SUFFIX}"
+        MOCK_OAUTH_URL="http://${MOCK_OAUTH_CONTAINER}:8080"
+        echo "Starting mock OAuth server..."
+        ${CONTAINER_BIN} run --rm ${CI_PARAMS} --name ${MOCK_OAUTH_CONTAINER} --network ${NETWORK} -d \
+            -e SERVER_PORT=8080 \
+            -e JSON_CONFIG_PATH=/config/config.json \
+            -v "${ROOT_DIR}/.ddev/mock-oauth:/config:ro" \
+            ${IMAGE_MOCK_OAUTH} >/dev/null
+        waitFor ${MOCK_OAUTH_CONTAINER} 8080
+
         # Functional coverage only runs with SQLite for simplicity
         mkdir -p "${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/"
         CONTAINERPARAMS="-e typo3DatabaseDriver=pdo_sqlite --tmpfs ${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/:rw,noexec,nosuid"
-        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${CONTAINERPARAMS} ${IMAGE_PHP} "${COMMAND[@]}"
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${CONTAINERPARAMS} -e MOCK_OAUTH_URL=${MOCK_OAUTH_URL} ${IMAGE_PHP} "${COMMAND[@]}"
+        SUITE_EXIT_CODE=$?
+        ;;
+    functionalParallel)
+        # Parallel functional tests - runs test files concurrently using GNU parallel
+        # Each test class gets its own isolated SQLite database, so parallelization is safe
+
+        # Start mock OAuth server for OAuth integration tests
+        MOCK_OAUTH_CONTAINER="mock-oauth-${SUFFIX}"
+        MOCK_OAUTH_URL="http://${MOCK_OAUTH_CONTAINER}:8080"
+        echo "Starting mock OAuth server..."
+        ${CONTAINER_BIN} run --rm ${CI_PARAMS} --name ${MOCK_OAUTH_CONTAINER} --network ${NETWORK} -d \
+            -e SERVER_PORT=8080 \
+            -e JSON_CONFIG_PATH=/config/config.json \
+            -v "${ROOT_DIR}/.ddev/mock-oauth:/config:ro" \
+            ${IMAGE_MOCK_OAUTH} >/dev/null
+        waitFor ${MOCK_OAUTH_CONTAINER} 8080
+
+        mkdir -p "${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/"
+        # Run functional tests in parallel using xargs
+        # Each test file runs in its own PHPUnit process with isolated SQLite DB
+        # CI: fixed 4 jobs for predictable resource usage on shared runners
+        # Local: half of available CPUs (similar to Playwright's default)
+        if [ "${CI}" == "true" ]; then
+            PARALLEL_JOBS=4
+        else
+            PARALLEL_JOBS="\$(((\$(nproc) + 1) / 2))"
+        fi
+        COMMAND="find Tests/Functional -name '*Test.php' | xargs -P${PARALLEL_JOBS} -I{} php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml {}"
+        CONTAINERPARAMS="-e typo3DatabaseDriver=pdo_sqlite --tmpfs ${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/:rw,noexec,nosuid"
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-parallel-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} -e MOCK_OAUTH_URL=${MOCK_OAUTH_URL} ${IMAGE_PHP} /bin/sh -c "${COMMAND}"
         SUITE_EXIT_CODE=$?
         ;;
     lint)
