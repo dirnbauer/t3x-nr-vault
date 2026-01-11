@@ -28,8 +28,9 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * Integration tests for OAuth 2.0 functionality with real HTTP requests.
  *
  * These tests require the mock OAuth server to be running:
- * - In ddev: `ddev start` (mock-oauth service starts automatically)
- * - Server URL: http://mock-oauth:8080 (internal) or https://mock-oauth.nr-vault.ddev.site (external)
+ * - Via runTests.sh: Mock OAuth server is started automatically
+ * - Via ddev: `ddev start` (mock-oauth service starts automatically)
+ * - Via MOCK_OAUTH_URL env var: Point to a running mock OAuth server
  *
  * Tests are skipped if the mock server is not reachable.
  */
@@ -325,7 +326,13 @@ final class OAuthIntegrationTest extends FunctionalTestCase
      */
     private function determineMockOAuthUrl(): string
     {
-        // Try internal ddev URL first
+        // Check for environment variable (set by runTests.sh)
+        $envUrl = getenv('MOCK_OAUTH_URL');
+        if ($envUrl !== false && $envUrl !== '') {
+            return $envUrl;
+        }
+
+        // Try internal ddev URL
         if ($this->isUrlReachable(self::MOCK_OAUTH_INTERNAL_URL . '/.well-known/openid-configuration')) {
             return self::MOCK_OAUTH_INTERNAL_URL;
         }
@@ -341,8 +348,8 @@ final class OAuthIntegrationTest extends FunctionalTestCase
     {
         if (!$this->isUrlReachable($this->mockOAuthUrl . '/.well-known/openid-configuration')) {
             self::markTestSkipped(
-                'Mock OAuth server is not available. Start it with: ddev start' . "\n" .
-                'Tried URLs: ' . self::MOCK_OAUTH_INTERNAL_URL . ', ' . self::MOCK_OAUTH_EXTERNAL_URL,
+                'Mock OAuth server is not available at: ' . $this->mockOAuthUrl . "\n" .
+                'Options: Set MOCK_OAUTH_URL env var, use runTests.sh, or start ddev.',
             );
         }
     }
