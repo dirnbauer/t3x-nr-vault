@@ -2,10 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './Tests/E2E',
-  fullyParallel: false,
+  fullyParallel: false, // Tests within a file run sequentially (safer for state)
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1,
+  workers: process.env.CI ? 4 : undefined, // Parallel by spec file; undefined = half of CPUs locally
   reporter: [
     ['html', { outputFolder: '.Build/playwright-report' }],
     ['list'],
