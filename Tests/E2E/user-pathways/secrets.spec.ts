@@ -587,7 +587,11 @@ test.describe('Secrets Module User Pathways', () => {
 
       // Filter out known non-critical errors
       const criticalErrors = consoleErrors.filter(
-        (err) => !err.includes('favicon') && !err.includes('404') && !err.includes('net::ERR')
+        (err) =>
+          !err.includes('favicon') &&
+          !err.includes('404') &&
+          !err.includes('net::ERR') &&
+          !err.includes('Error while retrieving widget') // TYPO3 dashboard widget fetch errors
       );
 
       expect(criticalErrors).toHaveLength(0);
