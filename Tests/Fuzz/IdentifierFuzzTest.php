@@ -9,6 +9,7 @@ use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use Override;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,6 +30,7 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 #[CoversClass(VaultFieldResolver::class)]
 #[CoversClass(FlexFormVaultResolver::class)]
 #[CoversClass(IdentifierValidator::class)]
+#[AllowMockObjectsWithoutExpectations]
 final class IdentifierFuzzTest extends TestCase
 {
     private VaultFieldResolver $vaultFieldResolver;
