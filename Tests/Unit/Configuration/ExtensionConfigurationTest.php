@@ -12,7 +12,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Throwable;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration as Typo3ExtensionConfiguration;
 
 #[CoversClass(ExtensionConfiguration::class)]
@@ -279,28 +278,6 @@ final class ExtensionConfigurationTest extends TestCase
         self::assertInstanceOf(AwsSecretsConfig::class, $result);
         self::assertSame('eu-west-1', $result->region);
         self::assertSame('myapp/', $result->secretPrefix);
-    }
-
-    #[Test]
-    public function getAutoKeyPathReturnsPath(): void
-    {
-        // This test requires TYPO3 Environment to be initialized (functional test context)
-        // Skip in unit test environment where Environment::getVarPath() will fail
-        try {
-            \TYPO3\CMS\Core\Core\Environment::getVarPath();
-        } catch (Throwable) {
-            self::markTestSkipped('Requires TYPO3 Environment initialization');
-        }
-
-        $this->typo3Config->method('get')
-            ->with('nr_vault')
-            ->willReturn([]);
-
-        $config = new ExtensionConfiguration($this->typo3Config);
-
-        $path = $config->getAutoKeyPath();
-
-        self::assertStringContainsString('secrets/vault-master.key', $path);
     }
 
     #[Test]
