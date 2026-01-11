@@ -421,9 +421,9 @@ PHP_OPCACHE_OPTS="-d opcache.enable_cli=1 -d opcache.jit=1255 -d opcache.jit_buf
 case ${TEST_SUITE} in
     cgl)
         if [ "${CGLCHECK_DRY_RUN}" -eq 1 ]; then
-            COMMAND="php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/php-cs-fixer fix -v --dry-run --diff --using-cache=no ."
+            COMMAND="php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/php-cs-fixer fix -v --dry-run --diff"
         else
-            COMMAND="php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/php-cs-fixer fix -v --using-cache=no ."
+            COMMAND="php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/php-cs-fixer fix -v"
         fi
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name cgl-${SUFFIX} -e COMPOSER_CACHE_DIR=.Build/.cache/composer -e COMPOSER_ROOT_VERSION=${COMPOSER_ROOT_VERSION} ${IMAGE_PHP} /bin/sh -c "${COMMAND}"
         SUITE_EXIT_CODE=$?
