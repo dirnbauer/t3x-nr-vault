@@ -18,7 +18,7 @@ return (new Config())
     ->setRiskyAllowed(true)
     ->setRules([
         '@PER-CS' => true,
-        '@PHP85Migration' => true,
+        '@PHP8x5Migration' => true,
 
         // Strict rules
         'declare_strict_types' => true,
@@ -68,7 +68,7 @@ return (new Config())
         ],
         'self_accessor' => true,
         'single_class_element_per_statement' => true,
-        'visibility_required' => [
+        'modifier_keywords' => [
             'elements' => ['property', 'method', 'const'],
         ],
 
