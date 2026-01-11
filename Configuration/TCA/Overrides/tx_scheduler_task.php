@@ -7,7 +7,7 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 defined('TYPO3') || die();
 
-if (\is_array($GLOBALS['TCA'] ?? null) && isset($GLOBALS['TCA']['tx_scheduler_task'])) {
+if (is_array($GLOBALS['TCA'] ?? null) && isset($GLOBALS['TCA']['tx_scheduler_task'])) {
     // Add custom fields for the OrphanCleanupTask
     ExtensionManagementUtility::addTCAcolumns(
         'tx_scheduler_task',

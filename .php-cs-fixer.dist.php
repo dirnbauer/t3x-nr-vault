@@ -8,6 +8,7 @@ use PhpCsFixer\Runner\Parallel\ParallelConfigFactory;
 
 $finder = Finder::create()
     ->in(__DIR__ . '/Classes')
+    ->in(__DIR__ . '/Configuration')
     ->in(__DIR__ . '/Tests')
     ->ignoreDotFiles(false)
     ->ignoreVCSIgnored(true);
