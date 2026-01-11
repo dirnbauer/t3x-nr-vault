@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use PhpCsFixer\Finder;
 use PhpCsFixer\Config;
+use PhpCsFixer\Finder;
+use PhpCsFixer\Runner\Parallel\ParallelConfigFactory;
 
 $finder = Finder::create()
     ->in(__DIR__ . '/Classes')
@@ -11,7 +12,8 @@ $finder = Finder::create()
     ->ignoreDotFiles(false)
     ->ignoreVCSIgnored(true);
 
-return new Config()
+return (new Config())
+    ->setParallelConfig(ParallelConfigFactory::detect())
     ->setRiskyAllowed(true)
     ->setRules([
         '@PER-CS' => true,
