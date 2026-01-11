@@ -525,6 +525,16 @@ case ${TEST_SUITE} in
 
         mkdir -p .Build/.cache/npm
 
+        # Pre-create node_modules to ensure correct ownership (avoids root-owned files)
+        mkdir -p node_modules
+
+        # Check for permission issues in node_modules
+        if [ -d "node_modules" ] && [ "$(find node_modules -maxdepth 1 -user root 2>/dev/null | head -1)" ]; then
+            echo "Error: node_modules contains root-owned files."
+            echo "Please remove node_modules and try again: sudo rm -rf node_modules"
+            exit 1
+        fi
+
         # For ddev, connect to ddev network and add host entries for routing
         DDEV_PARAMS=""
         if type "ddev" >/dev/null 2>&1 && ddev describe >/dev/null 2>&1; then
