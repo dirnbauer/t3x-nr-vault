@@ -12,6 +12,7 @@ Developer
    Api
    Commands
    TcaIntegration
+   SecureOutbound
    Adr/Index
 
 .. _developer-architecture:

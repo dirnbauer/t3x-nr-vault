@@ -34,6 +34,14 @@ ADR      Title                                       Status
 007      :ref:`adr-007-secret-metadata`              Accepted
 008      :ref:`adr-008-http-client`                  Accepted
 009      :ref:`adr-009`                              Accepted
+010      :ref:`adr-010-secure-outbound`              Accepted
+011      :ref:`adr-011-credential-sets`              Accepted
+012      :ref:`adr-012-secure-http-transports`       Accepted
+013      :ref:`adr-013-rust-ffi-preload`             Accepted
+014      :ref:`adr-014-packaging-native`             Accepted
+015      :ref:`adr-015-http3-feature-flag`           Accepted
+016      :ref:`adr-016-sidecar-option`               Accepted
+017      :ref:`adr-017-audit-metadata-retention`     Accepted
 =======  ==========================================  ========
 
 .. toctree::
@@ -49,3 +57,11 @@ ADR      Title                                       Status
    ADR-007-SecretMetadata
    ADR-008-HttpClient
    ADR-009-ExtensionConfigurationSecrets
+   ADR-010-SecureOutboundInNrVault
+   ADR-011-CredentialSetsDataModel
+   ADR-012-SecureHttpClientTransports
+   ADR-013-RustFfiPreload
+   ADR-014-PackagingNativeArtifacts
+   ADR-015-Http3FeatureFlag
+   ADR-016-SidecarOption
+   ADR-017-AuditMetadataRetention
