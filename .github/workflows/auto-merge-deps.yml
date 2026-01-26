@@ -6,9 +6,8 @@ on:
   pull_request_target:
     types: [opened, synchronize, reopened]
 
-permissions:
-  contents: write
-  pull-requests: write
+# Restrict default permissions - jobs declare what they need
+permissions: {}
 
 jobs:
   auto-merge:
@@ -17,6 +16,9 @@ jobs:
     # Use PR author login instead of github.actor to handle synchronize events
     # when someone else pushes to the dependabot/renovate branch
     if: github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'renovate[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Harden Runner

@@ -5,14 +5,16 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
 
-permissions:
-  contents: read
-  pull-requests: write
+# Restrict default permissions - jobs declare what they need
+permissions: {}
 
 jobs:
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     if: github.event.pull_request.draft == false
 
     steps:
@@ -42,6 +44,8 @@ jobs:
   auto-approve:
     name: Auto-Approve (Solo Maintainer)
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     needs: quality-gate
     if: github.event.pull_request.draft == false
 
