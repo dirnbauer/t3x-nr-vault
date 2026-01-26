@@ -7,15 +7,22 @@ on:
     # Run weekly on Monday at 8:00 AM UTC
     - cron: '0 8 * * 1'
 
-permissions: read-all
+# Restrict default permissions - jobs declare what they need
+permissions: {}
 
 jobs:
   analysis:
     name: Scorecard Analysis
     runs-on: ubuntu-latest
     permissions:
+      # Required for scorecard to read repository contents
+      contents: read
+      # Required for scorecard to upload SARIF results
       security-events: write
+      # Required for scorecard OIDC publishing
       id-token: write
+      # Required for scorecard to check branch protection (public repos)
+      actions: read
 
     steps:
       - name: Harden Runner
