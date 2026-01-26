@@ -164,7 +164,7 @@ By contributing, you agree that your contributions will be licensed under the GP
 
 ## Questions?
 
-If you have questions about contributing, please open a discussion or contact the maintainers.
+If you have questions about contributing, please [open a discussion](https://github.com/netresearch/t3x-nr-vault/discussions) on GitHub.
 
 ---
 

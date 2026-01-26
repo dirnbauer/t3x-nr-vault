@@ -1,0 +1,30 @@
+name: Code of Conduct Report
+description: Report a Code of Conduct violation
+title: "[CoC]: "
+labels: ["code-of-conduct"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a Code of Conduct concern. Reports are taken seriously.
+
+        For **private or sensitive matters**, please use [GitHub Security Advisories](https://github.com/netresearch/t3x-nr-vault/security/advisories/new) instead.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Please describe what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: location
+    attributes:
+      label: Where did this occur?
+      description: Link to issue, PR, discussion, or describe the context.
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Any other information that might be helpful.

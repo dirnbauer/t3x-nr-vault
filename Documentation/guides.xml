@@ -16,7 +16,7 @@
         class="\T3Docs\Typo3DocsTheme\DependencyInjection\Typo3DocsThemeExtension"
         typo3-core-preferred="stable"
         project-home="https://github.com/netresearch/t3x-nr-vault"
-        project-contact="mailto:info@netresearch.de"
+        project-contact="https://github.com/netresearch/t3x-nr-vault"
         project-repository="https://github.com/netresearch/t3x-nr-vault"
         project-issues="https://github.com/netresearch/t3x-nr-vault/issues"
         edit-on-github="netresearch/t3x-nr-vault"

@@ -63,7 +63,7 @@ When using nr-vault:
 
 ## Security Audit
 
-This extension has not yet undergone a formal security audit. If you are interested in sponsoring a security audit, please contact info@netresearch.de.
+This extension has not yet undergone a formal security audit. If you are interested in sponsoring a security audit, please [open a discussion](https://github.com/netresearch/t3x-nr-vault/discussions) or reach out through the [GitHub project](https://github.com/netresearch/t3x-nr-vault).
 
 ## Acknowledgments
 
