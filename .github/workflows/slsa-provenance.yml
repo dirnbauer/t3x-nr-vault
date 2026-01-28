@@ -87,6 +87,8 @@ jobs:
       base64-subjects: ${{ needs.provenance.outputs.subjects }}
       upload-assets: true
       upload-tag-name: ${{ needs.provenance.outputs.version }}
+      # Compile from source to avoid binary fetch issues
+      compile-generator: true
       # Workaround: generator incorrectly detects public repo as private
       # Safe for public repos - just allows posting to Rekor transparency log
       private-repository: true
