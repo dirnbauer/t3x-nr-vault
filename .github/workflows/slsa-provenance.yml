@@ -63,10 +63,11 @@ jobs:
         run: |
           cd release-assets
           if ls *.tar.gz *.zip 1> /dev/null 2>&1; then
+            # sha256sum output format: HASH  FILENAME (two spaces)
             sha256sum *.tar.gz *.zip > ../provenance-subjects.txt
             cat ../provenance-subjects.txt
-            SUBJECTS=$(cat ../provenance-subjects.txt | awk '{print "{\"name\":\""$2"\",\"digest\":{\"sha256\":\""$1"\"}}"}' | jq -s -c '.')
-            SUBJECTS_BASE64=$(echo "$SUBJECTS" | base64 -w0)
+            # base64-subjects expects sha256sum format, not JSON
+            SUBJECTS_BASE64=$(cat ../provenance-subjects.txt | base64 -w0)
             echo "subjects=$SUBJECTS_BASE64" >> "$GITHUB_OUTPUT"
             echo "has_subjects=true" >> "$GITHUB_OUTPUT"
           else
