@@ -77,3 +77,6 @@ jobs:
       base64-subjects: ${{ needs.provenance.outputs.subjects }}
       upload-assets: true
       upload-tag-name: ${{ needs.provenance.outputs.version }}
+      # Workaround: generator incorrectly detects public repo as private
+      # Safe for public repos - just allows posting to Rekor transparency log
+      private-repository: true
