@@ -1,5 +1,6 @@
-# Auto-merge dependency updates using GitHub's native auto-merge
-# Requires branch protection with required status checks enabled
+# Auto-merge dependency updates
+# For Renovate: Only approve (Renovate handles auto-merge via platformAutomerge with bypass permissions)
+# For Dependabot: Approve and enable auto-merge
 name: Auto-merge dependency PRs
 
 on:
@@ -14,7 +15,6 @@ jobs:
     name: Auto-merge dependency PRs
     runs-on: ubuntu-latest
     # Use PR author login instead of github.actor to handle synchronize events
-    # when someone else pushes to the dependabot/renovate branch
     if: github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'renovate[bot]'
     permissions:
       contents: write
@@ -39,7 +39,10 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge
+      # Only enable auto-merge for Dependabot PRs
+      # Renovate handles its own auto-merge via platformAutomerge (needs bypass permissions)
+      - name: Enable auto-merge (Dependabot only)
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
