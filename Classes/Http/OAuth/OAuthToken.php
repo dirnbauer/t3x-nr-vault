@@ -3,7 +3,7 @@
 /*
  * This file is part of the nr-vault TYPO3 extension.
  *
- * (c) Netresearch DTT GmbH <info@netresearch.de>
+ * (c) Netresearch DTT GmbH
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
