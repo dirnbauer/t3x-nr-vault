@@ -3,11 +3,10 @@
 declare(strict_types=1);
 
 /*
- * This file is part of the "nr_vault" Extension for TYPO3 CMS.
- *
- * For the full copyright and license information, please read the
- * LICENSE file that was distributed with this source code.
+ * Copyright (c) 2025-2026 Netresearch DTT GmbH
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
+
 
 namespace Netresearch\NrVault\Event;
 
