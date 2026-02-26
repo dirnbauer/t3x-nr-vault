@@ -33,13 +33,13 @@ final class AuditLogServiceTest extends TestCase
 {
     private ?AuditLogService $subject = null;
 
-    private MockObject $connectionPool = null;
+    private ?MockObject $connectionPool = null;
 
-    private MockObject $accessControlService = null;
+    private ?MockObject $accessControlService = null;
 
-    private MockObject $queryBuilder = null;
+    private ?MockObject $queryBuilder = null;
 
-    private MockObject $connection = null;
+    private ?MockObject $connection = null;
 
     protected function setUp(): void
     {
