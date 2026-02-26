@@ -14,8 +14,8 @@ jobs:
       typo3-packages: '["typo3/cms-core", "typo3/cms-backend"]'
       php-extensions: intl, mbstring, xml, sodium, json
       cgl-command: composer lint
-      phpstan-command: composer stan -- --error-format=github
-      rector-command: composer exec -- rector process --dry-run
+      phpstan-command: .Build/bin/phpstan analyse --error-format=github
+      rector-command: .Build/bin/rector process --dry-run
       unit-test-command: composer test:unit
       run-functional-tests: true
       functional-test-command: composer test:functional
