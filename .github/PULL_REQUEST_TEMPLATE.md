@@ -15,8 +15,8 @@
 ## Checklist
 
 - [ ] Tests pass locally (`composer test`)
-- [ ] PHPStan passes (`composer stan`)
-- [ ] Code style is correct (`composer lint`)
+- [ ] PHPStan passes (`composer ci:test:php:phpstan`)
+- [ ] Code style is correct (`composer ci:test:php:cgl`)
 - [ ] Documentation updated (if applicable)
 - [ ] CHANGELOG.md updated
 

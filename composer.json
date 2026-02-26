@@ -74,20 +74,22 @@
         }
     },
     "scripts": {
-        "test": "phpunit -c Tests/Build/phpunit.xml",
-        "test:unit": "phpunit -c Tests/Build/phpunit.xml --testsuite Unit",
-        "test:functional": "phpunit -c Tests/Build/FunctionalTests.xml",
-        "test:fuzz": "phpunit -c Tests/Build/phpunit.xml --testsuite Fuzz",
-        "test:all": ["@test", "@test:functional"],
-        "test:mutation": "infection --configuration=infection.json5 --threads=4",
-        "lint": "php-cs-fixer fix --dry-run --diff",
-        "fix": "php-cs-fixer fix",
-        "stan": "phpstan analyse Classes Tests",
         "ci": [
-            "@test:unit",
-            "@test:fuzz",
-            "@stan",
-            "@lint"
-        ]
+            "@ci:test:php:unit",
+            "@ci:test:php:fuzz",
+            "@ci:test:php:phpstan",
+            "@ci:test:php:cgl"
+        ],
+        "ci:cgl": "php-cs-fixer fix",
+        "ci:test:php:cgl": "@ci:cgl -- --dry-run --diff",
+        "ci:test:php:functional": "phpunit -c Tests/Build/FunctionalTests.xml",
+        "ci:test:php:fuzz": "phpunit -c Tests/Build/phpunit.xml --testsuite Fuzz",
+        "ci:test:php:mutation": "infection --configuration=infection.json5 --threads=4",
+        "ci:test:php:phpstan": "phpstan analyse Classes Tests",
+        "ci:test:php:rector": "rector process --dry-run",
+        "ci:test:php:unit": "phpunit -c Tests/Build/phpunit.xml --testsuite Unit",
+        "rector": "rector process",
+        "test": "phpunit -c Tests/Build/phpunit.xml",
+        "test:all": ["@test", "@ci:test:php:functional"]
     }
 }

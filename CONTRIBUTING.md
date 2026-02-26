@@ -91,10 +91,10 @@ Run specific test suites:
 
 ```bash
 # Unit tests
-composer test:unit
+composer ci:test:php:unit
 
 # Functional tests
-composer test:functional
+composer ci:test:php:functional
 ```
 
 ## Pull Request Process
