@@ -14,7 +14,6 @@ use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
 use Netresearch\NrVault\Exception\MasterKeyException;
 use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,12 +23,7 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class FileMasterKeyProviderTest extends TestCase
 {
-    private vfsStreamDirectory $root;
-
-    protected function setUp(): void
-    {
-        $this->root = vfsStream::setup('vault');
-    }
+    protected function setUp(): void {}
 
     #[Test]
     public function getIdentifierReturnsFile(): void

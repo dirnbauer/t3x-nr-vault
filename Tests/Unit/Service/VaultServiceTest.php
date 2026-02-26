@@ -18,6 +18,7 @@ use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Exception\AccessDeniedException;
+use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
@@ -472,7 +473,7 @@ final class VaultServiceTest extends TestCase
                 && $s->getDescription() === 'Test description'
                 && $s->getContext() === 'testing'
                 && $s->getScopePid() === 100
-                && $s->isFrontendAccessible() === true
+                && $s->isFrontendAccessible()
                 && $s->getExpiresAt() === $expiresAt->getTimestamp()));
 
         $this->subject->store($identifier, $secretValue, [
@@ -628,14 +629,14 @@ final class VaultServiceTest extends TestCase
 
         $this->encryptionService
             ->method('decrypt')
-            ->willThrowException(new \Netresearch\NrVault\Exception\EncryptionException('Decrypt failed', 1234567890));
+            ->willThrowException(new EncryptionException('Decrypt failed', 1234567890));
 
         $this->auditLogService
             ->expects(self::once())
             ->method('log')
             ->with('failDecrypt', 'read', false, self::stringContains('Decrypt failed'));
 
-        $this->expectException(\Netresearch\NrVault\Exception\EncryptionException::class);
+        $this->expectException(EncryptionException::class);
 
         $this->subject->retrieve('failDecrypt');
     }
@@ -752,7 +753,7 @@ final class VaultServiceTest extends TestCase
             ->with(null)
             ->willReturn([]);
 
-        $result = $this->subject->list(null);
+        $result = $this->subject->list();
 
         self::assertSame([], $result);
     }

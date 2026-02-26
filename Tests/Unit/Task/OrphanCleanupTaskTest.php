@@ -34,6 +34,7 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class OrphanCleanupTaskTest extends UnitTestCase
 {
+    #[Override]
     protected bool $resetSingletonInstances = true;
 
     private VaultServiceInterface&MockObject $vaultService;

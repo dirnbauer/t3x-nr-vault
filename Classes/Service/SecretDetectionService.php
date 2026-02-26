@@ -213,15 +213,13 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         /** @var array<string, mixed> $mailConfig */
         $mailConfig = \is_array($typo3ConfVars['MAIL'] ?? null) ? $typo3ConfVars['MAIL'] : [];
         $smtpPassword = $mailConfig['transport_smtp_password'] ?? '';
-        if (\is_string($smtpPassword) && $smtpPassword !== '') {
-            if (!$this->looksLikeVaultIdentifier($smtpPassword)) {
-                $finding = new ConfigSecretFinding(
-                    path: 'MAIL.transport_smtp_password',
-                    severity: Severity::High,
-                    isLocalConfiguration: true,
-                );
-                $this->detectedSecrets[$finding->getKey()] = $finding;
-            }
+        if (\is_string($smtpPassword) && $smtpPassword !== '' && !$this->looksLikeVaultIdentifier($smtpPassword)) {
+            $finding = new ConfigSecretFinding(
+                path: 'MAIL.transport_smtp_password',
+                severity: Severity::High,
+                isLocalConfiguration: true,
+            );
+            $this->detectedSecrets[$finding->getKey()] = $finding;
         }
 
         // Check SYS encryptionKey if it looks weak

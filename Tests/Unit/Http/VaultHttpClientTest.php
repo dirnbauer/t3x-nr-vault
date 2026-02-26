@@ -16,6 +16,7 @@ use Netresearch\NrVault\Audit\AuditContextInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 
@@ -636,7 +638,7 @@ final class VaultHttpClientTest extends TestCase
             ->method('retrieve')
             ->willReturn('secret');
 
-        $clientException = new class ('Connection failed') extends Exception implements \Psr\Http\Client\ClientExceptionInterface {};
+        $clientException = new class ('Connection failed') extends Exception implements ClientExceptionInterface {};
 
         $this->innerClient
             ->method('sendRequest')
@@ -667,7 +669,7 @@ final class VaultHttpClientTest extends TestCase
 
         $request = new Request('GET', 'https://api.example.com/data');
 
-        $this->expectException(\Psr\Http\Client\ClientExceptionInterface::class);
+        $this->expectException(ClientExceptionInterface::class);
         $authenticatedClient->sendRequest($request);
     }
 
@@ -680,7 +682,7 @@ final class VaultHttpClientTest extends TestCase
             $this->innerClient,
         );
 
-        $oauthConfig = \Netresearch\NrVault\Http\OAuth\OAuthConfig::clientCredentials(
+        $oauthConfig = OAuthConfig::clientCredentials(
             tokenEndpoint: 'https://auth.example.com/token',
             clientIdSecret: 'oauth/client-id',
             clientSecretSecret: 'oauth/client-secret',
@@ -701,7 +703,7 @@ final class VaultHttpClientTest extends TestCase
             $this->innerClient,
         );
 
-        $oauthConfig = \Netresearch\NrVault\Http\OAuth\OAuthConfig::clientCredentials(
+        $oauthConfig = OAuthConfig::clientCredentials(
             tokenEndpoint: 'https://auth.example.com/token',
             clientIdSecret: 'oauth/client-id',
             clientSecretSecret: 'oauth/client-secret',

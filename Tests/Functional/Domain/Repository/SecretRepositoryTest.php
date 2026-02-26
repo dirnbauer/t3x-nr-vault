@@ -26,10 +26,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(SecretFilters::class)]
 final class SecretRepositoryTest extends FunctionalTestCase
 {
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];

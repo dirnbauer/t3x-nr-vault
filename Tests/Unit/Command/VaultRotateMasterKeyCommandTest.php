@@ -345,9 +345,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
 
         $this->secretRepository
             ->method('findByIdentifier')
-            ->willReturnCallback(static function (string $id) use ($secret1, $secret2) {
-                return $id === 'secret-1' ? $secret1 : $secret2;
-            });
+            ->willReturnCallback(static fn (string $id): Secret => $id === 'secret-1' ? $secret1 : $secret2);
 
         $callCount = 0;
         $this->encryptionService
@@ -398,7 +396,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         $callCount = 0;
         $this->secretRepository
             ->method('findByIdentifier')
-            ->willReturnCallback(function (string $id) use ($secret, &$callCount) {
+            ->willReturnCallback(function (string $id) use ($secret, &$callCount): ?Secret {
                 ++$callCount;
                 // Return secret for verification
                 if ($callCount <= 2 && $id === 'existing-secret') {

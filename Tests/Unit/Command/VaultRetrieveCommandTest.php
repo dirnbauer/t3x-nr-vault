@@ -90,7 +90,7 @@ final class VaultRetrieveCommandTest extends TestCase
     #[Test]
     public function writesSecretToFile(): void
     {
-        $root = vfsStream::setup('test');
+        vfsStream::setup('test');
 
         $this->vaultService
             ->method('retrieve')

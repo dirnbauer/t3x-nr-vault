@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Functional\Http\OAuth;
 
 use GuzzleHttp\Psr7\Request;
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Http\SecretPlacement;
@@ -40,15 +41,17 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class OAuthIntegrationTest extends FunctionalTestCase
 {
     /** Mock OAuth server URL (internal ddev network). */
-    private const MOCK_OAUTH_INTERNAL_URL = 'http://mock-oauth:8080';
+    private const string MOCK_OAUTH_INTERNAL_URL = 'http://mock-oauth:8080';
 
     /** Mock OAuth server URL (external access). */
-    private const MOCK_OAUTH_EXTERNAL_URL = 'http://localhost:8080';
+    private const string MOCK_OAUTH_EXTERNAL_URL = 'http://localhost:8080';
 
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -303,8 +306,8 @@ final class OAuthIntegrationTest extends FunctionalTestCase
 
         // SecretDetails DTO has no 'type' or 'credentialSet' property - they're not semantically linked
         // Verify we got valid metadata objects
-        self::assertInstanceOf(\Netresearch\NrVault\Domain\Dto\SecretDetails::class, $clientIdMeta);
-        self::assertInstanceOf(\Netresearch\NrVault\Domain\Dto\SecretDetails::class, $clientSecretMeta);
+        self::assertInstanceOf(SecretDetails::class, $clientIdMeta);
+        self::assertInstanceOf(SecretDetails::class, $clientSecretMeta);
         self::assertSame('my_app_oauth_client_id', $clientIdMeta->identifier);
         self::assertSame('my_app_oauth_client_secret', $clientSecretMeta->identifier);
 

@@ -85,7 +85,7 @@ final class VaultInitCommandTest extends TestCase
     #[Test]
     public function generatesKeyToFile(): void
     {
-        $root = vfsStream::setup('vault');
+        vfsStream::setup('vault');
 
         $this->configuration
             ->method('getMasterKeyProvider')
@@ -159,7 +159,7 @@ final class VaultInitCommandTest extends TestCase
     #[Test]
     public function usesConfiguredSourcePath(): void
     {
-        $root = vfsStream::setup('vault');
+        vfsStream::setup('vault');
 
         $this->configuration
             ->method('getMasterKeyProvider')
@@ -178,7 +178,7 @@ final class VaultInitCommandTest extends TestCase
     #[Test]
     public function createsDirectoryIfNeeded(): void
     {
-        $root = vfsStream::setup('vault');
+        vfsStream::setup('vault');
 
         $this->configuration
             ->method('getMasterKeyProvider')
@@ -197,7 +197,7 @@ final class VaultInitCommandTest extends TestCase
     #[Test]
     public function displaysSecurityInformation(): void
     {
-        $root = vfsStream::setup('vault');
+        vfsStream::setup('vault');
 
         $this->configuration
             ->method('getMasterKeyProvider')

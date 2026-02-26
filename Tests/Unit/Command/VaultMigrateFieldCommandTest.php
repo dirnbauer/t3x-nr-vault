@@ -12,6 +12,7 @@ namespace Netresearch\NrVault\Tests\Unit\Command;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Netresearch\NrVault\Command\VaultMigrateFieldCommand;
+use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -211,7 +212,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
 
         $this->vaultService
             ->method('store')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Storage failed'));
+            ->willThrowException(new VaultException('Storage failed'));
 
         $this->commandTester->setInputs(['yes']);
         $exitCode = $this->commandTester->execute([

@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Functional\Controller;
 
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Audit\HashChainVerificationResult;
 use Netresearch\NrVault\Controller\AuditController;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -24,10 +25,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(AuditController::class)]
 final class AuditControllerTest extends FunctionalTestCase
 {
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -108,7 +111,7 @@ final class AuditControllerTest extends FunctionalTestCase
 
         $result = $auditLogService->verifyHashChain();
 
-        self::assertInstanceOf(\Netresearch\NrVault\Audit\HashChainVerificationResult::class, $result);
+        self::assertInstanceOf(HashChainVerificationResult::class, $result);
         self::assertTrue($result->valid);
     }
 

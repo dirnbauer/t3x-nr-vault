@@ -27,7 +27,9 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class VaultSecretElement extends AbstractFormElement
 {
-    private const LINE_FEED = "\n";
+    private const string LINE_FEED = "\n";
+
+    public function __construct(private readonly IconFactory $iconFactory) {}
 
     /**
      * @return array<string, mixed>
@@ -187,7 +189,7 @@ final class VaultSecretElement extends AbstractFormElement
         $html[] = '</div>'; // formengine-field-item
 
         // Hidden field to track vault identifier
-        $html[] = '<input type="hidden" name="' . htmlspecialchars((string) $itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
+        $html[] = '<input type="hidden" name="' . htmlspecialchars($itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
 
         $resultArray['html'] = implode(self::LINE_FEED, $html);
 
@@ -207,7 +209,7 @@ final class VaultSecretElement extends AbstractFormElement
      */
     private function renderIcon(string $identifier): string
     {
-        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $iconFactory = $this->iconFactory;
 
         return $iconFactory->getIcon($identifier, IconSize::SMALL)->render();
     }

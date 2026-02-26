@@ -151,7 +151,7 @@ final readonly class SecretRepository implements SecretRepositoryInterface
             ->from(self::TABLE_NAME)
             ->where($queryBuilder->expr()->eq('deleted', 0));
 
-        if ($filters !== null) {
+        if ($filters instanceof SecretFilters) {
             if ($filters->owner !== null) {
                 $queryBuilder->andWhere(
                     $queryBuilder->expr()->eq('owner_uid', $queryBuilder->createNamedParameter($filters->owner, Connection::PARAM_INT)),

@@ -25,10 +25,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(MigrationController::class)]
 final class MigrationControllerTest extends FunctionalTestCase
 {
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];

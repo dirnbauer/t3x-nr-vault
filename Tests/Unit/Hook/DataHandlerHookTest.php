@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Hook;
 
+use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\DataHandlerHook;
@@ -19,6 +20,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use ReflectionClass;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Schema\Field\FieldCollection;
@@ -34,6 +36,7 @@ final class DataHandlerHookTest extends UnitTestCase
 {
     private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
+    #[Override]
     protected bool $resetSingletonInstances = true;
 
     private DataHandlerHook $subject;
@@ -750,8 +753,8 @@ final class DataHandlerHookTest extends UnitTestCase
         $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
 
         // Mock database connection
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(['api_key' => $existingUuid]);
         $connection->method('select')->willReturn($result);
 
@@ -785,8 +788,8 @@ final class DataHandlerHookTest extends UnitTestCase
         $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
 
         // Mock database connection
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(['api_key' => $existingUuid]);
         $connection->method('select')->willReturn($result);
 
@@ -829,8 +832,8 @@ final class DataHandlerHookTest extends UnitTestCase
         ]);
 
         // Mock database connection - record not found
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(false);
         $connection->method('select')->willReturn($result);
 
@@ -861,8 +864,8 @@ final class DataHandlerHookTest extends UnitTestCase
         ]);
 
         // Mock database connection - vault field is empty
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(['api_key' => '']);
         $connection->method('select')->willReturn($result);
 
@@ -898,8 +901,8 @@ final class DataHandlerHookTest extends UnitTestCase
         $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
 
         // Mock database connection
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(['api_key' => $sourceUuid]);
         $connection->method('select')->willReturn($result);
 
@@ -958,8 +961,8 @@ final class DataHandlerHookTest extends UnitTestCase
         $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
 
         // Mock database connection - source record not found
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(false);
         $connection->method('select')->willReturn($result);
 
@@ -993,8 +996,8 @@ final class DataHandlerHookTest extends UnitTestCase
         $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
 
         // Mock database connection
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(['api_key' => $sourceUuid]);
         $connection->method('select')->willReturn($result);
 
@@ -1039,8 +1042,8 @@ final class DataHandlerHookTest extends UnitTestCase
         $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
 
         // Mock database connection
-        $connection = $this->createMock(\TYPO3\CMS\Core\Database\Connection::class);
-        $result = $this->createMock(\Doctrine\DBAL\Result::class);
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
         $result->method('fetchAssociative')->willReturn(['api_key' => $sourceUuid]);
         $connection->method('select')->willReturn($result);
 

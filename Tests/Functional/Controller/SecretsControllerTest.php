@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Functional\Controller;
 
 use Netresearch\NrVault\Controller\SecretsController;
+use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,10 +27,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(SecretsController::class)]
 final class SecretsControllerTest extends FunctionalTestCase
 {
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -157,7 +160,7 @@ final class SecretsControllerTest extends FunctionalTestCase
 
         $metadata = $vaultService->getMetadata($identifier);
 
-        self::assertInstanceOf(\Netresearch\NrVault\Domain\Dto\SecretDetails::class, $metadata);
+        self::assertInstanceOf(SecretDetails::class, $metadata);
         self::assertSame($identifier, $metadata->identifier);
         self::assertSame(1, $metadata->version);
 

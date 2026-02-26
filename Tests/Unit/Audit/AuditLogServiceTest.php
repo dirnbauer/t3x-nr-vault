@@ -12,7 +12,9 @@ namespace Netresearch\NrVault\Tests\Unit\Audit;
 use DateTimeImmutable;
 use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Audit\AuditLogEntry;
+use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogService;
+use Netresearch\NrVault\Audit\GenericContext;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -31,13 +33,13 @@ final class AuditLogServiceTest extends TestCase
 {
     private ?AuditLogService $subject = null;
 
-    private (ConnectionPool&MockObject)|null $connectionPool = null;
+    private MockObject $connectionPool = null;
 
-    private (AccessControlServiceInterface&MockObject)|null $accessControlService = null;
+    private MockObject $accessControlService = null;
 
-    private (QueryBuilder&MockObject)|null $queryBuilder = null;
+    private MockObject $queryBuilder = null;
 
-    private (Connection&MockObject)|null $connection = null;
+    private MockObject $connection = null;
 
     protected function setUp(): void
     {
@@ -271,7 +273,7 @@ final class AuditLogServiceTest extends TestCase
     #[Test]
     public function queryWithFilterAppliesSecretIdentifierFilter(): void
     {
-        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(secretIdentifier: 'specific_secret');
+        $filter = new AuditLogFilter(secretIdentifier: 'specific_secret');
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
         $expressionBuilder->expects(self::once())
@@ -293,7 +295,7 @@ final class AuditLogServiceTest extends TestCase
     #[Test]
     public function queryWithFilterAppliesActionFilter(): void
     {
-        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(action: 'read');
+        $filter = new AuditLogFilter(action: 'read');
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
         $expressionBuilder->expects(self::once())
@@ -315,7 +317,7 @@ final class AuditLogServiceTest extends TestCase
     #[Test]
     public function queryWithFilterAppliesSuccessFilter(): void
     {
-        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(success: true);
+        $filter = new AuditLogFilter(success: true);
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
         $expressionBuilder->expects(self::once())
@@ -339,7 +341,7 @@ final class AuditLogServiceTest extends TestCase
     {
         $since = new DateTimeImmutable('2024-01-01');
         $until = new DateTimeImmutable('2024-12-31');
-        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(since: $since, until: $until);
+        $filter = new AuditLogFilter(since: $since, until: $until);
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
         $expressionBuilder->expects(self::once())
@@ -391,7 +393,7 @@ final class AuditLogServiceTest extends TestCase
     #[Test]
     public function countWithFilterAppliesFilter(): void
     {
-        $filter = new \Netresearch\NrVault\Audit\AuditLogFilter(actorUid: 5);
+        $filter = new AuditLogFilter(actorUid: 5);
 
         $expressionBuilder = $this->createMock(ExpressionBuilder::class);
         $expressionBuilder->expects(self::once())
@@ -639,7 +641,7 @@ final class AuditLogServiceTest extends TestCase
     {
         $this->setupDatabaseMocks();
 
-        $context = new \Netresearch\NrVault\Audit\GenericContext(['key' => 'value']);
+        $context = new GenericContext(['key' => 'value']);
 
         $this->connection
             ->expects(self::once())
@@ -647,7 +649,7 @@ final class AuditLogServiceTest extends TestCase
             ->with(
                 'tx_nrvault_audit_log',
                 self::callback(static function (array $data) use ($context): bool {
-                    $decodedContext = json_decode($data['context'], true);
+                    $decodedContext = json_decode((string) $data['context'], true);
 
                     return $decodedContext === $context->toArray();
                 }),
@@ -686,27 +688,6 @@ final class AuditLogServiceTest extends TestCase
         self::assertNotNull($this->subject);
 
         return $this->subject;
-    }
-
-    private function getQueryBuilder(): QueryBuilder&MockObject
-    {
-        self::assertNotNull($this->queryBuilder);
-
-        return $this->queryBuilder;
-    }
-
-    private function getConnection(): Connection&MockObject
-    {
-        self::assertNotNull($this->connection);
-
-        return $this->connection;
-    }
-
-    private function getConnectionPool(): ConnectionPool&MockObject
-    {
-        self::assertNotNull($this->connectionPool);
-
-        return $this->connectionPool;
     }
 
     private function setupDatabaseMocks(): void

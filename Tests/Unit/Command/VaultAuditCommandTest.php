@@ -169,7 +169,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null && $filter->secretIdentifier === 'filtered-secret'),
+                $this->callback(fn ($filter): bool => $filter !== null && $filter->secretIdentifier === 'filtered-secret'),
                 50,
                 0,
             )
@@ -187,7 +187,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null && $filter->action === 'rotate'),
+                $this->callback(fn ($filter): bool => $filter !== null && $filter->action === 'rotate'),
                 50,
                 0,
             )
@@ -205,7 +205,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null && $filter->actorUid === 42),
+                $this->callback(fn ($filter): bool => $filter !== null && $filter->actorUid === 42),
                 50,
                 0,
             )
@@ -252,7 +252,7 @@ final class VaultAuditCommandTest extends TestCase
     #[Test]
     public function exportsToFile(): void
     {
-        $root = vfsStream::setup('exports');
+        vfsStream::setup('exports');
 
         $entry = AuditLogEntry::fromDatabaseRow([
             'uid' => 1,
@@ -320,7 +320,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null && $filter->since !== null),
+                $this->callback(fn ($filter): bool => $filter !== null && $filter->since !== null),
                 50,
                 0,
             )
@@ -338,7 +338,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null && $filter->until !== null),
+                $this->callback(fn ($filter): bool => $filter !== null && $filter->until !== null),
                 50,
                 0,
             )
@@ -356,7 +356,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null && $filter->success === true),
+                $this->callback(fn ($filter): bool => $filter !== null && $filter->success === true),
                 50,
                 0,
             )
@@ -467,7 +467,7 @@ final class VaultAuditCommandTest extends TestCase
             ->expects($this->once())
             ->method('query')
             ->with(
-                $this->callback(fn ($filter) => $filter !== null
+                $this->callback(fn ($filter): bool => $filter !== null
                     && $filter->secretIdentifier === 'multi-filter'
                     && $filter->action === 'read'
                     && $filter->actorUid === 5),
@@ -487,7 +487,7 @@ final class VaultAuditCommandTest extends TestCase
     #[Test]
     public function exportsToCsvFormat(): void
     {
-        $root = vfsStream::setup('exports');
+        vfsStream::setup('exports');
 
         $entry = AuditLogEntry::fromDatabaseRow([
             'uid' => 1,

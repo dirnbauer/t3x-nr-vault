@@ -199,7 +199,10 @@ final class DataHandlerHook
 
         foreach ($vaultFields as $fieldName) {
             $vaultIdentifier = $record[$fieldName] ?? '';
-            if (!\is_string($vaultIdentifier) || $vaultIdentifier === '') {
+            if (!\is_string($vaultIdentifier)) {
+                continue;
+            }
+            if ($vaultIdentifier === '') {
                 continue;
             }
 
@@ -265,7 +268,10 @@ final class DataHandlerHook
 
         foreach ($vaultFields as $fieldName) {
             $sourceIdentifier = $sourceRecord[$fieldName] ?? '';
-            if (!\is_string($sourceIdentifier) || $sourceIdentifier === '') {
+            if (!\is_string($sourceIdentifier)) {
+                continue;
+            }
+            if ($sourceIdentifier === '') {
                 continue;
             }
 

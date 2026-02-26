@@ -14,6 +14,7 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -24,10 +25,12 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(SecretTcaHook::class)]
 final class SecretTcaHookTest extends FunctionalTestCase
 {
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -351,7 +354,7 @@ final class SecretTcaHookTest extends FunctionalTestCase
         $record = $queryBuilder
             ->select('deleted')
             ->from('tx_nrvault_secret')
-            ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($recordUid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)))
+            ->where($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($recordUid, Connection::PARAM_INT)))
             ->executeQuery()
             ->fetchAssociative();
 

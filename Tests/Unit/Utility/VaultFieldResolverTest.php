@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Utility;
 
+use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use Override;
@@ -216,7 +218,7 @@ final class VaultFieldResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+            ->willThrowException(new SecretNotFoundException($identifier, 1234567890));
 
         $result = $this->subject->resolve($identifier);
 
@@ -253,7 +255,7 @@ final class VaultFieldResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+            ->willThrowException(new SecretNotFoundException($identifier, 1234567890));
 
         $data = [
             'api_key' => $identifier,
@@ -271,16 +273,14 @@ final class VaultFieldResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+            ->willThrowException(new VaultException('Decryption failed', 1234567890));
 
         $this->logger
             ->expects(self::once())
             ->method('error')
-            ->with('Failed to resolve vault field', self::callback(function (array $context) use ($identifier) {
-                return $context['field'] === 'api_key'
-                    && $context['identifier'] === $identifier
-                    && str_contains($context['error'], 'Decryption failed');
-            }));
+            ->with('Failed to resolve vault field', self::callback(fn (array $context): bool => $context['field'] === 'api_key'
+                && $context['identifier'] === $identifier
+                && str_contains((string) $context['error'], 'Decryption failed')));
 
         $data = [
             'api_key' => $identifier,
@@ -298,13 +298,13 @@ final class VaultFieldResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+            ->willThrowException(new VaultException('Decryption failed', 1234567890));
 
         $data = [
             'api_key' => $identifier,
         ];
 
-        $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+        $this->expectException(VaultException::class);
         $this->subject->resolveFields($data, ['api_key'], true);
     }
 

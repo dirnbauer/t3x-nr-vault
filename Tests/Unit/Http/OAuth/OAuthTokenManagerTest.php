@@ -562,7 +562,7 @@ final class OAuthTokenManagerTest extends TestCase
             ->with(
                 'oauth/refresh-token',
                 'new-refresh-token',
-                self::callback(fn (array $meta) => $meta['source'] === 'oauth_refresh'),
+                self::callback(fn (array $meta): bool => $meta['source'] === 'oauth_refresh'),
             );
 
         $response = $this->createSuccessfulTokenResponse([

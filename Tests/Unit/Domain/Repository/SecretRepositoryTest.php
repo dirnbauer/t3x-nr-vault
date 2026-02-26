@@ -157,10 +157,8 @@ final class SecretRepositoryTest extends TestCase
         $this->connection
             ->expects(self::once())
             ->method('insert')
-            ->with('tx_nrvault_secret', self::callback(static function (array $data): bool {
-                return $data['identifier'] === 'new-secret'
-                    && isset($data['crdate']);
-            }));
+            ->with('tx_nrvault_secret', self::callback(static fn (array $data): bool => $data['identifier'] === 'new-secret'
+                && isset($data['crdate'])));
 
         $this->connection
             ->method('lastInsertId')

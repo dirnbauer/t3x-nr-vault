@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Utility;
 
+use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use Override;
@@ -191,7 +193,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+            ->willThrowException(new SecretNotFoundException($identifier, 1234567890));
 
         $settings = [
             'apiKey' => $identifier,
@@ -209,16 +211,14 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+            ->willThrowException(new VaultException('Decryption failed', 1234567890));
 
         $this->logger
             ->expects(self::once())
             ->method('error')
-            ->with('Failed to resolve FlexForm vault field', self::callback(function (array $context) use ($identifier) {
-                return $context['field'] === 'apiKey'
-                    && $context['identifier'] === $identifier
-                    && str_contains($context['error'], 'Decryption failed');
-            }));
+            ->with('Failed to resolve FlexForm vault field', self::callback(fn (array $context): bool => $context['field'] === 'apiKey'
+                && $context['identifier'] === $identifier
+                && str_contains((string) $context['error'], 'Decryption failed')));
 
         $settings = [
             'apiKey' => $identifier,
@@ -236,13 +236,13 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+            ->willThrowException(new VaultException('Decryption failed', 1234567890));
 
         $settings = [
             'apiKey' => $identifier,
         ];
 
-        $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+        $this->expectException(VaultException::class);
         $this->subject->resolveSettings($settings, ['apiKey'], true);
     }
 
@@ -253,16 +253,14 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Decryption failed', 1234567890));
+            ->willThrowException(new VaultException('Decryption failed', 1234567890));
 
         $this->logger
             ->expects(self::once())
             ->method('error')
-            ->with('Failed to resolve vault identifier', self::callback(function (array $context) use ($identifier) {
-                return $context['key'] === 'apiKey'
-                    && $context['identifier'] === $identifier
-                    && str_contains($context['error'], 'Decryption failed');
-            }));
+            ->with('Failed to resolve vault identifier', self::callback(fn (array $context): bool => $context['key'] === 'apiKey'
+                && $context['identifier'] === $identifier
+                && str_contains((string) $context['error'], 'Decryption failed')));
 
         $settings = [
             'apiKey' => $identifier,
@@ -280,7 +278,7 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
         $this->vaultService
             ->method('retrieve')
-            ->willThrowException(new \Netresearch\NrVault\Exception\SecretNotFoundException($identifier, 1234567890));
+            ->willThrowException(new SecretNotFoundException($identifier, 1234567890));
 
         $settings = [
             'nested' => [

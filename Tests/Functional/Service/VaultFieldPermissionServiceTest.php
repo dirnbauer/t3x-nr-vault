@@ -24,11 +24,13 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class VaultFieldPermissionServiceTest extends FunctionalTestCase
 {
     /** @var list<string> */
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
     /** @var list<string> */
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];

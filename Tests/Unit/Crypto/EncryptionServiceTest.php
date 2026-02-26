@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
+use Netresearch\NrVault\Crypto\EncryptedData;
 use Netresearch\NrVault\Crypto\EncryptionService;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
@@ -62,7 +63,7 @@ final class EncryptionServiceTest extends TestCase
 
         $result = $this->subject->encrypt($plaintext, $identifier);
 
-        self::assertInstanceOf(\Netresearch\NrVault\Crypto\EncryptedData::class, $result);
+        self::assertInstanceOf(EncryptedData::class, $result);
         self::assertNotEmpty($result->encryptedValue);
         self::assertNotEmpty($result->encryptedDek);
         self::assertNotEmpty($result->dekNonce);

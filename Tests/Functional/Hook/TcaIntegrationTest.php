@@ -41,10 +41,12 @@ final class TcaIntegrationTest extends FunctionalTestCase
     private const string SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
         . 'The TCA hooks work in production; these tests need additional setup for isolated testing.';
 
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
+    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];

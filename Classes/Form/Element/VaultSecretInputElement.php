@@ -31,7 +31,9 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class VaultSecretInputElement extends AbstractFormElement
 {
-    private const LINE_FEED = "\n";
+    private const string LINE_FEED = "\n";
+
+    public function __construct(private readonly IconFactory $iconFactory) {}
 
     /**
      * @return array<string, mixed>
@@ -347,7 +349,7 @@ final class VaultSecretInputElement extends AbstractFormElement
      */
     private function renderIcon(string $identifier): string
     {
-        $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $iconFactory = $this->iconFactory;
 
         return $iconFactory->getIcon($identifier, IconSize::SMALL)->render();
     }

@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Functional\Configuration;
 
 use Netresearch\NrVault\Configuration\ExtensionConfiguration;
+use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,6 +22,7 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class ExtensionConfigurationTest extends FunctionalTestCase
 {
+    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];

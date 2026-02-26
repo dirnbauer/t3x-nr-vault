@@ -260,9 +260,7 @@ final readonly class MigrationController
         $parsedBodyArray = \is_array($parsedBody) ? $parsedBody : [];
         $migrations = $parsedBodyArray['migrations'] ?? [];
         $clearOriginalsValue = $parsedBodyArray['clearOriginals'] ?? false;
-        $clearOriginals = \is_string($clearOriginalsValue) || \is_int($clearOriginalsValue)
-            ? (bool) $clearOriginalsValue
-            : false;
+        $clearOriginals = (\is_string($clearOriginalsValue) || \is_int($clearOriginalsValue)) && (bool) $clearOriginalsValue;
 
         if (!\is_array($migrations) || $migrations === []) {
             $this->addFlashMessage(
@@ -289,13 +287,22 @@ final readonly class MigrationController
             $column = \is_string($columnVal) ? $columnVal : '';
             $identifierPatternVal = $migration['identifierPattern'] ?? '';
             $identifierPattern = \is_string($identifierPatternVal) ? $identifierPatternVal : '';
-            if (empty($table)) {
+            if ($table === '') {
                 continue;
             }
-            if (empty($column)) {
+            if ($table === '0') {
                 continue;
             }
-            if (empty($identifierPattern)) {
+            if ($column === '') {
+                continue;
+            }
+            if ($column === '0') {
+                continue;
+            }
+            if ($identifierPattern === '') {
+                continue;
+            }
+            if ($identifierPattern === '0') {
                 continue;
             }
 
