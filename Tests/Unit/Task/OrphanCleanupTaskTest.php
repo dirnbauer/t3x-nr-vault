@@ -288,7 +288,10 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             ->expects($this->atLeastOnce())
             ->method('info');
 
-        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $logManager = $this->createMock(LogManager::class);
+        $logManager->method('getLogger')->willReturn($this->logger);
+
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService, $logManager);
         $task->execute();
     }
 

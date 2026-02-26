@@ -23,7 +23,10 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class FileMasterKeyProviderTest extends TestCase
 {
-    protected function setUp(): void {}
+    protected function setUp(): void
+    {
+        vfsStream::setup('vault');
+    }
 
     #[Test]
     public function getIdentifierReturnsFile(): void
