@@ -7,7 +7,6 @@ declare(strict_types=1);
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-
 namespace Netresearch\NrVault\Tests\Architecture;
 
 use Netresearch\NrVault\Adapter\VaultAdapterInterface;

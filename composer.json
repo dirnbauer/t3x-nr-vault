@@ -81,7 +81,7 @@
             "@ci:test:php:cgl"
         ],
         "ci:cgl": "php-cs-fixer fix",
-        "ci:test:php:cgl": "@ci:cgl -- --dry-run --diff",
+        "ci:test:php:cgl": "php-cs-fixer fix --dry-run --diff",
         "ci:test:php:functional": "phpunit -c Tests/Build/FunctionalTests.xml",
         "ci:test:php:fuzz": "phpunit -c Tests/Build/phpunit.xml --testsuite Fuzz",
         "ci:test:php:mutation": "infection --configuration=infection.json5 --threads=4",
