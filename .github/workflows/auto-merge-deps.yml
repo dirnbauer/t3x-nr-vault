@@ -1,49 +1,11 @@
-# Auto-merge dependency updates
-# For Renovate: Only approve (Renovate handles auto-merge via platformAutomerge with bypass permissions)
-# For Dependabot: Approve and enable auto-merge
 name: Auto-merge dependency PRs
-
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-
-# Restrict default permissions - jobs declare what they need
 permissions: {}
-
 jobs:
   auto-merge:
-    name: Auto-merge dependency PRs
-    runs-on: ubuntu-latest
-    # Use PR author login instead of github.actor to handle synchronize events
-    if: github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'renovate[bot]'
+    uses: netresearch/typo3-ci-workflows/.github/workflows/auto-merge-deps.yml@main
     permissions:
       contents: write
       pull-requests: write
-
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
-        with:
-          egress-policy: audit
-
-      - name: Dependabot metadata
-        id: metadata
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Auto-approve PR
-        run: gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Only enable auto-merge for Dependabot PRs
-      # Renovate handles its own auto-merge via platformAutomerge (needs bypass permissions)
-      - name: Enable auto-merge (Dependabot only)
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        run: gh pr merge --auto --merge "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
