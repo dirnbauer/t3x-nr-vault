@@ -14,10 +14,10 @@ namespace Netresearch\NrVault\Audit;
 
 use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Http\ServerRequest;
 
 /**
  * Audit log service with tamper-evident hash chain.
@@ -301,11 +301,10 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     private function getClientIp(): string
     {
         $request = $this->getServerRequest();
-        if ($request === null) {
+        if (!$request instanceof ServerRequestInterface) {
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
-        /** @phpstan-ignore method.internalClass */
         $serverParams = $request->getServerParams();
         $remoteAddr = $serverParams['REMOTE_ADDR'] ?? '';
 
@@ -315,11 +314,10 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     private function getUserAgent(): string
     {
         $request = $this->getServerRequest();
-        if ($request === null) {
+        if (!$request instanceof ServerRequestInterface) {
             return PHP_SAPI === 'cli' ? 'CLI' : '';
         }
 
-        /** @phpstan-ignore method.internalClass */
         $userAgent = $request->getHeaderLine('User-Agent');
         if (\strlen($userAgent) > 500) {
             return substr($userAgent, 0, 500);
@@ -331,12 +329,11 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     private function getRequestId(): string
     {
         $request = $this->getServerRequest();
-        if ($request === null) {
+        if (!$request instanceof ServerRequestInterface) {
             return '';
         }
 
         // Try to get request ID from header
-        /** @phpstan-ignore method.internalClass */
         $requestId = $request->getHeaderLine('X-Request-Id');
         if ($requestId !== '') {
             return $requestId;
@@ -346,14 +343,10 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         return bin2hex(random_bytes(16));
     }
 
-    /**
-     * @phpstan-ignore return.internalClass
-     */
-    private function getServerRequest(): ?ServerRequest
+    private function getServerRequest(): ?ServerRequestInterface
     {
         $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
-        /** @phpstan-ignore instanceof.internalClass */
-        if ($request instanceof ServerRequest) {
+        if ($request instanceof ServerRequestInterface) {
             return $request;
         }
 

@@ -12,6 +12,7 @@ namespace Netresearch\NrVault\Task;
 use Netresearch\NrVault\Domain\Dto\OrphanReference;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Throwable;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -41,6 +42,7 @@ final class OrphanCleanupTask extends AbstractTask
     public function __construct(
         private readonly ConnectionPool $connectionPool,
         private readonly ?VaultServiceInterface $vaultService = null,
+        private readonly ?LogManager $logManager = null,
     ) {
         parent::__construct();
     }
@@ -117,7 +119,7 @@ final class OrphanCleanupTask extends AbstractTask
 
             // Parse identifier
             $reference = $this->parseIdentifier($identifier);
-            if ($reference === null) {
+            if (!$reference instanceof OrphanReference) {
                 continue;
             }
 
@@ -220,7 +222,11 @@ final class OrphanCleanupTask extends AbstractTask
 
     private function getLogger(): LoggerInterface
     {
-        return GeneralUtility::makeInstance(LogManager::class)
+        if (!$this->logManager instanceof LogManager) {
+            return new NullLogger();
+        }
+
+        return $this->logManager
             ->getLogger(self::class);
     }
 }
