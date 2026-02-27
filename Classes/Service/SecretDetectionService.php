@@ -435,6 +435,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                 return true;
             }
         }
+
         return false;
     }
 
@@ -449,6 +450,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                 return true;
             }
         }
+
         return false;
     }
 
