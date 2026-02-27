@@ -20,7 +20,7 @@ return RectorConfig::configure()
         __DIR__ . '/Configuration',
     ])
     ->withRootFiles()
-    ->withPhpSets(php85: true)
+    ->withPhpSets(php82: true)
     ->withSets([
         // PHP code quality
         SetList::CODE_QUALITY,
