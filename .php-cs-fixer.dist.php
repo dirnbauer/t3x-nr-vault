@@ -23,7 +23,7 @@ return new Config()
     ->setRiskyAllowed(true)
     ->setRules([
         '@PER-CS' => true,
-        '@PHP8x5Migration' => true,
+        '@PHP82Migration' => true,
 
         // Strict rules
         'declare_strict_types' => true,
