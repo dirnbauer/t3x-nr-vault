@@ -15,7 +15,6 @@ use Netresearch\NrVault\Exception\AccessDeniedException;
 use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
-use Netresearch\NrVault\Exception\ValidationException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -165,12 +164,6 @@ final readonly class AjaxController
                 'success' => false,
                 'error' => 'Access denied',
             ], 403);
-        } catch (ValidationException $e) {
-            /** @phpstan-ignore new.internalClass, method.internalClass */
-            return new JsonResponse([
-                'success' => false,
-                'error' => 'Validation error: ' . $e->getMessage(),
-            ], 400);
         } catch (EncryptionException $e) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
