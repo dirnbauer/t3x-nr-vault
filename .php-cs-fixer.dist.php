@@ -18,7 +18,7 @@ $finder = Finder::create()
     ->ignoreDotFiles(false)
     ->ignoreVCSIgnored(true);
 
-return new Config()
+return (new Config())
     ->setParallelConfig(ParallelConfigFactory::detect())
     ->setRiskyAllowed(true)
     ->setRules([

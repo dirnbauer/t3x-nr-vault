@@ -30,7 +30,7 @@ return RectorConfig::configure()
         SetList::TYPE_DECLARATION,
 
         // TYPO3 specific
-        Typo3LevelSetList::UP_TO_TYPO3_14,
+        Typo3LevelSetList::UP_TO_TYPO3_13,
         Typo3SetList::CODE_QUALITY,
         Typo3SetList::GENERAL,
     ])

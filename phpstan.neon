@@ -14,6 +14,14 @@ parameters:
             - Classes/Domain/Model/Secret.php
     reportUnmatchedIgnoredErrors: false
 
+    ignoreErrors:
+        # TcaSchemaFactory, TcaSchema, and FieldTypeInterface are internal in TYPO3 v13
+        # but were made public in v14. Since this extension supports both v13.4 and v14,
+        # we suppress these internal class errors for the affected files.
+        -
+            message: '#internal class TYPO3\\CMS\\Core\\Schema\\#'
+            reportUnmatched: false
+
     # PHP version targeting
     phpVersion: 80200
 
