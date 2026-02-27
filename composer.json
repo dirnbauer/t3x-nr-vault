@@ -26,17 +26,17 @@
         "source": "https://github.com/netresearch/t3x-nr-vault"
     },
     "require": {
-        "php": "^8.5",
+        "php": "^8.2",
         "ext-sodium": "*",
         "ext-json": "*",
-        "typo3/cms-core": "^14.0",
-        "typo3/cms-backend": "^14.0",
+        "typo3/cms-core": "^13.4 || ^14.0",
+        "typo3/cms-backend": "^13.4 || ^14.0",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0"
     },
     "require-dev": {
-        "typo3/testing-framework": "^9.0",
-        "typo3/cms-scheduler": "^14.0",
+        "typo3/testing-framework": "^8.2 || ^9.0",
+        "typo3/cms-scheduler": "^13.4 || ^14.0",
         "phpstan/phpstan": "^2.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "phpat/phpat": "^0.12.1",
