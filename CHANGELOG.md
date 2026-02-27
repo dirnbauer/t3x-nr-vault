@@ -40,8 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audit trail with tamper-evident hash chain
 
 ### Technical
-- PHP 8.5+ required
-- TYPO3 v14 compatible
+- PHP 8.2+ required
+- TYPO3 v13.4 / v14 compatible
 - PER Coding Style (latest)
 - PHPStan level 10 (maximum)
 - PHPat architecture tests
