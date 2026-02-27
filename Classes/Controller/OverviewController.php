@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 #[AsController]
 final readonly class OverviewController
 {
-    private const string MODULE_NAME = 'admin_vault';
+    private const MODULE_NAME = 'admin_vault';
 
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,

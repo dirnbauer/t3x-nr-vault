@@ -33,7 +33,7 @@ use TYPO3\CMS\Frontend\ContentObject\Event\AfterStdWrapFunctionsExecutedEvent;
 #[AsEventListener(identifier: 'nr-vault/typoscript-vault')]
 final readonly class TypoScriptVaultListener
 {
-    private const string VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
+    private const VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
 
     public function __construct(
         private VaultServiceInterface $vaultService,

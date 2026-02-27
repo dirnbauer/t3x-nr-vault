@@ -42,14 +42,14 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 #[AsController]
 final readonly class MigrationController
 {
-    private const string MODULE_NAME = 'admin_vault_migration';
+    private const MODULE_NAME = 'admin_vault_migration';
 
     /**
      * Allowed actions for this controller.
      *
      * @var list<string>
      */
-    private const array ALLOWED_ACTIONS = ['index', 'scan', 'review', 'configure', 'execute', 'verify'];
+    private const ALLOWED_ACTIONS = ['index', 'scan', 'review', 'configure', 'execute', 'verify'];
 
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,

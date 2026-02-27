@@ -27,7 +27,7 @@ use TYPO3\CMS\Core\Utility\StringUtility;
  */
 final class VaultSecretElement extends AbstractFormElement
 {
-    private const string LINE_FEED = "\n";
+    private const LINE_FEED = "\n";
 
     public function __construct(private readonly IconFactory $iconFactory) {}
 

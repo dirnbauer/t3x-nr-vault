@@ -18,7 +18,7 @@ use Netresearch\NrVault\Exception\MasterKeyException;
  */
 final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 {
-    private const int KEY_LENGTH = 32; // 256 bits
+    private const KEY_LENGTH = 32; // 256 bits
 
     public function __construct(
         private ExtensionConfigurationInterface $configuration,
