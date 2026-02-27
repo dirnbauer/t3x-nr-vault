@@ -27,6 +27,7 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Scheduler\Scheduler;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(OrphanCleanupTask::class)]
@@ -52,6 +53,10 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         // Mock GeneralUtility::makeInstance
         $logManager = $this->createMock(LogManager::class);
         $logManager->method('getLogger')->willReturn($this->logger);
+
+        // TYPO3 v13 AbstractTask::__construct() calls GeneralUtility::makeInstance(Scheduler::class)
+        // which requires 3 constructor args. Register a mock singleton to prevent this.
+        GeneralUtility::setSingletonInstance(Scheduler::class, $this->createMock(Scheduler::class));
 
         GeneralUtility::addInstance(VaultServiceInterface::class, $this->vaultService);
         GeneralUtility::addInstance(ConnectionPool::class, $this->connectionPool);
