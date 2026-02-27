@@ -21,7 +21,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -52,7 +51,6 @@ final readonly class SecretsController
         private FlashMessageService $flashMessageService,
         private ConnectionPool $connectionPool,
         private AuditLogServiceInterface $auditLogService,
-        private ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -62,12 +60,15 @@ final readonly class SecretsController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-            routeIdentifier: self::MODULE_NAME,
-            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-                . ' - '
-                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
-        );
+        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
+        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
+            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+                routeIdentifier: self::MODULE_NAME,
+                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                    . ' - '
+                    . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
+            );
+        }
 
         $this->addDocHeaderButtons($moduleTemplate);
 
@@ -371,7 +372,7 @@ final readonly class SecretsController
         $lang = $this->getLanguageService();
 
         // Create Secret button
-        $createButton = $this->componentFactory->createLinkButton()
+        $createButton = $buttonBar->makeLinkButton()
             ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.create'))
             ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create'))
             ->setShowLabelText(true)

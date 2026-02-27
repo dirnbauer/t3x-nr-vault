@@ -19,11 +19,12 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\RedirectResponse;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Imaging\IconSize;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -58,7 +59,7 @@ final readonly class MigrationController
         private ConnectionPool $connectionPool,
         private UriBuilder $uriBuilder,
         private FlashMessageService $flashMessageService,
-        private ComponentFactory $componentFactory,
+        private IconFactory $iconFactory,
     ) {}
 
     /**
@@ -93,12 +94,15 @@ final readonly class MigrationController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-            routeIdentifier: self::MODULE_NAME,
-            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-                . ' - '
-                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title'),
-        );
+        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
+        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
+            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+                routeIdentifier: self::MODULE_NAME,
+                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                    . ' - '
+                    . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title'),
+            );
+        }
 
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
@@ -516,9 +520,10 @@ final readonly class MigrationController
         string $targetAction,
     ): void {
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        $backButton = $this->componentFactory->createBackButton(
-            $this->buildUri($targetAction),
-        );
+        $backButton = $buttonBar->makeLinkButton()
+            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL))
+            ->setTitle('Back')
+            ->setHref($this->buildUri($targetAction));
         $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
     }
 }
