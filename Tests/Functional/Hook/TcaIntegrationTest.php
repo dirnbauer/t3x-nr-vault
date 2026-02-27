@@ -11,7 +11,6 @@ namespace Netresearch\NrVault\Tests\Functional\Hook;
 
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -38,15 +37,13 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[Group('not-sqlite')]
 final class TcaIntegrationTest extends FunctionalTestCase
 {
-    private const string SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
+    private const SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
         . 'The TCA hooks work in production; these tests need additional setup for isolated testing.';
 
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -55,7 +52,6 @@ final class TcaIntegrationTest extends FunctionalTestCase
 
     private bool $setupCompleted = false;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -82,7 +78,6 @@ final class TcaIntegrationTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key

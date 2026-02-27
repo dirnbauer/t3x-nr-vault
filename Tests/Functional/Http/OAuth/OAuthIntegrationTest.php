@@ -19,7 +19,6 @@ use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
@@ -41,17 +40,15 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class OAuthIntegrationTest extends FunctionalTestCase
 {
     /** Mock OAuth server URL (internal ddev network). */
-    private const string MOCK_OAUTH_INTERNAL_URL = 'http://mock-oauth:8080';
+    private const MOCK_OAUTH_INTERNAL_URL = 'http://mock-oauth:8080';
 
     /** Mock OAuth server URL (external access). */
-    private const string MOCK_OAUTH_EXTERNAL_URL = 'http://localhost:8080';
+    private const MOCK_OAUTH_EXTERNAL_URL = 'http://localhost:8080';
 
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -64,7 +61,6 @@ final class OAuthIntegrationTest extends FunctionalTestCase
 
     private string $mockOAuthUrl = self::MOCK_OAUTH_EXTERNAL_URL;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -96,7 +92,6 @@ final class OAuthIntegrationTest extends FunctionalTestCase
         $this->vaultService = $service;
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key

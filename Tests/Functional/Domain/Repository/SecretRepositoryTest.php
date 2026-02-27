@@ -13,7 +13,6 @@ use Netresearch\NrVault\Domain\Dto\SecretFilters;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepository;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -26,19 +25,16 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(SecretFilters::class)]
 final class SecretRepositoryTest extends FunctionalTestCase
 {
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
 
     private SecretRepositoryInterface $subject;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

@@ -15,7 +15,6 @@ use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Task\OrphanCleanupTask;
-use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -34,7 +33,6 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class OrphanCleanupTaskTest extends UnitTestCase
 {
-    #[Override]
     protected bool $resetSingletonInstances = true;
 
     private VaultServiceInterface&MockObject $vaultService;
@@ -43,7 +41,6 @@ final class OrphanCleanupTaskTest extends UnitTestCase
 
     private LoggerInterface&MockObject $logger;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -61,7 +58,6 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         GeneralUtility::setSingletonInstance(LogManager::class, $logManager);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();

@@ -12,7 +12,6 @@ namespace Netresearch\NrVault\Tests\Functional\Controller;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\HashChainVerificationResult;
 use Netresearch\NrVault\Controller\AuditController;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -25,19 +24,16 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(AuditController::class)]
 final class AuditControllerTest extends FunctionalTestCase
 {
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
 
     private ?string $masterKeyPath = null;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -60,7 +56,6 @@ final class AuditControllerTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key

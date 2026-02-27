@@ -430,7 +430,12 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function isSecretColumn(string $columnName): bool
     {
-        return array_any(self::COLUMN_NAME_PATTERNS, static fn (string $pattern): bool => preg_match($pattern, $columnName) === 1);
+        foreach (self::COLUMN_NAME_PATTERNS as $pattern) {
+            if (preg_match($pattern, $columnName) === 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -439,7 +444,12 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function isSecretConfigKey(string $key): bool
     {
-        return array_any(self::EXT_CONFIG_KEY_PATTERNS, static fn (string $pattern): bool => preg_match($pattern, $key) === 1);
+        foreach (self::EXT_CONFIG_KEY_PATTERNS as $pattern) {
+            if (preg_match($pattern, $key) === 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -11,7 +11,6 @@ namespace Netresearch\NrVault\Tests\Functional\Service;
 
 use Netresearch\NrVault\Service\VaultFieldPermission;
 use Netresearch\NrVault\Service\VaultFieldPermissionService;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -24,20 +23,17 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class VaultFieldPermissionServiceTest extends FunctionalTestCase
 {
     /** @var list<string> */
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
     /** @var list<string> */
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
 
     private ?VaultFieldPermissionService $subject = null;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
