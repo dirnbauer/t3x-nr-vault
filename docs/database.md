@@ -4,7 +4,7 @@
 
 nr-vault uses three tables for storing encrypted secrets, access control relationships, and audit logs. The schema follows TYPO3 v14 conventions and supports both the local encryption adapter and external vault adapters.
 
-**Target:** TYPO3 v14.0+ | PHP 8.5+
+**Target:** TYPO3 v13.4+ | PHP 8.2+
 
 ## Tables
 
@@ -487,4 +487,4 @@ WHERE crdate < UNIX_TIMESTAMP() - (365 * 86400);
 ---
 
 *Schema Version: 2.0*
-*Compatible with: TYPO3 v14.0+ | PHP 8.5+*
+*Compatible with: TYPO3 v13.4+ | PHP 8.2+*

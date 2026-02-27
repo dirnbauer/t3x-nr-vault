@@ -1,6 +1,6 @@
 # nr-vault Architecture
 
-**Target:** TYPO3 v14.0+ | PHP 8.5+
+**Target:** TYPO3 v13.4+ | PHP 8.2+
 
 ## Overview
 
@@ -452,4 +452,4 @@ $response = $vault->service('stripe')->post('charges', $payload);
 ---
 
 *Architecture Version: 2.0*
-*Compatible with: TYPO3 v14.0+ | PHP 8.5+*
+*Compatible with: TYPO3 v13.4+ | PHP 8.2+*

@@ -5,8 +5,8 @@
 [![Security](https://github.com/netresearch/t3x-nr-vault/actions/workflows/security.yml/badge.svg)](https://github.com/netresearch/t3x-nr-vault/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/netresearch/t3x-nr-vault/badge)](https://securityscorecards.dev/viewer/?uri=github.com/netresearch/t3x-nr-vault)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11695/badge)](https://www.bestpractices.dev/projects/11695)
-[![TYPO3](https://img.shields.io/badge/TYPO3-14-orange.svg)](https://typo3.org/)
-[![PHP](https://img.shields.io/badge/PHP-8.5+-blue.svg)](https://www.php.net/)
+[![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20|%2014-orange.svg)](https://typo3.org/)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://www.php.net/)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg)](https://phpstan.org/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/netresearch/t3x-nr-vault)](https://github.com/netresearch/t3x-nr-vault/releases)
@@ -212,8 +212,8 @@ vendor/bin/typo3 vault:export --output=secrets.enc
 
 ## Requirements
 
-- **TYPO3**: v14.0+
-- **PHP**: ^8.5
+- **TYPO3**: v13.4 / v14.0+
+- **PHP**: ^8.2
 - **Extensions**: `ext-sodium` (bundled with PHP)
 - **CPU**: AES-NI support recommended (XChaCha20-Poly1305 fallback available)
 

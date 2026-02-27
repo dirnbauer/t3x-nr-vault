@@ -10,9 +10,9 @@ Please be respectful and constructive in all interactions. We welcome contributi
 
 ### Prerequisites
 
-- PHP 8.5 or higher
+- PHP 8.2 or higher
 - Composer 2.x
-- TYPO3 v14
+- TYPO3 v13.4 or v14
 - Docker and DDEV (recommended for local development)
 
 ### Development Setup

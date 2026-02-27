@@ -1,5 +1,5 @@
 # nr-vault Implementation Plan
-## TYPO3 v14 | PHP 8.5+ | Secure Secrets Management Extension
+## TYPO3 v13.4+ | PHP 8.2+ | Secure Secrets Management Extension
 
 ---
 
@@ -34,7 +34,7 @@
 | **Vendor** | Netresearch DTT GmbH |
 | **Composer Name** | `netresearch/nr-vault` |
 | **TYPO3 Compatibility** | v14.0+ |
-| **PHP Requirement** | ^8.5 |
+| **PHP Requirement** | ^8.2 |
 | **License** | GPL-2.0-or-later |
 
 ### 1.2 Core Dependencies
@@ -42,7 +42,7 @@
 ```json
 {
     "require": {
-        "php": "^8.5",
+        "php": "^8.2",
         "typo3/cms-core": "^14.0",
         "typo3/cms-backend": "^14.0",
         "typo3/cms-extbase": "^14.0",
