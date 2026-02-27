@@ -15,7 +15,7 @@ parameters:
     reportUnmatchedIgnoredErrors: false
 
     # PHP version targeting
-    phpVersion: 80500
+    phpVersion: 80200
 
     # Strict rules
     checkTooWideReturnTypesInProtectedAndPublicMethods: true
