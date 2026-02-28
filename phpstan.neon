@@ -11,6 +11,8 @@ parameters:
         - Tests/Architecture
     excludePaths:
         analyseAndScan:
+            # Secret model uses raw array handling in fromDatabaseRow/toDatabaseRow
+            # that PHPStan level 10 cannot resolve without extensive generics
             - Classes/Domain/Model/Secret.php
     reportUnmatchedIgnoredErrors: false
 

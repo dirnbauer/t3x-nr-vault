@@ -31,7 +31,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
         with:
-          php-version: '8.5'
+          php-version: '8.2'
           extensions: sodium, json, pdo, pdo_sqlite
           tools: composer:v2
 
@@ -70,7 +70,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
         with:
-          php-version: '8.5'
+          php-version: '8.2'
           extensions: sodium, json, pdo, pdo_sqlite
           tools: composer:v2
           coverage: xdebug
@@ -90,5 +90,5 @@ jobs:
         run: composer install --no-progress --prefer-dist
 
       - name: Run Mutation Tests
-        run: composer test:mutation -- --min-msi=70 --min-covered-msi=80 --logger-github
+        run: composer ci:test:php:mutation -- --min-msi=70 --min-covered-msi=80 --logger-github
         continue-on-error: true
