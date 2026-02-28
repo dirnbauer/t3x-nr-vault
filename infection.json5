@@ -16,7 +16,7 @@
     },
     "tmpDir": ".Build/infection/tmp",
     "phpUnit": {
-        "configDir": "Tests/Build",
+        "configDir": "Build",
         "customPath": ".Build/bin/phpunit"
     },
     "testFramework": "phpunit",

@@ -54,11 +54,11 @@ jobs:
               --exclude='.github' \
               --exclude='.ddev' \
               --exclude='.Build' \
+              --exclude='Build' \
               --exclude='Tests' \
               --exclude='dist' \
               --exclude='.php-cs-fixer.dist.php' \
               --exclude='phpstan.neon' \
-              --exclude='phpstan-baseline.neon' \
               --exclude='phpat.neon' \
               --exclude='infection.json5' \
               --exclude='rector.php' \
@@ -70,11 +70,11 @@ jobs:
               -x '.github/*' \
               -x '.ddev/*' \
               -x '.Build/*' \
+              -x 'Build/*' \
               -x 'Tests/*' \
               -x 'dist/*' \
               -x '.php-cs-fixer.dist.php' \
               -x 'phpstan.neon' \
-              -x 'phpstan-baseline.neon' \
               -x 'phpat.neon' \
               -x 'infection.json5' \
               -x 'rector.php'

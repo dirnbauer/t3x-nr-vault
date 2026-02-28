@@ -17,9 +17,9 @@ use TYPO3\TestingFramework\Core\Testbase;
  */
 
 // Load Composer autoloader
-$autoloadFile = dirname(__DIR__, 2) . '/.Build/vendor/autoload.php';
+$autoloadFile = dirname(__DIR__) . '/.Build/vendor/autoload.php';
 if (!file_exists($autoloadFile)) {
-    $autoloadFile = dirname(__DIR__, 5) . '/vendor/autoload.php';
+    $autoloadFile = dirname(__DIR__, 4) . '/vendor/autoload.php';
 }
 
 if (!file_exists($autoloadFile)) {

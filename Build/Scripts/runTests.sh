@@ -61,7 +61,7 @@ cleanCacheFiles() {
     rm -rf \
         .Build/.cache \
         .php-cs-fixer.cache \
-        Tests/Build/.phpunit.cache
+        Build/.phpunit.cache
     echo "done"
 }
 
@@ -562,7 +562,7 @@ case ${TEST_SUITE} in
         ;;
     functional)
         CONTAINER_PARAMS=""
-        COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --exclude-group not-${DBMS} ${EXTRA_TEST_OPTIONS} "$@")
+        COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Build/FunctionalTests.xml --exclude-group not-${DBMS} ${EXTRA_TEST_OPTIONS} "$@")
 
         # Start mock OAuth server for OAuth integration tests
         MOCK_OAUTH_CONTAINER="mock-oauth-${SUFFIX}"
@@ -614,7 +614,7 @@ case ${TEST_SUITE} in
     functionalCoverage)
         mkdir -p .Build/coverage
         # Coverage requires xdebug, no JIT
-        COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml --coverage-clover=.Build/coverage/functional.xml --coverage-html=.Build/coverage/html-functional --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Build/FunctionalTests.xml --coverage-clover=.Build/coverage/functional.xml --coverage-html=.Build/coverage/html-functional --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
 
         # Start mock OAuth server for OAuth integration tests
         MOCK_OAUTH_CONTAINER="mock-oauth-${SUFFIX}"
@@ -658,7 +658,7 @@ case ${TEST_SUITE} in
         else
             PARALLEL_JOBS="\$(((\$(nproc) + 1) / 2))"
         fi
-        COMMAND="find Tests/Functional -name '*Test.php' | xargs -P${PARALLEL_JOBS} -I{} php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Tests/Build/FunctionalTests.xml {}"
+        COMMAND="find Tests/Functional -name '*Test.php' | xargs -P${PARALLEL_JOBS} -I{} php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Build/FunctionalTests.xml {}"
         CONTAINERPARAMS="-e typo3DatabaseDriver=pdo_sqlite --tmpfs ${ROOT_DIR}/.Build/web/typo3temp/var/tests/functional-sqlite-dbs/:rw,noexec,nosuid"
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name functional-parallel-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${CONTAINERPARAMS} -e MOCK_OAUTH_URL=${MOCK_OAUTH_URL} ${IMAGE_PHP} /bin/sh -c "${COMMAND}"
         SUITE_EXIT_CODE=$?
@@ -700,19 +700,19 @@ case ${TEST_SUITE} in
         SUITE_EXIT_CODE=$?
         ;;
     unit)
-        COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit ${EXTRA_TEST_OPTIONS} "$@")
+        COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit ${EXTRA_TEST_OPTIONS} "$@")
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;
     unitCoverage)
         mkdir -p .Build/coverage
         # Coverage requires xdebug, no JIT
-        COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --coverage-clover=.Build/coverage/unit.xml --coverage-html=.Build/coverage/html-unit --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --coverage-clover=.Build/coverage/unit.xml --coverage-html=.Build/coverage/html-unit --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;
     fuzz)
-        COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Fuzz ${EXTRA_TEST_OPTIONS} "$@")
+        COMMAND=(php ${PHP_OPCACHE_OPTS} -dxdebug.mode=off .Build/bin/phpunit -c Build/phpunit.xml --testsuite Fuzz ${EXTRA_TEST_OPTIONS} "$@")
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name fuzz-${SUFFIX} ${XDEBUG_MODE} -e XDEBUG_CONFIG="${XDEBUG_CONFIG}" ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;

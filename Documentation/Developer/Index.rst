@@ -245,10 +245,10 @@ Running tests
    ddev exec composer test
 
    # Unit tests only
-   ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit
+   ddev exec .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit
 
    # With coverage
-   ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --coverage-html .Build/coverage
+   ddev exec .Build/bin/phpunit -c Build/phpunit.xml --coverage-html .Build/coverage
 
 .. _developer-testing-quality:
 
