@@ -180,7 +180,7 @@ final readonly class SecretsController
             $metadata = $this->vaultService->getMetadata($identifier);
         } catch (SecretNotFoundException) {
             $this->addFlashMessage(
-                sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
                 ContextualFeedbackSeverity::ERROR,
             );
 
@@ -314,7 +314,7 @@ final readonly class SecretsController
                 return new JsonResponse(['success' => false, 'error' => 'Secret not found: ' . $identifier], 404);
             }
             $this->addFlashMessage(
-                sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
                 ContextualFeedbackSeverity::ERROR,
             );
         } catch (Exception $e) {
@@ -324,7 +324,7 @@ final readonly class SecretsController
                 return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
             }
             $this->addFlashMessage(
-                sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),
                 ContextualFeedbackSeverity::ERROR,
             );
         }
@@ -370,7 +370,7 @@ final readonly class SecretsController
             );
         } catch (SecretNotFoundException) {
             $this->addFlashMessage(
-                sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
                 ContextualFeedbackSeverity::ERROR,
             );
         } catch (AccessDeniedException) {
@@ -380,7 +380,7 @@ final readonly class SecretsController
             );
         } catch (Exception $e) {
             $this->addFlashMessage(
-                sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),
                 ContextualFeedbackSeverity::ERROR,
             );
         }

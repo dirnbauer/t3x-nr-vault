@@ -10,12 +10,13 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Http;
 
 use Netresearch\NrVault\Http\SecretPlacement;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(SecretPlacement::class)]
+// Enums are not valid coverage targets in PHPUnit 12
+#[CoversNothing]
 final class SecretPlacementTest extends TestCase
 {
     #[Test]
