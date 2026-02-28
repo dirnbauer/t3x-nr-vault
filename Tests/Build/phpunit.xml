@@ -40,6 +40,20 @@
             <!-- Form elements also depend on final TYPO3 classes -->
             <file>../../Classes/Form/Element/VaultSecretElement.php</file>
             <file>../../Classes/Form/Element/VaultSecretInputElement.php</file>
+            <!-- Interfaces define contracts, not executable code -->
+            <file>../../Classes/Adapter/VaultAdapterInterface.php</file>
+            <file>../../Classes/Audit/AuditContextInterface.php</file>
+            <file>../../Classes/Audit/AuditLogServiceInterface.php</file>
+            <file>../../Classes/Configuration/ExtensionConfigurationInterface.php</file>
+            <file>../../Classes/Configuration/SiteConfigurationVaultProcessorInterface.php</file>
+            <file>../../Classes/Crypto/EncryptionServiceInterface.php</file>
+            <file>../../Classes/Crypto/MasterKeyProviderFactoryInterface.php</file>
+            <file>../../Classes/Crypto/MasterKeyProviderInterface.php</file>
+            <file>../../Classes/Domain/Repository/SecretRepositoryInterface.php</file>
+            <file>../../Classes/Http/VaultHttpClientInterface.php</file>
+            <file>../../Classes/Security/AccessControlServiceInterface.php</file>
+            <file>../../Classes/Service/SecretDetectionServiceInterface.php</file>
+            <file>../../Classes/Service/VaultServiceInterface.php</file>
         </exclude>
     </source>
 
