@@ -221,10 +221,12 @@ final readonly class MigrationController
         $parsedBodyArray = \is_array($parsedBody) ? $parsedBody : [];
         $selectedSecrets = $parsedBodyArray['selected'] ?? [];
 
+        $lang = $this->getLanguageService();
+
         if (!\is_array($selectedSecrets) || $selectedSecrets === []) {
             $this->addFlashMessage(
-                'No secrets selected for migration.',
-                'Selection Required',
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.noSecretsSelected'),
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.selectionRequired'),
                 ContextualFeedbackSeverity::WARNING,
             );
 
@@ -266,10 +268,12 @@ final readonly class MigrationController
         $clearOriginalsValue = $parsedBodyArray['clearOriginals'] ?? false;
         $clearOriginals = (\is_string($clearOriginalsValue) || \is_int($clearOriginalsValue)) && (bool) $clearOriginalsValue;
 
+        $lang = $this->getLanguageService();
+
         if (!\is_array($migrations) || $migrations === []) {
             $this->addFlashMessage(
-                'No migrations configured.',
-                'Configuration Required',
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.noMigrationsConfigured'),
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.configurationRequired'),
                 ContextualFeedbackSeverity::ERROR,
             );
 
@@ -371,18 +375,20 @@ final readonly class MigrationController
             $beUser->setAndSaveSessionData('vault_migration_results', null);
         }
 
+        $lang = $this->getLanguageService();
+
         if ($totalMigrated > 0) {
             $this->addFlashMessage(
-                \sprintf('Successfully migrated %d secret(s) to the vault.', $totalMigrated),
-                'Migration Complete',
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.success'), $totalMigrated),
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.complete'),
                 ContextualFeedbackSeverity::OK,
             );
         }
 
         if ($totalFailed > 0) {
             $this->addFlashMessage(
-                \sprintf('%d secret(s) failed to migrate.', $totalFailed),
-                'Migration Errors',
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.failed'), $totalFailed),
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.errors'),
                 ContextualFeedbackSeverity::WARNING,
             );
         }
@@ -522,7 +528,7 @@ final readonly class MigrationController
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         $backButton = $buttonBar->makeLinkButton()
             ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL))
-            ->setTitle('Back')
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.back'))
             ->setHref($this->buildUri($targetAction));
         $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
     }

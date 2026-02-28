@@ -169,7 +169,7 @@ final readonly class AuditController
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         $backButton = $buttonBar->makeLinkButton()
             ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL))
-            ->setTitle('Back')
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.back'))
             ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME));
         $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 

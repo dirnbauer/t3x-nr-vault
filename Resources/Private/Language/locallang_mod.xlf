@@ -122,6 +122,68 @@
             <trans-unit id="migration.verify">
                 <source>Verify</source>
             </trans-unit>
+
+            <!-- Error/flash messages -->
+            <trans-unit id="error">
+                <source>Error</source>
+            </trans-unit>
+            <trans-unit id="secrets.notFound">
+                <source>Secret not found: %s</source>
+            </trans-unit>
+            <trans-unit id="secrets.noIdentifier">
+                <source>No secret identifier provided</source>
+            </trans-unit>
+            <trans-unit id="secrets.uidNotFound">
+                <source>Secret UID not found</source>
+            </trans-unit>
+            <trans-unit id="secrets.accessDenied">
+                <source>Access denied</source>
+            </trans-unit>
+            <trans-unit id="secrets.error">
+                <source>Error: %s</source>
+            </trans-unit>
+
+            <!-- Navigation -->
+            <trans-unit id="action.back">
+                <source>Back</source>
+            </trans-unit>
+
+            <!-- Overview descriptions -->
+            <trans-unit id="overview.secrets.description">
+                <source>Manage encrypted secrets stored in the vault.</source>
+            </trans-unit>
+            <trans-unit id="overview.audit.description">
+                <source>View access logs and verify audit chain integrity.</source>
+            </trans-unit>
+            <trans-unit id="overview.migration.description">
+                <source>Detect and migrate plaintext secrets to the vault.</source>
+            </trans-unit>
+
+            <!-- Migration messages -->
+            <trans-unit id="migration.noSecretsSelected">
+                <source>No secrets selected for migration.</source>
+            </trans-unit>
+            <trans-unit id="migration.selectionRequired">
+                <source>Selection Required</source>
+            </trans-unit>
+            <trans-unit id="migration.noMigrationsConfigured">
+                <source>No migrations configured.</source>
+            </trans-unit>
+            <trans-unit id="migration.configurationRequired">
+                <source>Configuration Required</source>
+            </trans-unit>
+            <trans-unit id="migration.complete">
+                <source>Migration Complete</source>
+            </trans-unit>
+            <trans-unit id="migration.success">
+                <source>Successfully migrated %d secret(s) to the vault.</source>
+            </trans-unit>
+            <trans-unit id="migration.errors">
+                <source>Migration Errors</source>
+            </trans-unit>
+            <trans-unit id="migration.failed">
+                <source>%d secret(s) failed to migrate.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>
