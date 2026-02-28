@@ -14,3 +14,6 @@ jobs:
       typo3-packages: '["typo3/cms-core", "typo3/cms-backend"]'
       php-extensions: intl, mbstring, xml, sodium, json
       run-functional-tests: true
+      upload-coverage: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
