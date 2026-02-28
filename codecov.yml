@@ -25,6 +25,16 @@ parsers:
       method: no
       macro: no
 
+flags:
+  unit:
+    paths:
+      - Classes/
+    carryforward: true
+  functional:
+    paths:
+      - Classes/
+    carryforward: true
+
 comment:
   layout: "reach,diff,flags,files"
   behavior: default
