@@ -270,7 +270,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     public function isReadOnlyDelegatesWithExplicitNullBackendUser(): void
     {
         // With no backend user (null), isAllowed returns false, so isReadOnly also returns false
-        $result = $this->service->isReadOnly('tx_table', 'field', null);
+        $result = $this->service->isReadOnly('tx_table', 'field');
 
         self::assertFalse($result);
     }
@@ -295,8 +295,8 @@ final class VaultFieldPermissionServiceTest extends TestCase
     {
         // Pre-seed cache for both users (uid 10 and uid 20) to prove separate cache keys.
         // We use admin users so no TSconfig lookup (BackendUtility) is needed.
-        $userA = $this->createMockBackendUser(isAdmin: true, uid: 10);
-        $userB = $this->createMockBackendUser(isAdmin: true, uid: 20);
+        $this->createMockBackendUser(isAdmin: true, uid: 10);
+        $this->createMockBackendUser(isAdmin: true, uid: 20);
 
         // Admins skip the cache entirely (early return), so pre-seed cache directly
         $reflection = new ReflectionClass($this->service);

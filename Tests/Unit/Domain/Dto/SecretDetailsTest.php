@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Domain\Dto;
 
 use Netresearch\NrVault\Domain\Dto\SecretDetails;
+use Netresearch\NrVault\Domain\Model\Secret;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -218,7 +219,7 @@ final class SecretDetailsTest extends TestCase
     #[Test]
     public function fromSecretMapsAllFieldsFromSecretModel(): void
     {
-        $secret = new \Netresearch\NrVault\Domain\Model\Secret();
+        $secret = new Secret();
         $secret->setUid(7);
         $secret->setIdentifier('from-secret-identifier');
         $secret->setDescription('From secret description');
@@ -260,7 +261,7 @@ final class SecretDetailsTest extends TestCase
     public function fromSecretConvertsZeroTimestampsToNull(): void
     {
         // expiresAt, lastRotatedAt, lastReadAt of 0 should become null in the DTO
-        $secret = new \Netresearch\NrVault\Domain\Model\Secret();
+        $secret = new Secret();
         $secret->setUid(1);
         $secret->setExpiresAt(0);
         $secret->setLastRotatedAt(0);
@@ -277,7 +278,7 @@ final class SecretDetailsTest extends TestCase
     public function fromSecretWithNullUidDefaultsToZero(): void
     {
         // Secret with no UID set (getUid() returns null) should default to 0
-        $secret = new \Netresearch\NrVault\Domain\Model\Secret();
+        $secret = new Secret();
         // Do NOT call setUid() – uid remains null
 
         $result = SecretDetails::fromSecret($secret);
