@@ -21,7 +21,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -41,7 +40,7 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 #[AsController]
 final readonly class SecretsController
 {
-    private const string MODULE_NAME = 'admin_vault_secrets';
+    private const MODULE_NAME = 'admin_vault_secrets';
 
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,
@@ -52,7 +51,6 @@ final readonly class SecretsController
         private FlashMessageService $flashMessageService,
         private ConnectionPool $connectionPool,
         private AuditLogServiceInterface $auditLogService,
-        private ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -62,12 +60,15 @@ final readonly class SecretsController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-            routeIdentifier: self::MODULE_NAME,
-            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-                . ' - '
-                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
-        );
+        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
+        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
+            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+                routeIdentifier: self::MODULE_NAME,
+                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                    . ' - '
+                    . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
+            );
+        }
 
         $this->addDocHeaderButtons($moduleTemplate);
 
@@ -161,8 +162,13 @@ final readonly class SecretsController
         $identifierVal = $queryParams['identifier'] ?? '';
         $identifier = \is_string($identifierVal) ? $identifierVal : '';
 
+        $lang = $this->getLanguageService();
+
         if ($identifier === '') {
-            $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.noIdentifier'),
+                ContextualFeedbackSeverity::ERROR,
+            );
 
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
@@ -173,7 +179,10 @@ final readonly class SecretsController
         try {
             $metadata = $this->vaultService->getMetadata($identifier);
         } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
+                ContextualFeedbackSeverity::ERROR,
+            );
 
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
@@ -183,7 +192,10 @@ final readonly class SecretsController
 
         $uid = $metadata->uid;
         if ($uid === 0) {
-            $this->addFlashMessage('Secret UID not found', ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.uidNotFound'),
+                ContextualFeedbackSeverity::ERROR,
+            );
 
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
@@ -218,12 +230,17 @@ final readonly class SecretsController
         $identifier = \is_string($identifierVal) ? $identifierVal : '';
         $isAjax = $this->isAjaxRequest($request);
 
+        $lang = $this->getLanguageService();
+
         if ($identifier === '') {
             if ($isAjax) {
                 /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse(['success' => false, 'error' => 'No secret identifier provided'], 400);
             }
-            $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.noIdentifier'),
+                ContextualFeedbackSeverity::ERROR,
+            );
 
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
@@ -296,14 +313,20 @@ final readonly class SecretsController
                 /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse(['success' => false, 'error' => 'Secret not found: ' . $identifier], 404);
             }
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
+                ContextualFeedbackSeverity::ERROR,
+            );
         } catch (Exception $e) {
             $this->auditLogService->log($identifier, 'update', false, $e->getMessage());
             if ($isAjax) {
                 /** @phpstan-ignore new.internalClass, method.internalClass */
                 return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
             }
-            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),
+                ContextualFeedbackSeverity::ERROR,
+            );
         }
 
         /** @phpstan-ignore new.internalClass, method.internalClass */
@@ -324,8 +347,13 @@ final readonly class SecretsController
         $reasonVal = $body['reason'] ?? '';
         $reason = \is_string($reasonVal) ? trim($reasonVal) : '';
 
+        $lang = $this->getLanguageService();
+
         if ($identifier === '') {
-            $this->addFlashMessage('No secret identifier provided', ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.noIdentifier'),
+                ContextualFeedbackSeverity::ERROR,
+            );
 
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new RedirectResponse(
@@ -337,15 +365,24 @@ final readonly class SecretsController
             $this->vaultService->delete($identifier, $reason);
 
             $this->addFlashMessage(
-                $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.delete.success'),
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.delete.success'),
                 ContextualFeedbackSeverity::OK,
             );
         } catch (SecretNotFoundException) {
-            $this->addFlashMessage('Secret not found: ' . $identifier, ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
+                ContextualFeedbackSeverity::ERROR,
+            );
         } catch (AccessDeniedException) {
-            $this->addFlashMessage('Access denied', ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.accessDenied'),
+                ContextualFeedbackSeverity::ERROR,
+            );
         } catch (Exception $e) {
-            $this->addFlashMessage('Error: ' . $e->getMessage(), ContextualFeedbackSeverity::ERROR);
+            $this->addFlashMessage(
+                \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),
+                ContextualFeedbackSeverity::ERROR,
+            );
         }
 
         /** @phpstan-ignore new.internalClass, method.internalClass */
@@ -371,7 +408,7 @@ final readonly class SecretsController
         $lang = $this->getLanguageService();
 
         // Create Secret button
-        $createButton = $this->componentFactory->createLinkButton()
+        $createButton = $buttonBar->makeLinkButton()
             ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.create'))
             ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.create'))
             ->setShowLabelText(true)

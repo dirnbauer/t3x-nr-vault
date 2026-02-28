@@ -26,7 +26,7 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
  */
 final class SecretTcaHook
 {
-    private const string TABLE = 'tx_nrvault_secret';
+    private const TABLE = 'tx_nrvault_secret';
 
     /**
      * Pending secrets to store after database operations.

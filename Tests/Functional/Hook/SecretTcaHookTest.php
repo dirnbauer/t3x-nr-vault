@@ -11,7 +11,6 @@ namespace Netresearch\NrVault\Tests\Functional\Hook;
 
 use Netresearch\NrVault\Hook\SecretTcaHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Database\Connection;
@@ -25,12 +24,10 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(SecretTcaHook::class)]
 final class SecretTcaHookTest extends FunctionalTestCase
 {
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -39,7 +36,6 @@ final class SecretTcaHookTest extends FunctionalTestCase
 
     private bool $setupCompleted = false;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -63,7 +59,6 @@ final class SecretTcaHookTest extends FunctionalTestCase
         $this->setUpBackendUser(1);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key

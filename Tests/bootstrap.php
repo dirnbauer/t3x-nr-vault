@@ -29,11 +29,4 @@ if (!file_exists($autoloadFile)) {
 
 require_once $autoloadFile;
 
-// Define TYPO3 constants if not already defined
-if (!defined('TYPO3')) {
-    define('TYPO3_MODE', 'BE');
-}
-
-if (!defined('TYPO3_REQUESTTYPE')) {
-    define('TYPO3_REQUESTTYPE', 2); // CLI
-}
+// TYPO3 v13+ defines the TYPO3 constant automatically via testing-framework bootstrap

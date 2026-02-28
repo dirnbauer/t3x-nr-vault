@@ -19,9 +19,9 @@ use Netresearch\NrVault\Exception\MasterKeyException;
  */
 final class Typo3MasterKeyProvider implements MasterKeyProviderInterface
 {
-    private const int KEY_LENGTH = 32; // 256 bits
+    private const KEY_LENGTH = 32; // 256 bits
 
-    private const string HKDF_INFO = 'nr-vault-master-key';
+    private const HKDF_INFO = 'nr-vault-master-key';
 
     public function getIdentifier(): string
     {

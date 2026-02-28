@@ -18,12 +18,12 @@ $finder = Finder::create()
     ->ignoreDotFiles(false)
     ->ignoreVCSIgnored(true);
 
-return new Config()
+return (new Config())
     ->setParallelConfig(ParallelConfigFactory::detect())
     ->setRiskyAllowed(true)
     ->setRules([
         '@PER-CS' => true,
-        '@PHP8x5Migration' => true,
+        '@PHP82Migration' => true,
 
         // Strict rules
         'declare_strict_types' => true,

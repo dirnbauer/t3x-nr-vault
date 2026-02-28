@@ -216,16 +216,114 @@ final class AccessControlServiceTest extends TestCase
         self::assertTrue($this->subject->canDelete($secret));
     }
 
+    #[Test]
+    public function canReadReturnsTrueForFrontendAccessibleSecretWithoutBackendUser(): void
+    {
+        // No backend user, not CLI context – falls back to isFrontendAccessible()
+        $secret = $this->createSecret(ownerUid: 0, frontendAccessible: true);
+
+        self::assertTrue($this->subject->canRead($secret));
+    }
+
+    #[Test]
+    public function canReadReturnsFalseForNonFrontendAccessibleSecretWithoutBackendUser(): void
+    {
+        $secret = $this->createSecret(ownerUid: 0, frontendAccessible: false);
+
+        self::assertFalse($this->subject->canRead($secret));
+    }
+
+    #[Test]
+    public function canReadReturnsFalseForNonOwnerWithNoGroupsOnSecret(): void
+    {
+        // Non-owner; secret has no allowed groups -> access denied
+        $this->setBackendUser(uid: 5, isAdmin: false, groups: [1, 2, 3]);
+        $secret = $this->createSecret(ownerUid: 10, allowedGroups: []);
+
+        self::assertFalse($this->subject->canRead($secret));
+    }
+
+    #[Test]
+    public function getCurrentActorUsernameReturnsUnknownWhenUsernameIsNotString(): void
+    {
+        // User record exists but username key is missing / non-string
+        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $backendUser->user = ['uid' => 1]; // no 'username' key
+        $backendUser->userGroupsUID = [];
+        $backendUser->method('isAdmin')->willReturn(false);
+        $backendUser->method('isSystemMaintainer')->willReturn(false);
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        self::assertEquals('Unknown', $this->subject->getCurrentActorUsername());
+    }
+
+    #[Test]
+    public function getCurrentActorUidReturnsZeroWhenUserUidIsNotInt(): void
+    {
+        // User record exists but uid is a string
+        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $backendUser->user = ['uid' => 'not-an-int'];
+        $backendUser->userGroupsUID = [];
+        $backendUser->method('isAdmin')->willReturn(false);
+        $backendUser->method('isSystemMaintainer')->willReturn(false);
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        self::assertSame(0, $this->subject->getCurrentActorUid());
+    }
+
+    #[Test]
+    public function getCurrentUserGroupsConvertsStringNumericGroupIds(): void
+    {
+        // userGroupsUID may contain string representations of integers
+        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $backendUser->user = ['uid' => 1, 'username' => 'tester'];
+        $backendUser->userGroupsUID = ['5', '10', '15'];
+        $backendUser->method('isAdmin')->willReturn(false);
+        $backendUser->method('isSystemMaintainer')->willReturn(false);
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        $groups = $this->subject->getCurrentUserGroups();
+
+        self::assertSame([5, 10, 15], $groups);
+    }
+
+    #[Test]
+    public function getCurrentUserGroupsConvertsNonNumericStringGroupIdToZero(): void
+    {
+        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $backendUser->user = ['uid' => 1, 'username' => 'tester'];
+        $backendUser->userGroupsUID = ['not-a-number'];
+        $backendUser->method('isAdmin')->willReturn(false);
+        $backendUser->method('isSystemMaintainer')->willReturn(false);
+        $GLOBALS['BE_USER'] = $backendUser;
+
+        $groups = $this->subject->getCurrentUserGroups();
+
+        self::assertSame([0], $groups);
+    }
+
+    #[Test]
+    public function hasAccessDelegatesToFrontendAccessibleWhenNoBackendUserAndNotCli(): void
+    {
+        // canWrite and canDelete also delegate to hasAccess, which ends at isFrontendAccessible()
+        $secret = $this->createSecret(ownerUid: 0, frontendAccessible: true);
+
+        self::assertTrue($this->subject->canWrite($secret));
+        self::assertTrue($this->subject->canDelete($secret));
+    }
+
     /**
      * Create a test Secret with specified properties.
      */
     private function createSecret(
         int $ownerUid = 0,
         array $allowedGroups = [],
+        bool $frontendAccessible = false,
     ): Secret {
         $secret = new Secret();
         $secret->setOwnerUid($ownerUid);
         $secret->setAllowedGroups($allowedGroups);
+        $secret->setFrontendAccessible($frontendAccessible);
         $secret->setIdentifier('test-secret');
 
         return $secret;

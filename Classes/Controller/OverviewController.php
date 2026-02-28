@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 #[AsController]
 final readonly class OverviewController
 {
-    private const string MODULE_NAME = 'admin_vault';
+    private const MODULE_NAME = 'admin_vault';
 
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,
@@ -37,13 +37,18 @@ final readonly class OverviewController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-            routeIdentifier: self::MODULE_NAME,
-            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
-        );
+        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
+        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
+            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+                routeIdentifier: self::MODULE_NAME,
+                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
+            );
+        }
 
         // Get statistics for the overview
         $stats = $this->getVaultStatistics();
+
+        $lang = $this->getLanguageService();
 
         $moduleTemplate->assignMultiple([
             'stats' => $stats,
@@ -52,19 +57,19 @@ final readonly class OverviewController
                     'route' => 'admin_vault_secrets',
                     'icon' => 'content-elements-login',
                     'title' => 'Secrets',
-                    'description' => 'Manage encrypted secrets stored in the vault.',
+                    'description' => $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.secrets.description'),
                 ],
                 [
                     'route' => 'admin_vault_audit',
                     'icon' => 'actions-document-history-open',
                     'title' => 'Audit Log',
-                    'description' => 'View access logs and verify audit chain integrity.',
+                    'description' => $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.audit.description'),
                 ],
                 [
                     'route' => 'admin_vault_migration',
                     'icon' => 'actions-database-import',
                     'title' => 'Migration Wizard',
-                    'description' => 'Detect and migrate plaintext secrets to the vault.',
+                    'description' => $lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.migration.description'),
                 ],
             ],
         ]);

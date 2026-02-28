@@ -13,7 +13,6 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
-use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -42,7 +41,6 @@ final class IdentifierFuzzTest extends TestCase
 
     private FlexFormVaultResolver $flexFormVaultResolver;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

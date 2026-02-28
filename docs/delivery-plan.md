@@ -1,6 +1,6 @@
 # nr-vault Delivery Plan: Maximum Security with Minimal User Impact
 
-**Target:** TYPO3 v14.0+ | PHP 8.5+
+**Target:** TYPO3 v13.4+ | PHP 8.2+
 
 ## Executive Summary
 
@@ -1394,4 +1394,4 @@ final class AccessDeniedEvent
 ---
 
 *Document Version: 2.0*
-*Compatible with: TYPO3 v14.0+ | PHP 8.5+*
+*Compatible with: TYPO3 v13.4+ | PHP 8.2+*

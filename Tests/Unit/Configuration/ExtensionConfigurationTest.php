@@ -298,4 +298,133 @@ final class ExtensionConfigurationTest extends TestCase
         self::assertSame(ExtensionConfiguration::DEFAULT_STORAGE_ADAPTER, $config->getStorageAdapter());
         self::assertSame(ExtensionConfiguration::DEFAULT_MASTER_KEY_PROVIDER, $config->getMasterKeyProvider());
     }
+
+    #[Test]
+    public function getStorageAdapterReturnsDefaultWhenValueIsNonString(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['storageAdapter' => 42]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_STORAGE_ADAPTER, $config->getStorageAdapter());
+    }
+
+    #[Test]
+    public function getMasterKeyProviderReturnsDefaultWhenValueIsNonString(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['masterKeyProvider' => true]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_MASTER_KEY_PROVIDER, $config->getMasterKeyProvider());
+    }
+
+    #[Test]
+    public function getMasterKeySourceReturnsDefaultWhenNotConfigured(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE, $config->getMasterKeySource());
+    }
+
+    #[Test]
+    public function getMasterKeySourceReturnsDefaultWhenValueIsNonString(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['masterKeySource' => 999]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE, $config->getMasterKeySource());
+    }
+
+    #[Test]
+    public function getAuditLogRetentionReturnsDefaultWhenValueIsNonNumeric(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditLogRetention' => 'not-a-number']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_AUDIT_LOG_RETENTION, $config->getAuditLogRetention());
+    }
+
+    #[Test]
+    public function getAuditLogRetentionAcceptsNumericString(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditLogRetention' => '180']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(180, $config->getAuditLogRetention());
+    }
+
+    #[Test]
+    public function getHashiCorpConfigReturnsDefaultWhenValueIsNonArray(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['hashicorp' => 'invalid']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+        $result = $config->getHashiCorpConfig();
+
+        self::assertInstanceOf(VaultServerConfig::class, $result);
+        self::assertSame('', $result->address);
+    }
+
+    #[Test]
+    public function getAwsConfigReturnsDefaultWhenValueIsNonArray(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['aws' => 'invalid']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+        $result = $config->getAwsConfig();
+
+        self::assertInstanceOf(AwsSecretsConfig::class, $result);
+        self::assertSame('', $result->region);
+    }
+
+    #[Test]
+    public function getCliAccessGroupsReturnsEmptyArrayWhenNotConfigured(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame([], $config->getCliAccessGroups());
+    }
+
+    #[Test]
+    public function getCliAccessGroupsFiltersZeroFromEmptyCommaString(): void
+    {
+        // A comma string with empty values would produce 0s that get filtered
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['cliAccessGroups' => '1,,3']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+        $result = $config->getCliAccessGroups();
+
+        // array_filter removes 0 values (from empty segment "")
+        self::assertContains(1, $result);
+        self::assertContains(3, $result);
+        self::assertNotContains(0, $result);
+    }
 }

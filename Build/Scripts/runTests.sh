@@ -220,10 +220,10 @@ Options:
 
     -p <8.2|8.3|8.4|8.5>
         Specifies the PHP minor version to be used
-            - 8.2: use PHP 8.2
+            - 8.2: (default) use PHP 8.2
             - 8.3: use PHP 8.3
             - 8.4: use PHP 8.4
-            - 8.5: (default) use PHP 8.5
+            - 8.5: use PHP 8.5
 
     -x
         Only with -s functional|unit
@@ -247,13 +247,13 @@ Options:
         Show this help.
 
 Examples:
-    # Run unit tests using PHP 8.5
+    # Run unit tests using PHP 8.2
     ./Build/Scripts/runTests.sh -s unit
 
     # Run unit tests with code coverage
     ./Build/Scripts/runTests.sh -s unitCoverage
 
-    # Run functional tests using PHP 8.5 and SQLite (default)
+    # Run functional tests using PHP 8.2 and SQLite (default)
     ./Build/Scripts/runTests.sh -s functional
 
     # Run functional tests with code coverage
@@ -295,7 +295,7 @@ TEST_SUITE="unit"
 DATABASE_DRIVER=""
 DBMS="sqlite"
 DBMS_VERSION=""
-PHP_VERSION="8.5"
+PHP_VERSION="8.2"
 PHP_XDEBUG_ON=0
 PHP_XDEBUG_PORT=9003
 CGLCHECK_DRY_RUN=0

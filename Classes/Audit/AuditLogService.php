@@ -24,7 +24,7 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
  */
 final readonly class AuditLogService implements AuditLogServiceInterface
 {
-    private const string TABLE_NAME = 'tx_nrvault_audit_log';
+    private const TABLE_NAME = 'tx_nrvault_audit_log';
 
     public function __construct(
         private ConnectionPool $connectionPool,

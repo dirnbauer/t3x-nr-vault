@@ -11,11 +11,28 @@ parameters:
         - Tests/Architecture
     excludePaths:
         analyseAndScan:
+            # Secret model uses raw array handling in fromDatabaseRow/toDatabaseRow
+            # that PHPStan level 10 cannot resolve without extensive generics
             - Classes/Domain/Model/Secret.php
     reportUnmatchedIgnoredErrors: false
 
+    ignoreErrors:
+        # TcaSchemaFactory, TcaSchema, and FieldTypeInterface are internal in TYPO3 v13
+        # but were made public in v14. Since this extension supports both v13.4 and v14,
+        # we suppress these internal class/interface errors for the affected files.
+        -
+            message: '#internal (class|interface) TYPO3\\CMS\\Core\\Schema\\#'
+            reportUnmatched: false
+
+        # setShortcutContext() is a v14-only method on DocHeaderComponent.
+        # Code is guarded by method_exists() but PHPStan can't resolve the
+        # named parameters when analysing against v13.
+        -
+            message: '#Unknown parameter .* in call to method .*::setShortcutContext\(\)#'
+            reportUnmatched: false
+
     # PHP version targeting
-    phpVersion: 80500
+    phpVersion: 80200
 
     # Strict rules
     checkTooWideReturnTypesInProtectedAndPublicMethods: true

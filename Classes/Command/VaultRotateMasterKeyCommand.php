@@ -36,7 +36,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 )]
 final class VaultRotateMasterKeyCommand extends Command
 {
-    private const int KEY_LENGTH = 32;
+    private const KEY_LENGTH = 32;
 
     public function __construct(
         private readonly SecretRepositoryInterface $secretRepository,

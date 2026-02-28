@@ -19,9 +19,9 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
  */
 final readonly class SecretRepository implements SecretRepositoryInterface
 {
-    private const string TABLE_NAME = 'tx_nrvault_secret';
+    private const TABLE_NAME = 'tx_nrvault_secret';
 
-    private const string MM_TABLE_NAME = 'tx_nrvault_secret_begroups_mm';
+    private const MM_TABLE_NAME = 'tx_nrvault_secret_begroups_mm';
 
     public function __construct(
         private ConnectionPool $connectionPool,

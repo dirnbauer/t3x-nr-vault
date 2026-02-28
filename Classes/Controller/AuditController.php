@@ -19,7 +19,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Template\Components\ComponentFactory;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Http\JsonResponse;
@@ -36,7 +35,7 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 #[AsController]
 final readonly class AuditController
 {
-    private const string MODULE_NAME = 'admin_vault_audit';
+    private const MODULE_NAME = 'admin_vault_audit';
 
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,
@@ -44,7 +43,6 @@ final readonly class AuditController
         private PageRenderer $pageRenderer,
         private AuditLogServiceInterface $auditLogService,
         private UriBuilder $uriBuilder,
-        private ComponentFactory $componentFactory,
     ) {}
 
     /**
@@ -54,12 +52,15 @@ final readonly class AuditController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-            routeIdentifier: self::MODULE_NAME,
-            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-                . ' - '
-                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title'),
-        );
+        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
+        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
+            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+                routeIdentifier: self::MODULE_NAME,
+                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                    . ' - '
+                    . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title'),
+            );
+        }
 
         $this->addDocHeaderButtons($moduleTemplate);
 
@@ -166,9 +167,10 @@ final readonly class AuditController
         $moduleTemplate->makeDocHeaderModuleMenu();
 
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        $backButton = $this->componentFactory->createBackButton(
-            (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
-        );
+        $backButton = $buttonBar->makeLinkButton()
+            ->setIcon($this->iconFactory->getIcon('actions-view-go-back', IconSize::SMALL))
+            ->setTitle($this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:action.back'))
+            ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME));
         $buttonBar->addButton($backButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
         $this->pageRenderer->addCssFile('EXT:nr_vault/Resources/Public/Css/backend.css');
@@ -350,21 +352,21 @@ final readonly class AuditController
 
         if ($this->isAdmin()) {
             // Verify Chain button
-            $verifyButton = $this->componentFactory->createLinkButton()
+            $verifyButton = $buttonBar->makeLinkButton()
                 ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.verifyChain'))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verify_chain'))
                 ->setIcon($this->iconFactory->getIcon('actions-check', IconSize::SMALL));
             $buttonBar->addButton($verifyButton, ButtonBar::BUTTON_POSITION_LEFT, 1);
 
             // Export JSON button
-            $exportJsonButton = $this->componentFactory->createLinkButton()
+            $exportJsonButton = $buttonBar->makeLinkButton()
                 ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.export', ['format' => 'json']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.export') . ' JSON')
                 ->setIcon($this->iconFactory->getIcon('actions-download', IconSize::SMALL));
             $buttonBar->addButton($exportJsonButton, ButtonBar::BUTTON_POSITION_LEFT, 2);
 
             // Export CSV button
-            $exportCsvButton = $this->componentFactory->createLinkButton()
+            $exportCsvButton = $buttonBar->makeLinkButton()
                 ->setHref((string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME . '.export', ['format' => 'csv']))
                 ->setTitle($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.export') . ' CSV')
                 ->setIcon($this->iconFactory->getIcon('actions-document-export-csv', IconSize::SMALL));

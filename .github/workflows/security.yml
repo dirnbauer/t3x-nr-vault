@@ -14,25 +14,7 @@ permissions:
 jobs:
   # Note: CodeQL does not support PHP. Using PHPStan for static analysis in tests workflow.
   # OpenSSF Scorecard is handled by the dedicated scorecard.yml workflow.
-
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
-        with:
-          egress-policy: audit
-
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Dependency Review
-        uses: actions/dependency-review-action@05fe4576374b728f0c523d6a13d64c25081e0803 # v4.8.3
-        with:
-          fail-on-severity: high
-          deny-licenses: GPL-3.0, AGPL-3.0
+  # Dependency review handled by dependency-review.yml (centralized workflow).
 
   security-audit:
     name: Security Audit
@@ -49,7 +31,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
         with:
-          php-version: '8.5'
+          php-version: '8.2'
           extensions: sodium, json
           tools: composer:v2
 

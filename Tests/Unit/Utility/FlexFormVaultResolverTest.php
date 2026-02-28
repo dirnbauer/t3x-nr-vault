@@ -13,7 +13,6 @@ use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
-use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -30,7 +29,6 @@ final class FlexFormVaultResolverTest extends UnitTestCase
 
     private FlexFormVaultResolver $subject;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();

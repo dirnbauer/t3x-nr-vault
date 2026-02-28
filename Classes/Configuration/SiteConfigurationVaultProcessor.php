@@ -43,7 +43,7 @@ use TYPO3\CMS\Core\Site\Entity\Site;
  */
 final readonly class SiteConfigurationVaultProcessor implements SiteConfigurationVaultProcessorInterface
 {
-    private const string VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
+    private const VAULT_PATTERN = '/%vault\(([^)]+)\)%/';
 
     public function __construct(
         private VaultServiceInterface $vaultService,

@@ -37,7 +37,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      *
      * @var array<string>
      */
-    private const array EXCLUDED_COLUMNS = [
+    private const EXCLUDED_COLUMNS = [
         'be_users.password',    // Contains password hashes (bcrypt/argon2)
         'fe_users.password',    // Contains password hashes (bcrypt/argon2)
     ];
@@ -47,7 +47,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      *
      * @var array<string>
      */
-    private const array COLUMN_NAME_PATTERNS = [
+    private const COLUMN_NAME_PATTERNS = [
         '/password$/i',
         '/^password/i',
         '/api[_-]?key$/i',
@@ -71,7 +71,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      *
      * @var array<string, string>
      */
-    private const array VALUE_PATTERNS = [
+    private const VALUE_PATTERNS = [
         'Stripe live key' => '/^sk_live_[a-zA-Z0-9]{24,}$/',
         'Stripe test key' => '/^sk_test_[a-zA-Z0-9]{24,}$/',
         'Stripe publishable live' => '/^pk_live_[a-zA-Z0-9]{24,}$/',
@@ -98,7 +98,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      *
      * @var array<string>
      */
-    private const array EXT_CONFIG_KEY_PATTERNS = [
+    private const EXT_CONFIG_KEY_PATTERNS = [
         '/password$/i',           // ends with "password" (smtpPassword, dbPassword)
         '/^password$/i',          // exactly "password"
         '/secret$/i',             // ends with "secret" (apiSecret, clientSecret) - NOT "secretPrefix"
@@ -110,7 +110,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
     ];
 
     /** UUID v7 pattern for vault identifiers. */
-    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /** @var array<string, SecretFinding> */
     private array $detectedSecrets = [];
@@ -430,7 +430,13 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function isSecretColumn(string $columnName): bool
     {
-        return array_any(self::COLUMN_NAME_PATTERNS, static fn (string $pattern): bool => preg_match($pattern, $columnName) === 1);
+        foreach (self::COLUMN_NAME_PATTERNS as $pattern) {
+            if (preg_match($pattern, $columnName) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -439,7 +445,13 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function isSecretConfigKey(string $key): bool
     {
-        return array_any(self::EXT_CONFIG_KEY_PATTERNS, static fn (string $pattern): bool => preg_match($pattern, $key) === 1);
+        foreach (self::EXT_CONFIG_KEY_PATTERNS as $pattern) {
+            if (preg_match($pattern, $key) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

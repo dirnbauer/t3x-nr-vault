@@ -16,9 +16,9 @@
 
 ## Project Overview
 
-**nr-vault** is a TYPO3 v14 extension providing secure secrets management with envelope encryption, access control, and audit logging.
+**nr-vault** is a TYPO3 v13.4/v14 extension providing secure secrets management with envelope encryption, access control, and audit logging.
 
-- **Stack**: PHP 8.5, TYPO3 v14, libsodium (AES-256-GCM)
+- **Stack**: PHP 8.2+, TYPO3 v13.4/v14, libsodium (AES-256-GCM)
 - **Environment**: DDEV for local development
 - **License**: GPL-2.0-or-later
 

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document defines the theoretically ideal secret management system, then systematically adapts it to the practical constraints of TYPO3 v14, PHP 8.4/8.5, and real-world hosting environments. Each compromise is documented with clear reasoning, threat assessment, and risk mitigation strategies.
+This document defines the theoretically ideal secret management system, then systematically adapts it to the practical constraints of TYPO3 v13.4+/v14, PHP 8.2+, and real-world hosting environments. Each compromise is documented with clear reasoning, threat assessment, and risk mitigation strategies.
 
 ---
 
@@ -380,15 +380,15 @@ This document defines the theoretically ideal secret management system, then sys
 
 ---
 
-## Part 2: TYPO3 v14 Reality Check
+## Part 2: TYPO3 v13.4+/v14 Reality Check
 
-### 2.1 What TYPO3 v14 Provides Natively
+### 2.1 What TYPO3 v13.4+/v14 Provides Natively
 
 ```
-                    TYPO3 v14 SECURITY BASELINE
+                    TYPO3 v13.4+/v14 SECURITY BASELINE
 
     ┌─────────────────────────────────────────────────────────────┐
-    │                  TYPO3 v14 PROVIDES                          │
+    │                  TYPO3 v13.4+/v14 PROVIDES                          │
     ├─────────────────────────────────────────────────────────────┤
     │  [x] Backend User Authentication                             │
     │  [x] Backend User Groups (RBAC-style)                        │
@@ -400,7 +400,7 @@ This document defines the theoretically ideal secret management system, then sys
     │  [x] Session security (secure cookies)                       │
     │  [x] Rate limiting (via extensions)                          │
     ├─────────────────────────────────────────────────────────────┤
-    │                  TYPO3 v14 DOES NOT PROVIDE                  │
+    │                  TYPO3 v13.4+/v14 DOES NOT PROVIDE                  │
     ├─────────────────────────────────────────────────────────────┤
     │  [ ] Secret encryption at rest                               │
     │  [ ] Secret access control                                   │
@@ -412,7 +412,7 @@ This document defines the theoretically ideal secret management system, then sys
     └─────────────────────────────────────────────────────────────┘
 ```
 
-#### TYPO3 v14 Crypto Primitives Available
+#### TYPO3 v13.4+/v14 Crypto Primitives Available
 
 | Primitive | Source | Capability |
 |-----------|--------|------------|
@@ -426,10 +426,10 @@ This document defines the theoretically ideal secret management system, then sys
 
 ---
 
-### 2.2 PHP 8.4/8.5 Capabilities and Limitations
+### 2.2 PHP 8.2+ Capabilities and Limitations
 
 ```
-                    PHP 8.4/8.5 CRYPTO CAPABILITIES
+                    PHP 8.2+ CRYPTO CAPABILITIES
 
     ┌─────────────────────────────────────────────────────────────┐
     │                     AVAILABLE                                │
@@ -463,7 +463,7 @@ This document defines the theoretically ideal secret management system, then sys
     └─────────────────────────────────────────────────────────────┘
 ```
 
-#### PHP 8.4/8.5 Crypto Recommendations
+#### PHP 8.2+ Crypto Recommendations
 
 | Use Case | Recommended | Avoid |
 |----------|-------------|-------|

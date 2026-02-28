@@ -16,15 +16,15 @@ use Netresearch\NrVault\Exception\ValidationException;
  */
 final class IdentifierValidator
 {
-    private const int MIN_LENGTH = 3;
+    private const MIN_LENGTH = 3;
 
-    private const int MAX_LENGTH = 255;
+    private const MAX_LENGTH = 255;
 
     /** User-friendly identifier pattern (e.g., my_api_key). */
-    private const string USER_PATTERN = '/^[a-zA-Z]\w*$/';
+    private const USER_PATTERN = '/^[a-zA-Z]\w*$/';
 
     /** UUID v7 pattern for TCA/FlexForm vault field identifiers. */
-    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /**
      * Validate a secret identifier.

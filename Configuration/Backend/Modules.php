@@ -19,8 +19,7 @@ use Netresearch\NrVault\Controller\SecretsController;
  * - Parent shows submodule overview with cards
  * - Submodule selector appears in DocHeader
  *
- * Uses TYPO3 v14 short label format:
- * - 'nr_vault.modules.overview' maps to EXT:nr_vault/Resources/Private/Language/Modules/overview.xlf
+ * Uses LLL:EXT: label format (compatible with TYPO3 v13+v14)
  */
 return [
     // Parent module - custom overview with usage information
@@ -32,11 +31,12 @@ return [
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault',
-        'labels' => 'nr_vault.modules.overview',
+        'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/overview.xlf',
         'iconIdentifier' => 'module-vault',
         'appearance' => [
             'dependsOnSubmodules' => true,
         ],
+        // v14+: Show overview page for parent module
         'showSubmoduleOverview' => true,
         'routes' => [
             '_default' => [
@@ -51,7 +51,7 @@ return [
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/secrets',
-        'labels' => 'nr_vault.modules.secrets',
+        'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/secrets.xlf',
         'routes' => [
             '_default' => [
                 'target' => SecretsController::class . '::listAction',
@@ -79,7 +79,7 @@ return [
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/audit',
-        'labels' => 'nr_vault.modules.audit',
+        'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/audit.xlf',
         'routes' => [
             '_default' => [
                 'target' => AuditController::class . '::listAction',
@@ -100,7 +100,7 @@ return [
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/migration',
-        'labels' => 'nr_vault.modules.migration',
+        'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/migration.xlf',
         'routes' => [
             '_default' => [
                 'target' => MigrationController::class . '::handleRequest',

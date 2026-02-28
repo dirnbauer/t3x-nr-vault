@@ -159,18 +159,18 @@ final readonly class AjaxController
                 'success' => false,
                 'error' => 'Secret not found',
             ], 404);
+        } catch (ValidationException $e) { // @phpstan-ignore catch.neverThrown
+            /** @phpstan-ignore new.internalClass, method.internalClass */
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Validation error: ' . $e->getMessage(),
+            ], 400);
         } catch (AccessDeniedException) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Access denied',
             ], 403);
-        } catch (ValidationException $e) {
-            /** @phpstan-ignore new.internalClass, method.internalClass */
-            return new JsonResponse([
-                'success' => false,
-                'error' => 'Validation error: ' . $e->getMessage(),
-            ], 400);
         } catch (EncryptionException $e) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([

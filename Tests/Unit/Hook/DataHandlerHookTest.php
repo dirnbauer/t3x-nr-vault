@@ -14,7 +14,6 @@ use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\DataHandlerHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -34,9 +33,8 @@ use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class DataHandlerHookTest extends UnitTestCase
 {
-    private const string UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
-    #[Override]
     protected bool $resetSingletonInstances = true;
 
     private DataHandlerHook $subject;
@@ -51,7 +49,6 @@ final class DataHandlerHookTest extends UnitTestCase
 
     private TcaSchemaFactory&MockObject $tcaSchemaFactory;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -71,7 +68,6 @@ final class DataHandlerHookTest extends UnitTestCase
         GeneralUtility::addInstance(AuditLogServiceInterface::class, $this->auditLogService);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();

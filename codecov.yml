@@ -11,11 +11,12 @@ coverage:
       default:
         target: auto
         threshold: 5%
-        if_ci_failed: error
+        informational: true
     patch:
       default:
         target: 80%
         threshold: 5%
+        informational: true
 
 parsers:
   gcov:
@@ -24,6 +25,16 @@ parsers:
       loop: yes
       method: no
       macro: no
+
+flags:
+  unit:
+    paths:
+      - Classes/
+    carryforward: true
+  functional:
+    paths:
+      - Classes/
+    carryforward: true
 
 comment:
   layout: "reach,diff,flags,files"

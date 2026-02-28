@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
 #[AllowMockObjectsWithoutExpectations]
 final class EnvironmentMasterKeyProviderTest extends TestCase
 {
-    private const string TEST_ENV_VAR = 'NR_VAULT_TEST_KEY_12345';
+    private const TEST_ENV_VAR = 'NR_VAULT_TEST_KEY_12345';
 
     protected function setUp(): void
     {

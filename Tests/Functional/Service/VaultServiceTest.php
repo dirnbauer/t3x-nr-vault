@@ -11,7 +11,6 @@ namespace Netresearch\NrVault\Tests\Functional\Service;
 
 use Netresearch\NrVault\Service\VaultService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
-use Override;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -23,13 +22,11 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 final class VaultServiceTest extends FunctionalTestCase
 {
     /** @var list<string> */
-    #[Override]
     protected array $testExtensionsToLoad = [
         'netresearch/nr-vault',
     ];
 
     /** @var list<string> */
-    #[Override]
     protected array $coreExtensionsToLoad = [
         'backend',
     ];
@@ -40,7 +37,6 @@ final class VaultServiceTest extends FunctionalTestCase
 
     private bool $setupCompleted = false;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -72,7 +68,6 @@ final class VaultServiceTest extends FunctionalTestCase
         $this->subject = $service;
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         // Clean up master key (if setUp completed successfully)

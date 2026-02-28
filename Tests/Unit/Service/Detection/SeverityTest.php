@@ -10,11 +10,12 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Service\Detection;
 
 use Netresearch\NrVault\Service\Detection\Severity;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(Severity::class)]
+// Enums are not valid coverage targets in PHPUnit 12
+#[CoversNothing]
 final class SeverityTest extends TestCase
 {
     #[Test]

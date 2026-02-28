@@ -15,7 +15,6 @@ use Netresearch\NrVault\Domain\Dto\SecretMetadata;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Task\OrphanCleanupTask;
-use Override;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -28,13 +27,13 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\QueryRestrictionContainerInterface;
 use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Scheduler\Scheduler;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(OrphanCleanupTask::class)]
 #[AllowMockObjectsWithoutExpectations]
 final class OrphanCleanupTaskTest extends UnitTestCase
 {
-    #[Override]
     protected bool $resetSingletonInstances = true;
 
     private VaultServiceInterface&MockObject $vaultService;
@@ -43,7 +42,6 @@ final class OrphanCleanupTaskTest extends UnitTestCase
 
     private LoggerInterface&MockObject $logger;
 
-    #[Override]
     protected function setUp(): void
     {
         parent::setUp();
@@ -56,12 +54,15 @@ final class OrphanCleanupTaskTest extends UnitTestCase
         $logManager = $this->createMock(LogManager::class);
         $logManager->method('getLogger')->willReturn($this->logger);
 
+        // TYPO3 v13 AbstractTask::__construct() calls GeneralUtility::makeInstance(Scheduler::class)
+        // which requires 3 constructor args. Register a mock singleton to prevent this.
+        GeneralUtility::setSingletonInstance(Scheduler::class, $this->createMock(Scheduler::class));
+
         GeneralUtility::addInstance(VaultServiceInterface::class, $this->vaultService);
         GeneralUtility::addInstance(ConnectionPool::class, $this->connectionPool);
         GeneralUtility::setSingletonInstance(LogManager::class, $logManager);
     }
 
-    #[Override]
     protected function tearDown(): void
     {
         GeneralUtility::purgeInstances();
