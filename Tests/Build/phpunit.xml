@@ -55,6 +55,10 @@
             <file>../../Classes/Service/SecretDetectionServiceInterface.php</file>
             <file>../../Classes/Service/VaultServiceInterface.php</file>
             <file>../../Classes/Service/Detection/SecretFinding.php</file>
+            <!-- Enums: PHPUnit 12 cannot attribute coverage to enum classes -->
+            <file>../../Classes/Http/SecretPlacement.php</file>
+            <file>../../Classes/Service/Detection/Severity.php</file>
+            <file>../../Classes/Service/VaultFieldPermission.php</file>
         </exclude>
     </source>
 
