@@ -23,7 +23,7 @@ composer.lock
 # Testing
 /.phpunit.result.cache
 /coverage/
-Tests/Build/.phpunit.cache/
+Build/.phpunit.cache/
 .php-cs-fixer.cache
 .ddev/.v14-data/
 .ddev.bak/

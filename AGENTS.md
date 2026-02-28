@@ -109,7 +109,7 @@ This extension handles sensitive data. Follow these rules:
 
 Run tests in container:
 ```bash
-ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit
+ddev exec .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit
 ```
 
 ## Pre-Commit Checklist

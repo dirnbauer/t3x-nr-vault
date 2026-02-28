@@ -27,7 +27,7 @@ make unit                    # Unit only
 make functional              # Functional only
 
 # In container with options
-ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --filter "OrphanCleanup"
+ddev exec .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --filter "OrphanCleanup"
 
 # E2E tests (requires running TYPO3)
 cd Tests/E2E && npx playwright test
@@ -155,7 +155,7 @@ $connectionPool->method('getQueryBuilderForTable')->willReturn($queryBuilder);
 
 - New code: Minimum 80% line coverage
 - Security-critical code: 100% coverage required
-- Run with coverage: `ddev exec .Build/bin/phpunit -c Tests/Build/phpunit.xml --testsuite Unit --coverage-text`
+- Run with coverage: `ddev exec .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --coverage-text`
 
 ## Common Issues
 

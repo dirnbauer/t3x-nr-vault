@@ -17,16 +17,16 @@
 >
     <testsuites>
         <testsuite name="Functional">
-            <directory>../Functional</directory>
+            <directory>../Tests/Functional</directory>
         </testsuite>
     </testsuites>
 
     <source>
         <include>
-            <directory suffix=".php">../../Classes</directory>
+            <directory suffix=".php">../Classes</directory>
         </include>
         <exclude>
-            <directory>../../Classes/Exception</directory>
+            <directory>../Classes/Exception</directory>
         </exclude>
     </source>
 

@@ -1,7 +1,7 @@
 includes:
     - .Build/vendor/phpstan/phpstan/conf/bleedingEdge.neon
     - .Build/vendor/phpat/phpat/extension.neon
-    - phpstan-baseline.neon
+    - Build/phpstan-baseline.neon
     - phpat.neon
 
 parameters:
