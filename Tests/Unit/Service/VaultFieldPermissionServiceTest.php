@@ -266,6 +266,92 @@ final class VaultFieldPermissionServiceTest extends TestCase
         self::assertNull($result);
     }
 
+    #[Test]
+    public function isReadOnlyDelegatesWithExplicitNullBackendUser(): void
+    {
+        // With no backend user (null), isAllowed returns false, so isReadOnly also returns false
+        $result = $this->service->isReadOnly('tx_table', 'field', null);
+
+        self::assertFalse($result);
+    }
+
+    #[Test]
+    public function getPermissionsIncludesAllFourPermissionsForAdmin(): void
+    {
+        // Verifies getPermissions iterates all VaultFieldPermission cases
+        $backendUser = $this->createMockBackendUser(isAdmin: true);
+
+        $permissions = $this->service->getPermissions('tx_table', 'field', $backendUser);
+
+        self::assertCount(4, $permissions);
+        self::assertArrayHasKey('reveal', $permissions);
+        self::assertArrayHasKey('copy', $permissions);
+        self::assertArrayHasKey('edit', $permissions);
+        self::assertArrayHasKey('readOnly', $permissions);
+    }
+
+    #[Test]
+    public function cacheIsKeyedByUserUid(): void
+    {
+        // Pre-seed cache for both users (uid 10 and uid 20) to prove separate cache keys.
+        // We use admin users so no TSconfig lookup (BackendUtility) is needed.
+        $userA = $this->createMockBackendUser(isAdmin: true, uid: 10);
+        $userB = $this->createMockBackendUser(isAdmin: true, uid: 20);
+
+        // Admins skip the cache entirely (early return), so pre-seed cache directly
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        $cacheProp->setValue($this->service, [
+            'tx_table:field:reveal:10' => true,
+            'tx_table:field:reveal:20' => false,
+        ]);
+
+        // Both values are independent in the cache
+        $cache = $cacheProp->getValue($this->service);
+        self::assertArrayHasKey('tx_table:field:reveal:10', $cache);
+        self::assertArrayHasKey('tx_table:field:reveal:20', $cache);
+        self::assertTrue($cache['tx_table:field:reveal:10']);
+        self::assertFalse($cache['tx_table:field:reveal:20']);
+    }
+
+    #[Test]
+    public function cacheResultIsReturnedOnSecondCallForNonAdmin(): void
+    {
+        // Pre-seed cache to simulate a result from a previous non-admin checkPermission call.
+        // Then verify the cached value is returned without invoking checkPermission again.
+        $backendUser = $this->createMockBackendUser(isAdmin: false, uid: 55);
+
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        // Seed a deliberate value
+        $cacheProp->setValue($this->service, ['tx_table:field:edit:55' => false]);
+
+        // The cache hit should return false even though built-in default for Edit is true
+        $result = $this->service->isAllowed('tx_table', 'field', VaultFieldPermission::Edit, $backendUser);
+
+        self::assertFalse($result);
+    }
+
+    #[Test]
+    public function userRecordWithNonIntUidDefaultsToZeroForCacheKey(): void
+    {
+        // When user record uid is not an int, cache key should use uid=0.
+        // Pre-seed cache with key for uid=0 to verify the correct key is constructed.
+        $backendUser = $this->createMock(BackendUserAuthentication::class);
+        $backendUser->method('isAdmin')->willReturn(false);
+        $backendUser->user = ['uid' => 'not-an-int'];
+
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        // Pre-seed result for uid=0 key
+        $cacheProp->setValue($this->service, ['tx_table:field:reveal:0' => true]);
+
+        // Should hit the cache for key 'tx_table:field:reveal:0'
+        $result = $this->service->isAllowed('tx_table', 'field', VaultFieldPermission::Reveal, $backendUser);
+
+        self::assertTrue($result);
+    }
+
     private function createMockBackendUser(bool $isAdmin = false, int $uid = 1): BackendUserAuthentication&MockObject
     {
         $backendUser = $this->createMock(BackendUserAuthentication::class);

@@ -215,6 +215,76 @@ final class SecretDetailsTest extends TestCase
         self::assertSame(1, $array['scopePid']);
     }
 
+    #[Test]
+    public function fromSecretMapsAllFieldsFromSecretModel(): void
+    {
+        $secret = new \Netresearch\NrVault\Domain\Model\Secret();
+        $secret->setUid(7);
+        $secret->setIdentifier('from-secret-identifier');
+        $secret->setDescription('From secret description');
+        $secret->setOwnerUid(3);
+        $secret->setAllowedGroups([10, 20]);
+        $secret->setContext('backend');
+        $secret->setFrontendAccessible(true);
+        $secret->setVersion(5);
+        $secret->setCrdate(1700000001);
+        $secret->setTstamp(1700000002);
+        $secret->setExpiresAt(1900000000);
+        $secret->setLastRotatedAt(1750000000);
+        $secret->setReadCount(42);
+        $secret->setLastReadAt(1800000000);
+        $secret->setMetadata(['env' => 'prod']);
+        $secret->setScopePid(11);
+
+        $result = SecretDetails::fromSecret($secret);
+
+        self::assertSame(7, $result->uid);
+        self::assertSame('from-secret-identifier', $result->identifier);
+        self::assertSame('From secret description', $result->description);
+        self::assertSame(3, $result->ownerUid);
+        self::assertSame([10, 20], $result->groups);
+        self::assertSame('backend', $result->context);
+        self::assertTrue($result->frontendAccessible);
+        self::assertSame(5, $result->version);
+        self::assertSame(1700000001, $result->createdAt);
+        self::assertSame(1700000002, $result->updatedAt);
+        self::assertSame(1900000000, $result->expiresAt);
+        self::assertSame(1750000000, $result->lastRotatedAt);
+        self::assertSame(42, $result->readCount);
+        self::assertSame(1800000000, $result->lastReadAt);
+        self::assertSame(['env' => 'prod'], $result->metadata);
+        self::assertSame(11, $result->scopePid);
+    }
+
+    #[Test]
+    public function fromSecretConvertsZeroTimestampsToNull(): void
+    {
+        // expiresAt, lastRotatedAt, lastReadAt of 0 should become null in the DTO
+        $secret = new \Netresearch\NrVault\Domain\Model\Secret();
+        $secret->setUid(1);
+        $secret->setExpiresAt(0);
+        $secret->setLastRotatedAt(0);
+        $secret->setLastReadAt(0);
+
+        $result = SecretDetails::fromSecret($secret);
+
+        self::assertNull($result->expiresAt);
+        self::assertNull($result->lastRotatedAt);
+        self::assertNull($result->lastReadAt);
+    }
+
+    #[Test]
+    public function fromSecretWithNullUidDefaultsToZero(): void
+    {
+        // Secret with no UID set (getUid() returns null) should default to 0
+        $secret = new \Netresearch\NrVault\Domain\Model\Secret();
+        // Do NOT call setUid() – uid remains null
+
+        $result = SecretDetails::fromSecret($secret);
+
+        self::assertSame(0, $result->uid);
+    }
+
     private function buildSubject(array $overrides = []): SecretDetails
     {
         $defaults = [

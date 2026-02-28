@@ -215,6 +215,60 @@ final class FileMasterKeyProviderTest extends TestCase
     }
 
     #[Test]
+    public function getMasterKeyThrowsWhenFileNotFoundAndAutoPathAlsoMissing(): void
+    {
+        // Main path does not exist and auto path also does not exist
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(vfsStream::url('vault/nonexistent.key'));
+        $config->method('getAutoKeyPath')->willReturn(vfsStream::url('vault/also-nonexistent.key'));
+
+        $provider = new FileMasterKeyProvider($config);
+
+        $this->expectException(MasterKeyException::class);
+        $this->expectExceptionMessage('not found');
+
+        $provider->getMasterKey();
+    }
+
+    #[Test]
+    public function getMasterKeyThrowsWhenKeyLengthInvalidAfterBase64Decode(): void
+    {
+        // File contains a base64 string that decodes to wrong length (not 32 bytes)
+        $keyPath = vfsStream::url('vault/wrong-length.key');
+        // base64 of 10-byte string - decodes to 10 bytes, not 32
+        file_put_contents($keyPath, base64_encode('tooshort!!'));
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn($keyPath);
+
+        $provider = new FileMasterKeyProvider($config);
+
+        $this->expectException(MasterKeyException::class);
+        $this->expectExceptionMessage('Invalid master key length');
+
+        $provider->getMasterKey();
+    }
+
+    #[Test]
+    public function storeMasterKeyUsesDefaultMasterKeySourceSentinelAsEmptyPath(): void
+    {
+        // When getMasterKeySource returns the sentinel value DEFAULT_MASTER_KEY_SOURCE,
+        // getKeyPath() returns '' and storeMasterKey falls back to getAutoKeyPath()
+        $key = random_bytes(32);
+        $autoKeyPath = vfsStream::url('vault/sentinel-auto.key');
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn(ExtensionConfiguration::DEFAULT_MASTER_KEY_SOURCE);
+        $config->method('getAutoKeyPath')->willReturn($autoKeyPath);
+
+        $provider = new FileMasterKeyProvider($config);
+        $provider->storeMasterKey($key);
+
+        self::assertFileExists($autoKeyPath);
+        self::assertEquals(base64_encode($key), file_get_contents($autoKeyPath));
+    }
+
+    #[Test]
     public function generateMasterKeyReturns32Bytes(): void
     {
         $config = $this->createMock(ExtensionConfigurationInterface::class);
