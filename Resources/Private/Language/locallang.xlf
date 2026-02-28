@@ -6,24 +6,6 @@
             <trans-unit id="vault_secret.placeholder_exists">
                 <source>Secret stored in vault (enter new value to update)</source>
             </trans-unit>
-            <trans-unit id="vault_secret.toggle_visibility">
-                <source>Toggle visibility</source>
-            </trans-unit>
-            <trans-unit id="vault_secret.clear">
-                <source>Clear secret</source>
-            </trans-unit>
-            <trans-unit id="error.access_denied">
-                <source>Access denied</source>
-            </trans-unit>
-            <trans-unit id="error.secret_not_found">
-                <source>Secret not found</source>
-            </trans-unit>
-            <trans-unit id="error.encryption_failed">
-                <source>Encryption failed</source>
-            </trans-unit>
-            <trans-unit id="error.master_key_unavailable">
-                <source>Master key unavailable</source>
-            </trans-unit>
 
             <!-- Scheduler Task: Orphan Cleanup -->
             <trans-unit id="task.orphanCleanup.title">

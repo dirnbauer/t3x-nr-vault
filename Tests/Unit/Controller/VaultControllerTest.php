@@ -39,12 +39,15 @@ final class VaultControllerTest extends TestCase
         $xliffContent = file_get_contents($xliffPath);
         self::assertNotFalse($xliffContent);
 
-        // Required button labels
+        // Required labels used in controllers and templates
         $requiredLabels = [
-            'action.secrets',
-            'action.audit',
-            'action.verifyChain',
-            'action.export',
+            'mlang_tabs_tab',
+            'secrets.title',
+            'secrets.create',
+            'audit.title',
+            'audit.export',
+            'audit.verify_chain',
+            'migration.title',
         ];
 
         foreach ($requiredLabels as $label) {
