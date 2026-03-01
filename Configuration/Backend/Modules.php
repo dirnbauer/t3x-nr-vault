@@ -19,6 +19,10 @@ use Netresearch\NrVault\Controller\SecretsController;
  * - Parent shows submodule overview with cards
  * - Submodule selector appears in DocHeader
  *
+ * Uses 'tools' as parent for v13+v14 compatibility:
+ * - v13: 'tools' exists natively as the admin tools group
+ * - v14: 'tools' is an alias for the new 'admin' group
+ *
  * Uses LLL:EXT: label format (compatible with TYPO3 v13+v14)
  */
 return [
@@ -26,7 +30,7 @@ return [
     // dependsOnSubmodules: true enables the submodule dropdown in DocHeader
     // showSubmoduleOverview: true prevents redirect to last-used submodule
     'admin_vault' => [
-        'parent' => 'admin',
+        'parent' => 'tools',
         'position' => ['after' => 'admin_sites'],
         'access' => 'admin',
         'workspaces' => 'live',
