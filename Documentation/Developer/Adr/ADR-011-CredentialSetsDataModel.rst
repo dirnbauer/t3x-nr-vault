@@ -50,12 +50,14 @@ Example decrypted payloads
 Bearer token:
 
 .. code-block:: json
+   :caption: Bearer token payload
 
    {"token": "sk-abc123..."}
 
 OAuth2 Client Credentials:
 
 .. code-block:: json
+   :caption: OAuth2 client credentials payload
 
    {
      "client_id": "my-client",

@@ -2,9 +2,9 @@
 
 .. _usage-api-endpoint-example:
 
-===============================
+==================================
 Example: API endpoint management
-===============================
+==================================
 
 A common pattern is storing API endpoints with their credentials in a database
 table. This example shows how to combine TCA vault fields with the HTTP client.

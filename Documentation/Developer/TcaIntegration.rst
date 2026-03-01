@@ -31,7 +31,7 @@ Add nr-vault as a dependency in your extension's :file:`composer.json`:
 
    {
        "require": {
-           "netresearch/nr-vault": "^1.0"
+           "netresearch/nr-vault": "^0.4"
        }
    }
 

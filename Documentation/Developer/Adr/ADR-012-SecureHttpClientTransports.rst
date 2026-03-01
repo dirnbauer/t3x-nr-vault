@@ -50,6 +50,7 @@ TransportInterface (engine)
 ---------------------------
 
 .. code-block:: php
+   :caption: TransportInterface
 
    interface TransportInterface
    {

@@ -66,12 +66,14 @@ JSON payloads containing all fields for a credential type:
 **Bearer Token:**
 
 .. code-block:: json
+   :caption: Bearer token payload
 
    {"token": "sk-abc123..."}
 
 **OAuth2 Client Credentials:**
 
 .. code-block:: json
+   :caption: OAuth2 client credentials payload
 
    {
      "client_id": "my-client",
@@ -93,6 +95,7 @@ SecureHttpClient API
 Extensions call external services using a simple PHP API:
 
 .. code-block:: php
+   :caption: SecureHttpClientInterface
 
    interface SecureHttpClientInterface
    {
@@ -116,6 +119,7 @@ Extensions call external services using a simple PHP API:
 **Response:**
 
 .. code-block:: php
+   :caption: SecureHttpResponse methods
 
    $response->statusCode();  // int
    $response->headers();     // array

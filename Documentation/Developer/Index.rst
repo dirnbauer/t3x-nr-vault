@@ -241,14 +241,11 @@ Running tests
 .. code-block:: bash
    :caption: Run test suites
 
-   # All tests
-   ddev exec composer test
+   # Unit tests
+   Build/Scripts/runTests.sh -s unit
 
-   # Unit tests only
-   ddev exec .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit
-
-   # With coverage
-   ddev exec .Build/bin/phpunit -c Build/phpunit.xml --coverage-html .Build/coverage
+   # Functional tests
+   Build/Scripts/runTests.sh -s functional
 
 .. _developer-testing-quality:
 
@@ -258,11 +255,11 @@ Code quality
 .. code-block:: bash
    :caption: Run code quality tools
 
-   # PHP-CS-Fixer
-   ddev exec composer fix
+   # Code style (PHP-CS-Fixer)
+   Build/Scripts/runTests.sh -s cgl
 
-   # PHPStan
-   ddev exec composer stan
+   # Static analysis (PHPStan)
+   Build/Scripts/runTests.sh -s phpstan
 
 .. _developer-contributing:
 

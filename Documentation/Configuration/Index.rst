@@ -91,6 +91,15 @@ Configure nr-vault in :guilabel:`Admin Tools > Settings > Extension Configuratio
    Prefer XChaCha20-Poly1305 over AES-256-GCM. XChaCha20 is recommended
    when hardware AES acceleration is not available.
 
+.. confval:: cacheEnabled
+   :name: ext-nrvault-cacheEnabled
+   :type: boolean
+   :Default: true
+
+   Enable request-scoped caching of decrypted secrets. When enabled,
+   repeated retrievals of the same secret within a single request
+   return the cached value instead of decrypting again.
+
 .. _configuration-master-key-providers:
 
 Master key providers

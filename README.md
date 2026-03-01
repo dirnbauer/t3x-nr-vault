@@ -205,9 +205,6 @@ vendor/bin/typo3 vault:rotate-master-key --new-key=/path/to/new.key --confirm
 
 # View audit log
 vendor/bin/typo3 vault:audit --identifier=my_secret_id --days=30
-
-# Export secrets (encrypted backup)
-vendor/bin/typo3 vault:export --output=secrets.enc
 ```
 
 ## Requirements

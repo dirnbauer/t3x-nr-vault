@@ -7,9 +7,9 @@
 >
     <project
         title="nr-vault"
-        version="0.1"
-        release="0.1.0"
-        copyright="since 2024 by Netresearch DTT GmbH"
+        version="0.4.0"
+        release="0.4.0"
+        copyright="since 2025 by Netresearch DTT GmbH"
     />
 
     <extension

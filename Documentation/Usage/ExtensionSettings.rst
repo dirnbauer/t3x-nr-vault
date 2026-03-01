@@ -2,9 +2,9 @@
 
 .. _usage-extension-settings:
 
-===========================================
+=============================================
 Example: SaaS API keys in extension settings
-===========================================
+=============================================
 
 Many TYPO3 extensions integrate with SaaS services (DeepL, Personio, Stepstone,
 Stripe, etc.) and store API keys in extension settings. This page shows how to
