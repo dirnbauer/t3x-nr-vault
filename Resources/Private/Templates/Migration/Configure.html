@@ -25,7 +25,7 @@
         </p>
 
         <form method="post" action="{f:be.uri(route: 'admin_vault_migration', parameters: '{action: \'execute\'}')}">
-            <f:be.infobox title="Database Modification" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}">
+            <f:be.infobox title="Database Modification" state="1">
                 <strong>Warning:</strong> This will modify your database. Make sure you have a backup before proceeding.
             </f:be.infobox>
 

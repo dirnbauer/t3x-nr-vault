@@ -149,14 +149,14 @@
                     </f:if>
                 </div>
                 <f:if condition="{configCount} && !{databaseCount}">
-                    <f:be.infobox title="No Database Secrets to Migrate" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
+                    <f:be.infobox title="No Database Secrets to Migrate" state="-1">
                         Only configuration secrets were detected. These must be migrated manually by updating your configuration
                         to use <code>%vault(identifier)%</code> references. See the documentation for details.
                     </f:be.infobox>
                 </f:if>
             </f:then>
             <f:else>
-                <f:be.infobox title="No Plaintext Secrets Detected" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::OK')}">
+                <f:be.infobox title="No Plaintext Secrets Detected" state="0">
                     Great! No potential plaintext secrets were found in your database or configuration.
                     Your sensitive data appears to be properly protected.
                 </f:be.infobox>
