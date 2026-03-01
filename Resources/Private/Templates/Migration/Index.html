@@ -77,7 +77,7 @@
     </div>
 
     <!-- Important Notes -->
-    <f:be.infobox title="Important Notes" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}">
+    <f:be.infobox title="Important Notes" state="1">
         <ul class="mb-0">
             <li><strong>Backup first</strong> - Always create a database backup before running migrations.</li>
             <li><strong>Test environment</strong> - Run the scan on a test system first to review what will be detected.</li>
@@ -86,7 +86,7 @@
         </ul>
     </f:be.infobox>
 
-    <f:be.infobox title="Configuration Secrets" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
+    <f:be.infobox title="Configuration Secrets" state="-1">
         Configuration secrets (in <code>LocalConfiguration.php</code> or extension settings) are detected but must be migrated manually.
         Replace the value with <code>%vault(identifier)%</code> after storing the secret in the vault.
     </f:be.infobox>

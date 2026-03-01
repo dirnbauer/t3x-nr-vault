@@ -28,7 +28,7 @@
     <f:if condition="{secrets -> f:count()} > 0">
         <f:then>
             <form method="post" action="{f:be.uri(route: 'admin_vault_migration', parameters: '{action: \'configure\'}')}">
-                <f:be.infobox title="Database Secrets Only" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::INFO')}">
+                <f:be.infobox title="Database Secrets Only" state="-1">
                     Only database secrets can be migrated via this wizard.
                     Configuration secrets need to be updated manually to use <code>%vault(identifier)%</code> references.
                 </f:be.infobox>
@@ -124,7 +124,7 @@
             </f:asset.script>
         </f:then>
         <f:else>
-            <f:be.infobox title="No Database Secrets Found" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::WARNING')}">
+            <f:be.infobox title="No Database Secrets Found" state="1">
                 No database secrets were found to migrate. The scan may have detected only configuration secrets,
                 which must be migrated manually by updating your configuration to use <code>%vault(identifier)%</code> references.
             </f:be.infobox>

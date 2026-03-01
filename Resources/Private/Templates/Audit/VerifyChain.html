@@ -9,12 +9,12 @@
 
         <f:if condition="{valid}">
             <f:then>
-                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')}" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::OK')}">
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')}" state="0">
                     The audit log hash chain has been verified successfully. No tampering or modifications have been detected.
                 </f:be.infobox>
             </f:then>
             <f:else>
-                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid')}" state="{f:constant(name: 'TYPO3\CMS\Core\Type\ContextualFeedbackSeverity::ERROR')}">
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid')}" state="2">
                     Hash chain verification failed. The audit log may have been tampered with.
                 </f:be.infobox>
 
