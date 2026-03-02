@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow test fixtures and build cache false positives"
+paths = [
+    '''Tests/Unit/Service/SecretDetectionServiceTest\.php''',
+    '''\.php-cs-fixer\.cache''',
+]

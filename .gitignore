@@ -9,16 +9,22 @@
 .DS_Store
 Thumbs.db
 
-# Build artifacts (future)
+# Build artifacts
 /vendor/
 /var/
 /.Build/
 /public/
 composer.lock
+package-lock.json
 
 # Rust (future)
 /rust/target/
 *.so
+
+# Generated / internal docs
+/docs/
+/claudedocs/
+/.conformance-reports/
 
 # Testing
 /.phpunit.result.cache
