@@ -24,6 +24,10 @@ use Netresearch\NrVault\Controller\SecretsController;
  * - v14: 'tools' is an alias for the new 'admin' group
  *
  * Uses LLL:EXT: label format (compatible with TYPO3 v13+v14)
+ *
+ * v13 compatibility: 'admin_vault_overview' is registered as first submodule so that
+ * v13 (which redirects to the first submodule) shows the overview page.
+ * v14 uses 'showSubmoduleOverview' on the parent module for the same effect.
  */
 return [
     // Parent module - custom overview with usage information
@@ -42,6 +46,25 @@ return [
         ],
         // v14+: Show overview page for parent module
         'showSubmoduleOverview' => true,
+        'routes' => [
+            '_default' => [
+                'target' => OverviewController::class . '::indexAction',
+            ],
+        ],
+    ],
+
+    // Overview submodule - v13 compatibility
+    // In v13, dependsOnSubmodules redirects to the first submodule.
+    // This ensures the overview page is shown instead of secrets.
+    // In v14, showSubmoduleOverview on the parent handles this natively.
+    'admin_vault_overview' => [
+        'parent' => 'admin_vault',
+        'position' => ['before' => '*'],
+        'access' => 'admin',
+        'workspaces' => 'live',
+        'path' => '/module/admin/vault/overview',
+        'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/overview_submodule.xlf',
+        'iconIdentifier' => 'module-vault',
         'routes' => [
             '_default' => [
                 'target' => OverviewController::class . '::indexAction',
