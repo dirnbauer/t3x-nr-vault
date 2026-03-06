@@ -10,6 +10,44 @@
         Secure storage and management for sensitive configuration data.
     </p>
 
+    <!-- Health Check Alerts -->
+    <f:if condition="{healthChecks.hasIssues}">
+        <div class="alert alert-danger mb-4" role="alert">
+            <h4 class="alert-heading">
+                <core:icon identifier="actions-exclamation-triangle" size="small" />
+                Vault Health Issue
+            </h4>
+            <f:if condition="!{healthChecks.masterKeyAvailable}">
+                <p class="mb-1">
+                    <strong>Encryption is not available.</strong>
+                    No master key provider is configured or accessible. Vault cannot encrypt or decrypt secrets.
+                </p>
+                <f:if condition="{healthChecks.masterKeyError}">
+                    <p class="mb-1 text-body-secondary"><small>Detail: {healthChecks.masterKeyError}</small></p>
+                </f:if>
+                <hr />
+                <p class="mb-0">
+                    Ensure that <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code> is set,
+                    or configure an alternative master key provider (environment variable or file-based).
+                </p>
+            </f:if>
+            <f:if condition="{healthChecks.masterKeyAvailable} && !{healthChecks.encryptionWorking}">
+                <p class="mb-1">
+                    <strong>Master key provider "{healthChecks.masterKeyProvider}" is available but encryption is broken.</strong>
+                </p>
+                <f:if condition="{healthChecks.encryptionError}">
+                    <p class="mb-0 text-body-secondary"><small>Detail: {healthChecks.encryptionError}</small></p>
+                </f:if>
+            </f:if>
+        </div>
+    </f:if>
+    <f:if condition="{healthChecks.masterKeyAvailable} && {healthChecks.encryptionWorking}">
+        <div class="alert alert-success mb-4" role="alert">
+            <core:icon identifier="actions-check" size="small" />
+            Encryption is active using the <strong>{healthChecks.masterKeyProvider}</strong> master key provider.
+        </div>
+    </f:if>
+
     <!-- Statistics Cards -->
     <div class="card-container mb-4" role="group" aria-label="Vault statistics">
         <div class="card card-size-fixed-small">
