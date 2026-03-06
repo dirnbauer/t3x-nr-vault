@@ -19,7 +19,6 @@ use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DataHandler hook for vault secret TCA fields.
@@ -46,6 +45,7 @@ final class DataHandlerHook
         private readonly ConnectionPool $connectionPool,
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly VaultServiceInterface $vaultService,
+        private readonly FlashMessageService $flashMessageService,
     ) {}
 
     /**
@@ -368,7 +368,7 @@ final class DataHandlerHook
     ): void {
         try {
             $flashMessage = new FlashMessage($message, $title, $severity, true);
-            GeneralUtility::makeInstance(FlashMessageService::class)
+            $this->flashMessageService
                 ->getMessageQueueByIdentifier()
                 ->addMessage($flashMessage);
         } catch (Exception) {

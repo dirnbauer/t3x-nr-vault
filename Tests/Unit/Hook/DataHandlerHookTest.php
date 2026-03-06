@@ -22,6 +22,8 @@ use ReflectionClass;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Schema\Field\FieldCollection;
 use TYPO3\CMS\Core\Schema\Field\FieldTypeInterface;
 use TYPO3\CMS\Core\Schema\TcaSchema;
@@ -49,6 +51,8 @@ final class DataHandlerHookTest extends UnitTestCase
 
     private TcaSchemaFactory&MockObject $tcaSchemaFactory;
 
+    private FlashMessageService&MockObject $flashMessageService;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -57,12 +61,14 @@ final class DataHandlerHookTest extends UnitTestCase
         $this->tcaSchemaFactory = $this->createMock(TcaSchemaFactory::class);
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
+        $this->flashMessageService = $this->createMock(FlashMessageService::class);
         $this->dataHandler = $this->createMock(DataHandler::class);
 
         $this->subject = new DataHandlerHook(
             $this->connectionPool,
             $this->tcaSchemaFactory,
             $this->vaultService,
+            $this->flashMessageService,
         );
 
         GeneralUtility::addInstance(AuditLogServiceInterface::class, $this->auditLogService);
@@ -319,6 +325,14 @@ final class DataHandlerHookTest extends UnitTestCase
             'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
         ]);
 
+        // Mock connection for rollback
+        $connection = $this->createMock(Connection::class);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        // Mock flash message queue
+        $flashMessageQueue = $this->createMock(FlashMessageQueue::class);
+        $this->flashMessageService->method('getMessageQueueByIdentifier')->willReturn($flashMessageQueue);
+
         $fieldArray = ['api_key' => 'test-secret'];
 
         $this->subject->processDatamap_preProcessFieldArray(
@@ -347,6 +361,171 @@ final class DataHandlerHookTest extends UnitTestCase
             'update',
             'tx_test',
             42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+    }
+
+    #[Test]
+    public function afterDatabaseOperationsRollsBackFieldOnNewSecretFailure(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock connection for rollback - new secret should clear field (empty string)
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->expects(self::once())
+            ->method('update')
+            ->with('tx_test', ['api_key' => ''], ['uid' => 42]);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        // Mock flash message queue
+        $flashMessageQueue = $this->createMock(FlashMessageQueue::class);
+        $this->flashMessageService->method('getMessageQueueByIdentifier')->willReturn($flashMessageQueue);
+
+        $fieldArray = ['api_key' => 'new-secret'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        $this->vaultService
+            ->method('store')
+            ->willThrowException(new VaultException('Storage failed'));
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+    }
+
+    #[Test]
+    public function afterDatabaseOperationsRollsBackFieldPreservingIdentifierOnUpdateFailure(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $existingUuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        // Mock connection for rollback - update failure should keep existing identifier
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->expects(self::once())
+            ->method('update')
+            ->with('tx_test', ['api_key' => $existingUuid], ['uid' => 42]);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        // Mock flash message queue
+        $flashMessageQueue = $this->createMock(FlashMessageQueue::class);
+        $this->flashMessageService->method('getMessageQueueByIdentifier')->willReturn($flashMessageQueue);
+
+        $fieldArray = [
+            'api_key' => [
+                'value' => 'updated-secret',
+                '_vault_identifier' => $existingUuid,
+                '_vault_checksum' => 'existing-checksum',
+            ],
+        ];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        $this->vaultService
+            ->method('rotate')
+            ->willThrowException(new VaultException('Rotate failed'));
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+    }
+
+    #[Test]
+    public function afterDatabaseOperationsAddsFlashMessageOnVaultFailure(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock connection for rollback
+        $connection = $this->createMock(Connection::class);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        // Flash message queue should receive the error message
+        $flashMessageQueue = $this->createMock(FlashMessageQueue::class);
+        $flashMessageQueue
+            ->expects(self::once())
+            ->method('addMessage');
+        $this->flashMessageService->method('getMessageQueueByIdentifier')->willReturn($flashMessageQueue);
+
+        $fieldArray = ['api_key' => 'new-secret'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        $this->vaultService
+            ->method('store')
+            ->willThrowException(new VaultException('Storage failed'));
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+    }
+
+    #[Test]
+    public function afterDatabaseOperationsRollbackSkippedWhenUidIsZero(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Connection should NOT be called for rollback when uid is 0
+        $this->connectionPool->expects(self::never())->method('getConnectionForTable');
+
+        // Mock flash message queue
+        $flashMessageQueue = $this->createMock(FlashMessageQueue::class);
+        $this->flashMessageService->method('getMessageQueueByIdentifier')->willReturn($flashMessageQueue);
+
+        $fieldArray = ['api_key' => 'new-secret'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            'NEW123',
+        );
+
+        // Don't set substNEWwithIDs - uid will remain non-numeric string -> cast to 0
+        $this->dataHandler->substNEWwithIDs = [];
+
+        $this->vaultService
+            ->method('store')
+            ->willThrowException(new VaultException('Storage failed'));
+
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'new',
+            'tx_test',
+            'NEW123',
             $fieldArray,
             $this->dataHandler,
         );

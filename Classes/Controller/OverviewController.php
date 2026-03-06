@@ -155,7 +155,12 @@ final readonly class OverviewController
                 // Check 2: Can we actually derive/read the master key?
                 try {
                     $key = $provider->getMasterKey();
-                    $result['encryptionWorking'] = $key !== '';
+                    if ($key === '') {
+                        $result['encryptionError'] = 'Master key provider returned an empty key.';
+                        $result['hasIssues'] = true;
+                    } else {
+                        $result['encryptionWorking'] = true;
+                    }
                 } catch (Exception $e) {
                     $result['encryptionError'] = $e->getMessage();
                     $result['hasIssues'] = true;
@@ -166,10 +171,6 @@ final readonly class OverviewController
             }
         } catch (Exception $e) {
             $result['masterKeyError'] = $e->getMessage();
-            $result['hasIssues'] = true;
-        }
-
-        if (!$result['masterKeyAvailable']) {
             $result['hasIssues'] = true;
         }
 
