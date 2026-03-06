@@ -1,15 +1,27 @@
 /**
  * JavaScript module for vault secret TCA form element.
+ *
+ * Handles:
+ * - Reveal existing secrets via AJAX (toggle visibility)
+ * - Copy to clipboard functionality
+ * - Clear secret
  */
 class VaultSecretElement {
     constructor() {
+        this.revealedSecrets = new Map();
+        this.originalButtonContents = new WeakMap();
         this.init();
     }
 
     init() {
-        // Toggle visibility buttons
+        // Toggle visibility / reveal buttons
         document.querySelectorAll('.t3js-vault-toggle-visibility').forEach(button => {
             button.addEventListener('click', this.handleToggleVisibility.bind(this));
+        });
+
+        // Copy buttons
+        document.querySelectorAll('.t3js-vault-copy').forEach(button => {
+            button.addEventListener('click', this.handleCopy.bind(this));
         });
 
         // Clear buttons
@@ -18,17 +30,155 @@ class VaultSecretElement {
         });
     }
 
-    handleToggleVisibility(event) {
+    /**
+     * Get the vault identifier from the input field in the same input-group.
+     */
+    getIdentifier(button) {
+        const inputGroup = button.closest('.input-group');
+        const input = inputGroup?.querySelector('input[data-vault-identifier]');
+        return input?.dataset.vaultIdentifier || '';
+    }
+
+    /**
+     * Toggle visibility: first click reveals via AJAX, subsequent clicks toggle show/hide.
+     */
+    async handleToggleVisibility(event) {
         const button = event.currentTarget;
         const inputGroup = button.closest('.input-group');
         const input = inputGroup.querySelector('input[type="password"], input[type="text"]');
+        if (!input) return;
 
-        if (input.type === 'password') {
-            input.type = 'text';
-            button.querySelector('.t3js-icon').classList.replace('icon-actions-eye', 'icon-actions-eye-slash');
-        } else {
+        const identifier = this.getIdentifier(button);
+
+        // If already revealed and showing, hide it
+        if (input.dataset.vaultRevealed === '1' && input.type === 'text') {
             input.type = 'password';
-            button.querySelector('.t3js-icon').classList.replace('icon-actions-eye-slash', 'icon-actions-eye');
+            input.value = '';
+            input.placeholder = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+            input.dataset.vaultRevealed = '0';
+            this.updateIcon(button, 'icon-actions-eye-slash', 'icon-actions-eye');
+            this.toggleCopyButton(inputGroup, false);
+            return;
+        }
+
+        // If we have a cached secret, show it directly
+        if (identifier && this.revealedSecrets.has(identifier)) {
+            this.showSecret(input, button, inputGroup, this.revealedSecrets.get(identifier));
+            return;
+        }
+
+        // No identifier means no stored secret — just toggle input type locally
+        if (!identifier) {
+            input.type = input.type === 'password' ? 'text' : 'password';
+            this.updateIcon(button,
+                input.type === 'text' ? 'icon-actions-eye' : 'icon-actions-eye-slash',
+                input.type === 'text' ? 'icon-actions-eye-slash' : 'icon-actions-eye'
+            );
+            return;
+        }
+
+        // Fetch secret from vault via AJAX
+        button.disabled = true;
+        this.showSpinner(button);
+
+        try {
+            const response = await fetch(TYPO3.settings.ajaxUrls['vault_reveal'], {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.secret !== undefined) {
+                this.revealedSecrets.set(identifier, data.secret);
+                this.restoreButton(button);
+                this.showSecret(input, button, inputGroup, data.secret);
+            } else {
+                throw new Error(data.error || 'Failed to reveal secret');
+            }
+        } catch (error) {
+            console.error('Error revealing secret:', error);
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.error('Error', error.message || 'Failed to reveal secret');
+            }
+            this.restoreButton(button);
+            button.disabled = false;
+        }
+    }
+
+    /**
+     * Replace button content with a spinner, saving the original nodes.
+     */
+    showSpinner(button) {
+        const savedNodes = Array.from(button.childNodes).map(n => n.cloneNode(true));
+        this.originalButtonContents.set(button, savedNodes);
+        button.textContent = '';
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+        button.appendChild(spinner);
+    }
+
+    /**
+     * Restore button content from saved nodes.
+     */
+    restoreButton(button) {
+        const saved = this.originalButtonContents.get(button);
+        if (saved) {
+            button.textContent = '';
+            saved.forEach(node => button.appendChild(node));
+            this.originalButtonContents.delete(button);
+        }
+    }
+
+    /**
+     * Show the revealed secret in the input field.
+     */
+    showSecret(input, button, inputGroup, secret) {
+        input.value = secret;
+        input.type = 'text';
+        input.dataset.vaultRevealed = '1';
+        this.updateIcon(button, 'icon-actions-eye', 'icon-actions-eye-slash');
+        this.toggleCopyButton(inputGroup, true);
+        button.disabled = false;
+    }
+
+    /**
+     * Copy secret to clipboard.
+     */
+    async handleCopy(event) {
+        const button = event.currentTarget;
+        const identifier = this.getIdentifier(button);
+
+        const secret = identifier ? this.revealedSecrets.get(identifier) : null;
+        if (!secret) {
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.warning('Warning', 'Reveal the secret first before copying');
+            }
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(secret);
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.success('Success', 'Secret copied to clipboard');
+            }
+
+            // Visual feedback
+            this.updateIcon(button, 'icon-actions-clipboard', 'icon-actions-check');
+            setTimeout(() => {
+                this.updateIcon(button, 'icon-actions-check', 'icon-actions-clipboard');
+            }, 2000);
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.error('Error', 'Failed to copy to clipboard');
+            }
         }
     }
 
@@ -40,16 +190,43 @@ class VaultSecretElement {
         if (confirm('Are you sure you want to clear this secret? This action cannot be undone.')) {
             input.value = '';
             input.placeholder = '';
+            input.dataset.vaultRevealed = '0';
+
+            // Clear from cache
+            const identifier = this.getIdentifier(button);
+            if (identifier) {
+                this.revealedSecrets.delete(identifier);
+            }
 
             // Mark as cleared by removing the checksum
             const checksumField = input.closest('.formengine-field-item')
-                .parentElement.querySelector('input[name$="[_vault_checksum]"]');
+                ?.parentElement?.querySelector('input[name$="[_vault_checksum]"]');
             if (checksumField) {
                 checksumField.value = '';
             }
 
-            // Remove the clear button
             button.remove();
+        }
+    }
+
+    /**
+     * Swap icon classes on a button.
+     */
+    updateIcon(button, removeClass, addClass) {
+        const icon = button.querySelector('.t3js-icon');
+        if (icon) {
+            icon.classList.remove(removeClass);
+            icon.classList.add(addClass);
+        }
+    }
+
+    /**
+     * Show or hide the copy button in an input group.
+     */
+    toggleCopyButton(inputGroup, show) {
+        const copyButton = inputGroup.querySelector('.t3js-vault-copy');
+        if (copyButton) {
+            copyButton.style.display = show ? '' : 'none';
         }
     }
 }
