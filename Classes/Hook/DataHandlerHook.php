@@ -9,12 +9,17 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Hook;
 
+use Exception;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\Dto\PendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DataHandler hook for vault secret TCA fields.
@@ -146,6 +151,9 @@ final class DataHandlerHook
                     $this->vaultService->rotate($vaultIdentifier, $secretValue, 'TCA field updated');
                 }
             } catch (VaultException $e) {
+                // Roll back the dangling UUID - clear the field so no orphan reference remains
+                $this->rollBackField($table, $uid, $fieldName, $isNew ? '' : ($pending->originalChecksum !== '' ? $vaultIdentifier : ''));
+
                 /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
@@ -154,6 +162,19 @@ final class DataHandlerHook
                     null,
                     1,
                     'Vault error for field "' . $fieldName . '": ' . $e->getMessage(),
+                );
+
+                // Add a visible flash message so the backend user sees the error
+                $this->addFlashMessage(
+                    \sprintf(
+                        'Vault storage failed for field "%s" on %s:%d: %s. The field value has been rolled back.',
+                        $fieldName,
+                        $table,
+                        $uid,
+                        $e->getMessage(),
+                    ),
+                    'Vault Error',
+                    ContextualFeedbackSeverity::ERROR,
                 );
             }
         }
@@ -312,6 +333,46 @@ final class DataHandlerHook
         // Update copied record with new UUIDs
         if ($updates !== []) {
             $connection->update($table, $updates, ['uid' => $newId]);
+        }
+    }
+
+    /**
+     * Roll back a field value after a failed vault operation.
+     *
+     * For new secrets, clears the field (removes the dangling UUID).
+     * For updates, keeps the existing identifier (the old secret still exists).
+     */
+    private function rollBackField(string $table, int $uid, string $fieldName, string $rollBackValue): void
+    {
+        if ($uid <= 0) {
+            return;
+        }
+
+        try {
+            $this->connectionPool
+                ->getConnectionForTable($table)
+                ->update($table, [$fieldName => $rollBackValue], ['uid' => $uid]);
+        } catch (Exception) {
+            // Best-effort rollback - if this also fails, the DataHandler log entry
+            // from the caller already documents the problem
+        }
+    }
+
+    /**
+     * Add a flash message visible to the backend user.
+     */
+    private function addFlashMessage(
+        string $message,
+        string $title,
+        ContextualFeedbackSeverity $severity,
+    ): void {
+        try {
+            $flashMessage = new FlashMessage($message, $title, $severity, true);
+            GeneralUtility::makeInstance(FlashMessageService::class)
+                ->getMessageQueueByIdentifier()
+                ->addMessage($flashMessage);
+        } catch (Exception) {
+            // Flash message service may not be available in all contexts (e.g., CLI)
         }
     }
 

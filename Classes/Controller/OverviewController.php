@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Controller;
 
 use Exception;
+use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -28,6 +29,7 @@ final readonly class OverviewController
     public function __construct(
         private ModuleTemplateFactory $moduleTemplateFactory,
         private ConnectionPool $connectionPool,
+        private MasterKeyProviderFactoryInterface $masterKeyProviderFactory,
     ) {}
 
     /**
@@ -47,11 +49,13 @@ final readonly class OverviewController
 
         // Get statistics for the overview
         $stats = $this->getVaultStatistics();
+        $healthChecks = $this->getHealthChecks();
 
         $lang = $this->getLanguageService();
 
         $moduleTemplate->assignMultiple([
             'stats' => $stats,
+            'healthChecks' => $healthChecks,
             'submodules' => [
                 [
                     'route' => 'admin_vault_secrets',
@@ -122,6 +126,54 @@ final readonly class OverviewController
                 'disabledSecrets' => 0,
             ];
         }
+    }
+
+    /**
+     * Run health checks and return status information.
+     *
+     * @return array{masterKeyAvailable: bool, masterKeyProvider: string, masterKeyError: string, encryptionWorking: bool, encryptionError: string, hasIssues: bool}
+     */
+    private function getHealthChecks(): array
+    {
+        $result = [
+            'masterKeyAvailable' => false,
+            'masterKeyProvider' => '',
+            'masterKeyError' => '',
+            'encryptionWorking' => false,
+            'encryptionError' => '',
+            'hasIssues' => false,
+        ];
+
+        // Check 1: Is a master key provider available?
+        try {
+            $provider = $this->masterKeyProviderFactory->getAvailableProvider();
+            $result['masterKeyProvider'] = $provider->getIdentifier();
+
+            if ($provider->isAvailable()) {
+                $result['masterKeyAvailable'] = true;
+
+                // Check 2: Can we actually derive/read the master key?
+                try {
+                    $key = $provider->getMasterKey();
+                    $result['encryptionWorking'] = $key !== '';
+                } catch (Exception $e) {
+                    $result['encryptionError'] = $e->getMessage();
+                    $result['hasIssues'] = true;
+                }
+            } else {
+                $result['masterKeyError'] = 'Master key provider "' . $provider->getIdentifier() . '" is configured but not available.';
+                $result['hasIssues'] = true;
+            }
+        } catch (Exception $e) {
+            $result['masterKeyError'] = $e->getMessage();
+            $result['hasIssues'] = true;
+        }
+
+        if (!$result['masterKeyAvailable']) {
+            $result['hasIssues'] = true;
+        }
+
+        return $result;
     }
 
     private function getLanguageService(): LanguageService

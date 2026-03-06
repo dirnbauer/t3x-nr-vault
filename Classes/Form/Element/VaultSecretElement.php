@@ -94,7 +94,7 @@ final class VaultSecretElement extends AbstractFormElement
         $attributes = [
             'type' => 'password',
             'id' => $fieldId,
-            'name' => $itemName,
+            'name' => $itemName . '[value]',
             'value' => '',
             'class' => implode(' ', [
                 'form-control',
@@ -138,6 +138,10 @@ final class VaultSecretElement extends AbstractFormElement
 
         // Build HTML
         $html = [];
+
+        // Render field label
+        $html[] = $this->renderLabel($fieldId);
+
         $html[] = '<div class="formengine-field-item t3js-formengine-field-item">';
 
         // Render field information (description/help text)
@@ -146,6 +150,16 @@ final class VaultSecretElement extends AbstractFormElement
         $html[] = \is_string($fieldInformationResult['html'] ?? null) ? $fieldInformationResult['html'] : '';
         /** @var array<string, mixed> $resultArray */
         $resultArray = $this->mergeChildReturnIntoExistingResult($resultArray, $fieldInformationResult, false);
+
+        // Render field description if present
+        $fieldDescriptionValue = $fieldConf['description'] ?? '';
+        $fieldDescription = \is_string($fieldDescriptionValue) ? $fieldDescriptionValue : '';
+        if ($fieldDescription !== '') {
+            $description = $this->getLanguageService()->sL($fieldDescription);
+            if ($description !== '') {
+                $html[] = '<div class="form-description">' . htmlspecialchars($description) . '</div>';
+            }
+        }
 
         $html[] = '<div class="form-wizards-wrap">';
         $html[] = '<div class="form-wizards-element">';
@@ -190,6 +204,11 @@ final class VaultSecretElement extends AbstractFormElement
 
         // Hidden field to track vault identifier
         $html[] = '<input type="hidden" name="' . htmlspecialchars($itemName) . '[_vault_identifier]" value="' . htmlspecialchars($vaultIdentifier) . '" />';
+
+        // Hidden checksum field to detect update vs. new operations
+        if ($hasValue && $vaultIdentifier !== '') {
+            $html[] = '<input type="hidden" name="' . htmlspecialchars($itemName) . '[_vault_checksum]" value="' . htmlspecialchars(hash('sha256', $vaultIdentifier)) . '" />';
+        }
 
         $resultArray['html'] = implode(self::LINE_FEED, $html);
 
