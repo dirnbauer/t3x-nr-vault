@@ -13,7 +13,7 @@ use Exception;
 use Netresearch\NrVault\Controller\OverviewController;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -24,10 +24,9 @@ use ReflectionClass;
  *
  * Tests the getHealthChecks() logic via reflection since the controller
  * depends on final TYPO3 classes that cannot be fully mocked for indexAction().
- * CoversNothing because OverviewController is excluded from unit test coverage
- * (tested via functional tests for full coverage).
+ * CoversClass enables coverage tracking for getHealthChecks() via unit tests.
  */
-#[CoversNothing]
+#[CoversClass(OverviewController::class)]
 final class OverviewControllerTest extends TestCase
 {
     private MasterKeyProviderFactoryInterface&MockObject $masterKeyProviderFactory;

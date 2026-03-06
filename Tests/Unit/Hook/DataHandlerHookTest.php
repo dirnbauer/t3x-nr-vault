@@ -19,6 +19,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use ReflectionClass;
+use RuntimeException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -1203,6 +1204,219 @@ final class DataHandlerHookTest extends UnitTestCase
             $this->dataHandler,
             false,
         );
+    }
+
+    #[Test]
+    public function cmdmapPreProcessSkipsNonStringVaultIdentifier(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock database connection - vault field is an integer (non-string)
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => 12345]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->with('tx_test')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('delete');
+
+        $this->subject->processCmdmap_preProcess(
+            'delete',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessSkipsNonStringSourceIdentifier(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        // Mock database connection - vault field is an integer (non-string)
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => 12345]);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('retrieve');
+
+        // No update should happen
+        $connection
+            ->expects(self::never())
+            ->method('update');
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function cmdmapPostProcessSkipsEmptySourceIdentifier(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        $this->dataHandler->copyMappingArray = ['tx_test' => [42 => 100]];
+
+        // Mock database connection - vault field is empty string
+        $connection = $this->createMock(Connection::class);
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAssociative')->willReturn(['api_key' => '']);
+        $connection->method('select')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $this->vaultService
+            ->expects(self::never())
+            ->method('retrieve');
+
+        $connection
+            ->expects(self::never())
+            ->method('update');
+
+        $this->subject->processCmdmap_postProcess(
+            'copy',
+            'tx_test',
+            42,
+            null,
+            $this->dataHandler,
+            false,
+        );
+    }
+
+    #[Test]
+    public function rollBackFieldHandlesExceptionGracefully(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock connection that throws on rollback update
+        $connection = $this->createMock(Connection::class);
+        $connection
+            ->method('update')
+            ->willThrowException(new RuntimeException('DB connection lost'));
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        // Mock flash message queue
+        $flashMessageQueue = $this->createMock(FlashMessageQueue::class);
+        $this->flashMessageService->method('getMessageQueueByIdentifier')->willReturn($flashMessageQueue);
+
+        $fieldArray = ['api_key' => 'new-secret'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        $this->vaultService
+            ->method('store')
+            ->willThrowException(new VaultException('Storage failed'));
+
+        // Should not throw - rollback failure is silently caught
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+
+        // If we get here, the exception was properly caught
+        self::assertTrue(true);
+    }
+
+    #[Test]
+    public function addFlashMessageHandlesExceptionGracefully(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+        ]);
+
+        // Mock connection for rollback
+        $connection = $this->createMock(Connection::class);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        // Flash message service throws exception
+        $this->flashMessageService
+            ->method('getMessageQueueByIdentifier')
+            ->willThrowException(new RuntimeException('Flash service unavailable'));
+
+        $fieldArray = ['api_key' => 'new-secret'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            42,
+        );
+
+        $this->vaultService
+            ->method('store')
+            ->willThrowException(new VaultException('Storage failed'));
+
+        // Should not throw - flash message failure is silently caught
+        $this->subject->processDatamap_afterDatabaseOperations(
+            'update',
+            'tx_test',
+            42,
+            $fieldArray,
+            $this->dataHandler,
+        );
+
+        // If we get here, the exception was properly caught
+        self::assertTrue(true);
+    }
+
+    #[Test]
+    public function preProcessFieldArraySkipsVaultFieldNotInFieldArray(): void
+    {
+        $this->mockTcaSchemaForTable('tx_test', [
+            'api_key' => ['type' => 'input', 'renderType' => 'vaultSecret'],
+            'title' => ['type' => 'input'],
+        ]);
+
+        // Only 'title' is in fieldArray, 'api_key' vault field is not
+        $fieldArray = ['title' => 'Test Title'];
+
+        $this->subject->processDatamap_preProcessFieldArray(
+            $fieldArray,
+            'tx_test',
+            1,
+        );
+
+        // Field array should remain unchanged - vault field was not present
+        self::assertSame(['title' => 'Test Title'], $fieldArray);
+        self::assertArrayNotHasKey('api_key', $fieldArray);
     }
 
     #[Test]

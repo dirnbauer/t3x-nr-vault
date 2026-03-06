@@ -35,10 +35,8 @@
             <!-- They are tested through functional tests instead -->
             <file>../Classes/Controller/AuditController.php</file>
             <file>../Classes/Controller/MigrationController.php</file>
-            <file>../Classes/Controller/OverviewController.php</file>
             <file>../Classes/Controller/SecretsController.php</file>
-            <!-- Form elements also depend on final TYPO3 classes -->
-            <file>../Classes/Form/Element/VaultSecretElement.php</file>
+            <!-- Form elements: VaultSecretInputElement depends on final TYPO3 classes -->
             <file>../Classes/Form/Element/VaultSecretInputElement.php</file>
             <!-- Interfaces define contracts, not executable code -->
             <file>../Classes/Adapter/VaultAdapterInterface.php</file>
