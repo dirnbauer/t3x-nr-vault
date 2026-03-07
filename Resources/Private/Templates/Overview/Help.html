@@ -1,0 +1,274 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+<!--
+ * Copyright (c) 2025-2026 Netresearch DTT GmbH
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ *
+ * Help page for the Vault admin module.
+ * Provides setup guidance, architecture overview, and FAQ.
+-->
+<f:layout name="Module" />
+<f:section name="Content">
+    <h1>Vault Help</h1>
+    <p class="lead">
+        This guide explains how vault encryption works, how to manage secrets,
+        and how to troubleshoot common issues.
+    </p>
+
+    <!-- Section 1: Getting started -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2 class="card-title mb-0">Getting started</h2>
+        </div>
+        <div class="card-body">
+            <p>
+                The Vault extension provides secure storage for sensitive configuration
+                data (API keys, passwords, tokens) using envelope encryption. Follow
+                these steps to get started:
+            </p>
+
+            <h3>Step 1 &mdash; Verify encryption health</h3>
+            <p>
+                Visit the <a href="{dashboardUrl}">Dashboard</a> and check the health
+                indicator at the top. A green banner confirms that encryption is active and
+                working. If you see an error, ensure that
+                <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code> is set in
+                your TYPO3 configuration or configure an alternative master key provider.
+            </p>
+
+            <h3>Step 2 &mdash; Create your first secret</h3>
+            <p>
+                Navigate to <strong>Secrets</strong> and click the <code>+</code> button in
+                the header. Choose a descriptive identifier (e.g., <code>stripe_api_key</code>)
+                and enter the secret value. The value is encrypted before it reaches the database.
+            </p>
+
+            <h3>Step 3 &mdash; Reference secrets in configuration</h3>
+            <p>
+                Use the vault syntax anywhere TYPO3 resolves configuration values:
+            </p>
+            <pre class="bg-body-tertiary p-3 rounded"><code>%vault(stripe_api_key)%</code></pre>
+            <p>
+                This works in site configuration YAML, TypoScript, and any configuration that
+                uses the TYPO3 expression language.
+            </p>
+
+            <h3>Step 4 &mdash; Migrate existing plaintext secrets (optional)</h3>
+            <p>
+                The <strong>Migration Wizard</strong> scans your database for plaintext secrets
+                and guides you through encrypting them. It supports batch processing and
+                verifies each migration before committing.
+            </p>
+        </div>
+    </div>
+
+    <!-- Section 2: Architecture -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2 class="card-title mb-0">Envelope encryption</h2>
+        </div>
+        <div class="card-body">
+            <p>
+                Vault uses a two-layer encryption scheme called <em>envelope encryption</em>,
+                the same pattern used by AWS KMS, Google Cloud KMS, and Azure Key Vault:
+            </p>
+
+            <h3>How it works</h3>
+            <ol>
+                <li>
+                    <strong>Data Encryption Key (DEK)</strong> &mdash; Each secret is encrypted
+                    with its own unique random key using AES-256-GCM. This means compromising one
+                    secret does not reveal others.
+                </li>
+                <li>
+                    <strong>Key Encryption Key (KEK / Master Key)</strong> &mdash; The DEK is
+                    then encrypted with the master key and stored alongside the ciphertext.
+                    The master key never leaves the server.
+                </li>
+            </ol>
+
+            <h3>Master key providers</h3>
+            <p>The master key can come from several sources (in priority order):</p>
+            <ul>
+                <li><strong>Environment variable</strong> (<code>TYPO3_VAULT_MASTER_KEY</code>) &mdash; recommended for production</li>
+                <li><strong>File-based</strong> &mdash; a key file outside the web root</li>
+                <li><strong>TYPO3 encryption key</strong> &mdash; fallback using <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code></li>
+            </ul>
+
+            <h3>Key rotation</h3>
+            <p>
+                The master key can be rotated without downtime using
+                <code>bin/typo3 vault:rotate-master-key</code>. This re-encrypts all DEKs
+                with the new master key. Individual secrets can also be rotated with
+                <code>bin/typo3 vault:rotate</code>.
+            </p>
+        </div>
+    </div>
+
+    <!-- Section 3: Audit trail -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2 class="card-title mb-0">Audit trail</h2>
+        </div>
+        <div class="card-body">
+            <p>
+                Every secret operation (create, read, update, delete, rotate) is recorded in a
+                tamper-evident audit chain. Each entry includes:
+            </p>
+            <ul>
+                <li>The action performed and the secret identifier</li>
+                <li>The backend user who performed the action</li>
+                <li>A timestamp and IP address</li>
+                <li>A cryptographic hash linking each entry to the previous one</li>
+            </ul>
+            <p>
+                Use the <strong>Audit Log</strong> module to browse entries and the
+                <strong>Verify Chain</strong> action to check integrity. Any tampered or
+                missing entries will be flagged.
+            </p>
+        </div>
+    </div>
+
+    <!-- Section 4: Troubleshooting -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2 class="card-title mb-0">Troubleshooting</h2>
+        </div>
+        <div class="card-body">
+            <h3>"Encryption is not available" on the dashboard</h3>
+            <p>
+                The master key provider could not be initialized. Check that at least one of
+                the following is configured:
+            </p>
+            <ul>
+                <li>The <code>TYPO3_VAULT_MASTER_KEY</code> environment variable is set</li>
+                <li>A valid key file path is configured in extension settings</li>
+                <li>The TYPO3 <code>encryptionKey</code> is not empty</li>
+            </ul>
+
+            <h3>Secret values show as "decryption failed"</h3>
+            <p>
+                This means the master key has changed since the secret was encrypted. If the
+                master key was rotated correctly, all DEKs should have been re-encrypted. If
+                the key was lost, the affected secrets cannot be recovered &mdash; store a new
+                value.
+            </p>
+
+            <h3>Migration wizard finds no candidates</h3>
+            <p>
+                The scanner looks for fields matching common secret patterns (columns named
+                <code>*password*</code>, <code>*key*</code>, <code>*token*</code>, <code>*secret*</code>).
+                If your field uses a different naming convention, you can add it manually via
+                the CLI: <code>bin/typo3 vault:migrate-field table_name field_name</code>.
+            </p>
+
+            <h3>Audit chain verification fails</h3>
+            <p>
+                A broken chain means an entry was modified or deleted outside of vault operations.
+                This could indicate tampering or a database restore from an inconsistent backup.
+                The verification report shows exactly which entries are affected.
+            </p>
+        </div>
+    </div>
+
+    <!-- Section 5: FAQ -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2 class="card-title mb-0">Frequently asked questions</h2>
+        </div>
+        <div class="card-body">
+            <div class="accordion" id="faqAccordion">
+
+                <div class="accordion-item">
+                    <h3 class="accordion-header" id="faqHeading1">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#faqCollapse1"
+                                aria-expanded="false" aria-controls="faqCollapse1">
+                            Can I use vault secrets in site configuration YAML?
+                        </button>
+                    </h3>
+                    <div id="faqCollapse1" class="accordion-collapse collapse"
+                         aria-labelledby="faqHeading1" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <p>
+                                Yes. Use the <code>%vault(identifier)%</code> syntax in your
+                                <code>config/sites/*/config.yaml</code>. Values are resolved at
+                                runtime, so they never appear in plain text in files.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h3 class="accordion-header" id="faqHeading2">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#faqCollapse2"
+                                aria-expanded="false" aria-controls="faqCollapse2">
+                            What happens if I lose the master key?
+                        </button>
+                    </h3>
+                    <div id="faqCollapse2" class="accordion-collapse collapse"
+                         aria-labelledby="faqHeading2" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <p>
+                                Without the master key, encrypted secrets cannot be recovered.
+                                This is by design &mdash; the security of envelope encryption
+                                depends on the master key. Always back up your master key
+                                separately from the database.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h3 class="accordion-header" id="faqHeading3">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#faqCollapse3"
+                                aria-expanded="false" aria-controls="faqCollapse3">
+                            Can editors access secrets?
+                        </button>
+                    </h3>
+                    <div id="faqCollapse3" class="accordion-collapse collapse"
+                         aria-labelledby="faqHeading3" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <p>
+                                The vault backend module is restricted to administrators. However,
+                                editors can interact with vault-backed TCA fields (e.g.,
+                                <code>renderType=vaultSecret</code>) without seeing the actual
+                                values &mdash; they enter values which are encrypted automatically.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item">
+                    <h3 class="accordion-header" id="faqHeading4">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#faqCollapse4"
+                                aria-expanded="false" aria-controls="faqCollapse4">
+                            How do I rotate secrets in a CI/CD pipeline?
+                        </button>
+                    </h3>
+                    <div id="faqCollapse4" class="accordion-collapse collapse"
+                         aria-labelledby="faqHeading4" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            <p>
+                                Use the CLI commands in your deployment scripts:
+                            </p>
+                            <pre class="bg-body-tertiary p-2 rounded"><code>bin/typo3 vault:store api_key "$NEW_API_KEY"
+bin/typo3 vault:rotate smtp_password "$NEW_SMTP_PASS"</code></pre>
+                            <p>
+                                Ensure the <code>TYPO3_VAULT_MASTER_KEY</code> environment
+                                variable is available in your CI/CD environment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</f:section>
+</html>

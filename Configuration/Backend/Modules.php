@@ -50,6 +50,9 @@ return [
             '_default' => [
                 'target' => OverviewController::class . '::indexAction',
             ],
+            'help' => [
+                'target' => OverviewController::class . '::helpAction',
+            ],
         ],
     ],
 
@@ -68,6 +71,9 @@ return [
         'routes' => [
             '_default' => [
                 'target' => OverviewController::class . '::indexAction',
+            ],
+            'help' => [
+                'target' => OverviewController::class . '::helpAction',
             ],
         ],
     ],

@@ -14,6 +14,8 @@ use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
+use TYPO3\CMS\Backend\Routing\UriBuilder as BackendUriBuilder;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -30,6 +32,7 @@ final readonly class OverviewController
         private ModuleTemplateFactory $moduleTemplateFactory,
         private ConnectionPool $connectionPool,
         private MasterKeyProviderFactoryInterface $masterKeyProviderFactory,
+        private BackendUriBuilder $backendUriBuilder,
     ) {}
 
     /**
@@ -39,6 +42,7 @@ final readonly class OverviewController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
+        $this->buildDocHeaderTabMenu($moduleTemplate, 'dashboard');
         /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
         if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
             $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
@@ -79,6 +83,52 @@ final readonly class OverviewController
         ]);
 
         return $moduleTemplate->renderResponse('Overview/Index');
+    }
+
+    /**
+     * Display vault help and documentation page.
+     */
+    public function helpAction(ServerRequestInterface $request): ResponseInterface
+    {
+        $moduleTemplate = $this->moduleTemplateFactory->create($request);
+        $moduleTemplate->makeDocHeaderModuleMenu();
+        $this->buildDocHeaderTabMenu($moduleTemplate, 'help');
+
+        $moduleTemplate->assignMultiple([
+            'dashboardUrl' => (string) $this->backendUriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        ]);
+
+        return $moduleTemplate->renderResponse('Overview/Help');
+    }
+
+    /**
+     * Build a Dashboard/Help tab menu in the docheader.
+     */
+    private function buildDocHeaderTabMenu(
+        ModuleTemplate $moduleTemplate,
+        string $activeTab,
+    ): void {
+        $menuRegistry = $moduleTemplate->getDocHeaderComponent()->getMenuRegistry();
+        $menu = $menuRegistry->makeMenu();
+        $menu->setIdentifier('VaultOverviewMenu');
+
+        $dashboardItem = $menu->makeMenuItem()
+            ->setTitle('Dashboard')
+            ->setHref((string) $this->backendUriBuilder->buildUriFromRoute(self::MODULE_NAME));
+        if ($activeTab === 'dashboard') {
+            $dashboardItem->setActive(true);
+        }
+        $menu->addMenuItem($dashboardItem);
+
+        $helpItem = $menu->makeMenuItem()
+            ->setTitle('Help')
+            ->setHref((string) $this->backendUriBuilder->buildUriFromRoute(self::MODULE_NAME . '.help'));
+        if ($activeTab === 'help') {
+            $helpItem->setActive(true);
+        }
+        $menu->addMenuItem($helpItem);
+
+        $menuRegistry->addMenu($menu);
     }
 
     /**
