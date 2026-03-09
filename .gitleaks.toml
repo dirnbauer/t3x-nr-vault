@@ -2,8 +2,10 @@
 useDefault = true
 
 [allowlist]
-description = "Allow test fixtures and build cache false positives"
+description = "Allow test fixtures, documentation examples, and build cache false positives"
 paths = [
     '''Tests/Unit/Service/SecretDetectionServiceTest\.php''',
+    '''Tests/Unit/Crypto/EnvironmentMasterKeyProviderTest\.php''',
+    '''docs/implementation-plan\.md''',
     '''\.php-cs-fixer\.cache''',
 ]
