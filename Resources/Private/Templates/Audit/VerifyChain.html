@@ -40,6 +40,26 @@
             </f:else>
         </f:if>
 
+        <f:if condition="{warnings}">
+            <div class="card card-size-medium mt-4">
+                <div class="card-header">
+                    <div class="card-header-body">
+                        <h2 class="card-title">Warnings</h2>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <f:for each="{warnings}" as="warning">
+                            <li class="list-group-item list-group-item-warning">
+                                <core:icon identifier="actions-exclamation-triangle" size="small" />
+                                {warning}
+                            </li>
+                        </f:for>
+                    </ul>
+                </div>
+            </div>
+        </f:if>
+
         <div class="form-actions mt-4">
             <f:be.link route="admin_vault_audit" class="btn btn-default">
                 <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.back" />

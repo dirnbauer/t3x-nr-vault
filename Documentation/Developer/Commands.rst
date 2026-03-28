@@ -566,9 +566,9 @@ vault:audit-migrate-hmac
 ========================
 
 Migrate existing audit log entries from plain SHA-256 (epoch 0) to
-HMAC-SHA256 (epoch 1). This command rehashes all legacy audit log entries
-using an HMAC key derived from the master key, upgrading the hash chain
-from tamper detection to adversarial tamper resistance.
+HMAC-SHA256 (target epoch configured via ``auditHmacEpoch``). This command
+rehashes all audit log entries using an HMAC key derived from the master key,
+upgrading the hash chain from tamper detection to adversarial tamper resistance.
 
 See :ref:`adr-023-audit-hash-chain-hmac` for the architectural decision
 behind this migration.
@@ -586,9 +586,6 @@ Options
 --dry-run
    Show what would be migrated without making changes.
 
---batch-size, -b
-   Number of entries to process per batch (default: 100).
-
 .. _command-audit-migrate-hmac-example:
 
 Example
@@ -602,9 +599,6 @@ Example
 
    # Run the migration
    vendor/bin/typo3 vault:audit-migrate-hmac
-
-   # Process in smaller batches
-   vendor/bin/typo3 vault:audit-migrate-hmac --batch-size=50
 
 .. attention::
 

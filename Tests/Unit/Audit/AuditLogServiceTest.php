@@ -777,8 +777,20 @@ final class AuditLogServiceTest extends TestCase
             ->method('lastInsertId')
             ->willReturn('1');
 
-        // Capture the entry_hash written during update
+        // Capture the entry_hash and crdate written during insert/update
         $hmacHash = '';
+        $capturedCrdate = 0;
+        $this->connection
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static function (array $data) use (&$capturedCrdate): bool {
+                    $capturedCrdate = $data['crdate'];
+
+                    return true;
+                }),
+            );
+
         $this->connection
             ->method('update')
             ->with(
@@ -793,13 +805,13 @@ final class AuditLogServiceTest extends TestCase
 
         $this->getSubject()->log('test_secret', 'create', true);
 
-        // Calculate the legacy SHA-256 hash for the same payload
+        // Calculate the legacy SHA-256 hash for the same payload using the captured crdate
         $payload = json_encode([
             'uid' => 1,
             'secret_identifier' => 'test_secret',
             'action' => 'create',
             'actor_uid' => 1,
-            'crdate' => self::anything(),
+            'crdate' => $capturedCrdate,
             'previous_hash' => '',
         ], JSON_THROW_ON_ERROR);
 
@@ -807,7 +819,7 @@ final class AuditLogServiceTest extends TestCase
         self::assertNotEmpty($hmacHash);
         self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hmacHash);
 
-        // The HMAC hash should differ from a plain SHA-256 of any similar payload
+        // The HMAC hash should differ from a plain SHA-256 of the same payload
         $legacySha256 = hash('sha256', $payload);
         self::assertNotSame($legacySha256, $hmacHash);
     }
@@ -957,6 +969,87 @@ final class AuditLogServiceTest extends TestCase
         self::assertNotEmpty($verification->warnings);
         self::assertArrayHasKey(2, $verification->warnings);
         self::assertStringContainsString('epoch boundary', $verification->warnings[2]);
+    }
+
+    #[Test]
+    public function verifyHashChainWithMixedEpochsValidatesChainIntegrity(): void
+    {
+        // Build a chain with epoch-0 entries followed by epoch-1 entries
+        $masterKey = str_repeat("\x01", 32);
+        $hmacKey = hash_hkdf('sha256', $masterKey, 32, 'nr-vault-audit-hmac-v1');
+
+        // Entry 1: epoch 0 (SHA-256)
+        $hash1 = AuditLogService::calculateHash(1, 'secret-a', 'create', 1, 1704067200, '');
+        // Entry 2: epoch 0 (SHA-256)
+        $hash2 = AuditLogService::calculateHash(2, 'secret-b', 'read', 1, 1704153600, $hash1);
+        // Entry 3: epoch 1 (HMAC) - epoch boundary
+        $hash3 = AuditLogService::calculateHash(3, 'secret-c', 'update', 2, 1704240000, $hash2, $hmacKey);
+        // Entry 4: epoch 1 (HMAC)
+        $hash4 = AuditLogService::calculateHash(4, 'secret-d', 'delete', 2, 1704326400, $hash3, $hmacKey);
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn([
+            [
+                'uid' => 1,
+                'secret_identifier' => 'secret-a',
+                'action' => 'create',
+                'actor_uid' => 1,
+                'crdate' => 1704067200,
+                'previous_hash' => '',
+                'entry_hash' => $hash1,
+                'hmac_key_epoch' => 0,
+            ],
+            [
+                'uid' => 2,
+                'secret_identifier' => 'secret-b',
+                'action' => 'read',
+                'actor_uid' => 1,
+                'crdate' => 1704153600,
+                'previous_hash' => $hash1,
+                'entry_hash' => $hash2,
+                'hmac_key_epoch' => 0,
+            ],
+            [
+                'uid' => 3,
+                'secret_identifier' => 'secret-c',
+                'action' => 'update',
+                'actor_uid' => 2,
+                'crdate' => 1704240000,
+                'previous_hash' => $hash2,
+                'entry_hash' => $hash3,
+                'hmac_key_epoch' => 1,
+            ],
+            [
+                'uid' => 4,
+                'secret_identifier' => 'secret-d',
+                'action' => 'delete',
+                'actor_uid' => 2,
+                'crdate' => 1704326400,
+                'previous_hash' => $hash3,
+                'entry_hash' => $hash4,
+                'hmac_key_epoch' => 1,
+            ],
+        ]);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        $verification = $this->getSubject()->verifyHashChain();
+
+        self::assertTrue($verification->isValid(), 'Mixed epoch chain should be valid');
+        self::assertNotEmpty($verification->warnings, 'Should have epoch boundary warning');
+        self::assertArrayHasKey(3, $verification->warnings, 'Warning should be on entry 3 (epoch boundary)');
+        self::assertCount(1, $verification->warnings, 'Should have exactly one epoch boundary warning');
     }
 
     private function getSubject(): AuditLogService

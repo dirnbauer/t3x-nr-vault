@@ -250,6 +250,24 @@ final class VaultAuditCommandTest extends TestCase
     }
 
     #[Test]
+    public function verifyHashChainDisplaysWarnings(): void
+    {
+        $this->auditLogService
+            ->method('verifyHashChain')
+            ->willReturn(HashChainVerificationResult::valid([5 => 'HMAC key epoch boundary: 0 -> 1']));
+
+        $exitCode = $this->commandTester->execute([
+            '--verify' => true,
+        ]);
+
+        self::assertSame(0, $exitCode);
+        $display = $this->commandTester->getDisplay();
+        self::assertStringContainsString('Hash chain is valid', $display);
+        self::assertStringContainsString('1 warning(s) detected', $display);
+        self::assertStringContainsString('epoch boundary', $display);
+    }
+
+    #[Test]
     public function exportsToFile(): void
     {
         vfsStream::setup('exports');

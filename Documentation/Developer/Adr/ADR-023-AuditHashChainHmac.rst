@@ -105,10 +105,14 @@ Risks
 -  **Data migration**: Existing hash chain entries are left as a legacy
    epoch (epoch 0) until migrated via the ``vault:audit-migrate-hmac``
    command.
--  **HMAC key lifecycle**: Master key rotation requires re-deriving the HMAC
-   key. If the old master key is discarded, verification of historical
-   entries derived from it becomes impossible unless the old HMAC key is
-   retained separately.
+-  **HMAC key lifecycle**: The epoch value is an algorithm/version marker,
+   not a key diversifier — the HMAC key is always derived identically from
+   the current master key regardless of the epoch number. Master key
+   rotation requires re-deriving the HMAC key. After master key rotation,
+   a new epoch should be started so the verifier knows which key was used.
+   If the old master key is discarded, verification of historical entries
+   derived from it becomes impossible unless the old HMAC key is retained
+   separately.
 -  **Operational complexity**: Introduces a dependency between the audit
    subsystem and the master key provider, coupling two previously
    independent components.

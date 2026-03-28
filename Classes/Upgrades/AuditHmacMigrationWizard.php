@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Upgrades;
 
+use Netresearch\NrVault\Audit\AuditLogService;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use TYPO3\CMS\Core\Database\Connection;
@@ -25,8 +26,6 @@ use TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface;
 final readonly class AuditHmacMigrationWizard implements UpgradeWizardInterface
 {
     private const TABLE_NAME = 'tx_nrvault_audit_log';
-
-    private const HKDF_INFO = 'nr-vault-audit-hmac-v1';
 
     public function __construct(
         private ConnectionPool $connectionPool,
@@ -65,22 +64,20 @@ final readonly class AuditHmacMigrationWizard implements UpgradeWizardInterface
 
         $connection = $this->connectionPool->getConnectionForTable(self::TABLE_NAME);
 
-        $masterKey = $this->masterKeyProvider->getMasterKey();
-        $hmacKey = hash_hkdf('sha256', $masterKey, 32, self::HKDF_INFO);
-        sodium_memzero($masterKey);
+        // Use the shared HMAC key derivation
+        $hmacKey = AuditLogService::deriveHmacKey($this->masterKeyProvider);
 
         try {
-            // Read ALL entries in UID order to rebuild chain
-            $rows = $connection->createQueryBuilder()
+            // Stream ALL entries in UID order to rebuild chain (maintains integrity)
+            $result = $connection->createQueryBuilder()
                 ->select('*')
                 ->from(self::TABLE_NAME)
                 ->orderBy('uid', 'ASC')
-                ->executeQuery()
-                ->fetchAllAssociative();
+                ->executeQuery();
 
             $previousHash = '';
 
-            foreach ($rows as $row) {
+            while (($row = $result->fetchAssociative()) !== false) {
                 $rowUid = $row['uid'] ?? 0;
                 $uid = is_numeric($rowUid) ? (int) $rowUid : 0;
                 $rowSecretId = $row['secret_identifier'] ?? '';
@@ -91,36 +88,29 @@ final readonly class AuditHmacMigrationWizard implements UpgradeWizardInterface
                 $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
                 $rowCrdate = $row['crdate'] ?? 0;
                 $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
-                $rowEpoch = $row['hmac_key_epoch'] ?? 0;
-                $epoch = is_numeric($rowEpoch) ? (int) $rowEpoch : 0;
 
-                if ($epoch === 0) {
-                    $payload = json_encode([
-                        'uid' => $uid,
-                        'secret_identifier' => $secretId,
-                        'action' => $action,
-                        'actor_uid' => $actorUid,
-                        'crdate' => $crdate,
+                // Re-hash ALL entries to maintain chain integrity
+                $newHash = AuditLogService::calculateHash(
+                    $uid,
+                    $secretId,
+                    $action,
+                    $actorUid,
+                    $crdate,
+                    $previousHash,
+                    $hmacKey,
+                );
+
+                $connection->update(
+                    self::TABLE_NAME,
+                    [
+                        'entry_hash' => $newHash,
                         'previous_hash' => $previousHash,
-                    ], JSON_THROW_ON_ERROR);
+                        'hmac_key_epoch' => $targetEpoch,
+                    ],
+                    ['uid' => $uid],
+                );
 
-                    $newHash = hash_hmac('sha256', $payload, $hmacKey);
-
-                    $connection->update(
-                        self::TABLE_NAME,
-                        [
-                            'entry_hash' => $newHash,
-                            'previous_hash' => $previousHash,
-                            'hmac_key_epoch' => $targetEpoch,
-                        ],
-                        ['uid' => $uid],
-                    );
-
-                    $previousHash = $newHash;
-                } else {
-                    $rowEntryHash = $row['entry_hash'] ?? '';
-                    $previousHash = \is_string($rowEntryHash) ? $rowEntryHash : '';
-                }
+                $previousHash = $newHash;
             }
 
             return true;

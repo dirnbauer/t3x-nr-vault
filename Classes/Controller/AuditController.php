@@ -180,6 +180,7 @@ final readonly class AuditController
         $moduleTemplate->assignMultiple([
             'valid' => $result->valid,
             'errors' => $result->errors,
+            'warnings' => $result->warnings,
             'message' => $result->isValid()
                 ? $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')
                 : $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid'),

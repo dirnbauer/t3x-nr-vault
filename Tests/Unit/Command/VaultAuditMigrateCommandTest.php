@@ -96,24 +96,30 @@ final class VaultAuditMigrateCommandTest extends TestCase
     #[Test]
     public function dryRunReportsChangesWithoutModifying(): void
     {
-        // Count query returns 1
+        // Count epoch-0 entries returns 1
         $countResult = $this->createMock(Result::class);
         $countResult->method('fetchOne')->willReturn(1);
 
-        // Select query returns 1 row with epoch 0
+        // Count total entries returns 1
+        $totalCountResult = $this->createMock(Result::class);
+        $totalCountResult->method('fetchOne')->willReturn(1);
+
+        // Select query streams rows via fetchAssociative
         $selectResult = $this->createMock(Result::class);
-        $selectResult->method('fetchAllAssociative')->willReturn([
-            [
-                'uid' => 1,
-                'secret_identifier' => 'test',
-                'action' => 'create',
-                'actor_uid' => 1,
-                'crdate' => 1704067200,
-                'previous_hash' => '',
-                'entry_hash' => 'oldhash',
-                'hmac_key_epoch' => 0,
-            ],
-        ]);
+        $selectResult->method('fetchAssociative')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    'uid' => 1,
+                    'secret_identifier' => 'test',
+                    'action' => 'create',
+                    'actor_uid' => 1,
+                    'crdate' => 1704067200,
+                    'previous_hash' => '',
+                    'entry_hash' => 'oldhash',
+                    'hmac_key_epoch' => 0,
+                ],
+                false,
+            );
 
         $this->queryBuilder->method('count')->willReturnSelf();
         $this->queryBuilder->method('select')->willReturnSelf();
@@ -122,9 +128,9 @@ final class VaultAuditMigrateCommandTest extends TestCase
         $this->queryBuilder->method('orderBy')->willReturnSelf();
         $this->queryBuilder->method('createNamedParameter')->willReturn('0');
 
-        // Return count result first, then select result
+        // Return count results then select result
         $this->queryBuilder->method('executeQuery')
-            ->willReturnOnConsecutiveCalls($countResult, $selectResult);
+            ->willReturnOnConsecutiveCalls($countResult, $totalCountResult, $selectResult);
 
         // update must NOT be called in dry-run
         $this->connection
@@ -142,24 +148,30 @@ final class VaultAuditMigrateCommandTest extends TestCase
     #[Test]
     public function migrationUpdatesHashesAndEpoch(): void
     {
-        // Count query returns 1
+        // Count epoch-0 entries returns 1
         $countResult = $this->createMock(Result::class);
         $countResult->method('fetchOne')->willReturn(1);
 
-        // Select query returns 1 row with epoch 0
+        // Count total entries returns 1
+        $totalCountResult = $this->createMock(Result::class);
+        $totalCountResult->method('fetchOne')->willReturn(1);
+
+        // Select query streams rows via fetchAssociative
         $selectResult = $this->createMock(Result::class);
-        $selectResult->method('fetchAllAssociative')->willReturn([
-            [
-                'uid' => 1,
-                'secret_identifier' => 'test',
-                'action' => 'create',
-                'actor_uid' => 1,
-                'crdate' => 1704067200,
-                'previous_hash' => '',
-                'entry_hash' => 'oldhash',
-                'hmac_key_epoch' => 0,
-            ],
-        ]);
+        $selectResult->method('fetchAssociative')
+            ->willReturnOnConsecutiveCalls(
+                [
+                    'uid' => 1,
+                    'secret_identifier' => 'test',
+                    'action' => 'create',
+                    'actor_uid' => 1,
+                    'crdate' => 1704067200,
+                    'previous_hash' => '',
+                    'entry_hash' => 'oldhash',
+                    'hmac_key_epoch' => 0,
+                ],
+                false,
+            );
 
         $this->queryBuilder->method('count')->willReturnSelf();
         $this->queryBuilder->method('select')->willReturnSelf();
@@ -169,7 +181,7 @@ final class VaultAuditMigrateCommandTest extends TestCase
         $this->queryBuilder->method('createNamedParameter')->willReturn('0');
 
         $this->queryBuilder->method('executeQuery')
-            ->willReturnOnConsecutiveCalls($countResult, $selectResult);
+            ->willReturnOnConsecutiveCalls($countResult, $totalCountResult, $selectResult);
 
         // update must be called with HMAC hash and epoch 1
         $this->connection

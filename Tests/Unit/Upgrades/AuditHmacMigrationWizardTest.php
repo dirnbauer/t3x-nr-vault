@@ -21,6 +21,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface;
 
 #[CoversClass(AuditHmacMigrationWizard::class)]
 final class AuditHmacMigrationWizardTest extends TestCase
@@ -35,7 +36,7 @@ final class AuditHmacMigrationWizardTest extends TestCase
 
     protected function setUp(): void
     {
-        if (!interface_exists(\TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface::class)) {
+        if (!interface_exists(UpgradeWizardInterface::class)) {
             self::markTestSkipped('UpgradeWizardInterface not available in TYPO3 v13');
         }
 

@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Command;
 
+use Doctrine\DBAL\Platforms\SQLitePlatform;
+use Netresearch\NrVault\Audit\AuditLogService;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -18,6 +20,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 
@@ -70,7 +73,7 @@ final class VaultAuditMigrateCommand extends Command
 
         $connection = $this->connectionPool->getConnectionForTable(self::TABLE_NAME);
 
-        // Count entries to migrate
+        // Count epoch-0 entries (for progress reporting)
         $queryBuilder = $connection->createQueryBuilder();
         $countResult = $queryBuilder
             ->count('uid')
@@ -84,21 +87,35 @@ final class VaultAuditMigrateCommand extends Command
             ->executeQuery()
             ->fetchOne();
 
-        $totalEntries = is_numeric($countResult) ? (int) $countResult : 0;
+        $epoch0Count = is_numeric($countResult) ? (int) $countResult : 0;
 
-        if ($totalEntries === 0) {
+        if ($epoch0Count === 0) {
             $io->success('No entries with epoch 0 found. Nothing to migrate.');
 
             return Command::SUCCESS;
         }
 
-        $io->writeln(\sprintf('Found %d entries with epoch 0 to migrate to epoch %d', $totalEntries, $targetEpoch));
+        // Count total entries (we must re-hash ALL to maintain chain integrity)
+        $totalQueryBuilder = $connection->createQueryBuilder();
+        $totalResult = $totalQueryBuilder
+            ->count('uid')
+            ->from(self::TABLE_NAME)
+            ->executeQuery()
+            ->fetchOne();
 
-        // Derive HMAC key
-        $hmacKey = $this->getHmacKey();
+        $totalEntries = is_numeric($totalResult) ? (int) $totalResult : 0;
+
+        $io->writeln(\sprintf(
+            'Found %d entries with epoch 0 (re-hashing all %d entries to maintain chain integrity)',
+            $epoch0Count,
+            $totalEntries,
+        ));
+
+        // Derive HMAC key using the shared method
+        $hmacKey = AuditLogService::deriveHmacKey($this->masterKeyProvider);
 
         try {
-            return $this->migrateEntries($io, $connection, $hmacKey, $targetEpoch, $totalEntries, $dryRun);
+            return $this->migrateEntries($io, $output, $connection, $hmacKey, $targetEpoch, $totalEntries, $dryRun);
         } finally {
             sodium_memzero($hmacKey);
         }
@@ -106,44 +123,63 @@ final class VaultAuditMigrateCommand extends Command
 
     private function migrateEntries(
         SymfonyStyle $io,
+        OutputInterface $output,
         Connection $connection,
         string $hmacKey,
         int $targetEpoch,
         int $totalEntries,
         bool $dryRun,
     ): int {
-        // Read ALL entries in UID order to maintain chain integrity
-        $queryBuilder = $connection->createQueryBuilder();
-        $rows = $queryBuilder
-            ->select('*')
-            ->from(self::TABLE_NAME)
-            ->orderBy('uid', 'ASC')
-            ->executeQuery()
-            ->fetchAllAssociative();
+        // Acquire an advisory lock to prevent concurrent writes during migration.
+        $isSQLite = $connection->getDatabasePlatform() instanceof SQLitePlatform;
 
-        $progressBar = new ProgressBar($io, $totalEntries);
-        $progressBar->start();
+        if ($isSQLite) {
+            $connection->executeStatement('BEGIN EXCLUSIVE');
+        } else {
+            $connection->executeStatement('SELECT GET_LOCK("nr_vault_audit", 5)');
+            $connection->beginTransaction();
+        }
 
-        $previousHash = '';
-        $migratedCount = 0;
+        try {
+            // Stream ALL entries in UID order using fetchAssociative() to avoid loading entire table
+            $queryBuilder = $connection->createQueryBuilder();
+            $result = $queryBuilder
+                ->select('*')
+                ->from(self::TABLE_NAME)
+                ->orderBy('uid', 'ASC')
+                ->executeQuery();
 
-        foreach ($rows as $row) {
-            $rowUid = $row['uid'] ?? 0;
-            $uid = is_numeric($rowUid) ? (int) $rowUid : 0;
-            $rowSecretId = $row['secret_identifier'] ?? '';
-            $secretId = \is_string($rowSecretId) ? $rowSecretId : '';
-            $rowAction = $row['action'] ?? '';
-            $actionStr = \is_string($rowAction) ? $rowAction : '';
-            $rowActorUid = $row['actor_uid'] ?? 0;
-            $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
-            $rowCrdate = $row['crdate'] ?? 0;
-            $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
-            $rowEpoch = $row['hmac_key_epoch'] ?? 0;
-            $epoch = is_numeric($rowEpoch) ? (int) $rowEpoch : 0;
+            $progressBar = new ProgressBar($output, $totalEntries);
+            $progressBar->start();
 
-            if ($epoch === 0) {
-                // Recalculate hash using HMAC
-                $newHash = $this->calculateHmacHash($uid, $secretId, $actionStr, $actorUid, $crdate, $previousHash, $hmacKey);
+            $previousHash = '';
+            $migratedCount = 0;
+
+            while (($row = $result->fetchAssociative()) !== false) {
+                $rowUid = $row['uid'] ?? 0;
+                $uid = is_numeric($rowUid) ? (int) $rowUid : 0;
+                $rowSecretId = $row['secret_identifier'] ?? '';
+                $secretId = \is_string($rowSecretId) ? $rowSecretId : '';
+                $rowAction = $row['action'] ?? '';
+                $actionStr = \is_string($rowAction) ? $rowAction : '';
+                $rowActorUid = $row['actor_uid'] ?? 0;
+                $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
+                $rowCrdate = $row['crdate'] ?? 0;
+                $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
+                $rowEpoch = $row['hmac_key_epoch'] ?? 0;
+                $epoch = is_numeric($rowEpoch) ? (int) $rowEpoch : 0;
+
+                // Re-hash ALL entries (including already-epoch-1 entries) to maintain chain integrity.
+                // After re-hashing, all entries use HMAC with the current master key.
+                $newHash = AuditLogService::calculateHash(
+                    $uid,
+                    $secretId,
+                    $actionStr,
+                    $actorUid,
+                    $crdate,
+                    $previousHash,
+                    $hmacKey,
+                );
 
                 if (!$dryRun) {
                     $connection->update(
@@ -158,12 +194,30 @@ final class VaultAuditMigrateCommand extends Command
                 }
 
                 $previousHash = $newHash;
-                ++$migratedCount;
+
+                if ($epoch === 0) {
+                    ++$migratedCount;
+                }
+
                 $progressBar->advance();
+            }
+
+            if ($isSQLite) {
+                $connection->executeStatement('COMMIT');
             } else {
-                // Already migrated, use its existing hash as previous
-                $rowEntryHash = $row['entry_hash'] ?? '';
-                $previousHash = \is_string($rowEntryHash) ? $rowEntryHash : '';
+                $connection->commit();
+            }
+        } catch (Throwable $e) {
+            if ($isSQLite) {
+                $connection->executeStatement('ROLLBACK');
+            } else {
+                $connection->rollBack();
+            }
+
+            throw $e;
+        } finally {
+            if (!$isSQLite) {
+                $connection->executeStatement('SELECT RELEASE_LOCK("nr_vault_audit")');
             }
         }
 
@@ -177,40 +231,5 @@ final class VaultAuditMigrateCommand extends Command
         }
 
         return Command::SUCCESS;
-    }
-
-    private function calculateHmacHash(
-        int $uid,
-        string $secretIdentifier,
-        string $action,
-        int $actorUid,
-        int $crdate,
-        string $previousHash,
-        string $hmacKey,
-    ): string {
-        $payload = json_encode([
-            'uid' => $uid,
-            'secret_identifier' => $secretIdentifier,
-            'action' => $action,
-            'actor_uid' => $actorUid,
-            'crdate' => $crdate,
-            'previous_hash' => $previousHash,
-        ], JSON_THROW_ON_ERROR);
-
-        return hash_hmac('sha256', $payload, $hmacKey);
-    }
-
-    /**
-     * Derive the HMAC key from the master key via HKDF.
-     */
-    private function getHmacKey(): string
-    {
-        $masterKey = $this->masterKeyProvider->getMasterKey();
-
-        try {
-            return hash_hkdf('sha256', $masterKey, 32, 'nr-vault-audit-hmac-v1');
-        } finally {
-            sodium_memzero($masterKey);
-        }
     }
 }
