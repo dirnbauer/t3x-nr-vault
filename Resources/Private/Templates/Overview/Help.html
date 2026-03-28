@@ -10,25 +10,22 @@
 -->
 <f:layout name="Module" />
 <f:section name="Content">
-    <h1>Vault Help</h1>
+    <h1>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.title')}</h1>
     <p class="lead">
-        This guide explains how vault encryption works, how to manage secrets,
-        and how to troubleshoot common issues.
+        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.lead')}
     </p>
 
     <!-- Section 1: Getting started -->
     <div class="card mb-3">
         <div class="card-header">
-            <h2 class="card-title mb-0">Getting started</h2>
+            <h2 class="card-title mb-0">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.title')}</h2>
         </div>
         <div class="card-body">
             <p>
-                The Vault extension provides secure storage for sensitive configuration
-                data (API keys, passwords, tokens) using envelope encryption. Follow
-                these steps to get started:
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.intro')}
             </p>
 
-            <h3>Step 1 &mdash; Verify encryption health</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step1.title')}</h3>
             <p>
                 Visit the <a href="{dashboardUrl}">Dashboard</a> and check the health
                 indicator at the top. A green banner confirms that encryption is active and
@@ -37,28 +34,23 @@
                 your TYPO3 configuration or configure an alternative master key provider.
             </p>
 
-            <h3>Step 2 &mdash; Create your first secret</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step2.title')}</h3>
             <p>
-                Navigate to <strong>Secrets</strong> and click the <code>+</code> button in
-                the header. Choose a descriptive identifier (e.g., <code>stripe_api_key</code>)
-                and enter the secret value. The value is encrypted before it reaches the database.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step2.text')}
             </p>
 
-            <h3>Step 3 &mdash; Reference secrets in configuration</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step3.title')}</h3>
             <p>
-                Use the vault syntax anywhere TYPO3 resolves configuration values:
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step3.text')}
             </p>
             <pre class="bg-body-tertiary p-3 rounded"><code>%vault(stripe_api_key)%</code></pre>
             <p>
-                This works in site configuration YAML, TypoScript, and any configuration that
-                uses the TYPO3 expression language.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step3.text2')}
             </p>
 
-            <h3>Step 4 &mdash; Migrate existing plaintext secrets (optional)</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step4.title')}</h3>
             <p>
-                The <strong>Migration Wizard</strong> scans your database for plaintext secrets
-                and guides you through encrypting them. It supports batch processing and
-                verifies each migration before committing.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step4.text')}
             </p>
         </div>
     </div>
@@ -66,37 +58,32 @@
     <!-- Section 2: Architecture -->
     <div class="card mb-3">
         <div class="card-header">
-            <h2 class="card-title mb-0">Envelope encryption</h2>
+            <h2 class="card-title mb-0">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.title')}</h2>
         </div>
         <div class="card-body">
             <p>
-                Vault uses a two-layer encryption scheme called <em>envelope encryption</em>,
-                the same pattern used by AWS KMS, Google Cloud KMS, and Azure Key Vault:
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.intro')}
             </p>
 
-            <h3>How it works</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.how_it_works')}</h3>
             <ol>
                 <li>
-                    <strong>Data Encryption Key (DEK)</strong> &mdash; Each secret is encrypted
-                    with its own unique random key using AES-256-GCM. This means compromising one
-                    secret does not reveal others.
+                    <strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.dek.label')}</strong> &mdash; {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.dek.text')}
                 </li>
                 <li>
-                    <strong>Key Encryption Key (KEK / Master Key)</strong> &mdash; The DEK is
-                    then encrypted with the master key and stored alongside the ciphertext.
-                    The master key never leaves the server.
+                    <strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.kek.label')}</strong> &mdash; {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.kek.text')}
                 </li>
             </ol>
 
-            <h3>Master key providers</h3>
-            <p>The master key can come from several sources (in priority order):</p>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.title')}</h3>
+            <p>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.intro')}</p>
             <ul>
-                <li><strong>Environment variable</strong> (<code>TYPO3_VAULT_MASTER_KEY</code>) &mdash; recommended for production</li>
-                <li><strong>File-based</strong> &mdash; a key file outside the web root</li>
-                <li><strong>TYPO3 encryption key</strong> &mdash; fallback using <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code></li>
+                <li><strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.env')}</strong> (<code>TYPO3_VAULT_MASTER_KEY</code>) &mdash; {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.env.note')}</li>
+                <li><strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.file')}</strong> &mdash; {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.file.note')}</li>
+                <li><strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.typo3')}</strong> &mdash; {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.providers.typo3.note')} <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code></li>
             </ul>
 
-            <h3>Key rotation</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.rotation.title')}</h3>
             <p>
                 The master key can be rotated without downtime using
                 <code>bin/typo3 vault:rotate-master-key</code>. This re-encrypts all DEKs
@@ -109,23 +96,20 @@
     <!-- Section 3: Audit trail -->
     <div class="card mb-3">
         <div class="card-header">
-            <h2 class="card-title mb-0">Audit trail</h2>
+            <h2 class="card-title mb-0">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.title')}</h2>
         </div>
         <div class="card-body">
             <p>
-                Every secret operation (create, read, update, delete, rotate) is recorded in a
-                tamper-evident audit chain. Each entry includes:
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.intro')}
             </p>
             <ul>
-                <li>The action performed and the secret identifier</li>
-                <li>The backend user who performed the action</li>
-                <li>A timestamp and IP address</li>
-                <li>A cryptographic hash linking each entry to the previous one</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.item.action')}</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.item.user')}</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.item.timestamp')}</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.item.hash')}</li>
             </ul>
             <p>
-                Use the <strong>Audit Log</strong> module to browse entries and the
-                <strong>Verify Chain</strong> action to check integrity. Any tampered or
-                missing entries will be flagged.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.audit.text')}
             </p>
         </div>
     </div>
@@ -133,41 +117,33 @@
     <!-- Section 4: Troubleshooting -->
     <div class="card mb-3">
         <div class="card-header">
-            <h2 class="card-title mb-0">Troubleshooting</h2>
+            <h2 class="card-title mb-0">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.title')}</h2>
         </div>
         <div class="card-body">
-            <h3>"Encryption is not available" on the dashboard</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.encryption.title')}</h3>
             <p>
-                The master key provider could not be initialized. Check that at least one of
-                the following is configured:
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.encryption.text')}
             </p>
             <ul>
-                <li>The <code>TYPO3_VAULT_MASTER_KEY</code> environment variable is set</li>
-                <li>A valid key file path is configured in extension settings</li>
-                <li>The TYPO3 <code>encryptionKey</code> is not empty</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.encryption.item1')}</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.encryption.item2')}</li>
+                <li>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.encryption.item3')}</li>
             </ul>
 
-            <h3>Secret values show as "decryption failed"</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.decryption.title')}</h3>
             <p>
-                This means the master key has changed since the secret was encrypted. If the
-                master key was rotated correctly, all DEKs should have been re-encrypted. If
-                the key was lost, the affected secrets cannot be recovered &mdash; store a new
-                value.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.decryption.text')}
             </p>
 
-            <h3>Migration wizard finds no candidates</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.no_candidates.title')}</h3>
             <p>
-                The scanner looks for fields matching common secret patterns (columns named
-                <code>*password*</code>, <code>*key*</code>, <code>*token*</code>, <code>*secret*</code>).
-                If your field uses a different naming convention, you can add it manually via
-                the CLI: <code>bin/typo3 vault:migrate-field table_name field_name</code>.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.no_candidates.text')}
+                <code>bin/typo3 vault:migrate-field table_name field_name</code>.
             </p>
 
-            <h3>Audit chain verification fails</h3>
+            <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.chain.title')}</h3>
             <p>
-                A broken chain means an entry was modified or deleted outside of vault operations.
-                This could indicate tampering or a database restore from an inconsistent backup.
-                The verification report shows exactly which entries are affected.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.troubleshooting.chain.text')}
             </p>
         </div>
     </div>
@@ -175,7 +151,7 @@
     <!-- Section 5: FAQ -->
     <div class="card mb-3">
         <div class="card-header">
-            <h2 class="card-title mb-0">Frequently asked questions</h2>
+            <h2 class="card-title mb-0">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.title')}</h2>
         </div>
         <div class="card-body">
             <div class="accordion" id="faqAccordion">
@@ -185,16 +161,14 @@
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#faqCollapse1"
                                 aria-expanded="false" aria-controls="faqCollapse1">
-                            Can I use vault secrets in site configuration YAML?
+                            {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.site_config.question')}
                         </button>
                     </h3>
                     <div id="faqCollapse1" class="accordion-collapse collapse"
                          aria-labelledby="faqHeading1" data-bs-parent="#faqAccordion">
                         <div class="accordion-body">
                             <p>
-                                Yes. Use the <code>%vault(identifier)%</code> syntax in your
-                                <code>config/sites/*/config.yaml</code>. Values are resolved at
-                                runtime, so they never appear in plain text in files.
+                                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.site_config.answer')}
                             </p>
                         </div>
                     </div>
@@ -205,17 +179,14 @@
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#faqCollapse2"
                                 aria-expanded="false" aria-controls="faqCollapse2">
-                            What happens if I lose the master key?
+                            {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.lost_key.question')}
                         </button>
                     </h3>
                     <div id="faqCollapse2" class="accordion-collapse collapse"
                          aria-labelledby="faqHeading2" data-bs-parent="#faqAccordion">
                         <div class="accordion-body">
                             <p>
-                                Without the master key, encrypted secrets cannot be recovered.
-                                This is by design &mdash; the security of envelope encryption
-                                depends on the master key. Always back up your master key
-                                separately from the database.
+                                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.lost_key.answer')}
                             </p>
                         </div>
                     </div>
@@ -226,17 +197,14 @@
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#faqCollapse3"
                                 aria-expanded="false" aria-controls="faqCollapse3">
-                            Can editors access secrets?
+                            {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.editors.question')}
                         </button>
                     </h3>
                     <div id="faqCollapse3" class="accordion-collapse collapse"
                          aria-labelledby="faqHeading3" data-bs-parent="#faqAccordion">
                         <div class="accordion-body">
                             <p>
-                                The vault backend module is restricted to administrators. However,
-                                editors can interact with vault-backed TCA fields (e.g.,
-                                <code>renderType=vaultSecret</code>) without seeing the actual
-                                values &mdash; they enter values which are encrypted automatically.
+                                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.editors.answer')}
                             </p>
                         </div>
                     </div>
@@ -247,20 +215,19 @@
                         <button class="accordion-button collapsed" type="button"
                                 data-bs-toggle="collapse" data-bs-target="#faqCollapse4"
                                 aria-expanded="false" aria-controls="faqCollapse4">
-                            How do I rotate secrets in a CI/CD pipeline?
+                            {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.cicd.question')}
                         </button>
                     </h3>
                     <div id="faqCollapse4" class="accordion-collapse collapse"
                          aria-labelledby="faqHeading4" data-bs-parent="#faqAccordion">
                         <div class="accordion-body">
                             <p>
-                                Use the CLI commands in your deployment scripts:
+                                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.cicd.answer.intro')}
                             </p>
                             <pre class="bg-body-tertiary p-2 rounded"><code>bin/typo3 vault:store api_key "$NEW_API_KEY"
 bin/typo3 vault:rotate smtp_password "$NEW_SMTP_PASS"</code></pre>
                             <p>
-                                Ensure the <code>TYPO3_VAULT_MASTER_KEY</code> environment
-                                variable is available in your CI/CD environment.
+                                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.faq.cicd.answer.outro')}
                             </p>
                         </div>
                     </div>
