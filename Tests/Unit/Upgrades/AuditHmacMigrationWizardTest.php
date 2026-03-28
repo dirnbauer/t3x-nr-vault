@@ -35,6 +35,10 @@ final class AuditHmacMigrationWizardTest extends TestCase
 
     protected function setUp(): void
     {
+        if (!interface_exists(\TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface::class)) {
+            self::markTestSkipped('UpgradeWizardInterface not available in TYPO3 v13');
+        }
+
         parent::setUp();
 
         $this->connectionPool = $this->createMock(ConnectionPool::class);

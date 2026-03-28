@@ -14,6 +14,9 @@ parameters:
             # Secret model uses raw array handling in fromDatabaseRow/toDatabaseRow
             # that PHPStan level 10 cannot resolve without extensive generics
             - Classes/Domain/Model/Secret.php
+            # UpgradeWizardInterface moved from cms-install to cms-core in v14.
+            # The wizard only runs in v14+ where the interface exists.
+            - Classes/Upgrades/AuditHmacMigrationWizard.php
     reportUnmatchedIgnoredErrors: false
 
     ignoreErrors:
