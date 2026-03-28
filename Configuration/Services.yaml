@@ -145,6 +145,12 @@ services:
     tags:
       - name: console.command
 
+  # Upgrade wizards
+  Netresearch\NrVault\Upgrades\AuditHmacMigrationWizard:
+    tags:
+      - name: upgrade.wizard
+        identifier: nrVaultAuditHmacMigration
+
   # Secret detection service
   Netresearch\NrVault\Service\SecretDetectionService:
     public: true
