@@ -33,6 +33,8 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
 
     public const DEFAULT_CACHE_ENABLED = true;
 
+    public const DEFAULT_AUDIT_READS = true;
+
     public const DEFAULT_PREFER_XCHACHA20 = false;
 
     private const EXTENSION_KEY = 'nr_vault';
@@ -128,6 +130,14 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
     public function isCacheEnabled(): bool
     {
         return (bool) ($this->configuration['cacheEnabled'] ?? self::DEFAULT_CACHE_ENABLED);
+    }
+
+    /**
+     * Check if read operations should be written to the audit log.
+     */
+    public function isAuditReadsEnabled(): bool
+    {
+        return (bool) ($this->configuration['auditReads'] ?? self::DEFAULT_AUDIT_READS);
     }
 
     /**

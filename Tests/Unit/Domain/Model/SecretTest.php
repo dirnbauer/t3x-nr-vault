@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Domain\Model;
 
 use Netresearch\NrVault\Domain\Model\Secret;
+use Netresearch\NrVault\Exception\ValidationException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -483,5 +484,87 @@ final class SecretTest extends TestCase
 
         self::assertEquals('hashicorp', $secret->getAdapter());
         self::assertSame($secret, $result);
+    }
+
+    #[Test]
+    public function createSetsAllFieldsCorrectly(): void
+    {
+        $secret = Secret::create(
+            identifier: 'my-api-key',
+            encryptedValue: 'enc_value',
+            valueChecksum: 'checksum123',
+            encryptedDek: 'enc_dek',
+            dekNonce: 'dek_nonce',
+            valueNonce: 'value_nonce',
+            ownerUid: 5,
+            allowedGroups: [1, 2, 3],
+            context: 'payment',
+            description: 'Stripe key',
+            adapter: 'local',
+            expiresAt: 1735689600,
+            metadata: ['service' => 'stripe'],
+            scopePid: 10,
+            frontendAccessible: true,
+        );
+
+        self::assertEquals('my-api-key', $secret->getIdentifier());
+        self::assertEquals('enc_value', $secret->getEncryptedValue());
+        self::assertEquals('checksum123', $secret->getValueChecksum());
+        self::assertEquals('enc_dek', $secret->getEncryptedDek());
+        self::assertEquals('dek_nonce', $secret->getDekNonce());
+        self::assertEquals('value_nonce', $secret->getValueNonce());
+        self::assertEquals(5, $secret->getOwnerUid());
+        self::assertEquals([1, 2, 3], $secret->getAllowedGroups());
+        self::assertEquals('payment', $secret->getContext());
+        self::assertEquals('Stripe key', $secret->getDescription());
+        self::assertEquals('local', $secret->getAdapter());
+        self::assertEquals(1735689600, $secret->getExpiresAt());
+        self::assertEquals(['service' => 'stripe'], $secret->getMetadata());
+        self::assertEquals(10, $secret->getScopePid());
+        self::assertTrue($secret->isFrontendAccessible());
+    }
+
+    #[Test]
+    public function createAllowsAllCryptoFieldsEmpty(): void
+    {
+        $secret = Secret::create(
+            identifier: 'external-ref',
+            encryptedValue: 'enc_value',
+            valueChecksum: 'checksum',
+        );
+
+        self::assertEquals('external-ref', $secret->getIdentifier());
+        self::assertEquals('', $secret->getEncryptedDek());
+        self::assertEquals('', $secret->getDekNonce());
+        self::assertEquals('', $secret->getValueNonce());
+    }
+
+    #[Test]
+    public function createThrowsOnPartialCryptoFields(): void
+    {
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('encryptedDek, dekNonce, and valueNonce must all be set or all be empty');
+
+        Secret::create(
+            identifier: 'broken',
+            encryptedValue: 'enc_value',
+            valueChecksum: 'checksum',
+            encryptedDek: 'has_dek',
+            dekNonce: '',
+            valueNonce: 'has_nonce',
+        );
+    }
+
+    #[Test]
+    public function createThrowsWhenOnlyDekNonceSet(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        Secret::create(
+            identifier: 'broken',
+            encryptedValue: 'enc_value',
+            valueChecksum: 'checksum',
+            dekNonce: 'only_nonce',
+        );
     }
 }

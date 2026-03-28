@@ -27,6 +27,7 @@ final class EnvironmentMasterKeyProviderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        EnvironmentMasterKeyProvider::clearCachedKey();
         // Clean up environment variable before each test
         putenv(self::TEST_ENV_VAR);
     }

@@ -22,6 +22,8 @@ use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
+use Netresearch\NrVault\Http\VaultHttpClientFactoryInterface;
+use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Service\VaultService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -46,6 +48,8 @@ final class VaultServiceTest extends TestCase
 
     private ExtensionConfigurationInterface&MockObject $configuration;
 
+    private VaultHttpClientFactoryInterface&MockObject $httpClientFactory;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -55,6 +59,7 @@ final class VaultServiceTest extends TestCase
         $this->accessControlService = $this->createMock(AccessControlServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
         $this->configuration = $this->createMock(ExtensionConfigurationInterface::class);
+        $this->httpClientFactory = $this->createMock(VaultHttpClientFactoryInterface::class);
 
         $this->accessControlService
             ->method('getCurrentActorUid')
@@ -70,6 +75,7 @@ final class VaultServiceTest extends TestCase
             $this->accessControlService,
             $this->auditLogService,
             $this->configuration,
+            $this->httpClientFactory,
         );
     }
 
@@ -430,9 +436,16 @@ final class VaultServiceTest extends TestCase
     #[Test]
     public function httpReturnsVaultHttpClient(): void
     {
+        $mockClient = $this->createMock(VaultHttpClientInterface::class);
+        $this->httpClientFactory
+            ->expects(self::once())
+            ->method('create')
+            ->with($this->subject)
+            ->willReturn($mockClient);
+
         $result = $this->subject->http();
 
-        self::assertNotNull($result);
+        self::assertSame($mockClient, $result);
     }
 
     #[Test]
@@ -580,6 +593,7 @@ final class VaultServiceTest extends TestCase
             $this->accessControlService,
             $this->auditLogService,
             $this->configuration,
+            $this->httpClientFactory,
         );
 
         $secret = $this->createSecretEntity('cached');
@@ -677,6 +691,7 @@ final class VaultServiceTest extends TestCase
             $this->accessControlService,
             $this->auditLogService,
             $this->configuration,
+            $this->httpClientFactory,
         );
 
         $secret = $this->createSecretEntity('cached');

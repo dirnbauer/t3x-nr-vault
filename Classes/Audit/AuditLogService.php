@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Audit;
 
 use DateTimeInterface;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
@@ -44,11 +45,22 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     ): void {
         $connection = $this->getConnection();
 
-        // Use a transaction to serialize hash chain writes and prevent race conditions
-        $connection->beginTransaction();
+        // Acquire an advisory lock to serialize hash chain writes across concurrent processes.
+        // MySQL/MariaDB: named lock via GET_LOCK; SQLite: BEGIN EXCLUSIVE serializes writers.
+        $isSQLite = $connection->getDatabasePlatform() instanceof SQLitePlatform;
+
+        if ($isSQLite) {
+            // SQLite BEGIN EXCLUSIVE acquires a write lock immediately, serializing all writers
+            $connection->executeStatement('BEGIN EXCLUSIVE');
+        } else {
+            // MySQL/MariaDB: acquire a named advisory lock (5 second timeout)
+            $connection->executeStatement('SELECT GET_LOCK("nr_vault_audit", 5)');
+            $connection->beginTransaction();
+        }
 
         try {
-            // Get previous hash with row-level lock to serialize concurrent writers
+            // Get previous hash – the advisory lock (or EXCLUSIVE transaction) ensures no
+            // concurrent writer can insert between this SELECT and our INSERT below.
             $queryBuilder = $connection->createQueryBuilder();
             $result = $queryBuilder
                 ->select('entry_hash')
@@ -95,11 +107,23 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 ['uid' => $uid],
             );
 
-            $connection->commit();
+            if ($isSQLite) {
+                $connection->executeStatement('COMMIT');
+            } else {
+                $connection->commit();
+            }
         } catch (Throwable $e) {
-            $connection->rollBack();
+            if ($isSQLite) {
+                $connection->executeStatement('ROLLBACK');
+            } else {
+                $connection->rollBack();
+            }
 
             throw $e;
+        } finally {
+            if (!$isSQLite) {
+                $connection->executeStatement('SELECT RELEASE_LOCK("nr_vault_audit")');
+            }
         }
     }
 

@@ -223,10 +223,11 @@ final class IdentifierValidatorTest extends TestCase
     }
 
     #[Test]
-    public function looksLikeVaultIdentifierRecognisesLegacyTcaFormat(): void
+    public function looksLikeVaultIdentifierRejectsLegacyTcaFormat(): void
     {
-        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier('tx_myext__api_key__123'));
-        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier('pages__password__42'));
+        // Legacy TCA format (table__field__uid) is not a vault identifier
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('tx_myext__api_key__123'));
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('pages__password__42'));
     }
 
     #[Test]

@@ -7,3 +7,9 @@ Sitemap
 =======
 
 See the :doc:`table of contents </Index>` for a complete overview.
+
+.. toctree::
+   :maxdepth: 2
+   :glob:
+
+   */Index

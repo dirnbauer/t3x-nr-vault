@@ -89,6 +89,13 @@ and audit logging.
       .. card-footer:: :ref:`Read more <developer>`
          :button-style: btn btn-secondary stretched-link
 
+   .. card:: 🛠️ Troubleshooting
+
+      Common issues, error resolution, and frequently asked questions.
+
+      .. card-footer:: :ref:`Read more <troubleshooting>`
+         :button-style: btn btn-secondary stretched-link
+
 .. toctree::
    :maxdepth: 2
    :titlesonly:
@@ -100,6 +107,7 @@ and audit logging.
    Usage/Index
    Security/Index
    Developer/Index
+   Troubleshooting/Index
 
 .. toctree::
    :hidden:

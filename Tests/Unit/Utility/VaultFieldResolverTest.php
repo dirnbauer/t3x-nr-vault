@@ -71,7 +71,7 @@ final class VaultFieldResolverTest extends UnitTestCase
         // Wrong format
         self::assertFalse($this->subject->isVaultIdentifier('invalid'));
         self::assertFalse($this->subject->isVaultIdentifier('not-a-valid-uuid'));
-        self::assertTrue($this->subject->isVaultIdentifier('tx_myext__api_key__42')); // Legacy TCA format
+        self::assertFalse($this->subject->isVaultIdentifier('tx_myext__api_key__42')); // Legacy TCA format (rejected)
         self::assertFalse($this->subject->isVaultIdentifier('01937b6e-4b6c-1abc-8def-0123456789ab')); // UUID v1 (not v7)
         self::assertFalse($this->subject->isVaultIdentifier('01937b6e-4b6c-4abc-8def-0123456789ab')); // UUID v4 (not v7)
         self::assertFalse($this->subject->isVaultIdentifier('01937b6e-4b6c-7abc-cdef-0123456789ab')); // Wrong variant
@@ -143,7 +143,7 @@ final class VaultFieldResolverTest extends UnitTestCase
             'null' => [null, false],
             'integer' => [42, false],
             'array' => [['test'], false],
-            'old format table__field__uid' => ['tx_ext__field__1', true],
+            'old format table__field__uid' => ['tx_ext__field__1', false],
             'uuid v1' => ['01937b6e-4b6c-1abc-8def-0123456789ab', false],
             'uuid v4' => ['01937b6e-4b6c-4abc-8def-0123456789ab', false],
             'uuid with wrong variant' => ['01937b6e-4b6c-7abc-cdef-0123456789ab', false],

@@ -28,6 +28,14 @@ services:
     factory: ['@Netresearch\NrVault\Crypto\MasterKeyProviderFactory', 'create']
     public: true
 
+  # HTTP Client Factory
+  Netresearch\NrVault\Http\VaultHttpClientFactory:
+    public: true
+
+  Netresearch\NrVault\Http\VaultHttpClientFactoryInterface:
+    alias: Netresearch\NrVault\Http\VaultHttpClientFactory
+    public: true
+
   # Vault service
   Netresearch\NrVault\Service\VaultService:
     arguments:

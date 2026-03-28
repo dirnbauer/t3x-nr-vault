@@ -16,13 +16,21 @@ use Netresearch\NrVault\Exception\MasterKeyException;
 /**
  * Environment variable-based master key provider.
  */
-final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
+final class EnvironmentMasterKeyProvider implements MasterKeyProviderInterface
 {
     private const KEY_LENGTH = 32; // 256 bits
 
+    /** @var string|null Request-lifetime cached master key */
+    private static ?string $cachedKey = null;
+
     public function __construct(
-        private ExtensionConfigurationInterface $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
     ) {}
+
+    public function __destruct()
+    {
+        self::clearCachedKey();
+    }
 
     public function getIdentifier(): string
     {
@@ -37,8 +45,23 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
         return $value !== false && $value !== '';
     }
 
+    /**
+     * Clear the cached master key from memory.
+     */
+    public static function clearCachedKey(): void
+    {
+        if (self::$cachedKey !== null) {
+            sodium_memzero(self::$cachedKey);
+            self::$cachedKey = null;
+        }
+    }
+
     public function getMasterKey(): string
     {
+        if (self::$cachedKey !== null) {
+            return self::$cachedKey;
+        }
+
         $varName = $this->getEnvVarName();
         $value = getenv($varName);
 
@@ -49,15 +72,18 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
         // Handle base64-encoded keys
         if (\strlen($value) === self::KEY_LENGTH) {
             // Raw binary key - return directly (don't zero $value, it IS the key)
-            return $value;
+            self::$cachedKey = $value;
+
+            return self::$cachedKey;
         }
 
         $decoded = base64_decode($value, true);
         if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
             // Zero the raw base64 string, keep decoded key
             sodium_memzero($value);
+            self::$cachedKey = $decoded;
 
-            return $decoded;
+            return self::$cachedKey;
         }
 
         // Neither raw nor valid base64

@@ -42,6 +42,12 @@ ADR      Title                                       Status
 015      :ref:`adr-015-http3-feature-flag`           Accepted
 016      :ref:`adr-016-sidecar-option`               Accepted
 017      :ref:`adr-017-audit-metadata-retention`     Accepted
+018      :ref:`adr-018-flexform-secret-lifecycle`    Accepted
+019      :ref:`adr-019-configurable-audit-read-logging`  Accepted
+020      :ref:`adr-020-master-key-request-lifetime-caching`  Accepted
+021      :ref:`adr-021-batch-secret-loading`         Accepted
+022      :ref:`adr-022-dedicated-oauth-exception`    Accepted
+023      :ref:`adr-023-audit-hash-chain-hmac`        Proposed
 =======  ==========================================  ========
 
 .. toctree::
@@ -65,3 +71,9 @@ ADR      Title                                       Status
    ADR-015-Http3FeatureFlag
    ADR-016-SidecarOption
    ADR-017-AuditMetadataRetention
+   ADR-018-FlexFormSecretLifecycle
+   ADR-019-ConfigurableAuditReadLogging
+   ADR-020-MasterKeyRequestLifetimeCaching
+   ADR-021-BatchSecretLoading
+   ADR-022-DedicatedOAuthException
+   ADR-023-AuditHashChainHmac

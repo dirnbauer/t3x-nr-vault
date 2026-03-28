@@ -126,8 +126,7 @@ final class IdentifierValidator
     public static function looksLikeVaultIdentifier(string $value): bool
     {
         return preg_match(self::UUID_PATTERN, $value) === 1
-            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1
-            || preg_match('/^[a-z][a-z0-9_]+__[a-z][a-z0-9_]+__\d+$/i', $value) === 1;
+            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
     }
 
     /**

@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Domain\Model;
 
+use Netresearch\NrVault\Exception\ValidationException;
+
 /**
  * Secret entity representing an encrypted secret.
  */
@@ -69,6 +71,68 @@ final class Secret
     private int $readCount = 0;
 
     private int $lastReadAt = 0;
+
+    /**
+     * Create a Secret with validated cryptographic fields.
+     *
+     * Ensures that the three envelope-encryption fields (encryptedDek, dekNonce,
+     * valueNonce) are either ALL provided or ALL empty. A partial set indicates a
+     * programming error that would produce an undecryptable secret.
+     *
+     * @param int[] $allowedGroups
+     * @param array<string, mixed> $metadata
+     *
+     * @throws ValidationException If cryptographic fields are inconsistent
+     */
+    public static function create(
+        string $identifier,
+        string $encryptedValue,
+        string $valueChecksum,
+        string $encryptedDek = '',
+        string $dekNonce = '',
+        string $valueNonce = '',
+        int $ownerUid = 0,
+        array $allowedGroups = [],
+        string $context = '',
+        string $description = '',
+        string $adapter = 'local',
+        int $expiresAt = 0,
+        array $metadata = [],
+        int $scopePid = 0,
+        bool $frontendAccessible = false,
+    ): self {
+        // Validate: all three envelope-encryption fields must be consistently set or unset
+        $hasEncryptedDek = $encryptedDek !== '';
+        $hasDekNonce = $dekNonce !== '';
+        $hasValueNonce = $valueNonce !== '';
+
+        $setCount = (int) $hasEncryptedDek + (int) $hasDekNonce + (int) $hasValueNonce;
+        if ($setCount !== 0 && $setCount !== 3) {
+            throw ValidationException::invalidOption(
+                'cryptographic fields',
+                'encryptedDek, dekNonce, and valueNonce must all be set or all be empty',
+            );
+        }
+
+        $secret = new self();
+        $secret->identifier = $identifier;
+        $secret->encryptedValue = $encryptedValue;
+        $secret->valueChecksum = $valueChecksum;
+        $secret->encryptedDek = $encryptedDek;
+        $secret->dekNonce = $dekNonce;
+        $secret->valueNonce = $valueNonce;
+        $secret->ownerUid = $ownerUid;
+        $secret->allowedGroups = array_map(\intval(...), $allowedGroups);
+        $secret->context = $context;
+        $secret->description = $description;
+        $secret->adapter = $adapter;
+        $secret->expiresAt = $expiresAt;
+        $secret->metadata = $metadata;
+        $secret->scopePid = $scopePid;
+        $secret->frontendAccessible = $frontendAccessible;
+
+        return $secret;
+    }
 
     public function getUid(): ?int
     {

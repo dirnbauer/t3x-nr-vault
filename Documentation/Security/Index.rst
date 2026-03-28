@@ -14,33 +14,29 @@ Encryption architecture
 nr-vault uses envelope encryption, an industry-standard pattern for
 protecting sensitive data.
 
-.. uml::
+.. code-block:: text
    :caption: Envelope encryption: Each secret has its own DEK encrypted by the master key.
 
-   skinparam backgroundColor white
-   skinparam shadowing false
-   skinparam componentStyle rectangle
+   +-------------------+
+   |    Master Key     |
+   +--------+----------+
+            |
+            | encrypts
+            |
+      +-----+------+--------+
+      |            |         |
+      v            v         v
+   +------+    +------+   +------+
+   | DEK1 |    | DEK2 |   | DEK3 |
+   +--+---+    +--+---+   +--+---+
+      |           |          |
+      | encrypts  | encrypts | encrypts
+      v           v          v
+   +------+    +------+   +------+
+   |Value1|    |Value2|   |Value3|
+   +------+    +------+   +------+
 
-   rectangle "Master Key" as MK #2F99A4
-   rectangle "Secret 1" as S1 {
-      rectangle "DEK₁ (encrypted)" as DEK1 #CCCDCC
-      rectangle "Value (encrypted)" as V1 #F5F5F5
-   }
-   rectangle "Secret 2" as S2 {
-      rectangle "DEK₂ (encrypted)" as DEK2 #CCCDCC
-      rectangle "Value (encrypted)" as V2 #F5F5F5
-   }
-   rectangle "Secret 3" as S3 {
-      rectangle "DEK₃ (encrypted)" as DEK3 #CCCDCC
-      rectangle "Value (encrypted)" as V3 #F5F5F5
-   }
-
-   MK --> DEK1 : encrypts
-   MK --> DEK2 : encrypts
-   MK --> DEK3 : encrypts
-   DEK1 --> V1 : encrypts
-   DEK2 --> V2 : encrypts
-   DEK3 --> V3 : encrypts
+   Secret 1    Secret 2   Secret 3
 
 .. _security-how-it-works:
 

@@ -15,6 +15,7 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Throwable;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -35,6 +36,7 @@ final class FlexFormVaultHook
     private array $pendingFlexSecrets = [];
 
     public function __construct(
+        private readonly ConnectionPool $connectionPool,
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly VaultServiceInterface $vaultService,
         private readonly FlexFormTools $flexFormTools,
@@ -126,7 +128,148 @@ final class FlexFormVaultHook
     }
 
     /**
-     * Process FlexForm data array recursively to find vault fields.
+     * Called before record deletion.
+     * Parses FlexForm XML to find vault identifiers and deletes the corresponding secrets.
+     * Only acts on hard delete (not soft-delete/recycle).
+     *
+     * @param array<string, mixed> $recordToDelete
+     */
+    public function processCmdmap_deleteAction(
+        string $table,
+        int $id,
+        array $recordToDelete,
+        bool &$recordWasDeleted,
+        DataHandler $dataHandler,
+    ): void {
+        if (!$this->isHardDelete($table)) {
+            return;
+        }
+
+        $flexFieldNames = $this->getFlexFieldNames($table);
+        if ($flexFieldNames === []) {
+            return;
+        }
+
+        foreach ($flexFieldNames as $flexFieldName) {
+            $xmlValue = $recordToDelete[$flexFieldName] ?? '';
+            if (!\is_string($xmlValue)) {
+                continue;
+            }
+            if ($xmlValue === '') {
+                continue;
+            }
+
+            $identifiers = $this->extractVaultIdentifiersFromXml($xmlValue);
+
+            foreach ($identifiers as $identifier) {
+                try {
+                    $this->vaultService->delete($identifier, 'Record deleted');
+                } catch (Throwable $e) {
+                    /** @phpstan-ignore method.internal */
+                    $dataHandler->log(
+                        $table,
+                        $id,
+                        3,
+                        null,
+                        1,
+                        'Vault error during delete for FlexForm field: ' . $e->getMessage(),
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Called after record copy.
+     * Copies FlexForm vault secrets to the new record with fresh UUIDs.
+     */
+    public function processCmdmap_postProcess(
+        string $command,
+        string $table,
+        string|int $id,
+        mixed $value,
+        DataHandler $dataHandler,
+        bool $pasteUpdate,
+    ): void {
+        if ($command !== 'copy') {
+            return;
+        }
+
+        /** @phpstan-ignore property.internal */
+        $newIdRaw = $dataHandler->copyMappingArray[$table][$id] ?? null;
+        if ($newIdRaw === null) {
+            return;
+        }
+        $newId = is_numeric($newIdRaw) ? (int) $newIdRaw : 0;
+
+        $flexFieldNames = $this->getFlexFieldNames($table);
+        if ($flexFieldNames === []) {
+            return;
+        }
+
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        $copiedRecord = $connection->select(
+            $flexFieldNames,
+            $table,
+            ['uid' => $newId],
+        )->fetchAssociative();
+
+        if ($copiedRecord === false) {
+            return;
+        }
+
+        foreach ($flexFieldNames as $flexFieldName) {
+            $xmlValue = $copiedRecord[$flexFieldName] ?? '';
+            if (!\is_string($xmlValue)) {
+                continue;
+            }
+            if ($xmlValue === '') {
+                continue;
+            }
+
+            $xml = $xmlValue;
+            $identifiers = $this->extractVaultIdentifiersFromXml($xml);
+
+            foreach ($identifiers as $oldIdentifier) {
+                try {
+                    $secretValue = $this->vaultService->retrieve($oldIdentifier);
+                    if ($secretValue === null) {
+                        continue;
+                    }
+
+                    $newIdentifier = IdentifierValidator::generateUuid();
+
+                    $this->vaultService->store($newIdentifier, $secretValue, [
+                        'table' => $table,
+                        'flexField' => $flexFieldName,
+                        'uid' => $newId,
+                        'source' => 'flexform_record_copy',
+                        'copied_from' => $oldIdentifier,
+                    ]);
+
+                    $xml = str_replace($oldIdentifier, $newIdentifier, $xml);
+                } catch (Throwable $e) {
+                    /** @phpstan-ignore method.internal */
+                    $dataHandler->log(
+                        $table,
+                        $newId,
+                        1,
+                        null,
+                        1,
+                        'Vault error during copy for FlexForm field "' . $flexFieldName . '": ' . $e->getMessage(),
+                    );
+                }
+            }
+
+            if ($xml !== $xmlValue) {
+                $connection->update($table, [$flexFieldName => $xml], ['uid' => $newId]);
+            }
+        }
+    }
+
+    /**
+     * Process FlexForm data array to find vault fields.
+     * Handles both flat FlexForm fields and section container elements.
      *
      * @param array<string, mixed> $data
      * @param array<string, mixed> $flexFieldConfig
@@ -138,13 +281,11 @@ final class FlexFormVaultHook
         string $flexFieldName,
         array $flexFieldConfig,
     ): void {
-        // Get the FlexForm data structure
         $dataStructure = $this->getFlexFormDataStructure($flexFieldConfig, $data);
         if ($dataStructure === null) {
             return;
         }
 
-        // Process each sheet
         if (!\is_array($data['data'] ?? null)) {
             return;
         }
@@ -156,7 +297,7 @@ final class FlexFormVaultHook
 
             /** @var array<string, mixed> $sheets */
             $sheets = $dataStructure['sheets'] ?? [];
-            /** @var array{ROOT?: array{el?: array<string, array{config?: array{renderType?: string}}>}} $sheetConfig */
+            /** @var array{ROOT?: array{el?: array<string, mixed>}} $sheetConfig */
             $sheetConfig = \is_array($sheets[$sheetName] ?? null) ? $sheets[$sheetName] : [];
 
             if (!\is_array($sheetData['lDEF'] ?? null)) {
@@ -168,64 +309,157 @@ final class FlexFormVaultHook
                     continue;
                 }
 
-                $elementConfig = $this->getFlexFormElementConfig($sheetConfig, (string) $fieldPath);
+                $fieldPathStr = (string) $fieldPath;
+                $elementConfig = $this->getFlexFormElementConfig($sheetConfig, $fieldPathStr);
 
-                // Check if this is a vault secret field
-                $renderType = $elementConfig['config']['renderType'] ?? '';
-                if (!\is_string($renderType)) {
-                    continue;
-                }
-                if ($renderType !== 'vaultSecret') {
-                    continue;
-                }
-
-                $value = $fieldData['vDEF'] ?? '';
-
-                // Handle array format from form element
-                if (\is_array($value)) {
-                    $rawSecretValue = $value['value'] ?? $value[0] ?? '';
-                    $rawIdentifier = $value['_vault_identifier'] ?? '';
-                    $rawChecksum = $value['_vault_checksum'] ?? '';
-                    $secretValue = \is_string($rawSecretValue) || \is_int($rawSecretValue) ? (string) $rawSecretValue : '';
-                    $existingIdentifier = \is_string($rawIdentifier) ? $rawIdentifier : '';
-                    $originalChecksum = \is_string($rawChecksum) ? $rawChecksum : '';
-                } else {
-                    $secretValue = \is_string($value) || \is_int($value) ? (string) $value : '';
-                    $existingIdentifier = '';
-                    $originalChecksum = '';
-                }
-
-                // Skip if unchanged
-                if ($secretValue === '' && $originalChecksum === '') {
-                    continue;
-                }
-
-                // Determine vault identifier (generate new UUID if needed)
-                $isNewSecret = $existingIdentifier === '' || $originalChecksum === '';
-                $vaultIdentifier = $isNewSecret ? IdentifierValidator::generateUuid() : $existingIdentifier;
-
-                // Store for post-processing
-                $this->pendingFlexSecrets[$table][$id][] = $isNewSecret
-                    ? FlexFormPendingSecret::createNew(
+                $configArray = $elementConfig['config'] ?? [];
+                $renderType = \is_array($configArray) ? ($configArray['renderType'] ?? '') : '';
+                if (\is_string($renderType) && $renderType === 'vaultSecret') {
+                    $this->processVaultSecretValue(
+                        $fieldData,
+                        $table,
+                        $id,
                         $flexFieldName,
                         (string) $sheetName,
-                        (string) $fieldPath,
-                        $secretValue,
-                        $vaultIdentifier,
-                    )
-                    : FlexFormPendingSecret::createUpdate(
-                        $flexFieldName,
-                        (string) $sheetName,
-                        (string) $fieldPath,
-                        $secretValue,
-                        $vaultIdentifier,
-                        $originalChecksum,
+                        $fieldPathStr,
                     );
 
-                // Store UUID in FlexForm (or empty if clearing)
-                $fieldData['vDEF'] = $secretValue !== '' ? $vaultIdentifier : '';
+                    continue;
+                }
+
+                // Check for section container with repeating elements
+                $this->processSectionContainerFields(
+                    $fieldData,
+                    $sheetConfig,
+                    $table,
+                    $id,
+                    $flexFieldName,
+                    (string) $sheetName,
+                    $fieldPathStr,
+                );
             }
         }
+    }
+
+    /**
+     * Process a single vault secret value from FlexForm data.
+     *
+     * @param array<mixed, mixed> $fieldData
+     */
+    private function processVaultSecretValue(
+        array &$fieldData,
+        string $table,
+        string|int $id,
+        string $flexFieldName,
+        string $sheetName,
+        string $fieldPath,
+    ): void {
+        $value = $fieldData['vDEF'] ?? '';
+
+        if (\is_array($value)) {
+            $rawSecretValue = $value['value'] ?? $value[0] ?? '';
+            $rawIdentifier = $value['_vault_identifier'] ?? '';
+            $rawChecksum = $value['_vault_checksum'] ?? '';
+            $secretValue = \is_string($rawSecretValue) || \is_int($rawSecretValue) ? (string) $rawSecretValue : '';
+            $existingIdentifier = \is_string($rawIdentifier) ? $rawIdentifier : '';
+            $originalChecksum = \is_string($rawChecksum) ? $rawChecksum : '';
+        } else {
+            $secretValue = \is_string($value) || \is_int($value) ? (string) $value : '';
+            $existingIdentifier = '';
+            $originalChecksum = '';
+        }
+
+        if ($secretValue === '' && $originalChecksum === '') {
+            return;
+        }
+
+        $isNewSecret = $existingIdentifier === '' || $originalChecksum === '';
+        $vaultIdentifier = $isNewSecret ? IdentifierValidator::generateUuid() : $existingIdentifier;
+
+        $this->pendingFlexSecrets[$table][$id][] = $isNewSecret
+            ? FlexFormPendingSecret::createNew(
+                $flexFieldName,
+                $sheetName,
+                $fieldPath,
+                $secretValue,
+                $vaultIdentifier,
+            )
+            : FlexFormPendingSecret::createUpdate(
+                $flexFieldName,
+                $sheetName,
+                $fieldPath,
+                $secretValue,
+                $vaultIdentifier,
+                $originalChecksum,
+            );
+
+        $fieldData['vDEF'] = $secretValue !== '' ? $vaultIdentifier : '';
+    }
+
+    /**
+     * Process section container fields to find vault secret fields in repeating elements.
+     *
+     * @param array<mixed, mixed> $fieldData
+     * @param array<mixed, mixed> $sheetConfig
+     */
+    private function processSectionContainerFields(
+        array &$fieldData,
+        array $sheetConfig,
+        string $table,
+        string|int $id,
+        string $flexFieldName,
+        string $sheetName,
+        string $fieldPath,
+    ): void {
+        if (!isset($fieldData['el']) || !\is_array($fieldData['el'])) {
+            return;
+        }
+
+        foreach ($fieldData['el'] as &$sectionItem) {
+            if (!\is_array($sectionItem)) {
+                continue;
+            }
+
+            foreach ($sectionItem as &$containerData) {
+                if (!\is_array($containerData)) {
+                    continue;
+                }
+                if (!isset($containerData['el'])) {
+                    continue;
+                }
+                if (!\is_array($containerData['el'])) {
+                    continue;
+                }
+
+                foreach ($containerData['el'] as $innerFieldName => &$innerFieldData) {
+                    if (!\is_array($innerFieldData)) {
+                        continue;
+                    }
+
+                    /** @var array{ROOT?: array{el?: array<string, mixed>}} $typedSheetConfig */
+                    $typedSheetConfig = $sheetConfig;
+                    $elementConfig = $this->getFlexFormElementConfig($typedSheetConfig, (string) $innerFieldName);
+                    $innerConfigArray = $elementConfig['config'] ?? [];
+                    $renderType = \is_array($innerConfigArray) ? ($innerConfigArray['renderType'] ?? '') : '';
+                    if (!\is_string($renderType)) {
+                        continue;
+                    }
+                    if ($renderType !== 'vaultSecret') {
+                        continue;
+                    }
+
+                    $this->processVaultSecretValue(
+                        $innerFieldData,
+                        $table,
+                        $id,
+                        $flexFieldName,
+                        $sheetName,
+                        $fieldPath . '/' . $innerFieldName,
+                    );
+                }
+            }
+        }
+        unset($sectionItem, $containerData, $innerFieldData);
     }
 
     /**
@@ -239,12 +473,10 @@ final class FlexFormVaultHook
     ): void {
         try {
             if ($pending->value === '') {
-                // Delete secret if cleared
                 if ($pending->originalChecksum !== '') {
                     $this->vaultService->delete($pending->identifier, 'FlexForm field cleared');
                 }
             } elseif ($pending->isNew) {
-                // New secret with new UUID
                 $this->vaultService->store($pending->identifier, $pending->value, [
                     'table' => $table,
                     'flexField' => $pending->flexField,
@@ -254,7 +486,6 @@ final class FlexFormVaultHook
                     'source' => 'flexform_field',
                 ]);
             } else {
-                // Update existing
                 $this->vaultService->rotate($pending->identifier, $pending->value, 'FlexForm field updated');
             }
         } catch (Throwable $e) {
@@ -327,13 +558,124 @@ final class FlexFormVaultHook
 
     /**
      * Get FlexForm element configuration from sheet config.
+     * Handles both flat fields and section container elements.
      *
-     * @param array{ROOT?: array{el?: array<string, array{config?: array{renderType?: string}}>}} $sheetConfig
+     * @param array<mixed> $sheetConfig
      *
-     * @return array{config?: array{renderType?: string}}
+     * @return array<mixed>
      */
     private function getFlexFormElementConfig(array $sheetConfig, string $fieldPath): array
     {
-        return $sheetConfig['ROOT']['el'][$fieldPath] ?? [];
+        $root = $sheetConfig['ROOT'] ?? [];
+        $elements = \is_array($root) ? ($root['el'] ?? []) : [];
+        if (!\is_array($elements)) {
+            return [];
+        }
+
+        if (isset($elements[$fieldPath]) && \is_array($elements[$fieldPath])) {
+            return $elements[$fieldPath];
+        }
+
+        // Search in section container elements for repeating fields
+        foreach ($elements as $element) {
+            if (!\is_array($element)) {
+                continue;
+            }
+
+            /** @var mixed $elementConfig */
+            $elementConfig = $element['config'] ?? [];
+            $sectionFlag = $element['section'] ?? (\is_array($elementConfig) ? ($elementConfig['section'] ?? null) : null);
+            if ($sectionFlag !== 1 && $sectionFlag !== '1') {
+                continue;
+            }
+
+            $containerEl = $element['el'] ?? [];
+            if (!\is_array($containerEl)) {
+                continue;
+            }
+
+            foreach ($containerEl as $container) {
+                if (!\is_array($container)) {
+                    continue;
+                }
+
+                $innerEl = $container['el'] ?? [];
+                if (!\is_array($innerEl)) {
+                    continue;
+                }
+
+                if (isset($innerEl[$fieldPath]) && \is_array($innerEl[$fieldPath])) {
+                    return $innerEl[$fieldPath];
+                }
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Extract all vault identifiers from FlexForm XML.
+     *
+     * Uses a broad UUID regex to match any version, then validates each
+     * candidate with IdentifierValidator and existence check.
+     *
+     * @return list<string>
+     */
+    private function extractVaultIdentifiersFromXml(string $xml): array
+    {
+        $identifiers = [];
+
+        // Match any UUID format (v1-v7), not just v7
+        if (preg_match_all(
+            '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',
+            $xml,
+            $matches,
+        )) {
+            foreach ($matches[0] as $match) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($match)
+                    && $this->vaultService->exists($match)) {
+                    $identifiers[] = $match;
+                }
+            }
+        }
+
+        return array_values(array_unique($identifiers));
+    }
+
+    /**
+     * Get FlexForm field names from a table's TCA schema.
+     *
+     * @return list<string>
+     */
+    private function getFlexFieldNames(string $table): array
+    {
+        if (!$this->tcaSchemaFactory->has($table)) {
+            return [];
+        }
+
+        $schema = $this->tcaSchemaFactory->get($table);
+        $flexFields = [];
+
+        foreach ($schema->getFields() as $field) {
+            $fieldConfig = $field->getConfiguration();
+            $configType = $fieldConfig['type'] ?? '';
+            if (\is_string($configType) && $configType === 'flex') {
+                $flexFields[] = $field->getName();
+            }
+        }
+
+        return $flexFields;
+    }
+
+    /**
+     * Check if the current delete operation is a hard delete (not soft-delete).
+     */
+    private function isHardDelete(string $table): bool
+    {
+        /** @var array<string, array{ctrl?: array{delete?: string}}> $tca */
+        $tca = $GLOBALS['TCA'] ?? [];
+        $deleteField = $tca[$table]['ctrl']['delete'] ?? null;
+
+        return !\is_string($deleteField) || $deleteField === '';
     }
 }

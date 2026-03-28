@@ -188,6 +188,30 @@ final class ExtensionConfigurationTest extends TestCase
     }
 
     #[Test]
+    public function isAuditReadsEnabledReturnsTrueByDefault(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertTrue($config->isAuditReadsEnabled());
+    }
+
+    #[Test]
+    public function isAuditReadsEnabledReturnsFalseWhenDisabled(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditReads' => false]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertFalse($config->isAuditReadsEnabled());
+    }
+
+    #[Test]
     public function preferXChaCha20ReturnsFalseByDefault(): void
     {
         $this->typo3Config->method('get')
