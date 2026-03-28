@@ -85,17 +85,17 @@ final readonly class AjaxController
                 'success' => false,
                 'error' => 'Secret has expired',
             ], 410);
-        } catch (EncryptionException $e) {
+        } catch (EncryptionException) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Decryption failed: ' . $e->getMessage(),
+                'error' => 'Decryption failed',
             ], 500);
-        } catch (Exception $e) {
+        } catch (Exception) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Failed to retrieve secret: ' . $e->getMessage(),
+                'error' => 'Failed to retrieve secret',
             ], 500);
         }
     }
@@ -171,17 +171,17 @@ final readonly class AjaxController
                 'success' => false,
                 'error' => 'Access denied',
             ], 403);
-        } catch (EncryptionException $e) {
+        } catch (EncryptionException) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Encryption failed: ' . $e->getMessage(),
+                'error' => 'Encryption failed',
             ], 500);
-        } catch (Exception $e) {
+        } catch (Exception) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Failed to rotate secret: ' . $e->getMessage(),
+                'error' => 'Failed to rotate secret',
             ], 500);
         }
     }

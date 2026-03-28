@@ -55,6 +55,9 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
             }
         }
 
+        // Zero the raw environment variable value to reduce exposure
+        sodium_memzero($value);
+
         if (\strlen($key) !== self::KEY_LENGTH) {
             throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
         }

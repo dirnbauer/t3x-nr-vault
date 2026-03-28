@@ -15,6 +15,9 @@ namespace Netresearch\NrVault\Http;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use Psr\Http\Client\ClientInterface;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Factory for creating HTTP clients that respect TYPO3 settings but prevent secret leakage.
@@ -73,6 +76,12 @@ final class SecureHttpClientFactory
 
         // SSL/TLS settings
         if (\array_key_exists('verify', $typo3Config)) {
+            if ($typo3Config['verify'] === false) {
+                $this->getLogger()->warning(
+                    'TLS verification is disabled in TYPO3 HTTP configuration. '
+                    . 'This weakens security for vault HTTP client requests.',
+                );
+            }
             $options['verify'] = $typo3Config['verify'];
         }
         if (!empty($typo3Config['cert'])) {
@@ -82,9 +91,11 @@ final class SecureHttpClientFactory
             $options['ssl_key'] = $typo3Config['ssl_key'];
         }
 
-        // Redirect settings
+        // Redirect settings: disable by default to prevent credential leakage on cross-origin redirects
         if (\array_key_exists('allow_redirects', $typo3Config)) {
             $options['allow_redirects'] = $typo3Config['allow_redirects'];
+        } else {
+            $options['allow_redirects'] = false;
         }
 
         // Create handler stack without any logging middleware
@@ -166,5 +177,10 @@ final class SecureHttpClientFactory
         }
 
         return $proxy !== [] ? $proxy : null;
+    }
+
+    private function getLogger(): LoggerInterface
+    {
+        return GeneralUtility::makeInstance(LogManager::class)->getLogger(self::class);
     }
 }

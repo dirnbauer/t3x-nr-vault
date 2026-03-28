@@ -171,6 +171,25 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
      */
     public function sendRequest(RequestInterface $request): ResponseInterface
     {
+        // Validate scheme (only HTTP/HTTPS allowed to prevent file://, gopher://, etc.)
+        $scheme = strtolower($request->getUri()->getScheme());
+        if ($scheme !== 'https' && $scheme !== 'http') {
+            throw new VaultException(
+                \sprintf('Unsupported URI scheme "%s"; only https and http are allowed', $scheme),
+                1735858523,
+            );
+        }
+
+        // Validate host against allowlist before injecting authentication secrets
+        $host = $request->getUri()->getHost();
+        $factory = GeneralUtility::makeInstance(SecureHttpClientFactory::class);
+        if (!$factory->isHostAllowed($host)) {
+            throw new VaultException(
+                \sprintf('Host "%s" is not in the allowed hosts list', $host),
+                1735858522,
+            );
+        }
+
         $authenticatedRequest = $this->injectAuthentication($request);
         $secretForAudit = $this->getSecretIdentifierForAudit();
 
@@ -322,8 +341,10 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
                 $newBody = http_build_query($data);
             }
 
-            return $request
-                ->withBody(Utils::streamFor($newBody));
+            $result = $request->withBody(Utils::streamFor($newBody));
+            sodium_memzero($newBody);
+
+            return $result;
         } finally {
             sodium_memzero($secret);
         }
