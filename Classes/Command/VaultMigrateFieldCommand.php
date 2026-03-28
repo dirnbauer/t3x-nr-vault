@@ -11,6 +11,7 @@ namespace Netresearch\NrVault\Command;
 
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -186,7 +187,7 @@ final class VaultMigrateFieldCommand extends Command
                 $valueStr = (string) $value;
 
                 try {
-                    $identifier = $this->generateUuid();
+                    $identifier = IdentifierValidator::generateUuid();
 
                     // Store in vault
                     $this->vaultService->store($identifier, $valueStr, [
@@ -374,27 +375,5 @@ final class VaultMigrateFieldCommand extends Command
                 $queryBuilder->expr()->eq($uidField, $queryBuilder->createNamedParameter($uid)),
             )
             ->executeStatement();
-    }
-
-    /**
-     * Generate a UUID v7 for vault identifiers.
-     *
-     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
-     * This provides time-ordered IDs with better database index performance.
-     */
-    private function generateUuid(): string
-    {
-        $time = (int) (microtime(true) * 1000);
-        $random = random_bytes(10);
-
-        return \sprintf(
-            '%08x-%04x-7%03x-%04x-%012x',
-            ($time >> 16) & 0xFFFFFFFF,
-            $time & 0xFFFF,
-            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF,
-            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000,
-            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
-                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]),
-        );
     }
 }

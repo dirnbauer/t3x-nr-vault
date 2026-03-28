@@ -12,6 +12,7 @@ namespace Netresearch\NrVault\Hook;
 use Exception;
 use Netresearch\NrVault\Hook\Dto\FlexFormPendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use Throwable;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -201,7 +202,7 @@ final class FlexFormVaultHook
 
                 // Determine vault identifier (generate new UUID if needed)
                 $isNewSecret = $existingIdentifier === '' || $originalChecksum === '';
-                $vaultIdentifier = $isNewSecret ? $this->generateUuid() : $existingIdentifier;
+                $vaultIdentifier = $isNewSecret ? IdentifierValidator::generateUuid() : $existingIdentifier;
 
                 // Store for post-processing
                 $this->pendingFlexSecrets[$table][$id][] = $isNewSecret
@@ -297,31 +298,6 @@ final class FlexFormVaultHook
         } catch (Exception) {
             // Flash message service may not be available in all contexts (e.g., CLI)
         }
-    }
-
-    /**
-     * Generate a UUID v7 for vault identifiers.
-     *
-     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
-     * This provides time-ordered IDs with better database index performance.
-     */
-    private function generateUuid(): string
-    {
-        // 48-bit timestamp in milliseconds
-        $time = (int) (microtime(true) * 1000);
-
-        // 10 random bytes for the remaining fields
-        $random = random_bytes(10);
-
-        return \sprintf(
-            '%08x-%04x-7%03x-%04x-%012x',
-            ($time >> 16) & 0xFFFFFFFF,
-            $time & 0xFFFF,
-            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF,
-            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000,
-            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
-                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]),
-        );
     }
 
     /**

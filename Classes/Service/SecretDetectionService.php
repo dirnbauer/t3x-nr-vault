@@ -18,6 +18,7 @@ use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
 use Netresearch\NrVault\Service\Detection\SecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
@@ -110,9 +111,6 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
         '/encryptionKey$/i',      // ends with "encryptionKey"
         '/credential/i',          // contains "credential"
     ];
-
-    /** UUID v7 pattern for vault identifiers. */
-    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     /** @var array<string, SecretFinding> */
     private array $detectedSecrets = [];
@@ -223,7 +221,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
         /** @var array<string, mixed> $mailConfig */
         $mailConfig = \is_array($typo3ConfVars['MAIL'] ?? null) ? $typo3ConfVars['MAIL'] : [];
         $smtpPassword = $mailConfig['transport_smtp_password'] ?? '';
-        if (\is_string($smtpPassword) && $smtpPassword !== '' && !$this->looksLikeVaultIdentifier($smtpPassword)) {
+        if (\is_string($smtpPassword) && $smtpPassword !== '' && !IdentifierValidator::looksLikeVaultIdentifier($smtpPassword)) {
             $finding = new ConfigSecretFinding(
                 path: 'MAIL.transport_smtp_password',
                 severity: Severity::High,
@@ -359,7 +357,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
                     $value = \is_string($rawValue) || is_numeric($rawValue) ? (string) $rawValue : '';
 
                     // Skip if it looks like a vault identifier
-                    if ($this->looksLikeVaultIdentifier($value)) {
+                    if (IdentifierValidator::looksLikeVaultIdentifier($value)) {
                         continue;
                     }
 
@@ -424,7 +422,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
             // Check if key name suggests a secret
             if ($this->isSecretConfigKey($key)) {
                 // Skip vault references
-                if ($this->looksLikeVaultIdentifier($value)) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($value)) {
                     continue;
                 }
 
@@ -493,17 +491,6 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
         }
 
         return false;
-    }
-
-    /**
-     * Check if a value looks like a vault identifier.
-     */
-    private function looksLikeVaultIdentifier(string $value): bool
-    {
-        // TCA vault fields store UUIDs
-        // Also check for vault reference format: %vault(identifier)%
-        return preg_match(self::UUID_PATTERN, $value) === 1
-            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
     }
 
     /**

@@ -14,6 +14,7 @@ use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\DataHandlerHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -751,11 +752,8 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function generateUuidReturnsValidUuidV7Format(): void
     {
-        $reflection = new ReflectionClass($this->subject);
-        $method = $reflection->getMethod('generateUuid');
-
-        $uuid1 = $method->invoke($this->subject);
-        $uuid2 = $method->invoke($this->subject);
+        $uuid1 = IdentifierValidator::generateUuid();
+        $uuid2 = IdentifierValidator::generateUuid();
 
         // Both should be valid UUID v7 format
         self::assertMatchesRegularExpression(self::UUID_PATTERN, $uuid1);
@@ -768,12 +766,9 @@ final class DataHandlerHookTest extends UnitTestCase
     #[Test]
     public function generateUuidIsTimeOrdered(): void
     {
-        $reflection = new ReflectionClass($this->subject);
-        $method = $reflection->getMethod('generateUuid');
-
         $uuids = [];
         for ($i = 0; $i < 5; $i++) {
-            $uuids[] = $method->invoke($this->subject);
+            $uuids[] = IdentifierValidator::generateUuid();
             usleep(1000); // 1ms delay
         }
 

@@ -16,6 +16,7 @@ use Exception;
 use Netresearch\NrVault\Domain\Dto\MigrationResult;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -451,7 +452,7 @@ final readonly class MigrationController
                 $value = \is_string($valueVal) ? $valueVal : '';
 
                 // Skip if already looks like a vault identifier
-                if ($this->looksLikeVaultIdentifier($value)) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($value)) {
                     ++$skipped;
                     continue;
                 }
@@ -489,15 +490,6 @@ final readonly class MigrationController
         }
 
         return MigrationResult::withFailures($table, $column, $migrated, $failed, $skipped);
-    }
-
-    /**
-     * Check if a value looks like a vault identifier.
-     */
-    private function looksLikeVaultIdentifier(string $value): bool
-    {
-        return preg_match('/^[a-z][a-z0-9_]+__[a-z][a-z0-9_]+__\d+$/i', $value) === 1
-            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
     }
 
     /**
