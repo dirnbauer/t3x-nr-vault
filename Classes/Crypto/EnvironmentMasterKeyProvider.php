@@ -47,22 +47,24 @@ final readonly class EnvironmentMasterKeyProvider implements MasterKeyProviderIn
         }
 
         // Handle base64-encoded keys
-        $key = $value;
-        if (\strlen($key) !== self::KEY_LENGTH) {
-            $decoded = base64_decode($value, true);
-            if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
-                $key = $decoded;
-            }
+        if (\strlen($value) === self::KEY_LENGTH) {
+            // Raw binary key - return directly (don't zero $value, it IS the key)
+            return $value;
         }
 
-        // Zero the raw environment variable value to reduce exposure
+        $decoded = base64_decode($value, true);
+        if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
+            // Zero the raw base64 string, keep decoded key
+            sodium_memzero($value);
+
+            return $decoded;
+        }
+
+        // Neither raw nor valid base64
+        $length = \strlen($value);
         sodium_memzero($value);
 
-        if (\strlen($key) !== self::KEY_LENGTH) {
-            throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
-        }
-
-        return $key;
+        throw MasterKeyException::invalidLength(self::KEY_LENGTH, $length);
     }
 
     public function storeMasterKey(string $key): void

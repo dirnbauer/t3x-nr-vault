@@ -67,14 +67,18 @@ class SecretView {
     }
 
     async fetchAndReveal() {
-        const url = this.revealBtn.dataset.revealUrl + '&identifier=' + encodeURIComponent(this.revealBtn.dataset.identifier);
+        const url = this.revealBtn.dataset.revealUrl;
         this.revealBtn.disabled = true;
         this.showLoading(true);
 
         try {
             const response = await fetch(url, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' }
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ identifier: this.revealBtn.dataset.identifier }),
             });
             const data = await response.json();
 
