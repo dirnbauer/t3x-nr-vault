@@ -112,15 +112,30 @@ class SecretView {
 
         try {
             await navigator.clipboard.writeText(this.secretValue);
-            const originalHTML = this.copyBtn.innerHTML;
-            this.copyBtn.innerHTML = '<span class="text-success">Copied!</span>';
+            const originalText = this.copyBtn.textContent;
+            const originalChildNodes = Array.from(this.copyBtn.childNodes).map(n => n.cloneNode(true));
+            this.copyBtn.textContent = '';
+            const copiedSpan = document.createElement('span');
+            copiedSpan.className = 'text-success';
+            copiedSpan.textContent = 'Copied!';
+            this.copyBtn.appendChild(copiedSpan);
             setTimeout(() => {
-                this.copyBtn.innerHTML = originalHTML;
+                this.copyBtn.textContent = '';
+                originalChildNodes.forEach(node => this.copyBtn.appendChild(node));
             }, 2000);
             Notification.success('Copied', 'Secret copied to clipboard', 2);
         } catch {
             Notification.error('Error', 'Failed to copy to clipboard', 5);
         }
+    }
+
+    /**
+     * Escape text for safe display in UI strings.
+     */
+    escapeText(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     handleDelete(event) {
@@ -131,7 +146,7 @@ class SecretView {
 
         Modal.confirm(
             'Delete Secret',
-            'Are you sure you want to delete the secret "' + identifier + '"? This action cannot be undone.',
+            'Are you sure you want to delete the secret "' + this.escapeText(identifier) + '"? This action cannot be undone.',
             Severity.warning,
             [
                 {

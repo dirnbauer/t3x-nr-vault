@@ -67,6 +67,24 @@
             </trans-unit>
 
             <!-- Secret actions -->
+            <trans-unit id="secrets.action.reveal">
+                <source>Reveal secret</source>
+            </trans-unit>
+            <trans-unit id="secrets.action.edit">
+                <source>Edit secret</source>
+            </trans-unit>
+            <trans-unit id="secrets.action.delete">
+                <source>Delete secret</source>
+            </trans-unit>
+            <trans-unit id="secrets.action.rotate">
+                <source>Rotate secret</source>
+            </trans-unit>
+            <trans-unit id="secrets.action.enable">
+                <source>Enable secret</source>
+            </trans-unit>
+            <trans-unit id="secrets.action.disable">
+                <source>Disable secret</source>
+            </trans-unit>
             <trans-unit id="secrets.create">
                 <source>Create Secret</source>
             </trans-unit>
@@ -89,6 +107,60 @@
             </trans-unit>
             <trans-unit id="audit.empty">
                 <source>No audit entries found</source>
+            </trans-unit>
+            <trans-unit id="audit.col.time">
+                <source>Time</source>
+            </trans-unit>
+            <trans-unit id="audit.col.secret">
+                <source>Secret</source>
+            </trans-unit>
+            <trans-unit id="audit.col.action">
+                <source>Action</source>
+            </trans-unit>
+            <trans-unit id="audit.col.status">
+                <source>Status</source>
+            </trans-unit>
+            <trans-unit id="audit.col.actor">
+                <source>Actor</source>
+            </trans-unit>
+            <trans-unit id="audit.col.ip_address">
+                <source>IP Address</source>
+            </trans-unit>
+            <trans-unit id="audit.col.details">
+                <source>Details</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.secret">
+                <source>Secret</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.action">
+                <source>Action</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.status">
+                <source>Status</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.from">
+                <source>From</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.to">
+                <source>To</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.apply">
+                <source>Filter</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.reset">
+                <source>Reset</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.status.all">
+                <source>[all]</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.status.success">
+                <source>Success</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.status.failed">
+                <source>Failed</source>
+            </trans-unit>
+            <trans-unit id="audit.filter.secret.placeholder">
+                <source>Secret identifier</source>
             </trans-unit>
             <trans-unit id="audit.export">
                 <source>Export</source>

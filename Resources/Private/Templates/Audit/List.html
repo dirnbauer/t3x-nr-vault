@@ -11,13 +11,13 @@
         <form method="post" action="{f:be.uri(route: 'admin_vault_audit')}" role="search" aria-label="Filter audit log" class="mb-4">
             <div class="form-row">
                 <div class="form-group">
-                    <label for="filter-secret" class="form-label">Secret</label>
-                    <input type="text" id="filter-secret" name="secretIdentifier" value="{filters._form.secretIdentifier}" class="form-control" placeholder="Secret identifier" />
+                    <label for="filter-secret" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.secret" /></label>
+                    <input type="text" id="filter-secret" name="secretIdentifier" value="{filters._form.secretIdentifier}" class="form-control" placeholder="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.secret.placeholder')}" />
                 </div>
                 <div class="form-group">
-                    <label for="filter-action" class="form-label">Action</label>
+                    <label for="filter-action" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.action" /></label>
                     <select id="filter-action" name="filterAction" class="form-select">
-                        <option value="">[all]</option>
+                        <option value=""><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status.all" /></option>
                         <f:for each="{actions}" as="actionType">
                             <f:if condition="{filters._form.action} == '{actionType}'">
                                 <f:then><option value="{actionType}" selected>{actionType}</option></f:then>
@@ -27,34 +27,34 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="filter-success" class="form-label">Status</label>
+                    <label for="filter-success" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status" /></label>
                     <select id="filter-success" name="success" class="form-select">
-                        <option value="">[all]</option>
+                        <option value=""><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status.all" /></option>
                         <f:if condition="{filters._form.success} == '1'">
-                            <f:then><option value="1" selected>Success</option></f:then>
-                            <f:else><option value="1">Success</option></f:else>
+                            <f:then><option value="1" selected><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status.success" /></option></f:then>
+                            <f:else><option value="1"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status.success" /></option></f:else>
                         </f:if>
                         <f:if condition="{filters._form.success} == '0'">
-                            <f:then><option value="0" selected>Failed</option></f:then>
-                            <f:else><option value="0">Failed</option></f:else>
+                            <f:then><option value="0" selected><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status.failed" /></option></f:then>
+                            <f:else><option value="0"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.status.failed" /></option></f:else>
                         </f:if>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="filter-since" class="form-label">From</label>
+                    <label for="filter-since" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.from" /></label>
                     <input type="date" id="filter-since" name="since" value="{filters._form.since}" class="form-control" />
                 </div>
                 <div class="form-group">
-                    <label for="filter-until" class="form-label">To</label>
+                    <label for="filter-until" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.to" /></label>
                     <input type="date" id="filter-until" name="until" value="{filters._form.until}" class="form-control" />
                 </div>
                 <div class="form-group align-self-end">
                     <button type="submit" class="btn btn-default" name="operation" value="filter">
                         <core:icon identifier="actions-filter" size="small" />
-                        Filter
+                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.apply" />
                     </button>
                     <f:be.link route="admin_vault_audit" class="btn btn-link">
-                        Reset
+                        <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.reset" />
                     </f:be.link>
                 </div>
             </div>
@@ -76,13 +76,13 @@
                             <caption id="audit-table-{date}" class="visually-hidden">Audit log entries for {date}</caption>
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 100px;">Time</th>
-                                    <th scope="col">Secret</th>
-                                    <th scope="col" style="width: 100px;">Action</th>
-                                    <th scope="col" style="width: 80px;">Status</th>
-                                    <th scope="col">Actor</th>
-                                    <th scope="col" style="width: 130px;">IP Address</th>
-                                    <th scope="col">Details</th>
+                                    <th scope="col" style="width: 100px;"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.time" /></th>
+                                    <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.secret" /></th>
+                                    <th scope="col" style="width: 100px;"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.action" /></th>
+                                    <th scope="col" style="width: 80px;"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.status" /></th>
+                                    <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.actor" /></th>
+                                    <th scope="col" style="width: 130px;"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.ip_address" /></th>
+                                    <th scope="col"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.details" /></th>
                                 </tr>
                             </thead>
                             <tbody>

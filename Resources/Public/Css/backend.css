@@ -109,6 +109,11 @@
     background: var(--bs-secondary-bg);
 }
 
+.vault-module .col-control .btn-group .btn:focus-visible {
+    outline: 2px solid var(--nr-primary);
+    outline-offset: 1px;
+}
+
 .vault-module .col-control .btn-group .d-inline {
     display: inline-flex !important;
 }
@@ -196,13 +201,15 @@
 }
 
 .vault-chain-result.valid {
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
+    background: var(--bs-success-bg-subtle, #d4edda);
+    border: 1px solid var(--bs-success-border-subtle, #c3e6cb);
+    color: var(--bs-success-text-emphasis, inherit);
 }
 
 .vault-chain-result.invalid {
-    background: #f8d7da;
-    border: 1px solid #f5c6cb;
+    background: var(--bs-danger-bg-subtle, #f8d7da);
+    border: 1px solid var(--bs-danger-border-subtle, #f5c6cb);
+    color: var(--bs-danger-text-emphasis, inherit);
 }
 
 /* Responsive */
