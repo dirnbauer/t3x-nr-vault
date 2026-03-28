@@ -40,6 +40,34 @@ interface SecretRepositoryInterface
     public function findAllWithFilters(?SecretFilters $filters = null): array;
 
     /**
+     * Find all secrets accessible by specific groups.
+     *
+     * @param int[] $groupUids
+     *
+     * @return Secret[]
+     */
+    public function findByGroups(array $groupUids): array;
+
+    /**
+     * Find expired secrets.
+     *
+     * @return Secret[]
+     */
+    public function findExpired(): array;
+
+    /**
+     * Find secrets expiring within given days.
+     *
+     * @return Secret[]
+     */
+    public function findExpiringSoon(int $days): array;
+
+    /**
+     * Count all active secrets.
+     */
+    public function countAll(): int;
+
+    /**
      * Increment read count and update last_read_at atomically.
      */
     public function incrementReadCount(int $uid): void;
