@@ -181,7 +181,7 @@ final readonly class VaultHttpClient implements VaultHttpClientInterface
         }
 
         // Validate host against allowlist before injecting authentication secrets
-        $host = $request->getUri()->getHost();
+        $host = strtolower($request->getUri()->getHost());
         $factory = GeneralUtility::makeInstance(SecureHttpClientFactory::class);
         if (!$factory->isHostAllowed($host)) {
             throw new VaultException(

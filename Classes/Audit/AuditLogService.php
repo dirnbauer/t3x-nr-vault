@@ -48,8 +48,16 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         $connection->beginTransaction();
 
         try {
-            // Get previous hash for chain (within transaction for consistency)
-            $previousHash = $this->getLatestHash() ?? '';
+            // Get previous hash with row-level lock to serialize concurrent writers
+            $queryBuilder = $connection->createQueryBuilder();
+            $result = $queryBuilder
+                ->select('entry_hash')
+                ->from(self::TABLE_NAME)
+                ->orderBy('uid', 'DESC')
+                ->setMaxResults(1)
+                ->executeQuery()
+                ->fetchOne();
+            $previousHash = \is_string($result) ? $result : '';
 
             // Build entry data
             $data = [

@@ -116,7 +116,6 @@ class SecretView {
 
         try {
             await navigator.clipboard.writeText(this.secretValue);
-            const originalText = this.copyBtn.textContent;
             const originalChildNodes = Array.from(this.copyBtn.childNodes).map(n => n.cloneNode(true));
             this.copyBtn.textContent = '';
             const copiedSpan = document.createElement('span');

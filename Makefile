@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help up down shell cgl cgl-fix phpstan rector test test-unit test-functional test-mutation lint ci docs
+.PHONY: help up down shell cgl cgl-fix fix phpstan rector test test-unit test-functional test-mutation lint ci docs
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -31,7 +31,7 @@ rector: ## Run Rector dry-run
 	composer ci:test:php:rector
 
 lint: ## PHP syntax check
-	find Classes Configuration Tests -name '*.php' -exec php -l {} \; | grep -v 'No syntax errors' || true
+	@find Classes Configuration Tests -name '*.php' -print0 | xargs -0 -n1 php -l 2>&1 | grep -v 'No syntax errors' && exit 1 || exit 0
 
 # Testing
 test: test-unit test-functional ## Run all tests
