@@ -16,8 +16,8 @@ use DateTimeImmutable;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use JsonException;
+use Netresearch\NrVault\Exception\OAuthException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
@@ -60,12 +60,17 @@ final class OAuthTokenManager
         $this->streamFactory = $streamFactory ?? $httpFactory;
     }
 
+    public function __destruct()
+    {
+        $this->clearToken();
+    }
+
     /**
      * Get a valid access token for the given OAuth config.
      *
      * Automatically refreshes the token if it's expired or about to expire.
      *
-     * @throws VaultException If token cannot be obtained
+     * @throws OAuthException If token cannot be obtained
      */
     public function getAccessToken(OAuthConfig $config): string
     {
@@ -104,9 +109,20 @@ final class OAuthTokenManager
     }
 
     /**
+     * Clear the cached token references to allow garbage collection.
+     *
+     * Since OAuthToken is readonly, sodium_memzero cannot be used on its properties.
+     * This method nulls the cache references so the token objects can be collected.
+     */
+    public function clearToken(): void
+    {
+        $this->tokenCache = [];
+    }
+
+    /**
      * Fetch a new token from the OAuth server.
      *
-     * @throws VaultException If token request fails
+     * @throws OAuthException If token request fails
      */
     private function fetchToken(OAuthConfig $config): OAuthToken
     {
@@ -170,17 +186,14 @@ final class OAuthTokenManager
 
             $statusCode = $response->getStatusCode();
             if ($statusCode !== 200) {
-                throw new VaultException(\sprintf(
-                    'OAuth token request failed with status %d',
-                    $statusCode,
-                ), 2477018617);
+                throw OAuthException::tokenRequestFailed($statusCode);
             }
 
             /** @var array<string, mixed>|null $body */
             $body = json_decode((string) $response->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
             if (!\is_array($body) || !isset($body['access_token'])) {
-                throw new VaultException('OAuth response missing access_token', 9878610721);
+                throw OAuthException::missingAccessToken();
             }
 
             $accessToken = \is_string($body['access_token']) ? $body['access_token'] : '';
@@ -219,17 +232,9 @@ final class OAuthTokenManager
                 'error' => $e->getMessage(),
             ]);
 
-            throw new VaultException(
-                \sprintf('OAuth token request failed: %s', $e->getMessage()),
-                0,
-                $e,
-            );
+            throw OAuthException::requestFailed($e->getMessage(), $e);
         } catch (JsonException $e) {
-            throw new VaultException(
-                'Invalid JSON response from OAuth server',
-                0,
-                $e,
-            );
+            throw OAuthException::invalidJsonResponse($e);
         }
     }
 

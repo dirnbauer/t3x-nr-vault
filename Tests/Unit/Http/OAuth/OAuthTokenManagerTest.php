@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
 
+use Netresearch\NrVault\Exception\OAuthException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -255,7 +255,7 @@ final class OAuthTokenManagerTest extends TestCase
             ->method('sendRequest')
             ->willReturn($response);
 
-        $this->expectException(VaultException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('OAuth token request failed with status 401');
 
         $this->subject->getAccessToken($config);
@@ -287,7 +287,7 @@ final class OAuthTokenManagerTest extends TestCase
             ->method('sendRequest')
             ->willReturn($response);
 
-        $this->expectException(VaultException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('OAuth response missing access_token');
 
         $this->subject->getAccessToken($config);
@@ -316,7 +316,7 @@ final class OAuthTokenManagerTest extends TestCase
             ->method('sendRequest')
             ->willThrowException($exception);
 
-        $this->expectException(VaultException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('OAuth token request failed: Connection timeout');
 
         $this->subject->getAccessToken($config);
@@ -470,7 +470,7 @@ final class OAuthTokenManagerTest extends TestCase
             ->method('sendRequest')
             ->willReturn($response);
 
-        $this->expectException(VaultException::class);
+        $this->expectException(OAuthException::class);
         $this->expectExceptionMessage('Invalid JSON response from OAuth server');
 
         $this->subject->getAccessToken($config);
