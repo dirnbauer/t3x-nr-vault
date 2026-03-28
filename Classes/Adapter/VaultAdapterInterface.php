@@ -69,4 +69,9 @@ interface VaultAdapterInterface
      * @param array<string, mixed> $metadata
      */
     public function updateMetadata(string $identifier, array $metadata): void;
+
+    /**
+     * Increment read count and update last_read_at atomically.
+     */
+    public function incrementReadCount(int $uid): void;
 }

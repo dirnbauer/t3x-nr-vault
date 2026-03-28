@@ -146,9 +146,8 @@ final class VaultServiceTest extends TestCase
 
         $this->adapter
             ->expects(self::once())
-            ->method('store')
-            ->with(self::callback(static fn (Secret $s): bool => $s->getReadCount() === 1
-                && $s->getLastReadAt() > 0));
+            ->method('incrementReadCount')
+            ->with($secret->getUid());
 
         $result = $this->subject->retrieve($identifier);
 
@@ -780,6 +779,7 @@ final class VaultServiceTest extends TestCase
     private function createSecretEntity(string $identifier): Secret
     {
         $secret = new Secret();
+        $secret->setUid(1);
         $secret->setIdentifier($identifier);
         $secret->setEncryptedValue('encrypted');
         $secret->setEncryptedDek('dek');

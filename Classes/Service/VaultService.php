@@ -36,12 +36,10 @@ use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use TYPO3\CMS\Core\SingletonInterface;
-
 /**
  * Main vault service implementation.
  */
-final class VaultService implements VaultServiceInterface, SingletonInterface
+final class VaultService implements VaultServiceInterface
 {
     /** @var array<string, string> Request-scoped cache */
     private array $cache = [];
@@ -54,6 +52,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly ExtensionConfigurationInterface $configuration,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
+
+    public function __destruct()
+    {
+        $this->clearCache();
+    }
 
     /**
      * @param array<string, mixed> $options
@@ -224,10 +227,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             throw $e;
         }
 
-        // Update read statistics
-        $secret->incrementReadCount();
-        $secret->setLastReadAt(time());
-        $this->adapter->store($secret);
+        // Update read statistics atomically (avoids full entity save + MM table churn)
+        $uid = $secret->getUid();
+        if ($uid !== null) {
+            $this->adapter->incrementReadCount($uid);
+        }
 
         // Log success
         $this->auditLogService->log($identifier, 'read', true);
@@ -420,11 +424,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
      */
     public function clearCache(): void
     {
-        // Securely wipe cached values
-        foreach ($this->cache as $key => $value) {
+        // Securely wipe cached values via reference to avoid copy-on-write
+        foreach ($this->cache as $key => &$value) {
             sodium_memzero($value);
-            unset($this->cache[$key]);
         }
+        unset($value);
         $this->cache = [];
     }
 }

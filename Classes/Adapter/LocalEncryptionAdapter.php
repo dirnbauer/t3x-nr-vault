@@ -87,6 +87,11 @@ final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
         ];
     }
 
+    public function incrementReadCount(int $uid): void
+    {
+        $this->secretRepository->incrementReadCount($uid);
+    }
+
     /**
      * @param array<string, mixed> $metadata
      */

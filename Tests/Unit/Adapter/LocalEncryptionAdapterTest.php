@@ -240,4 +240,16 @@ final class LocalEncryptionAdapterTest extends TestCase
 
         self::assertEquals(['existing' => 'value', 'new' => 'data'], $secret->getMetadata());
     }
+
+    #[Test]
+    public function incrementReadCountDelegatesToRepository(): void
+    {
+        $repository = $this->createMock(SecretRepositoryInterface::class);
+        $repository->expects(self::once())
+            ->method('incrementReadCount')
+            ->with(42);
+
+        $adapter = new LocalEncryptionAdapter($repository);
+        $adapter->incrementReadCount(42);
+    }
 }

@@ -49,13 +49,22 @@ final readonly class SiteConfigurationVaultListener
 
     /**
      * Quick check if configuration might contain vault references.
+     * Uses recursive traversal with early return instead of json_encode.
      *
      * @param array<string, mixed> $configuration
      */
     private function containsVaultReferences(array $configuration): bool
     {
-        $json = json_encode($configuration);
+        foreach ($configuration as $value) {
+            if (\is_string($value)) {
+                if (str_contains($value, '%vault(')) {
+                    return true;
+                }
+            } elseif (\is_array($value) && $this->containsVaultReferences($value)) {
+                return true;
+            }
+        }
 
-        return $json !== false && str_contains($json, '%vault(');
+        return false;
     }
 }

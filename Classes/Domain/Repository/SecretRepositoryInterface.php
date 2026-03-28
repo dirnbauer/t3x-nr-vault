@@ -31,4 +31,9 @@ interface SecretRepositoryInterface
      * @return list<string>
      */
     public function findIdentifiers(?SecretFilters $filters = null): array;
+
+    /**
+     * Increment read count and update last_read_at atomically.
+     */
+    public function incrementReadCount(int $uid): void;
 }

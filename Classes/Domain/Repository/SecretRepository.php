@@ -367,6 +367,18 @@ final readonly class SecretRepository implements SecretRepositoryInterface
         }
     }
 
+    /**
+     * Increment read count and update last_read_at atomically without full entity save.
+     */
+    public function incrementReadCount(int $uid): void
+    {
+        $this->getConnection()->executeStatement(
+            'UPDATE ' . self::TABLE_NAME . ' SET read_count = read_count + 1, last_read_at = ? WHERE uid = ?',
+            [time(), $uid],
+            [Connection::PARAM_INT, Connection::PARAM_INT],
+        );
+    }
+
     private function getConnection(): Connection
     {
         return $this->connectionPool->getConnectionForTable(self::TABLE_NAME);
