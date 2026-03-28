@@ -61,6 +61,11 @@ final readonly class LocalEncryptionAdapter implements VaultAdapterInterface
         return $this->secretRepository->findIdentifiers($filters);
     }
 
+    public function listSecrets(?SecretFilters $filters = null): array
+    {
+        return $this->secretRepository->findAllWithFilters($filters);
+    }
+
     /**
      * @return array<string, mixed>|null
      */

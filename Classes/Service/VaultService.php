@@ -365,16 +365,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     {
         $filters = $pattern !== null ? new SecretFilters(prefix: $pattern) : null;
 
-        $identifiers = $this->adapter->list($filters);
+        $allSecrets = $this->adapter->listSecrets($filters);
 
         // Build metadata array for accessible secrets
         $secrets = [];
-        foreach ($identifiers as $identifier) {
-            $secret = $this->adapter->retrieve($identifier);
-            if (!$secret instanceof Secret) {
-                continue;
-            }
-
+        foreach ($allSecrets as $secret) {
             // Check access
             if (!$this->accessControlService->canRead($secret)) {
                 continue;

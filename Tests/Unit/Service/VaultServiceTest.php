@@ -375,16 +375,8 @@ final class VaultServiceTest extends TestCase
         $secret2 = $this->createSecretEntity('secret2');
 
         $this->adapter
-            ->method('list')
-            ->willReturn(['secret1', 'secret2', 'secret3']);
-
-        $this->adapter
-            ->method('retrieve')
-            ->willReturnCallback(static fn (string $id): ?Secret => match ($id) {
-                'secret1' => $secret1,
-                'secret2' => $secret2,
-                default => null,
-            });
+            ->method('listSecrets')
+            ->willReturn([$secret1, $secret2]);
 
         $this->accessControlService
             ->method('canRead')
@@ -561,13 +553,9 @@ final class VaultServiceTest extends TestCase
         $secret = $this->createSecretEntity('api-key-1');
 
         $this->adapter
-            ->method('list')
+            ->method('listSecrets')
             ->with(self::callback(static fn ($filters): bool => $filters instanceof SecretFilters && $filters->prefix === 'api-*'))
-            ->willReturn(['api-key-1']);
-
-        $this->adapter
-            ->method('retrieve')
-            ->willReturn($secret);
+            ->willReturn([$secret]);
 
         $this->accessControlService
             ->method('canRead')
@@ -748,7 +736,7 @@ final class VaultServiceTest extends TestCase
     public function listHandlesEmptyPattern(): void
     {
         $this->adapter
-            ->method('list')
+            ->method('listSecrets')
             ->with(null)
             ->willReturn([]);
 
