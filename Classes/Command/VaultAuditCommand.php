@@ -206,6 +206,18 @@ final class VaultAuditCommand extends Command
 
         $result = $this->auditLogService->verifyHashChain();
 
+        if ($result->getWarningCount() > 0) {
+            $io->warning(\sprintf('%d warning(s) detected:', $result->getWarningCount()));
+            $io->table(
+                ['Entry UID', 'Warning'],
+                array_map(
+                    fn ($uid, $warning): array => [$uid, $warning],
+                    array_keys($result->warnings),
+                    array_values($result->warnings),
+                ),
+            );
+        }
+
         if ($result->isValid()) {
             $io->success('Hash chain is valid - no tampering detected');
 

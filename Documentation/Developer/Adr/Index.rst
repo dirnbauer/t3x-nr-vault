@@ -47,7 +47,7 @@ ADR      Title                                       Status
 020      :ref:`adr-020-master-key-request-lifetime-caching`  Accepted
 021      :ref:`adr-021-batch-secret-loading`         Accepted
 022      :ref:`adr-022-dedicated-oauth-exception`    Accepted
-023      :ref:`adr-023-audit-hash-chain-hmac`        Proposed
+023      :ref:`adr-023-audit-hash-chain-hmac`        Accepted
 =======  ==========================================  ========
 
 .. toctree::

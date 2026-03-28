@@ -559,3 +559,49 @@ Example
 
    # Clean up orphans for specific table only
    vendor/bin/typo3 vault:cleanup-orphans --table=tx_myext_settings
+
+.. _command-audit-migrate-hmac:
+
+vault:audit-migrate-hmac
+========================
+
+Migrate existing audit log entries from plain SHA-256 (epoch 0) to
+HMAC-SHA256 (target epoch configured via ``auditHmacEpoch``). This command
+rehashes all audit log entries using an HMAC key derived from the master key,
+upgrading the hash chain from tamper detection to adversarial tamper resistance.
+
+See :ref:`adr-023-audit-hash-chain-hmac` for the architectural decision
+behind this migration.
+
+.. code-block:: bash
+   :caption: Command syntax
+
+   vendor/bin/typo3 vault:audit-migrate-hmac [options]
+
+.. _command-audit-migrate-hmac-options:
+
+Options
+-------
+
+--dry-run
+   Show what would be migrated without making changes.
+
+.. _command-audit-migrate-hmac-example:
+
+Example
+-------
+
+.. code-block:: bash
+   :caption: vault:audit-migrate-hmac examples
+
+   # Preview migration
+   vendor/bin/typo3 vault:audit-migrate-hmac --dry-run
+
+   # Run the migration
+   vendor/bin/typo3 vault:audit-migrate-hmac
+
+.. attention::
+
+   This command requires a valid master key to derive the HMAC key.
+   Always backup your database before running the migration. Once migrated,
+   entries cannot be reverted to plain SHA-256 without restoring the backup.

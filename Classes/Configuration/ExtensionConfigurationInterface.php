@@ -75,6 +75,11 @@ interface ExtensionConfigurationInterface
     public function getAwsConfig(): AwsSecretsConfig;
 
     /**
+     * Get the audit HMAC epoch (0 = legacy SHA-256, 1+ = HMAC-SHA256).
+     */
+    public function getAuditHmacEpoch(): int;
+
+    /**
      * Get the auto-generated key storage path (for development).
      */
     public function getAutoKeyPath(): string;

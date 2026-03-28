@@ -37,6 +37,8 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
 
     public const DEFAULT_PREFER_XCHACHA20 = false;
 
+    public const DEFAULT_AUDIT_HMAC_EPOCH = 1;
+
     private const EXTENSION_KEY = 'nr_vault';
 
     /** @var array<string, mixed> */
@@ -146,6 +148,16 @@ final class ExtensionConfiguration implements ExtensionConfigurationInterface, S
     public function preferXChaCha20(): bool
     {
         return (bool) ($this->configuration['preferXChaCha20'] ?? self::DEFAULT_PREFER_XCHACHA20);
+    }
+
+    /**
+     * Get the audit HMAC epoch (0 = legacy SHA-256, 1+ = HMAC-SHA256).
+     */
+    public function getAuditHmacEpoch(): int
+    {
+        $val = $this->configuration['auditHmacEpoch'] ?? self::DEFAULT_AUDIT_HMAC_EPOCH;
+
+        return is_numeric($val) ? (int) $val : self::DEFAULT_AUDIT_HMAC_EPOCH;
     }
 
     /**

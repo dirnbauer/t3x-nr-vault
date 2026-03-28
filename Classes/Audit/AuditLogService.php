@@ -14,6 +14,8 @@ namespace Netresearch\NrVault\Audit;
 
 use DateTimeInterface;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
+use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
@@ -31,6 +33,8 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     public function __construct(
         private ConnectionPool $connectionPool,
         private AccessControlServiceInterface $accessControlService,
+        private MasterKeyProviderInterface $masterKeyProvider,
+        private ExtensionConfigurationInterface $extensionConfiguration,
     ) {}
 
     public function log(
@@ -72,6 +76,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $previousHash = \is_string($result) ? $result : '';
 
             // Build entry data
+            $currentEpoch = $this->getCurrentEpoch();
             $data = [
                 'pid' => 0,
                 'secret_identifier' => $secretIdentifier,
@@ -90,6 +95,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 'hash_before' => $hashBefore ?? '',
                 'hash_after' => $hashAfter ?? '',
                 'crdate' => time(),
+                'hmac_key_epoch' => $currentEpoch,
                 'context' => $context instanceof AuditContextInterface ? json_encode($context->toArray()) : '{}',
             ];
 
@@ -98,7 +104,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $uid = (int) $connection->lastInsertId();
 
             // Calculate entry hash with the known UID
-            $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash);
+            $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash, $currentEpoch);
 
             // Set the hash
             $connection->update(
@@ -192,47 +198,70 @@ final readonly class AuditLogService implements AuditLogServiceInterface
 
         $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
         $errors = [];
+        $warnings = [];
         $previousHash = '';
+        $previousEpoch = -1;
 
-        foreach ($rows as $row) {
-            $rowUid = $row['uid'] ?? 0;
-            $uid = is_numeric($rowUid) ? (int) $rowUid : 0;
-            $rowSecretId = $row['secret_identifier'] ?? '';
-            $secretId = \is_string($rowSecretId) ? $rowSecretId : '';
-            $rowAction = $row['action'] ?? '';
-            $actionStr = \is_string($rowAction) ? $rowAction : '';
-            $rowActorUid = $row['actor_uid'] ?? 0;
-            $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
-            $rowCrdate = $row['crdate'] ?? 0;
-            $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
+        // Derive the HMAC key once for all HMAC-epoch entries
+        $hmacKey = $this->getHmacKey();
 
-            $expectedHash = $this->calculateEntryHash(
-                $uid,
-                $secretId,
-                $actionStr,
-                $actorUid,
-                $crdate,
-                $previousHash,
-            );
+        try {
+            foreach ($rows as $row) {
+                $rowUid = $row['uid'] ?? 0;
+                $uid = is_numeric($rowUid) ? (int) $rowUid : 0;
+                $rowSecretId = $row['secret_identifier'] ?? '';
+                $secretId = \is_string($rowSecretId) ? $rowSecretId : '';
+                $rowAction = $row['action'] ?? '';
+                $actionStr = \is_string($rowAction) ? $rowAction : '';
+                $rowActorUid = $row['actor_uid'] ?? 0;
+                $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
+                $rowCrdate = $row['crdate'] ?? 0;
+                $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
+                $rowEpoch = $row['hmac_key_epoch'] ?? 0;
+                $epoch = is_numeric($rowEpoch) ? (int) $rowEpoch : 0;
 
-            // Verify previous_hash matches
-            $rowPrevHash = $row['previous_hash'] ?? '';
-            if ($rowPrevHash !== $previousHash) {
-                $errors[$uid] = 'Previous hash mismatch - chain broken';
+                // Detect epoch boundary and report warning
+                if ($previousEpoch >= 0 && $epoch !== $previousEpoch) {
+                    $warnings[$uid] = \sprintf(
+                        'HMAC key epoch boundary: %d -> %d',
+                        $previousEpoch,
+                        $epoch,
+                    );
+                }
+
+                $previousEpoch = $epoch;
+
+                $expectedHash = self::calculateHash(
+                    $uid,
+                    $secretId,
+                    $actionStr,
+                    $actorUid,
+                    $crdate,
+                    $previousHash,
+                    $epoch === 0 ? null : $hmacKey,
+                );
+
+                // Verify previous_hash matches
+                $rowPrevHash = $row['previous_hash'] ?? '';
+                if ($rowPrevHash !== $previousHash) {
+                    $errors[$uid] = 'Previous hash mismatch - chain broken';
+                }
+
+                // Verify entry_hash is correct
+                $rowEntryHash = $row['entry_hash'] ?? '';
+                if ($rowEntryHash !== $expectedHash) {
+                    $errors[$uid] = 'Entry hash mismatch - possible tampering';
+                }
+
+                $previousHash = \is_string($rowEntryHash) ? $rowEntryHash : '';
             }
-
-            // Verify entry_hash is correct
-            $rowEntryHash = $row['entry_hash'] ?? '';
-            if ($rowEntryHash !== $expectedHash) {
-                $errors[$uid] = 'Entry hash mismatch - possible tampering';
-            }
-
-            $previousHash = \is_string($rowEntryHash) ? $rowEntryHash : '';
+        } finally {
+            sodium_memzero($hmacKey);
         }
 
         return $errors === []
-            ? HashChainVerificationResult::valid()
-            : HashChainVerificationResult::invalid($errors);
+            ? HashChainVerificationResult::valid($warnings)
+            : HashChainVerificationResult::invalid($errors, $warnings);
     }
 
     public function getLatestHash(): ?string
@@ -250,15 +279,22 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     }
 
     /**
-     * Calculate hash for an audit log entry.
+     * Calculate an audit log entry hash.
+     *
+     * When $hmacKey is null, produces a legacy SHA-256 hash (epoch 0).
+     * When $hmacKey is provided, produces an HMAC-SHA256 hash (epoch 1+).
+     *
+     * This method is public so it can be reused by the migration command
+     * without duplicating the HKDF derivation logic.
      */
-    private function calculateEntryHash(
+    public static function calculateHash(
         int $uid,
         string $secretIdentifier,
         string $action,
         int $actorUid,
         int $crdate,
         string $previousHash,
+        ?string $hmacKey = null,
     ): string {
         $payload = json_encode([
             'uid' => $uid,
@@ -269,7 +305,73 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             'previous_hash' => $previousHash,
         ], JSON_THROW_ON_ERROR);
 
-        return hash('sha256', $payload);
+        if ($hmacKey === null) {
+            return hash('sha256', $payload);
+        }
+
+        return hash_hmac('sha256', $payload, $hmacKey);
+    }
+
+    /**
+     * Derive the HMAC key from the master key via HKDF.
+     *
+     * Uses a distinct info string to ensure the HMAC key is separate from the encryption key.
+     *
+     * NOTE: The current implementation always derives the same key from a given master key,
+     * regardless of the epoch value. The epoch is a version marker, not a key diversifier.
+     * After master key rotation, a new epoch should be started so the verifier knows which
+     * key to use for verification.
+     */
+    public static function deriveHmacKey(MasterKeyProviderInterface $masterKeyProvider): string
+    {
+        $masterKey = $masterKeyProvider->getMasterKey();
+
+        try {
+            return hash_hkdf('sha256', $masterKey, 32, 'nr-vault-audit-hmac-v1');
+        } finally {
+            sodium_memzero($masterKey);
+        }
+    }
+
+    /**
+     * Calculate hash for an audit log entry.
+     *
+     * Epoch 0 uses legacy SHA-256 (no HMAC key) for backward compatibility.
+     * Epoch 1+ uses HMAC-SHA256 with a key derived from the master key.
+     */
+    private function calculateEntryHash(
+        int $uid,
+        string $secretIdentifier,
+        string $action,
+        int $actorUid,
+        int $crdate,
+        string $previousHash,
+        int $epoch = 0,
+    ): string {
+        if ($epoch === 0) {
+            return self::calculateHash($uid, $secretIdentifier, $action, $actorUid, $crdate, $previousHash);
+        }
+
+        $hmacKey = $this->getHmacKey();
+
+        try {
+            return self::calculateHash($uid, $secretIdentifier, $action, $actorUid, $crdate, $previousHash, $hmacKey);
+        } finally {
+            sodium_memzero($hmacKey);
+        }
+    }
+
+    private function getHmacKey(): string
+    {
+        return self::deriveHmacKey($this->masterKeyProvider);
+    }
+
+    /**
+     * Get the current HMAC key epoch from extension configuration.
+     */
+    private function getCurrentEpoch(): int
+    {
+        return $this->extensionConfiguration->getAuditHmacEpoch();
     }
 
     /**

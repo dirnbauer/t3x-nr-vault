@@ -123,6 +123,7 @@ final class HashChainVerificationResultTest extends TestCase
         self::assertSame([
             'valid' => true,
             'errors' => [],
+            'warnings' => [],
         ], $subject->toArray());
     }
 
@@ -135,14 +136,73 @@ final class HashChainVerificationResultTest extends TestCase
         self::assertSame([
             'valid' => false,
             'errors' => $errors,
+            'warnings' => [],
         ], $subject->toArray());
     }
 
     #[Test]
-    public function toArrayContainsExactlyTwoKeys(): void
+    public function toArrayContainsExactlyThreeKeys(): void
     {
         $subject = HashChainVerificationResult::valid();
 
-        self::assertCount(2, $subject->toArray());
+        self::assertCount(3, $subject->toArray());
+    }
+
+    #[Test]
+    public function constructorWarningsDefaultToEmptyArray(): void
+    {
+        $subject = new HashChainVerificationResult(valid: true);
+
+        self::assertSame([], $subject->warnings);
+    }
+
+    #[Test]
+    public function validFactoryAcceptsWarnings(): void
+    {
+        $warnings = [5 => 'HMAC key epoch boundary: 0 -> 1'];
+        $subject = HashChainVerificationResult::valid($warnings);
+
+        self::assertTrue($subject->valid);
+        self::assertSame([], $subject->errors);
+        self::assertSame($warnings, $subject->warnings);
+    }
+
+    #[Test]
+    public function invalidFactoryAcceptsWarnings(): void
+    {
+        $errors = [3 => 'Chain broken'];
+        $warnings = [2 => 'Epoch boundary'];
+        $subject = HashChainVerificationResult::invalid($errors, $warnings);
+
+        self::assertFalse($subject->valid);
+        self::assertSame($errors, $subject->errors);
+        self::assertSame($warnings, $subject->warnings);
+    }
+
+    #[Test]
+    public function getWarningCountReturnsZeroForNoWarnings(): void
+    {
+        $subject = HashChainVerificationResult::valid();
+
+        self::assertSame(0, $subject->getWarningCount());
+    }
+
+    #[Test]
+    public function getWarningCountReturnsCorrectCount(): void
+    {
+        $warnings = [1 => 'warn1', 5 => 'warn2'];
+        $subject = HashChainVerificationResult::valid($warnings);
+
+        self::assertSame(2, $subject->getWarningCount());
+    }
+
+    #[Test]
+    public function toArrayIncludesWarnings(): void
+    {
+        $warnings = [10 => 'epoch change'];
+        $subject = HashChainVerificationResult::valid($warnings);
+
+        $array = $subject->toArray();
+        self::assertSame($warnings, $array['warnings']);
     }
 }

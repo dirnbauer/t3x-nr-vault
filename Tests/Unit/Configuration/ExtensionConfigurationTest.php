@@ -436,6 +436,54 @@ final class ExtensionConfigurationTest extends TestCase
     }
 
     #[Test]
+    public function getAuditHmacEpochReturnsConfiguredValue(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditHmacEpoch' => 2]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(2, $config->getAuditHmacEpoch());
+    }
+
+    #[Test]
+    public function getAuditHmacEpochReturnsDefaultWhenNotConfigured(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn([]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_AUDIT_HMAC_EPOCH, $config->getAuditHmacEpoch());
+    }
+
+    #[Test]
+    public function getAuditHmacEpochReturnsDefaultWhenValueIsNonNumeric(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditHmacEpoch' => 'not-a-number']);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(ExtensionConfiguration::DEFAULT_AUDIT_HMAC_EPOCH, $config->getAuditHmacEpoch());
+    }
+
+    #[Test]
+    public function getAuditHmacEpochAcceptsZeroForLegacyMode(): void
+    {
+        $this->typo3Config->method('get')
+            ->with('nr_vault')
+            ->willReturn(['auditHmacEpoch' => 0]);
+
+        $config = new ExtensionConfiguration($this->typo3Config);
+
+        self::assertSame(0, $config->getAuditHmacEpoch());
+    }
+
+    #[Test]
     public function getCliAccessGroupsFiltersZeroFromEmptyCommaString(): void
     {
         // A comma string with empty values would produce 0s that get filtered

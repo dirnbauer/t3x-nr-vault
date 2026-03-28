@@ -103,6 +103,9 @@ CREATE TABLE tx_nrvault_audit_log (
     -- When
     crdate int(11) unsigned DEFAULT 0 NOT NULL,
 
+    -- HMAC epoch (0 = legacy SHA-256, 1+ = HMAC-SHA256 with derived key)
+    hmac_key_epoch int(11) unsigned DEFAULT 0 NOT NULL,
+
     -- Additional data (JSON)
     context text,
 
