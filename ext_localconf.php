@@ -37,8 +37,11 @@ defined('TYPO3') || die();
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'][]
         = DataHandlerHook::class;
 
-    // FlexForm vault field handling
+    // FlexForm vault field handling (datamap for store/update, cmdmap for delete/copy)
     $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass'][]
+        = FlexFormVaultHook::class;
+
+    $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass'][]
         = FlexFormVaultHook::class;
 
     // Hook for tx_nrvault_secret TCA operations (identifier immutability, audit logging)

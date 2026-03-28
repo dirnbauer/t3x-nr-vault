@@ -15,6 +15,7 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Throwable;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -39,6 +40,7 @@ final class FlexFormVaultHook
         private readonly VaultServiceInterface $vaultService,
         private readonly FlexFormTools $flexFormTools,
         private readonly FlashMessageService $flashMessageService,
+        private readonly ConnectionPool $connectionPool,
     ) {}
 
     /**
@@ -123,6 +125,148 @@ final class FlexFormVaultHook
 
         // Clean up
         unset($this->pendingFlexSecrets[$table][$id]);
+    }
+
+    /**
+     * Handle record deletion: clean up associated FlexForm vault secrets.
+     *
+     * @param array<string, mixed> $recordToDelete
+     */
+    public function processCmdmap_deleteAction(
+        string $table,
+        int $id,
+        array $recordToDelete,
+        bool &$recordWasDeleted,
+        DataHandler $dataHandler,
+    ): void {
+        // Only clean up vault secrets on hard delete.
+        // Soft-delete keeps the record so secrets remain referenced.
+        if (!$this->isHardDelete($table)) {
+            return;
+        }
+
+        $flexFieldNames = $this->getFlexFieldNames($table);
+        if ($flexFieldNames === []) {
+            return;
+        }
+
+        foreach ($flexFieldNames as $flexFieldName) {
+            $xmlValue = $recordToDelete[$flexFieldName] ?? '';
+            if (!\is_string($xmlValue)) {
+                continue;
+            }
+            if ($xmlValue === '') {
+                continue;
+            }
+
+            $identifiers = $this->extractVaultIdentifiersFromXml($xmlValue);
+
+            foreach ($identifiers as $identifier) {
+                try {
+                    $this->vaultService->delete($identifier, 'Record deleted');
+                } catch (Throwable $e) {
+                    /** @phpstan-ignore method.internal */
+                    $dataHandler->log(
+                        $table,
+                        $id,
+                        3,
+                        null,
+                        1,
+                        'Vault error during delete for FlexForm field: ' . $e->getMessage(),
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Called after record copy.
+     * Copies FlexForm vault secrets to the new record with fresh UUIDs.
+     */
+    public function processCmdmap_postProcess(
+        string $command,
+        string $table,
+        string|int $id,
+        mixed $value,
+        DataHandler $dataHandler,
+        bool $pasteUpdate,
+    ): void {
+        if ($command !== 'copy') {
+            return;
+        }
+
+        /** @phpstan-ignore property.internal */
+        $newIdRaw = $dataHandler->copyMappingArray[$table][$id] ?? null;
+        if ($newIdRaw === null) {
+            return;
+        }
+        $newId = is_numeric($newIdRaw) ? (int) $newIdRaw : 0;
+
+        $flexFieldNames = $this->getFlexFieldNames($table);
+        if ($flexFieldNames === []) {
+            return;
+        }
+
+        // Read the copied record's FlexForm XML
+        $connection = $this->connectionPool->getConnectionForTable($table);
+        $copiedRecord = $connection->select(
+            $flexFieldNames,
+            $table,
+            ['uid' => $newId],
+        )->fetchAssociative();
+
+        if ($copiedRecord === false) {
+            return;
+        }
+
+        foreach ($flexFieldNames as $flexFieldName) {
+            $xmlValue = $copiedRecord[$flexFieldName] ?? '';
+            if (!\is_string($xmlValue)) {
+                continue;
+            }
+            if ($xmlValue === '') {
+                continue;
+            }
+
+            $xml = $xmlValue;
+            $identifiers = $this->extractVaultIdentifiersFromXml($xml);
+
+            foreach ($identifiers as $oldIdentifier) {
+                try {
+                    $secretValue = $this->vaultService->retrieve($oldIdentifier);
+                    if ($secretValue === null) {
+                        continue;
+                    }
+
+                    $newIdentifier = IdentifierValidator::generateUuid();
+
+                    $this->vaultService->store($newIdentifier, $secretValue, [
+                        'table' => $table,
+                        'flexField' => $flexFieldName,
+                        'uid' => $newId,
+                        'source' => 'flexform_record_copy',
+                        'copied_from' => $oldIdentifier,
+                    ]);
+
+                    // Replace old identifier with new in XML
+                    $xml = str_replace($oldIdentifier, $newIdentifier, $xml);
+                } catch (Throwable $e) {
+                    /** @phpstan-ignore method.internal */
+                    $dataHandler->log(
+                        $table,
+                        $newId,
+                        1,
+                        null,
+                        1,
+                        'Vault error during copy for FlexForm field "' . $flexFieldName . '": ' . $e->getMessage(),
+                    );
+                }
+            }
+
+            if ($xml !== $xmlValue) {
+                $connection->update($table, [$flexFieldName => $xml], ['uid' => $newId]);
+            }
+        }
     }
 
     /**
@@ -326,6 +470,32 @@ final class FlexFormVaultHook
     }
 
     /**
+     * Extract vault identifiers from FlexForm XML.
+     *
+     * @return list<string>
+     */
+    private function extractVaultIdentifiersFromXml(string $xml): array
+    {
+        $identifiers = [];
+
+        // Match UUID v7 patterns in XML values
+        if (preg_match_all(
+            '/[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i',
+            $xml,
+            $matches,
+        )) {
+            foreach ($matches[0] as $match) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($match)
+                    && $this->vaultService->exists($match)) {
+                    $identifiers[] = $match;
+                }
+            }
+        }
+
+        return $identifiers;
+    }
+
+    /**
      * Get FlexForm element configuration from sheet config.
      *
      * @param array{ROOT?: array{el?: array<string, array{config?: array{renderType?: string}}>}} $sheetConfig
@@ -335,5 +505,43 @@ final class FlexFormVaultHook
     private function getFlexFormElementConfig(array $sheetConfig, string $fieldPath): array
     {
         return $sheetConfig['ROOT']['el'][$fieldPath] ?? [];
+    }
+
+    /**
+     * Check if the table uses hard delete (no soft-delete column).
+     */
+    private function isHardDelete(string $table): bool
+    {
+        if (!$this->tcaSchemaFactory->has($table)) {
+            return true;
+        }
+
+        $schema = $this->tcaSchemaFactory->get($table);
+
+        return !$schema->hasField('deleted');
+    }
+
+    /**
+     * Get names of FlexForm-type fields in a table.
+     *
+     * @return list<string>
+     */
+    private function getFlexFieldNames(string $table): array
+    {
+        if (!$this->tcaSchemaFactory->has($table)) {
+            return [];
+        }
+
+        $names = [];
+        $schema = $this->tcaSchemaFactory->get($table);
+
+        foreach ($schema->getFields() as $field) {
+            $fieldConfig = $field->getConfiguration();
+            if (($fieldConfig['type'] ?? '') === 'flex') {
+                $names[] = $field->getName();
+            }
+        }
+
+        return $names;
     }
 }

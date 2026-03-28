@@ -18,6 +18,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Schema\Field\FieldCollection;
@@ -46,11 +47,14 @@ final class FlexFormVaultHookTest extends TestCase
         $this->flexFormTools = $this->createMock(FlexFormTools::class);
         $flashMessageService = $this->createStub(FlashMessageService::class);
 
+        $connectionPool = $this->createStub(ConnectionPool::class);
+
         $this->subject = new FlexFormVaultHook(
             $this->tcaSchemaFactory,
             $this->vaultService,
             $this->flexFormTools,
             $flashMessageService,
+            $connectionPool,
         );
     }
 
