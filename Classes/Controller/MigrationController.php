@@ -406,7 +406,7 @@ final readonly class MigrationController
                 ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME)
                 ->createSchemaManager();
             $tableNames = array_map(
-                static fn($t): string => $t->getName(),
+                static fn($t): string => $t->getName(), /** @phpstan-ignore method.internalClass */
                 $schemaManager->listTables(),
             );
             if (!in_array($table, $tableNames, true)) {
@@ -414,7 +414,7 @@ final readonly class MigrationController
             }
 
             $columns = array_map(
-                static fn($col): string => $col->getName(),
+                static fn($col): string => $col->getName(), /** @phpstan-ignore method.internalClass */
                 $schemaManager->listTableColumns($table),
             );
             if (!in_array($column, $columns, true)) {

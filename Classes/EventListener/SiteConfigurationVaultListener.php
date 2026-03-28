@@ -51,7 +51,7 @@ final readonly class SiteConfigurationVaultListener
      * Quick check if configuration might contain vault references.
      * Uses recursive traversal with early return instead of json_encode.
      *
-     * @param array<string, mixed> $configuration
+     * @param array<mixed> $configuration
      */
     private function containsVaultReferences(array $configuration): bool
     {

@@ -56,6 +56,7 @@ final class SecretDetectionServiceTest extends TestCase
             $this->connectionPool,
             $this->packageManager,
             $this->extensionConfiguration,
+            new \Psr\Log\NullLogger(),
         );
     }
 

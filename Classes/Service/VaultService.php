@@ -36,10 +36,12 @@ use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use TYPO3\CMS\Core\SingletonInterface;
+
 /**
  * Main vault service implementation.
  */
-final class VaultService implements VaultServiceInterface
+final class VaultService implements VaultServiceInterface, SingletonInterface
 {
     /** @var array<string, string> Request-scoped cache */
     private array $cache = [];

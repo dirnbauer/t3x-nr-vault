@@ -11,6 +11,8 @@ namespace Netresearch\NrVault\Service;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\SingletonInterface;
+
 /**
  * Service for checking TSconfig-based permissions on vault fields.
  *
@@ -41,7 +43,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
  *     }
  * }
  */
-final class VaultFieldPermissionService
+final class VaultFieldPermissionService implements SingletonInterface
 {
     /** @var array<string, bool> */
     private array $permissionCache = [];

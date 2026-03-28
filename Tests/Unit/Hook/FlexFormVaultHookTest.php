@@ -43,11 +43,13 @@ final class FlexFormVaultHookTest extends TestCase
         $this->tcaSchemaFactory = $this->createMock(TcaSchemaFactory::class);
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->flexFormTools = $this->createMock(FlexFormTools::class);
+        $flashMessageService = $this->createStub(\TYPO3\CMS\Core\Messaging\FlashMessageService::class);
 
         $this->subject = new FlexFormVaultHook(
             $this->tcaSchemaFactory,
             $this->vaultService,
             $this->flexFormTools,
+            $flashMessageService,
         );
     }
 

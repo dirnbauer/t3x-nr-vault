@@ -120,7 +120,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -140,7 +140,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30, // 30 days old
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -165,7 +165,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 3, // 3 days old
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -186,12 +186,12 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
             $this->createSecretMetadata(
                 'tx_other__secret__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_other'],
+                ['source' => 'tca_field', 'table' => 'tx_other', 'field' => 'secret', 'uid' => 1],
             ),
         ]);
 
@@ -219,7 +219,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -243,7 +243,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'migration', 'table' => 'tx_myext'],
+                ['source' => 'migration', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -262,13 +262,13 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     }
 
     #[Test]
-    public function skipsInvalidIdentifierFormats(): void
+    public function skipsSecretsWithInvalidMetadata(): void
     {
         $this->vaultService->method('list')->willReturn([
             $this->createSecretMetadata(
                 'invalid_format',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field'],
             ),
         ]);
 

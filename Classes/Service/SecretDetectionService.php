@@ -196,6 +196,11 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
                 }
             } catch (ExtensionConfigurationExtensionNotConfiguredException | ExtensionConfigurationPathDoesNotExistException) {
                 // Extension has no configuration - skip
+            } catch (\Exception $e) {
+                $this->logger->warning('Failed to scan extension configuration', [
+                    'extension' => $extKey,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
     }
@@ -514,13 +519,13 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
             return true;
         }
 
-        // Check for base64-encoded encrypted data (typically > 50 chars, high entropy)
-        if (\strlen($value) > 80 && preg_match('/^[A-Za-z0-9+\/]{40,}={0,2}$/', $value)) {
+        // Check for base64-encoded encrypted data (typically >= 80 chars, high entropy)
+        if (\strlen($value) >= 80 && preg_match('/^[A-Za-z0-9+\/]{40,}={0,2}$/', $value)) {
             return true;
         }
 
         // Check for hex-encoded data (require longer length to reduce false positives)
-        return \strlen($value) > 80 && preg_match('/^[0-9a-f]+$/i', $value);
+        return \strlen($value) >= 80 && preg_match('/^[0-9a-f]+$/i', $value);
     }
 
     /**
