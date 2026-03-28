@@ -252,4 +252,43 @@ final class LocalEncryptionAdapterTest extends TestCase
         $adapter = new LocalEncryptionAdapter($repository);
         $adapter->incrementReadCount(42);
     }
+
+    #[Test]
+    public function listSecretsDelegatesToRepository(): void
+    {
+        $secret1 = new Secret();
+        $secret1->setIdentifier('secret-1');
+        $secret2 = new Secret();
+        $secret2->setIdentifier('secret-2');
+
+        $filters = new SecretFilters(prefix: 'test');
+
+        $repository = $this->createMock(SecretRepositoryInterface::class);
+        $repository->expects(self::once())
+            ->method('findAllWithFilters')
+            ->with($filters)
+            ->willReturn([$secret1, $secret2]);
+
+        $adapter = new LocalEncryptionAdapter($repository);
+        $result = $adapter->listSecrets($filters);
+
+        self::assertCount(2, $result);
+        self::assertSame($secret1, $result[0]);
+        self::assertSame($secret2, $result[1]);
+    }
+
+    #[Test]
+    public function listSecretsWithNullFilters(): void
+    {
+        $repository = $this->createMock(SecretRepositoryInterface::class);
+        $repository->expects(self::once())
+            ->method('findAllWithFilters')
+            ->with(null)
+            ->willReturn([]);
+
+        $adapter = new LocalEncryptionAdapter($repository);
+        $result = $adapter->listSecrets();
+
+        self::assertSame([], $result);
+    }
 }

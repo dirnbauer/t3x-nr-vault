@@ -21,6 +21,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -681,6 +682,70 @@ final class AuditLogServiceTest extends TestCase
             );
 
         $subject->log('test_secret', 'read', true);
+    }
+
+    #[Test]
+    public function logUsesTransactionForAtomicWrite(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('beginTransaction');
+
+        $this->connection
+            ->expects(self::once())
+            ->method('commit');
+
+        $this->connection
+            ->expects(self::never())
+            ->method('rollBack');
+
+        $this->getSubject()->log('test_secret', 'create', true);
+    }
+
+    #[Test]
+    public function logRollsBackTransactionOnInsertFailure(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->method('insert')
+            ->willThrowException(new RuntimeException('Insert failed'));
+
+        $this->connection
+            ->expects(self::once())
+            ->method('rollBack');
+
+        $this->connection
+            ->expects(self::never())
+            ->method('commit');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Insert failed');
+
+        $this->getSubject()->log('test_secret', 'create', true);
+    }
+
+    #[Test]
+    public function logUpdatesEntryHashAfterInsert(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->method('lastInsertId')
+            ->willReturn('42');
+
+        $this->connection
+            ->expects(self::once())
+            ->method('update')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => isset($data['entry_hash']) && $data['entry_hash'] !== ''),
+                ['uid' => 42],
+            );
+
+        $this->getSubject()->log('test_secret', 'create', true);
     }
 
     private function getSubject(): AuditLogService

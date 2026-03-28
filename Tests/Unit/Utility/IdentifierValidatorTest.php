@@ -158,4 +158,100 @@ final class IdentifierValidatorTest extends TestCase
 
         IdentifierValidator::validate('a' . str_repeat('b', 254)); // Exactly 255 characters
     }
+
+    #[Test]
+    public function generateUuidReturnsValidUuidV7Format(): void
+    {
+        $uuid = IdentifierValidator::generateUuid();
+
+        // UUID format: 8-4-4-4-12 hex characters
+        self::assertMatchesRegularExpression(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/',
+            $uuid,
+        );
+    }
+
+    #[Test]
+    public function generateUuidReturnsUniqueValues(): void
+    {
+        $uuid1 = IdentifierValidator::generateUuid();
+        $uuid2 = IdentifierValidator::generateUuid();
+
+        self::assertNotSame($uuid1, $uuid2);
+    }
+
+    #[Test]
+    public function generateUuidPassesValidation(): void
+    {
+        $uuid = IdentifierValidator::generateUuid();
+
+        $this->expectNotToPerformAssertions();
+        IdentifierValidator::validate($uuid);
+    }
+
+    #[Test]
+    public function generateUuidHasVersionBit7(): void
+    {
+        $uuid = IdentifierValidator::generateUuid();
+
+        // The version nibble (position 14) must be '7'
+        self::assertSame('7', $uuid[14]);
+    }
+
+    #[Test]
+    public function generateUuidHasCorrectVariantBits(): void
+    {
+        $uuid = IdentifierValidator::generateUuid();
+
+        // The variant nibble (position 19) must be 8, 9, a, or b
+        self::assertContains($uuid[19], ['8', '9', 'a', 'b']);
+    }
+
+    #[Test]
+    public function looksLikeVaultIdentifierRecognisesUuidV7(): void
+    {
+        $uuid = IdentifierValidator::generateUuid();
+
+        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier($uuid));
+    }
+
+    #[Test]
+    public function looksLikeVaultIdentifierRecognisesVaultReferenceFormat(): void
+    {
+        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier('%vault(my_secret)%'));
+        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier('%vault(site:main:key)%'));
+    }
+
+    #[Test]
+    public function looksLikeVaultIdentifierRecognisesLegacyTcaFormat(): void
+    {
+        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier('tx_myext__api_key__123'));
+        self::assertTrue(IdentifierValidator::looksLikeVaultIdentifier('pages__password__42'));
+    }
+
+    #[Test]
+    public function looksLikeVaultIdentifierReturnsFalseForPlainValues(): void
+    {
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier(''));
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('my-api-key'));
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('some_regular_value'));
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('sk-1234567890abcdef'));
+    }
+
+    #[Test]
+    public function looksLikeVaultIdentifierRejectsPartialVaultReference(): void
+    {
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('vault(key)'));
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('%vault%'));
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('%vault()%'));
+    }
+
+    #[Test]
+    public function looksLikeVaultIdentifierRejectsIncompleteLegacyFormat(): void
+    {
+        // Only one double-underscore segment
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('tx_myext__api_key'));
+        // Missing UID
+        self::assertFalse(IdentifierValidator::looksLikeVaultIdentifier('tx_myext__api_key__'));
+    }
 }
