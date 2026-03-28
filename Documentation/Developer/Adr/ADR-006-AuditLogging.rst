@@ -148,13 +148,21 @@ Audit log entry structure
 Hash chain algorithm
 --------------------
 
+.. note::
+
+   As of :ref:`adr-023-audit-hash-chain-hmac`, the hash chain uses
+   HMAC-SHA256 keyed with an HKDF-derived key from the master key.
+   New entries (epoch 1+) use ``hash_hmac()`` instead of plain ``hash()``.
+   Legacy entries (epoch 0) remain verifiable with the original SHA-256
+   algorithm.
+
 Each entry's hash includes the previous entry's hash, creating an
 unbroken chain:
 
 .. code-block:: php
-   :caption: Hash chain calculation
+   :caption: Hash chain calculation (HMAC-SHA256, epoch 1+)
 
-   private function calculateEntryHash(AuditLogEntry $entry): string
+   private function calculateEntryHash(AuditLogEntry $entry, string $hmacKey): string
    {
        $data = implode('|', [
            $entry->uid,
@@ -165,7 +173,7 @@ unbroken chain:
            $entry->previousHash,
        ]);
 
-       return hash('sha256', $data);
+       return hash_hmac('sha256', $data, $hmacKey);
    }
 
    public function verifyHashChain(?int $fromUid = null, ?int $toUid = null): array

@@ -22,28 +22,33 @@ final readonly class HashChainVerificationResult
     /**
      * @param bool $valid Whether the hash chain is valid
      * @param array<int, string> $errors Map of UID => error message for invalid entries
+     * @param array<int, string> $warnings Map of UID => warning message (e.g., epoch boundaries)
      */
     public function __construct(
         public bool $valid,
         public array $errors = [],
+        public array $warnings = [],
     ) {}
 
     /**
      * Create a successful verification result.
+     *
+     * @param array<int, string> $warnings Map of UID => warning message
      */
-    public static function valid(): self
+    public static function valid(array $warnings = []): self
     {
-        return new self(valid: true, errors: []);
+        return new self(valid: true, errors: [], warnings: $warnings);
     }
 
     /**
      * Create a failed verification result.
      *
      * @param array<int, string> $errors Map of UID => error message
+     * @param array<int, string> $warnings Map of UID => warning message
      */
-    public static function invalid(array $errors): self
+    public static function invalid(array $errors, array $warnings = []): self
     {
-        return new self(valid: false, errors: $errors);
+        return new self(valid: false, errors: $errors, warnings: $warnings);
     }
 
     /**
@@ -63,15 +68,24 @@ final readonly class HashChainVerificationResult
     }
 
     /**
+     * Get warning count.
+     */
+    public function getWarningCount(): int
+    {
+        return \count($this->warnings);
+    }
+
+    /**
      * Convert to array for JSON serialization.
      *
-     * @return array{valid: bool, errors: array<int, string>}
+     * @return array{valid: bool, errors: array<int, string>, warnings: array<int, string>}
      */
     public function toArray(): array
     {
         return [
             'valid' => $this->valid,
             'errors' => $this->errors,
+            'warnings' => $this->warnings,
         ];
     }
 }

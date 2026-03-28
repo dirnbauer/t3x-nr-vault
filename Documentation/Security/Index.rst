@@ -158,6 +158,27 @@ the previous entry. This provides:
 -  **Completeness**: Deleted entries are detectable.
 -  **Non-repudiation**: Actions cannot be denied after logging.
 
+.. _security-hmac-audit-chain:
+
+HMAC-keyed audit chain
+----------------------
+
+The audit hash chain is authenticated with HMAC-SHA256, using a key derived
+from the master key via HKDF (see :ref:`adr-023-audit-hash-chain-hmac`).
+This provides adversarial tamper resistance in addition to tamper detection:
+
+-  **Adversarial resistance**: An attacker with database access but without
+   the master key cannot forge valid HMAC values or recompute the hash chain.
+-  **Cryptographic separation**: The HMAC key is derived with a dedicated
+   context string (``"nr-vault-audit-hmac-v1"``), ensuring independence from
+   encryption key material.
+-  **Backward compatibility**: Legacy entries (epoch 0) created before the
+   HMAC migration remain verifiable using the original SHA-256 algorithm.
+   New entries (epoch 1+) use HMAC-SHA256.
+
+Use the ``vault:audit-migrate-hmac`` command to migrate existing legacy
+entries to HMAC-SHA256. See :ref:`command-audit-migrate-hmac` for details.
+
 .. _security-access-control:
 
 Access control

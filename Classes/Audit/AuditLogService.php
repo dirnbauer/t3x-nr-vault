@@ -14,6 +14,8 @@ namespace Netresearch\NrVault\Audit;
 
 use DateTimeInterface;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
+use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
+use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Throwable;
@@ -31,6 +33,8 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     public function __construct(
         private ConnectionPool $connectionPool,
         private AccessControlServiceInterface $accessControlService,
+        private MasterKeyProviderInterface $masterKeyProvider,
+        private ExtensionConfigurationInterface $extensionConfiguration,
     ) {}
 
     public function log(
@@ -72,6 +76,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $previousHash = \is_string($result) ? $result : '';
 
             // Build entry data
+            $currentEpoch = $this->getCurrentEpoch();
             $data = [
                 'pid' => 0,
                 'secret_identifier' => $secretIdentifier,
@@ -90,6 +95,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 'hash_before' => $hashBefore ?? '',
                 'hash_after' => $hashAfter ?? '',
                 'crdate' => time(),
+                'hmac_key_epoch' => $currentEpoch,
                 'context' => $context instanceof AuditContextInterface ? json_encode($context->toArray()) : '{}',
             ];
 
@@ -98,7 +104,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $uid = (int) $connection->lastInsertId();
 
             // Calculate entry hash with the known UID
-            $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash);
+            $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash, $currentEpoch);
 
             // Set the hash
             $connection->update(
@@ -192,7 +198,9 @@ final readonly class AuditLogService implements AuditLogServiceInterface
 
         $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
         $errors = [];
+        $warnings = [];
         $previousHash = '';
+        $previousEpoch = -1;
 
         foreach ($rows as $row) {
             $rowUid = $row['uid'] ?? 0;
@@ -205,6 +213,19 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             $actorUid = is_numeric($rowActorUid) ? (int) $rowActorUid : 0;
             $rowCrdate = $row['crdate'] ?? 0;
             $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
+            $rowEpoch = $row['hmac_key_epoch'] ?? 0;
+            $epoch = is_numeric($rowEpoch) ? (int) $rowEpoch : 0;
+
+            // Detect epoch boundary and report warning
+            if ($previousEpoch >= 0 && $epoch !== $previousEpoch) {
+                $warnings[$uid] = \sprintf(
+                    'HMAC key epoch boundary: %d -> %d',
+                    $previousEpoch,
+                    $epoch,
+                );
+            }
+
+            $previousEpoch = $epoch;
 
             $expectedHash = $this->calculateEntryHash(
                 $uid,
@@ -213,6 +234,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 $actorUid,
                 $crdate,
                 $previousHash,
+                $epoch,
             );
 
             // Verify previous_hash matches
@@ -231,8 +253,8 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         }
 
         return $errors === []
-            ? HashChainVerificationResult::valid()
-            : HashChainVerificationResult::invalid($errors);
+            ? HashChainVerificationResult::valid($warnings)
+            : HashChainVerificationResult::invalid($errors, $warnings);
     }
 
     public function getLatestHash(): ?string
@@ -251,6 +273,9 @@ final readonly class AuditLogService implements AuditLogServiceInterface
 
     /**
      * Calculate hash for an audit log entry.
+     *
+     * Epoch 0 uses legacy SHA-256 (no HMAC key) for backward compatibility.
+     * Epoch 1+ uses HMAC-SHA256 with a key derived from the master key.
      */
     private function calculateEntryHash(
         int $uid,
@@ -259,6 +284,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         int $actorUid,
         int $crdate,
         string $previousHash,
+        int $epoch = 0,
     ): string {
         $payload = json_encode([
             'uid' => $uid,
@@ -269,7 +295,41 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             'previous_hash' => $previousHash,
         ], JSON_THROW_ON_ERROR);
 
-        return hash('sha256', $payload);
+        if ($epoch === 0) {
+            return hash('sha256', $payload);
+        }
+
+        $hmacKey = $this->getHmacKey();
+
+        try {
+            return hash_hmac('sha256', $payload, $hmacKey);
+        } finally {
+            sodium_memzero($hmacKey);
+        }
+    }
+
+    /**
+     * Derive the HMAC key from the master key via HKDF.
+     *
+     * Uses a distinct info string to ensure the HMAC key is separate from the encryption key.
+     */
+    private function getHmacKey(): string
+    {
+        $masterKey = $this->masterKeyProvider->getMasterKey();
+
+        try {
+            return hash_hkdf('sha256', $masterKey, 32, 'nr-vault-audit-hmac-v1');
+        } finally {
+            sodium_memzero($masterKey);
+        }
+    }
+
+    /**
+     * Get the current HMAC key epoch from extension configuration.
+     */
+    private function getCurrentEpoch(): int
+    {
+        return $this->extensionConfiguration->getAuditHmacEpoch();
     }
 
     /**

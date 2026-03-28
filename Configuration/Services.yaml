@@ -141,6 +141,10 @@ services:
     tags:
       - name: console.command
 
+  Netresearch\NrVault\Command\VaultAuditMigrateCommand:
+    tags:
+      - name: console.command
+
   # Secret detection service
   Netresearch\NrVault\Service\SecretDetectionService:
     public: true

@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Internationalization**: Translate all backend module templates to use XLF translation keys
 - **Help Page**: Add help page with docheader tab menu to backend module
+- **Security**: HMAC-SHA256 keyed audit hash chain (ADR-023)
+- **CLI**: `vault:audit-migrate-hmac` command for migrating legacy SHA-256 audit entries
 
 ### Changed
 - **Performance**: Fix N+1 queries in `VaultService::list()`
