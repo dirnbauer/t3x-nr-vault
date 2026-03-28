@@ -23,6 +23,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use ReflectionClass;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Connection;
@@ -56,7 +57,7 @@ final class SecretDetectionServiceTest extends TestCase
             $this->connectionPool,
             $this->packageManager,
             $this->extensionConfiguration,
-            new \Psr\Log\NullLogger(),
+            new NullLogger(),
         );
     }
 

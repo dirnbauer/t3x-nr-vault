@@ -13,16 +13,18 @@ use Doctrine\DBAL\Exception as DbalException;
 use Doctrine\DBAL\Types\BlobType;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\TextType;
+use Exception;
 use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
 use Netresearch\NrVault\Service\Detection\SecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
-use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Package\PackageManager;
+
 /**
  * Service for detecting potential plaintext secrets in the TYPO3 installation.
  *
@@ -194,9 +196,9 @@ final class SecretDetectionService implements SecretDetectionServiceInterface
                     $configArray = $config;
                     $this->scanConfigArray($configArray, "extension:{$extKey}");
                 }
-            } catch (ExtensionConfigurationExtensionNotConfiguredException | ExtensionConfigurationPathDoesNotExistException) {
+            } catch (ExtensionConfigurationExtensionNotConfiguredException|ExtensionConfigurationPathDoesNotExistException) {
                 // Extension has no configuration - skip
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->warning('Failed to scan extension configuration', [
                     'extension' => $extKey,
                     'error' => $e->getMessage(),

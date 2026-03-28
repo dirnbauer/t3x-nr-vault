@@ -15,6 +15,7 @@ namespace Netresearch\NrVault\Audit;
 use DateTimeInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Throwable;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
@@ -87,7 +88,7 @@ final readonly class AuditLogService implements AuditLogServiceInterface
             );
 
             $connection->commit();
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $connection->rollBack();
 
             throw $e;

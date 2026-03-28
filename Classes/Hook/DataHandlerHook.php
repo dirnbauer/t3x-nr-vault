@@ -11,8 +11,8 @@ namespace Netresearch\NrVault\Hook;
 
 use Exception;
 use Netresearch\NrVault\Hook\Dto\PendingSecret;
-use Throwable;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -392,6 +392,7 @@ final class DataHandlerHook
 
         if (!$this->tcaSchemaFactory->has($table)) {
             $this->vaultFieldCache[$table] = [];
+
             return [];
         }
 

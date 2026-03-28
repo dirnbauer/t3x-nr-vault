@@ -427,7 +427,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     public function clearCache(): void
     {
         // Securely wipe cached values via reference to avoid copy-on-write
-        foreach ($this->cache as $key => &$value) {
+        foreach ($this->cache as &$value) {
             sodium_memzero($value);
         }
         unset($value);

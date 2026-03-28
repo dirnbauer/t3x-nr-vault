@@ -37,5 +37,9 @@ return RectorConfig::configure()
     ->withSkip([
         // Skip vendor and build directories
         __DIR__ . '/.Build',
+        // Scheduler tasks use unserialize() - constructor injection breaks them
+        __DIR__ . '/Classes/Task/OrphanCleanupTask.php',
+        // Factory is called via GeneralUtility::makeInstance without constructor args
+        __DIR__ . '/Classes/Http/SecureHttpClientFactory.php',
     ])
     ->withImportNames(removeUnusedImports: true);

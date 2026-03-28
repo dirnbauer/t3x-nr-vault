@@ -40,9 +40,9 @@ final class OrphanCleanupTask extends AbstractTask
     protected string $tableFilter = '';
 
     public function __construct(
-        private ?ConnectionPool $connectionPool = null,
-        private ?VaultServiceInterface $vaultService = null,
-        private ?LogManager $logManager = null,
+        private readonly ?ConnectionPool $connectionPool = null,
+        private readonly ?VaultServiceInterface $vaultService = null,
+        private readonly ?LogManager $logManager = null,
     ) {
         parent::__construct();
     }

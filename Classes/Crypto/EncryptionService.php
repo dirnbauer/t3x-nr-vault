@@ -200,8 +200,6 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             : SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
     }
 
-    private static ?bool $aesAvailable = null;
-
     /**
      * Determine if AES-256-GCM should be used.
      */
@@ -211,6 +209,6 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             return false;
         }
 
-        return self::$aesAvailable ??= sodium_crypto_aead_aes256gcm_is_available();
+        return sodium_crypto_aead_aes256gcm_is_available();
     }
 }

@@ -187,23 +187,13 @@ final readonly class AjaxController
     }
 
     /**
-     * Extract identifier from request (supports query params and JSON body).
+     * Extract identifier from POST request body.
      */
     private function getIdentifierFromRequest(ServerRequestInterface $request): string
     {
-        // First try query params (GET request or query string)
-        $queryParams = $request->getQueryParams();
-        if (isset($queryParams['identifier']) && \is_string($queryParams['identifier']) && $queryParams['identifier'] !== '') {
-            return $queryParams['identifier'];
-        }
-
-        // Then try JSON body (POST request)
         $body = $this->getJsonBody($request);
-        if (isset($body['identifier']) && \is_string($body['identifier']) && $body['identifier'] !== '') {
-            return $body['identifier'];
-        }
 
-        return '';
+        return isset($body['identifier']) && \is_string($body['identifier']) ? $body['identifier'] : '';
     }
 
     /**

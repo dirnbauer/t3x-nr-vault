@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Controller;
 
 use Doctrine\DBAL\Exception as DbalException;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Table;
 use Exception;
 use Netresearch\NrVault\Domain\Dto\MigrationResult;
 use Netresearch\NrVault\Service\SecretDetectionService;
@@ -295,7 +297,13 @@ final readonly class MigrationController
             $column = \is_string($columnVal) ? $columnVal : '';
             $identifierPatternVal = $migration['identifierPattern'] ?? '';
             $identifierPattern = \is_string($identifierPatternVal) ? $identifierPatternVal : '';
-            if ($table === '' || $column === '' || $identifierPattern === '') {
+            if ($table === '') {
+                continue;
+            }
+            if ($column === '') {
+                continue;
+            }
+            if ($identifierPattern === '') {
                 continue;
             }
 
@@ -406,18 +414,18 @@ final readonly class MigrationController
                 ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME)
                 ->createSchemaManager();
             $tableNames = array_map(
-                static fn($t): string => $t->getName(), /** @phpstan-ignore method.internalClass */
+                static fn (Table $t): string => $t->getName(), /** @phpstan-ignore method.internalClass */
                 $schemaManager->listTables(),
             );
-            if (!in_array($table, $tableNames, true)) {
+            if (!\in_array($table, $tableNames, true)) {
                 return MigrationResult::error($table, $column, 'Invalid table name');
             }
 
             $columns = array_map(
-                static fn($col): string => $col->getName(), /** @phpstan-ignore method.internalClass */
+                static fn (Column $col): string => $col->getName(), /** @phpstan-ignore method.internalClass */
                 $schemaManager->listTableColumns($table),
             );
-            if (!in_array($column, $columns, true)) {
+            if (!\in_array($column, $columns, true)) {
                 return MigrationResult::error($table, $column, 'Invalid column name');
             }
         } catch (DbalException $e) {
