@@ -152,7 +152,10 @@ final class FlexFormVaultHook
 
         foreach ($flexFieldNames as $flexFieldName) {
             $xmlValue = $recordToDelete[$flexFieldName] ?? '';
-            if (!\is_string($xmlValue) || $xmlValue === '') {
+            if (!\is_string($xmlValue)) {
+                continue;
+            }
+            if ($xmlValue === '') {
                 continue;
             }
 
@@ -217,7 +220,10 @@ final class FlexFormVaultHook
 
         foreach ($flexFieldNames as $flexFieldName) {
             $xmlValue = $copiedRecord[$flexFieldName] ?? '';
-            if (!\is_string($xmlValue) || $xmlValue === '') {
+            if (!\is_string($xmlValue)) {
+                continue;
+            }
+            if ($xmlValue === '') {
                 continue;
             }
 
@@ -303,9 +309,11 @@ final class FlexFormVaultHook
                     continue;
                 }
 
-                $elementConfig = $this->getFlexFormElementConfig($sheetConfig, (string) $fieldPath);
+                $fieldPathStr = (string) $fieldPath;
+                $elementConfig = $this->getFlexFormElementConfig($sheetConfig, $fieldPathStr);
 
-                $renderType = $elementConfig['config']['renderType'] ?? '';
+                $configArray = $elementConfig['config'] ?? [];
+                $renderType = \is_array($configArray) ? ($configArray['renderType'] ?? '') : '';
                 if (\is_string($renderType) && $renderType === 'vaultSecret') {
                     $this->processVaultSecretValue(
                         $fieldData,
@@ -313,7 +321,7 @@ final class FlexFormVaultHook
                         $id,
                         $flexFieldName,
                         (string) $sheetName,
-                        (string) $fieldPath,
+                        $fieldPathStr,
                     );
 
                     continue;
@@ -327,7 +335,7 @@ final class FlexFormVaultHook
                     $id,
                     $flexFieldName,
                     (string) $sheetName,
-                    (string) $fieldPath,
+                    $fieldPathStr,
                 );
             }
         }
@@ -336,7 +344,7 @@ final class FlexFormVaultHook
     /**
      * Process a single vault secret value from FlexForm data.
      *
-     * @param array<string, mixed> $fieldData
+     * @param array<mixed, mixed> $fieldData
      */
     private function processVaultSecretValue(
         array &$fieldData,
@@ -391,8 +399,8 @@ final class FlexFormVaultHook
     /**
      * Process section container fields to find vault secret fields in repeating elements.
      *
-     * @param array<string, mixed> $fieldData
-     * @param array{ROOT?: array{el?: array<string, mixed>}} $sheetConfig
+     * @param array<mixed, mixed> $fieldData
+     * @param array<mixed, mixed> $sheetConfig
      */
     private function processSectionContainerFields(
         array &$fieldData,
@@ -416,20 +424,27 @@ final class FlexFormVaultHook
                 if (!\is_array($containerData)) {
                     continue;
                 }
-
-                $containerEl = $containerData['el'] ?? [];
-                if (!\is_array($containerEl)) {
+                if (!isset($containerData['el'])) {
+                    continue;
+                }
+                if (!\is_array($containerData['el'])) {
                     continue;
                 }
 
-                foreach ($containerEl as $innerFieldName => &$innerFieldData) {
+                foreach ($containerData['el'] as $innerFieldName => &$innerFieldData) {
                     if (!\is_array($innerFieldData)) {
                         continue;
                     }
 
-                    $elementConfig = $this->getFlexFormElementConfig($sheetConfig, (string) $innerFieldName);
-                    $renderType = $elementConfig['config']['renderType'] ?? '';
-                    if (!\is_string($renderType) || $renderType !== 'vaultSecret') {
+                    /** @var array{ROOT?: array{el?: array<string, mixed>}} $typedSheetConfig */
+                    $typedSheetConfig = $sheetConfig;
+                    $elementConfig = $this->getFlexFormElementConfig($typedSheetConfig, (string) $innerFieldName);
+                    $innerConfigArray = $elementConfig['config'] ?? [];
+                    $renderType = \is_array($innerConfigArray) ? ($innerConfigArray['renderType'] ?? '') : '';
+                    if (!\is_string($renderType)) {
+                        continue;
+                    }
+                    if ($renderType !== 'vaultSecret') {
                         continue;
                     }
 
@@ -545,22 +560,20 @@ final class FlexFormVaultHook
      * Get FlexForm element configuration from sheet config.
      * Handles both flat fields and section container elements.
      *
-     * @param array{ROOT?: array{el?: array<string, mixed>}} $sheetConfig
+     * @param array<mixed> $sheetConfig
      *
-     * @return array{config?: array{renderType?: string}}
+     * @return array<mixed>
      */
     private function getFlexFormElementConfig(array $sheetConfig, string $fieldPath): array
     {
-        $elements = $sheetConfig['ROOT']['el'] ?? [];
+        $root = $sheetConfig['ROOT'] ?? [];
+        $elements = \is_array($root) ? ($root['el'] ?? []) : [];
         if (!\is_array($elements)) {
             return [];
         }
 
-        if (isset($elements[$fieldPath])) {
-            /** @var array{config?: array{renderType?: string}} $config */
-            $config = $elements[$fieldPath];
-
-            return $config;
+        if (isset($elements[$fieldPath]) && \is_array($elements[$fieldPath])) {
+            return $elements[$fieldPath];
         }
 
         // Search in section container elements for repeating fields
@@ -569,7 +582,9 @@ final class FlexFormVaultHook
                 continue;
             }
 
-            $sectionFlag = $element['section'] ?? $element['config']['section'] ?? null;
+            /** @var mixed $elementConfig */
+            $elementConfig = $element['config'] ?? [];
+            $sectionFlag = $element['section'] ?? (\is_array($elementConfig) ? ($elementConfig['section'] ?? null) : null);
             if ($sectionFlag !== 1 && $sectionFlag !== '1') {
                 continue;
             }
@@ -589,11 +604,8 @@ final class FlexFormVaultHook
                     continue;
                 }
 
-                if (isset($innerEl[$fieldPath])) {
-                    /** @var array{config?: array{renderType?: string}} $innerConfig */
-                    $innerConfig = $innerEl[$fieldPath];
-
-                    return $innerConfig;
+                if (isset($innerEl[$fieldPath]) && \is_array($innerEl[$fieldPath])) {
+                    return $innerEl[$fieldPath];
                 }
             }
         }
@@ -655,7 +667,9 @@ final class FlexFormVaultHook
      */
     private function isHardDelete(string $table): bool
     {
-        $deleteField = $GLOBALS['TCA'][$table]['ctrl']['delete'] ?? null;
+        /** @var array<string, array{ctrl?: array{delete?: string}}> $tca */
+        $tca = $GLOBALS['TCA'] ?? [];
+        $deleteField = $tca[$table]['ctrl']['delete'] ?? null;
 
         return !\is_string($deleteField) || $deleteField === '';
     }
