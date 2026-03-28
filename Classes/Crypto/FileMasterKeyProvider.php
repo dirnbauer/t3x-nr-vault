@@ -16,13 +16,21 @@ use Netresearch\NrVault\Exception\MasterKeyException;
 /**
  * File-based master key provider.
  */
-final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
+final class FileMasterKeyProvider implements MasterKeyProviderInterface
 {
     private const KEY_LENGTH = 32; // 256 bits
 
+    /** @var string|null Request-lifetime cached master key */
+    private static ?string $cachedKey = null;
+
     public function __construct(
-        private ExtensionConfigurationInterface $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
     ) {}
+
+    public function __destruct()
+    {
+        self::clearCachedKey();
+    }
 
     public function getIdentifier(): string
     {
@@ -36,8 +44,23 @@ final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
         return $path !== '' && file_exists($path) && is_readable($path);
     }
 
+    /**
+     * Clear the cached master key from memory.
+     */
+    public static function clearCachedKey(): void
+    {
+        if (self::$cachedKey !== null) {
+            sodium_memzero(self::$cachedKey);
+            self::$cachedKey = null;
+        }
+    }
+
     public function getMasterKey(): string
     {
+        if (self::$cachedKey !== null) {
+            return self::$cachedKey;
+        }
+
         $path = $this->getKeyPath();
 
         if ($path === '') {
@@ -68,18 +91,24 @@ final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
 
         // Try trimmed value as raw binary key
         if (\strlen($trimmed) === self::KEY_LENGTH) {
-            return $trimmed;
+            self::$cachedKey = $trimmed;
+
+            return self::$cachedKey;
         }
 
         // Try base64 decode of trimmed value
         $decoded = base64_decode($trimmed, true);
         if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
-            return $decoded;
+            self::$cachedKey = $decoded;
+
+            return self::$cachedKey;
         }
 
         // Try raw file contents as binary (no trimming of binary data)
         if (\strlen($raw) === self::KEY_LENGTH) {
-            return $raw;
+            self::$cachedKey = $raw;
+
+            return self::$cachedKey;
         }
 
         throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($trimmed));

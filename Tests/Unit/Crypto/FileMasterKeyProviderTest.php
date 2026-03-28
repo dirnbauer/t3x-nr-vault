@@ -25,6 +25,7 @@ final class FileMasterKeyProviderTest extends TestCase
 {
     protected function setUp(): void
     {
+        FileMasterKeyProvider::clearCachedKey();
         vfsStream::setup('vault');
     }
 
