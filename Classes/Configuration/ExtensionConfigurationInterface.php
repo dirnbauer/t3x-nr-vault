@@ -55,6 +55,11 @@ interface ExtensionConfigurationInterface
     public function isCacheEnabled(): bool;
 
     /**
+     * Check if read operations should be written to the audit log.
+     */
+    public function isAuditReadsEnabled(): bool;
+
+    /**
      * Check if XChaCha20-Poly1305 should be preferred over AES-256-GCM.
      */
     public function preferXChaCha20(): bool;

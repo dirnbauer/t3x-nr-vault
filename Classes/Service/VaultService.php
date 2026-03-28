@@ -31,7 +31,7 @@ use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Exception\SecretExpiredException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\ValidationException;
-use Netresearch\NrVault\Http\VaultHttpClient;
+use Netresearch\NrVault\Http\VaultHttpClientFactoryInterface;
 use Netresearch\NrVault\Http\VaultHttpClientInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
 use Netresearch\NrVault\Utility\IdentifierValidator;
@@ -52,6 +52,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly AccessControlServiceInterface $accessControlService,
         private readonly AuditLogServiceInterface $auditLogService,
         private readonly ExtensionConfigurationInterface $configuration,
+        private readonly VaultHttpClientFactoryInterface $httpClientFactory,
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
@@ -235,8 +236,10 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             $this->adapter->incrementReadCount($uid);
         }
 
-        // Log success
-        $this->auditLogService->log($identifier, 'read', true);
+        // Log success (can be disabled for high-throughput scenarios)
+        if ($this->configuration->isAuditReadsEnabled()) {
+            $this->auditLogService->log($identifier, 'read', true);
+        }
 
         // Dispatch PSR-14 event
         $this->eventDispatcher?->dispatch(new SecretAccessedEvent(
@@ -410,10 +413,7 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
 
     public function http(): VaultHttpClientInterface
     {
-        return new VaultHttpClient(
-            $this,
-            $this->auditLogService,
-        );
+        return $this->httpClientFactory->create($this);
     }
 
     /**

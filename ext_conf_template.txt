@@ -36,6 +36,9 @@ cliAccessGroups =
 # cat=Security; type=int+; label=Audit Log Retention (days): Number of days to keep audit log entries (0 = forever)
 auditLogRetention = 365
 
+# cat=Security; type=boolean; label=Audit Read Operations: Log every secret read to the audit log. Disable for high-throughput scenarios where read logging is not required.
+auditReads = 1
+
 ##################
 ### PERFORMANCE ###
 ##################
