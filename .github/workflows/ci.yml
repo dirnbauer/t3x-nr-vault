@@ -36,6 +36,10 @@ jobs:
     uses: netresearch/typo3-ci-workflows/.github/workflows/fuzz.yml@main
     permissions:
       contents: read
+    with:
+      run-fuzz-tests: true
+      run-mutation-tests: ${{ github.event_name == 'schedule' }}
+      php-extensions: intl, mbstring, xml, sodium, json
 
   license-check:
     uses: netresearch/typo3-ci-workflows/.github/workflows/license-check.yml@main
@@ -78,25 +82,3 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-
-  mutation:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: intl, mbstring, xml, sodium, json
-          coverage: pcov
-
-      - name: Install Composer dependencies
-        run: composer require --no-update typo3/cms-core:^14.0 typo3/cms-backend:^14.0 && composer install --no-progress
-
-      - name: Run mutation tests
-        run: composer ci:test:php:mutation

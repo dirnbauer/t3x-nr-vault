@@ -544,6 +544,11 @@ final class FlexFormVaultHookTest extends TestCase
         $xml = '<?xml version="1.0" encoding="utf-8" standalone="yes" ?><T3FlexForms><data><sheet index="sDEF"><language index="lDEF"><field index="settings.apiKey"><value index="vDEF">' . $uuid . '</value></field></language></sheet></data></T3FlexForms>';
 
         $this->vaultService
+            ->method('exists')
+            ->with($uuid)
+            ->willReturn(true);
+
+        $this->vaultService
             ->expects(self::once())
             ->method('delete')
             ->with($uuid, 'Record deleted');
@@ -623,6 +628,7 @@ final class FlexFormVaultHookTest extends TestCase
         $uuid = '01937b6e-4b6c-7abc-8def-0123456789ab';
         $xml = '<T3FlexForms><data><sheet index="sDEF"><language index="lDEF"><field index="key"><value index="vDEF">' . $uuid . '</value></field></language></sheet></data></T3FlexForms>';
 
+        $this->vaultService->method('exists')->willReturn(true);
         $this->vaultService->method('delete')->willThrowException(new VaultException('Delete failed'));
 
         $this->dataHandler
@@ -719,6 +725,7 @@ final class FlexFormVaultHookTest extends TestCase
 
         $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
 
+        $this->vaultService->method('exists')->willReturn(true);
         $this->vaultService->method('retrieve')->with($sourceUuid)->willReturn('the-secret-value');
 
         $this->vaultService
@@ -764,6 +771,7 @@ final class FlexFormVaultHookTest extends TestCase
 
         $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
 
+        $this->vaultService->method('exists')->willReturn(true);
         $this->vaultService->method('retrieve')->willReturn(null);
         $this->vaultService->expects(self::never())->method('store');
         $connection->expects(self::never())->method('update');
@@ -788,6 +796,7 @@ final class FlexFormVaultHookTest extends TestCase
 
         $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
 
+        $this->vaultService->method('exists')->willReturn(true);
         $this->vaultService->method('retrieve')->willThrowException(new VaultException('Retrieve failed'));
 
         $this->dataHandler

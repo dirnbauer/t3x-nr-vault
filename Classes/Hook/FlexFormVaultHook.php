@@ -614,7 +614,10 @@ final class FlexFormVaultHook
     }
 
     /**
-     * Extract all vault identifiers from FlexForm XML using regex.
+     * Extract all vault identifiers from FlexForm XML.
+     *
+     * Uses a broad UUID regex to match any version, then validates each
+     * candidate with IdentifierValidator and existence check.
      *
      * @return list<string>
      */
@@ -622,13 +625,15 @@ final class FlexFormVaultHook
     {
         $identifiers = [];
 
+        // Match any UUID format (v1-v7), not just v7
         if (preg_match_all(
-            '/[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i',
+            '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i',
             $xml,
             $matches,
         )) {
             foreach ($matches[0] as $match) {
-                if (IdentifierValidator::looksLikeVaultIdentifier($match)) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($match)
+                    && $this->vaultService->exists($match)) {
                     $identifiers[] = $match;
                 }
             }
