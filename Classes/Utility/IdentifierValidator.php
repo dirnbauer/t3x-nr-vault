@@ -85,6 +85,52 @@ final class IdentifierValidator
     }
 
     /**
+     * Generate a UUID v7 for vault identifiers.
+     *
+     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
+     * This provides time-ordered IDs with better database index performance.
+     */
+    public static function generateUuid(): string
+    {
+        // 48-bit timestamp in milliseconds
+        $time = (int) (microtime(true) * 1000);
+
+        // 10 random bytes for the remaining fields
+        $random = random_bytes(10);
+
+        // Build UUID v7:
+        // - Bytes 0-5: timestamp (48 bits)
+        // - Byte 6: version (0111) + 4 random bits
+        // - Byte 7: 8 random bits
+        // - Byte 8: variant (10) + 6 random bits
+        // - Bytes 9-15: 56 random bits
+        return \sprintf(
+            '%08x-%04x-7%03x-%04x-%012x',
+            ($time >> 16) & 0xFFFFFFFF,           // timestamp high 32 bits
+            $time & 0xFFFF,                        // timestamp low 16 bits
+            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF, // version 7 + 12 random bits
+            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000, // variant 10 + 14 random bits
+            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
+                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]), // 48 random bits
+        );
+    }
+
+    /**
+     * Check if a value looks like a vault identifier.
+     *
+     * Recognises three formats:
+     * - UUID v7 (current TCA/FlexForm vault fields)
+     * - Vault reference syntax: %vault(identifier)%
+     * - Legacy TCA format: table__field__uid (e.g. tx_myext_config__api_key__123)
+     */
+    public static function looksLikeVaultIdentifier(string $value): bool
+    {
+        return preg_match(self::UUID_PATTERN, $value) === 1
+            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1
+            || preg_match('/^[a-z][a-z0-9_]+__[a-z][a-z0-9_]+__\d+$/i', $value) === 1;
+    }
+
+    /**
      * Sanitize a string to create a valid identifier.
      */
     public static function sanitize(string $input): string

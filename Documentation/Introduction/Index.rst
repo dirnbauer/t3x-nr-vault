@@ -158,7 +158,7 @@ Use cases
 Requirements
 ============
 
-- TYPO3 v13.4 or v14
-- PHP 8.2 or higher
+- TYPO3 v\ |typo3_version|
+- PHP |php_version| or higher
 - PHP sodium extension (bundled with PHP 8.2+)
 - Composer-based TYPO3 installation

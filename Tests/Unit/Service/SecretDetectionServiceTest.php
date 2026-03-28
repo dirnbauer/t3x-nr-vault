@@ -17,12 +17,14 @@ use Doctrine\DBAL\Types\StringType;
 use Exception;
 use Netresearch\NrVault\Service\Detection\Severity;
 use Netresearch\NrVault\Service\SecretDetectionService;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use ReflectionClass;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\Connection;
@@ -56,6 +58,7 @@ final class SecretDetectionServiceTest extends TestCase
             $this->connectionPool,
             $this->packageManager,
             $this->extensionConfiguration,
+            new NullLogger(),
         );
     }
 
@@ -186,10 +189,7 @@ final class SecretDetectionServiceTest extends TestCase
     #[DataProvider('vaultIdentifierProvider')]
     public function detectsVaultIdentifiers(string $value, bool $isVaultIdentifier): void
     {
-        $reflection = new ReflectionClass($this->service);
-        $method = $reflection->getMethod('looksLikeVaultIdentifier');
-
-        $result = $method->invoke($this->service, $value);
+        $result = IdentifierValidator::looksLikeVaultIdentifier($value);
 
         self::assertSame($isVaultIdentifier, $result);
     }
@@ -202,7 +202,7 @@ final class SecretDetectionServiceTest extends TestCase
         return [
             'UUID v7 format' => ['01937b6e-4b6c-7abc-8def-0123456789ab', true],
             'vault reference' => ['%vault(my_secret_key)%', true],
-            'old TCA format (no longer detected)' => ['tx_myext_config__api_key__123', false],
+            'old TCA format' => ['tx_myext_config__api_key__123', true],
             'regular value' => ['some_regular_value', false],
             'API key' => ['sk_live_abcdefghij', false],
             'password' => ['mySecretPassword123', false],

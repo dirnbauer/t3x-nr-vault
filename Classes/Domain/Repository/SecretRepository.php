@@ -317,6 +317,123 @@ final readonly class SecretRepository implements SecretRepositoryInterface
     }
 
     /**
+     * Find all secrets matching filters with groups batch-loaded.
+     *
+     * @return Secret[]
+     */
+    public function findAllWithFilters(?SecretFilters $filters = null): array
+    {
+        $queryBuilder = $this->getConnection()->createQueryBuilder();
+        $queryBuilder
+            ->select('*')
+            ->from(self::TABLE_NAME)
+            ->where($queryBuilder->expr()->eq('deleted', 0));
+
+        if ($filters instanceof SecretFilters) {
+            if ($filters->owner !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq('owner_uid', $queryBuilder->createNamedParameter($filters->owner, Connection::PARAM_INT)),
+                );
+            }
+
+            if ($filters->prefix !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->like('identifier', $queryBuilder->createNamedParameter($filters->prefix . '%')),
+                );
+            }
+
+            if ($filters->context !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq('context', $queryBuilder->createNamedParameter($filters->context)),
+                );
+            }
+
+            if ($filters->scopePid !== null) {
+                $queryBuilder->andWhere(
+                    $queryBuilder->expr()->eq('scope_pid', $queryBuilder->createNamedParameter($filters->scopePid, Connection::PARAM_INT)),
+                );
+            }
+        }
+
+        $queryBuilder->orderBy('identifier', 'ASC');
+
+        $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
+
+        if ($rows === []) {
+            return [];
+        }
+
+        // Collect all UIDs for batch group loading
+        $uidMap = [];
+        $secrets = [];
+        foreach ($rows as $row) {
+            $secret = Secret::fromDatabaseRow($row);
+            $uid = $row['uid'] ?? 0;
+            $intUid = is_numeric($uid) ? (int) $uid : 0;
+            $uidMap[$intUid] = $secret;
+            $secrets[] = $secret;
+        }
+
+        // Batch-load all MM groups in ONE query
+        $allUids = array_keys($uidMap);
+        if ($allUids !== []) {
+            $groupsBySecret = $this->loadGroupsForSecrets($allUids);
+            foreach ($groupsBySecret as $secretUid => $groups) {
+                if ($groups !== [] && isset($uidMap[$secretUid])) {
+                    $uidMap[$secretUid]->setAllowedGroups($groups);
+                }
+            }
+        }
+
+        return $secrets;
+    }
+
+    /**
+     * Increment read count and update last_read_at atomically without full entity save.
+     */
+    public function incrementReadCount(int $uid): void
+    {
+        $this->getConnection()->executeStatement(
+            'UPDATE ' . self::TABLE_NAME . ' SET read_count = read_count + 1, last_read_at = ? WHERE uid = ?',
+            [time(), $uid],
+            [Connection::PARAM_INT, Connection::PARAM_INT],
+        );
+    }
+
+    /**
+     * Batch-load groups for multiple secrets from MM table.
+     *
+     * @param int[] $secretUids
+     *
+     * @return array<int, int[]> Map of secret UID to group UIDs
+     */
+    private function loadGroupsForSecrets(array $secretUids): array
+    {
+        if ($secretUids === []) {
+            return [];
+        }
+
+        $queryBuilder = $this->getConnection()->createQueryBuilder();
+        $rows = $queryBuilder
+            ->select('uid_local', 'uid_foreign')
+            ->from(self::MM_TABLE_NAME)
+            ->where($queryBuilder->expr()->in('uid_local', $secretUids))
+            ->orderBy('uid_local', 'ASC')
+            ->addOrderBy('sorting', 'ASC')
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        $groupsBySecret = [];
+        foreach ($rows as $row) {
+            $uidLocal = $row['uid_local'] ?? 0;
+            $uidForeign = $row['uid_foreign'] ?? 0;
+            $groupsBySecret[is_numeric($uidLocal) ? (int) $uidLocal : 0][] = is_numeric($uidForeign) ? (int) $uidForeign : 0;
+        }
+
+        return $groupsBySecret;
+    }
+
+    /**
      * Load groups for a secret from MM table.
      *
      * @return int[]

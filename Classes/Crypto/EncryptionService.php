@@ -60,8 +60,8 @@ final readonly class EncryptionService implements EncryptionServiceInterface
                 valueNonce: $valueNonce,
                 valueChecksum: $checksum,
             );
-        } catch (SodiumException $e) {
-            throw EncryptionException::encryptionFailed($e->getMessage());
+        } catch (SodiumException) {
+            throw EncryptionException::encryptionFailed('Encryption operation failed');
         }
     }
 
@@ -97,8 +97,8 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             sodium_memzero($masterKey);
 
             return $plaintext;
-        } catch (SodiumException $e) {
-            throw EncryptionException::decryptionFailed($e->getMessage());
+        } catch (SodiumException) {
+            throw EncryptionException::decryptionFailed('Decryption operation failed');
         }
     }
 
@@ -141,15 +141,19 @@ final readonly class EncryptionService implements EncryptionServiceInterface
             // Encrypt DEK with new master key
             $newEncryptedDek = $this->encryptWithKey($dek, $newMasterKey, $newNonce, $identifier);
 
-            // Securely wipe
-            sodium_memzero($dek);
-
             return ReEncryptedDek::fromRaw(
                 encryptedDek: $newEncryptedDek,
                 nonce: $newNonce,
             );
-        } catch (SodiumException $e) {
-            throw EncryptionException::encryptionFailed($e->getMessage());
+        } catch (SodiumException) {
+            throw EncryptionException::encryptionFailed('Re-encryption operation failed');
+        } finally {
+            // Securely wipe key material from local copies
+            if (isset($dek)) {
+                sodium_memzero($dek);
+            }
+            sodium_memzero($oldMasterKey);
+            sodium_memzero($newMasterKey);
         }
     }
 

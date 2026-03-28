@@ -85,17 +85,17 @@ final readonly class AjaxController
                 'success' => false,
                 'error' => 'Secret has expired',
             ], 410);
-        } catch (EncryptionException $e) {
+        } catch (EncryptionException) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Decryption failed: ' . $e->getMessage(),
+                'error' => 'Decryption failed',
             ], 500);
-        } catch (Exception $e) {
+        } catch (Exception) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Failed to retrieve secret: ' . $e->getMessage(),
+                'error' => 'Failed to retrieve secret',
             ], 500);
         }
     }
@@ -171,39 +171,29 @@ final readonly class AjaxController
                 'success' => false,
                 'error' => 'Access denied',
             ], 403);
-        } catch (EncryptionException $e) {
+        } catch (EncryptionException) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Encryption failed: ' . $e->getMessage(),
+                'error' => 'Encryption failed',
             ], 500);
-        } catch (Exception $e) {
+        } catch (Exception) {
             /** @phpstan-ignore new.internalClass, method.internalClass */
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Failed to rotate secret: ' . $e->getMessage(),
+                'error' => 'Failed to rotate secret',
             ], 500);
         }
     }
 
     /**
-     * Extract identifier from request (supports query params and JSON body).
+     * Extract identifier from POST request body.
      */
     private function getIdentifierFromRequest(ServerRequestInterface $request): string
     {
-        // First try query params (GET request or query string)
-        $queryParams = $request->getQueryParams();
-        if (isset($queryParams['identifier']) && \is_string($queryParams['identifier']) && $queryParams['identifier'] !== '') {
-            return $queryParams['identifier'];
-        }
-
-        // Then try JSON body (POST request)
         $body = $this->getJsonBody($request);
-        if (isset($body['identifier']) && \is_string($body['identifier']) && $body['identifier'] !== '') {
-            return $body['identifier'];
-        }
 
-        return '';
+        return isset($body['identifier']) && \is_string($body['identifier']) ? $body['identifier'] : '';
     }
 
     /**

@@ -15,22 +15,20 @@
     <div class="mb-4">
         <typo3-backend-progress-tracker
             active="1"
-            stages='["Scan","Review","Configure","Execute","Verify"]'>
+            stages='["{f:translate(key: \'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan\')}","{f:translate(key: \'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review\')}","{f:translate(key: \'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.configure\')}","Execute","{f:translate(key: \'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.verify\')}"]'>
         </typo3-backend-progress-tracker>
     </div>
 
-    <h2>Step 2: Review and Select Secrets</h2>
+    <h2>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.title')}</h2>
     <p class="text-body-secondary mb-4">
-        Select which database secrets you want to migrate to the vault.
-        Configuration secrets must be migrated manually.
+        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.description')}
     </p>
 
     <f:if condition="{secrets -> f:count()} > 0">
         <f:then>
             <form method="post" action="{f:be.uri(route: 'admin_vault_migration', parameters: '{action: \'configure\'}')}">
-                <f:be.infobox title="Database Secrets Only" state="-1">
-                    Only database secrets can be migrated via this wizard.
-                    Configuration secrets need to be updated manually to use <code>%vault(identifier)%</code> references.
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.db_only.title')}" state="-1">
+                    {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.db_only.text')}
                 </f:be.infobox>
 
                 <div class="table-fit">
@@ -39,13 +37,13 @@
                             <tr>
                                 <th scope="col" style="width: 30px;">
                                     <div class="form-check mb-0">
-                                        <input type="checkbox" id="select-all" class="form-check-input" title="Select all" />
+                                        <input type="checkbox" id="select-all" class="form-check-input" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.select_all')}" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.select_all')}" />
                                     </div>
                                 </th>
-                                <th scope="col">Location</th>
-                                <th scope="col" title="Number of database records affected">Records</th>
-                                <th scope="col">Severity</th>
-                                <th scope="col" title="Known API key formats detected (Stripe, AWS, GitHub, etc.)">Patterns</th>
+                                <th scope="col">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.col.location')}</th>
+                                <th scope="col" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.records.hint')}">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.col.records')}</th>
+                                <th scope="col">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.col.severity')}</th>
+                                <th scope="col" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.patterns.hint')}">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.col.patterns')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -69,16 +67,16 @@
                                     <td>
                                         <f:switch expression="{secret.severity}">
                                             <f:case value="critical">
-                                                <span class="badge text-bg-danger">Critical</span>
+                                                <span class="badge text-bg-danger">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.severity.critical')}</span>
                                             </f:case>
                                             <f:case value="high">
-                                                <span class="badge text-bg-warning">High</span>
+                                                <span class="badge text-bg-warning">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.severity.high')}</span>
                                             </f:case>
                                             <f:case value="medium">
-                                                <span class="badge text-bg-info">Medium</span>
+                                                <span class="badge text-bg-info">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.severity.medium')}</span>
                                             </f:case>
                                             <f:defaultCase>
-                                                <span class="badge text-bg-secondary">Low</span>
+                                                <span class="badge text-bg-secondary">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.severity.low')}</span>
                                             </f:defaultCase>
                                         </f:switch>
                                     </td>
@@ -90,7 +88,7 @@
                                                 </f:for>
                                             </f:then>
                                             <f:else>
-                                                <span class="text-body-secondary" title="No known API key format matched - detected by field name">—</span>
+                                                <span class="text-body-secondary" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.patterns.hint')}">—</span>
                                             </f:else>
                                         </f:if>
                                     </td>
@@ -100,16 +98,16 @@
                     </table>
                 </div>
                 <p class="text-body-secondary small mt-2">
-                    <strong>Patterns:</strong> Known API key formats (Stripe, AWS, GitHub, etc.). "—" means detected by field name only.
+                    <strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.scan.col.patterns')}:</strong> {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.patterns.hint')}
                 </p>
 
                 <div class="mt-4 d-flex justify-content-between">
                     <f:be.link route="admin_vault_migration" parameters="{action: 'scan'}" class="btn btn-default">
                         <core:icon identifier="actions-arrow-left" size="small" />
-                        Back to Scan
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.back_to_scan')}
                     </f:be.link>
                     <button type="submit" class="btn btn-primary">
-                        Configure Selected
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.configure_selected')}
                         <core:icon identifier="actions-arrow-right" size="small" />
                     </button>
                 </div>
@@ -124,14 +122,13 @@
             </f:asset.script>
         </f:then>
         <f:else>
-            <f:be.infobox title="No Database Secrets Found" state="1">
-                No database secrets were found to migrate. The scan may have detected only configuration secrets,
-                which must be migrated manually by updating your configuration to use <code>%vault(identifier)%</code> references.
+            <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.no_secrets.title')}" state="1">
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.no_secrets.text')}
             </f:be.infobox>
             <div class="mt-4">
                 <f:be.link route="admin_vault_migration" class="btn btn-default">
                     <core:icon identifier="actions-arrow-left" size="small" />
-                    Back to Scan
+                    {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.review.back_to_scan')}
                 </f:be.link>
             </div>
         </f:else>

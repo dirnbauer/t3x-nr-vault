@@ -58,27 +58,31 @@ final readonly class FileMasterKeyProvider implements MasterKeyProviderInterface
             throw MasterKeyException::notFound($path . ' (not readable)');
         }
 
-        $key = file_get_contents($path);
-        if ($key === false) {
+        $raw = file_get_contents($path);
+        if ($raw === false) {
             throw MasterKeyException::notFound($path);
         }
 
-        // Handle base64-encoded keys
-        if (\strlen($key) !== self::KEY_LENGTH) {
-            $decoded = base64_decode($key, true);
-            if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
-                $key = $decoded;
-            }
+        // Trim whitespace first (handles trailing newlines from text editors)
+        $trimmed = trim($raw);
+
+        // Try trimmed value as raw binary key
+        if (\strlen($trimmed) === self::KEY_LENGTH) {
+            return $trimmed;
         }
 
-        // Trim any whitespace (newlines from file)
-        $key = trim($key);
-
-        if (\strlen($key) !== self::KEY_LENGTH) {
-            throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($key));
+        // Try base64 decode of trimmed value
+        $decoded = base64_decode($trimmed, true);
+        if ($decoded !== false && \strlen($decoded) === self::KEY_LENGTH) {
+            return $decoded;
         }
 
-        return $key;
+        // Try raw file contents as binary (no trimming of binary data)
+        if (\strlen($raw) === self::KEY_LENGTH) {
+            return $raw;
+        }
+
+        throw MasterKeyException::invalidLength(self::KEY_LENGTH, \strlen($trimmed));
     }
 
     public function storeMasterKey(string $key): void

@@ -55,6 +55,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
         private readonly ?EventDispatcherInterface $eventDispatcher = null,
     ) {}
 
+    public function __destruct()
+    {
+        $this->clearCache();
+    }
+
     /**
      * @param array<string, mixed> $options
      */
@@ -224,10 +229,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
             throw $e;
         }
 
-        // Update read statistics
-        $secret->incrementReadCount();
-        $secret->setLastReadAt(time());
-        $this->adapter->store($secret);
+        // Update read statistics atomically (avoids full entity save + MM table churn)
+        $uid = $secret->getUid();
+        if ($uid !== null) {
+            $this->adapter->incrementReadCount($uid);
+        }
 
         // Log success
         $this->auditLogService->log($identifier, 'read', true);
@@ -359,16 +365,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
     {
         $filters = $pattern !== null ? new SecretFilters(prefix: $pattern) : null;
 
-        $identifiers = $this->adapter->list($filters);
+        $allSecrets = $this->adapter->listSecrets($filters);
 
         // Build metadata array for accessible secrets
         $secrets = [];
-        foreach ($identifiers as $identifier) {
-            $secret = $this->adapter->retrieve($identifier);
-            if (!$secret instanceof Secret) {
-                continue;
-            }
-
+        foreach ($allSecrets as $secret) {
             // Check access
             if (!$this->accessControlService->canRead($secret)) {
                 continue;
@@ -420,11 +421,11 @@ final class VaultService implements VaultServiceInterface, SingletonInterface
      */
     public function clearCache(): void
     {
-        // Securely wipe cached values
-        foreach ($this->cache as $key => $value) {
+        // Securely wipe cached values via reference to avoid copy-on-write
+        foreach ($this->cache as &$value) {
             sodium_memzero($value);
-            unset($this->cache[$key]);
         }
+        unset($value);
         $this->cache = [];
     }
 }

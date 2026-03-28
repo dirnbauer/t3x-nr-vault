@@ -96,7 +96,7 @@ final class VaultRotateMasterKeyCommand extends Command
         }
 
         // Validate we have different keys
-        if ($oldKey === $newKey) {
+        if (hash_equals($oldKey, $newKey)) {
             $io->error('Old and new master keys are identical. Nothing to rotate.');
             sodium_memzero($oldKey);
             sodium_memzero($newKey);

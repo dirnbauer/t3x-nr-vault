@@ -23,7 +23,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 
 #[CoversClass(AjaxController::class)]
@@ -45,7 +44,7 @@ final class AjaxControllerTest extends TestCase
     #[Test]
     public function revealActionReturns400WhenNoIdentifier(): void
     {
-        $request = $this->createRequestWithQueryParams([]);
+        $request = $this->createRequestWithJsonBody([]);
 
         $response = $this->subject->revealAction($request);
 
@@ -61,7 +60,7 @@ final class AjaxControllerTest extends TestCase
         $identifier = 'test-secret-id';
         $secretValue = 'my-secret-value';
 
-        $request = $this->createRequestWithQueryParams(['identifier' => $identifier]);
+        $request = $this->createRequestWithJsonBody(['identifier' => $identifier]);
 
         $this->vaultService
             ->expects(self::once())
@@ -81,7 +80,7 @@ final class AjaxControllerTest extends TestCase
     public function revealActionReturns404WhenSecretNotFound(): void
     {
         $identifier = 'nonexistent-id';
-        $request = $this->createRequestWithQueryParams(['identifier' => $identifier]);
+        $request = $this->createRequestWithJsonBody(['identifier' => $identifier]);
 
         $this->vaultService
             ->method('retrieve')
@@ -99,7 +98,7 @@ final class AjaxControllerTest extends TestCase
     public function revealActionReturns403WhenAccessDenied(): void
     {
         $identifier = 'restricted-id';
-        $request = $this->createRequestWithQueryParams(['identifier' => $identifier]);
+        $request = $this->createRequestWithJsonBody(['identifier' => $identifier]);
 
         $this->vaultService
             ->method('retrieve')
@@ -117,7 +116,7 @@ final class AjaxControllerTest extends TestCase
     public function revealActionReturns410WhenSecretExpired(): void
     {
         $identifier = 'expired-id';
-        $request = $this->createRequestWithQueryParams(['identifier' => $identifier]);
+        $request = $this->createRequestWithJsonBody(['identifier' => $identifier]);
 
         $this->vaultService
             ->method('retrieve')
@@ -135,7 +134,7 @@ final class AjaxControllerTest extends TestCase
     public function revealActionReturns500WhenEncryptionFails(): void
     {
         $identifier = 'decrypt-error-id';
-        $request = $this->createRequestWithQueryParams(['identifier' => $identifier]);
+        $request = $this->createRequestWithJsonBody(['identifier' => $identifier]);
 
         $this->vaultService
             ->method('retrieve')
@@ -153,7 +152,7 @@ final class AjaxControllerTest extends TestCase
     public function revealActionReturns500OnGenericException(): void
     {
         $identifier = 'error-id';
-        $request = $this->createRequestWithQueryParams(['identifier' => $identifier]);
+        $request = $this->createRequestWithJsonBody(['identifier' => $identifier]);
 
         $this->vaultService
             ->method('retrieve')
@@ -384,31 +383,9 @@ final class AjaxControllerTest extends TestCase
     }
 
     #[Test]
-    public function revealActionQueryParamTakesPrecedenceOverJsonBody(): void
-    {
-        $queryIdentifier = 'query-param-id';
-        $jsonIdentifier = 'json-body-id';
-        $secretValue = 'secret-value';
-
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->method('getQueryParams')->willReturn(['identifier' => $queryIdentifier]);
-        $request->method('getParsedBody')->willReturn(['identifier' => $jsonIdentifier]);
-
-        $this->vaultService
-            ->expects(self::once())
-            ->method('retrieve')
-            ->with($queryIdentifier)
-            ->willReturn($secretValue);
-
-        $response = $this->subject->revealAction($request);
-
-        self::assertSame(200, $response->getStatusCode());
-    }
-
-    #[Test]
     public function revealActionHandlesEmptyStringIdentifier(): void
     {
-        $request = $this->createRequestWithQueryParams(['identifier' => '']);
+        $request = $this->createRequestWithJsonBody(['identifier' => '']);
 
         $response = $this->subject->revealAction($request);
 
@@ -443,22 +420,6 @@ final class AjaxControllerTest extends TestCase
         self::assertSame(400, $response->getStatusCode());
         $body = json_decode((string) $response->getBody(), true);
         self::assertSame('No secret value provided', $body['error']);
-    }
-
-    /**
-     * @param array<string, mixed> $queryParams
-     */
-    private function createRequestWithQueryParams(array $queryParams): ServerRequestInterface&MockObject
-    {
-        $request = $this->createMock(ServerRequestInterface::class);
-        $request->method('getQueryParams')->willReturn($queryParams);
-        $request->method('getParsedBody')->willReturn(null);
-
-        $stream = $this->createMock(StreamInterface::class);
-        $stream->method('__toString')->willReturn('');
-        $request->method('getBody')->willReturn($stream);
-
-        return $request;
     }
 
     /**

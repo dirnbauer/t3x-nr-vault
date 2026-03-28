@@ -10,10 +10,13 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Controller;
 
 use Doctrine\DBAL\Exception as DbalException;
+use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Table;
 use Exception;
 use Netresearch\NrVault\Domain\Dto\MigrationResult;
 use Netresearch\NrVault\Service\SecretDetectionService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -298,19 +301,10 @@ final readonly class MigrationController
             if ($table === '') {
                 continue;
             }
-            if ($table === '0') {
-                continue;
-            }
             if ($column === '') {
                 continue;
             }
-            if ($column === '0') {
-                continue;
-            }
             if ($identifierPattern === '') {
-                continue;
-            }
-            if ($identifierPattern === '0') {
                 continue;
             }
 
@@ -415,6 +409,30 @@ final readonly class MigrationController
         $failed = 0;
         $skipped = 0;
 
+        // Validate table and column names against database schema to prevent SQL injection
+        try {
+            $schemaManager = $this->connectionPool
+                ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME)
+                ->createSchemaManager();
+            $tableNames = array_map(
+                static fn (Table $t): string => $t->getName(), /** @phpstan-ignore method.internalClass */
+                $schemaManager->listTables(),
+            );
+            if (!\in_array($table, $tableNames, true)) {
+                return MigrationResult::error($table, $column, 'Invalid table name');
+            }
+
+            $columns = array_map(
+                static fn (Column $col): string => $col->getName(), /** @phpstan-ignore method.internalClass */
+                $schemaManager->listTableColumns($table),
+            );
+            if (!\in_array($column, $columns, true)) {
+                return MigrationResult::error($table, $column, 'Invalid column name');
+            }
+        } catch (DbalException $e) {
+            return MigrationResult::error($table, $column, 'Schema validation failed');
+        }
+
         try {
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
             $rows = $queryBuilder
@@ -434,7 +452,7 @@ final readonly class MigrationController
                 $value = \is_string($valueVal) ? $valueVal : '';
 
                 // Skip if already looks like a vault identifier
-                if ($this->looksLikeVaultIdentifier($value)) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($value)) {
                     ++$skipped;
                     continue;
                 }
@@ -472,15 +490,6 @@ final readonly class MigrationController
         }
 
         return MigrationResult::withFailures($table, $column, $migrated, $failed, $skipped);
-    }
-
-    /**
-     * Check if a value looks like a vault identifier.
-     */
-    private function looksLikeVaultIdentifier(string $value): bool
-    {
-        return preg_match('/^[a-z][a-z0-9_]+__[a-z][a-z0-9_]+__\d+$/i', $value) === 1
-            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
     }
 
     /**

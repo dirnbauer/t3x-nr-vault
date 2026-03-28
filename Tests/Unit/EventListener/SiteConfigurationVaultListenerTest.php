@@ -116,4 +116,79 @@ final class SiteConfigurationVaultListenerTest extends TestCase
 
         self::assertSame($config, $event->getConfiguration());
     }
+
+    #[Test]
+    public function detectsVaultReferencesInDeeplyNestedArrays(): void
+    {
+        $config = [
+            'level1' => [
+                'level2' => [
+                    'level3' => [
+                        'secret' => '%vault(deep_secret)%',
+                    ],
+                ],
+            ],
+        ];
+
+        $processedConfig = [
+            'level1' => [
+                'level2' => [
+                    'level3' => [
+                        'secret' => 'resolved',
+                    ],
+                ],
+            ],
+        ];
+
+        $event = new SiteConfigurationLoadedEvent('test-site', $config);
+
+        $this->processor
+            ->expects($this->once())
+            ->method('processConfiguration')
+            ->willReturn($processedConfig);
+
+        ($this->listener)($event);
+
+        self::assertSame($processedConfig, $event->getConfiguration());
+    }
+
+    #[Test]
+    public function skipsProcessingWhenConfigHasNonStringNonArrayValues(): void
+    {
+        $config = [
+            'port' => 8080,
+            'debug' => false,
+            'ratio' => 1.5,
+            'nothing' => null,
+        ];
+
+        $event = new SiteConfigurationLoadedEvent('test-site', $config);
+
+        $this->processor->expects($this->never())->method('processConfiguration');
+
+        ($this->listener)($event);
+
+        self::assertSame($config, $event->getConfiguration());
+    }
+
+    #[Test]
+    public function detectsVaultReferenceAmongMixedValueTypes(): void
+    {
+        $config = [
+            'port' => 8080,
+            'settings' => [
+                'debug' => false,
+                'apiKey' => '%vault(api_key)%',
+            ],
+        ];
+
+        $event = new SiteConfigurationLoadedEvent('test-site', $config);
+
+        $this->processor
+            ->expects($this->once())
+            ->method('processConfiguration')
+            ->willReturn($config);
+
+        ($this->listener)($event);
+    }
 }

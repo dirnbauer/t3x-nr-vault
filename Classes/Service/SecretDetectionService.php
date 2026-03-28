@@ -18,10 +18,13 @@ use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
 use Netresearch\NrVault\Service\Detection\SecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
+use Netresearch\NrVault\Utility\IdentifierValidator;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Package\PackageManager;
-use TYPO3\CMS\Core\SingletonInterface;
 
 /**
  * Service for detecting potential plaintext secrets in the TYPO3 installation.
@@ -30,7 +33,7 @@ use TYPO3\CMS\Core\SingletonInterface;
  * for values that appear to be unencrypted secrets based on naming patterns
  * and known API key formats.
  */
-final class SecretDetectionService implements SecretDetectionServiceInterface, SingletonInterface
+final class SecretDetectionService implements SecretDetectionServiceInterface
 {
     /**
      * Table.column combinations that should be excluded (contain hashes, not secrets).
@@ -109,9 +112,6 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         '/credential/i',          // contains "credential"
     ];
 
-    /** UUID v7 pattern for vault identifiers. */
-    private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
-
     /** @var array<string, SecretFinding> */
     private array $detectedSecrets = [];
 
@@ -119,6 +119,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         private readonly ConnectionPool $connectionPool,
         private readonly PackageManager $packageManager,
         private readonly ExtensionConfiguration $extensionConfiguration,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -171,8 +172,10 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
 
                 $this->scanTable($tableName);
             }
-        } catch (DbalException) {
-            // Silently fail if database is not accessible
+        } catch (DbalException $e) {
+            $this->logger->warning('Secret detection: database scan failed', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -191,8 +194,13 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $configArray = $config;
                     $this->scanConfigArray($configArray, "extension:{$extKey}");
                 }
-            } catch (Exception) {
+            } catch (ExtensionConfigurationExtensionNotConfiguredException|ExtensionConfigurationPathDoesNotExistException) {
                 // Extension has no configuration - skip
+            } catch (Exception $e) {
+                $this->logger->warning('Failed to scan extension configuration', [
+                    'extension' => $extKey,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
     }
@@ -213,7 +221,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         /** @var array<string, mixed> $mailConfig */
         $mailConfig = \is_array($typo3ConfVars['MAIL'] ?? null) ? $typo3ConfVars['MAIL'] : [];
         $smtpPassword = $mailConfig['transport_smtp_password'] ?? '';
-        if (\is_string($smtpPassword) && $smtpPassword !== '' && !$this->looksLikeVaultIdentifier($smtpPassword)) {
+        if (\is_string($smtpPassword) && $smtpPassword !== '' && !IdentifierValidator::looksLikeVaultIdentifier($smtpPassword)) {
             $finding = new ConfigSecretFinding(
                 path: 'MAIL.transport_smtp_password',
                 severity: Severity::High,
@@ -300,8 +308,11 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $this->analyzeTableColumn($tableName, $columnName);
                 }
             }
-        } catch (DbalException) {
-            // Silently skip tables that cannot be analyzed
+        } catch (DbalException $e) {
+            $this->logger->warning('Secret detection: failed to scan table', [
+                'table' => $tableName,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -346,7 +357,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $value = \is_string($rawValue) || is_numeric($rawValue) ? (string) $rawValue : '';
 
                     // Skip if it looks like a vault identifier
-                    if ($this->looksLikeVaultIdentifier($value)) {
+                    if (IdentifierValidator::looksLikeVaultIdentifier($value)) {
                         continue;
                     }
 
@@ -377,8 +388,12 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $this->detectedSecrets[$finding->getKey()] = $finding;
                 }
             }
-        } catch (DbalException) {
-            // Silently skip columns that cannot be analyzed
+        } catch (DbalException $e) {
+            $this->logger->warning('Secret detection: failed to analyze column', [
+                'table' => $tableName,
+                'column' => $columnName,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -407,7 +422,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
             // Check if key name suggests a secret
             if ($this->isSecretConfigKey($key)) {
                 // Skip vault references
-                if ($this->looksLikeVaultIdentifier($value)) {
+                if (IdentifierValidator::looksLikeVaultIdentifier($value)) {
                     continue;
                 }
 
@@ -479,17 +494,6 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
     }
 
     /**
-     * Check if a value looks like a vault identifier.
-     */
-    private function looksLikeVaultIdentifier(string $value): bool
-    {
-        // TCA vault fields store UUIDs
-        // Also check for vault reference format: %vault(identifier)%
-        return preg_match(self::UUID_PATTERN, $value) === 1
-            || preg_match('/^%vault\([^)]+\)%$/', $value) === 1;
-    }
-
-    /**
      * Check if a value looks already encrypted or is a password hash.
      */
     private function looksEncrypted(string $value): bool
@@ -504,13 +508,13 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
             return true;
         }
 
-        // Check for base64-encoded encrypted data (typically > 50 chars, high entropy)
-        if (\strlen($value) > 50 && preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
+        // Check for base64-encoded encrypted data (typically >= 80 chars, high entropy)
+        if (\strlen($value) >= 80 && preg_match('/^[A-Za-z0-9+\/]{40,}={0,2}$/', $value)) {
             return true;
         }
 
-        // Check for hex-encoded data
-        return \strlen($value) > 50 && preg_match('/^[0-9a-f]+$/i', $value);
+        // Check for hex-encoded data (require longer length to reduce false positives)
+        return \strlen($value) >= 80 && preg_match('/^[0-9a-f]+$/i', $value);
     }
 
     /**
@@ -518,8 +522,9 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function detectValuePattern(string $value): ?string
     {
+        $trimmed = trim($value);
         foreach (self::VALUE_PATTERNS as $name => $pattern) {
-            if (preg_match($pattern, $value)) {
+            if (preg_match($pattern, $trimmed)) {
                 return $name;
             }
         }

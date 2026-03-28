@@ -46,7 +46,7 @@ class SecretsList {
 
         Modal.confirm(
             'Delete Secret',
-            'Are you sure you want to delete the secret "' + identifier + '"? This action cannot be undone.',
+            'Are you sure you want to delete the secret "' + this.escapeHtml(identifier) + '"? This action cannot be undone.',
             Severity.warning,
             [
                 {

@@ -227,15 +227,17 @@ final class SiteConfigurationVaultProcessorTest extends TestCase
             'apiKey' => '%vault(api_key)%',
         ];
 
-        // First call should be for site-specific, second for global
+        // Site-specific does not exist, so falls through to global
         $this->vaultService
-            ->expects($this->exactly(2))
+            ->method('exists')
+            ->with('site:main:api_key')
+            ->willReturn(false);
+
+        $this->vaultService
+            ->expects($this->once())
             ->method('retrieve')
-            ->willReturnCallback(fn (string $id): ?string => match ($id) {
-                'site:main:api_key' => null,
-                'api_key' => 'global_value',
-                default => null,
-            });
+            ->with('api_key')
+            ->willReturn('global_value');
 
         $result = $this->processor->processConfiguration($config, $site);
 
@@ -251,6 +253,11 @@ final class SiteConfigurationVaultProcessorTest extends TestCase
         $config = [
             'apiKey' => '%vault(api_key)%',
         ];
+
+        $this->vaultService
+            ->method('exists')
+            ->with('site:main:api_key')
+            ->willReturn(true);
 
         $this->vaultService
             ->method('retrieve')

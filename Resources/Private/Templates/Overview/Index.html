@@ -5,9 +5,9 @@
 <f:layout name="Module" />
 
 <f:section name="Content">
-    <h1>Vault - Secrets Management</h1>
+    <h1>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.title')}</h1>
     <p class="text-body-secondary mb-4">
-        Secure storage and management for sensitive configuration data.
+        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.subtitle')}
     </p>
 
     <!-- Health Check Alerts -->
@@ -15,28 +15,27 @@
         <div class="alert alert-danger mb-4" role="alert">
             <h4 class="alert-heading">
                 <core:icon identifier="actions-exclamation-triangle" size="small" />
-                Vault Health Issue
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.issue.heading')}
             </h4>
             <f:if condition="!{healthChecks.masterKeyAvailable}">
                 <p class="mb-1">
-                    <strong>Encryption is not available.</strong>
-                    No master key provider is configured or accessible. Vault cannot encrypt or decrypt secrets.
+                    <strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.encryption_not_available')}</strong>
+                    {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.encryption_not_available.description')}
                 </p>
                 <f:if condition="{healthChecks.masterKeyError}">
-                    <p class="mb-1 text-body-secondary"><small>Detail: {healthChecks.masterKeyError}</small></p>
+                    <p class="mb-1 text-body-secondary"><small>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.detail')} {healthChecks.masterKeyError}</small></p>
                 </f:if>
                 <hr />
                 <p class="mb-0">
-                    Ensure that <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code> is set,
-                    or configure an alternative master key provider (environment variable or file-based).
+                    {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.encryption_not_available.remedy', arguments: {0: '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'encryptionKey\']'})}
                 </p>
             </f:if>
             <f:if condition="{healthChecks.masterKeyAvailable} && !{healthChecks.encryptionWorking}">
                 <p class="mb-1">
-                    <strong>Master key provider "{healthChecks.masterKeyProvider}" is available but encryption is broken.</strong>
+                    <strong>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.encryption_broken', arguments: {0: healthChecks.masterKeyProvider})}</strong>
                 </p>
                 <f:if condition="{healthChecks.encryptionError}">
-                    <p class="mb-0 text-body-secondary"><small>Detail: {healthChecks.encryptionError}</small></p>
+                    <p class="mb-0 text-body-secondary"><small>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.detail')} {healthChecks.encryptionError}</small></p>
                 </f:if>
             </f:if>
         </div>
@@ -44,41 +43,41 @@
     <f:if condition="{healthChecks.masterKeyAvailable} && {healthChecks.encryptionWorking}">
         <div class="alert alert-success mb-4" role="alert">
             <core:icon identifier="actions-check" size="small" />
-            Encryption is active using the <strong>{healthChecks.masterKeyProvider}</strong> master key provider.
+            {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.health.encryption_active', arguments: {0: healthChecks.masterKeyProvider})}
         </div>
     </f:if>
 
     <!-- Statistics Cards -->
-    <div class="card-container mb-4" role="group" aria-label="Vault statistics">
+    <div class="card-container mb-4" role="group" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}">
         <div class="card card-size-fixed-small">
             <div class="card-header">
                 <div class="card-header-body">
-                    <span class="card-title" aria-label="{stats.totalSecrets} total secrets">{stats.totalSecrets}</span>
-                    <span class="card-subtitle">Total Secrets</span>
+                    <span class="card-title" aria-label="{stats.totalSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}">{stats.totalSecrets}</span>
+                    <span class="card-subtitle">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}</span>
                 </div>
             </div>
         </div>
         <div class="card card-size-fixed-small">
             <div class="card-header">
                 <div class="card-header-body">
-                    <span class="card-title text-success" aria-label="{stats.activeSecrets} active secrets">{stats.activeSecrets}</span>
-                    <span class="card-subtitle">Active</span>
+                    <span class="card-title text-success" aria-label="{stats.activeSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.active')}">{stats.activeSecrets}</span>
+                    <span class="card-subtitle">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.active')}</span>
                 </div>
             </div>
         </div>
         <div class="card card-size-fixed-small">
             <div class="card-header">
                 <div class="card-header-body">
-                    <span class="card-title text-secondary" aria-label="{stats.disabledSecrets} disabled secrets">{stats.disabledSecrets}</span>
-                    <span class="card-subtitle">Disabled</span>
+                    <span class="card-title text-secondary" aria-label="{stats.disabledSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.disabled')}">{stats.disabledSecrets}</span>
+                    <span class="card-subtitle">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.disabled')}</span>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Submodule Navigation Cards -->
-    <h2>Modules</h2>
-    <nav class="card-container mb-5" aria-label="Vault submodules">
+    <h2>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.modules')}</h2>
+    <nav class="card-container mb-5" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.modules')}">
         <f:for each="{submodules}" as="submodule">
             <div class="card card-size-fixed-small card-has-hover">
                 <f:be.link route="{submodule.route}" class="card-link">
@@ -97,21 +96,21 @@
     </nav>
 
     <!-- Quick Start Guide -->
-    <h2>Quick Start</h2>
+    <h2>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.quickstart')}</h2>
     <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
         <div class="col">
             <div class="card h-100">
                 <div class="card-body">
-                    <h3 class="card-title h5">Store a Secret</h3>
-                    <p class="card-text">Navigate to <strong>Secrets</strong> and click the <code>+</code> button in the header to create a new secret. Provide an identifier (e.g., <code>stripe_api_key</code>) and the secret value.</p>
+                    <h3 class="card-title h5">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.quickstart.store.title')}</h3>
+                    <p class="card-text">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.quickstart.store.description')}</p>
                 </div>
             </div>
         </div>
         <div class="col">
             <div class="card h-100">
                 <div class="card-body">
-                    <h3 class="card-title h5">Use in Configuration</h3>
-                    <p class="card-text">Reference secrets in your TYPO3 configuration using the vault syntax:</p>
+                    <h3 class="card-title h5">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.quickstart.use.title')}</h3>
+                    <p class="card-text">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.quickstart.use.description')}</p>
                     <pre class="bg-body-tertiary p-2 rounded mb-0"><code class="text-body">%vault(stripe_api_key)%</code></pre>
                 </div>
             </div>
@@ -119,16 +118,16 @@
     </div>
 
     <!-- Usage Examples -->
-    <h2>When to Use What</h2>
+    <h2>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.title')}</h2>
     <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
         <div class="col">
             <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-x-content-site-config" size="small" />
-                        Site-Specific API Keys
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.site_keys.title')}
                     </h3>
-                    <p class="card-text small">Payment gateways, external services, or any secret that differs per site. Resolved at runtime from <code>config/sites/*/config.yaml</code>.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.site_keys.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">settings:
   stripeKey: '%vault(stripe_api_key)%'
   mailchimpKey: '%vault(mailchimp_key)%'</code></pre>
@@ -140,9 +139,9 @@
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-database" size="small" />
-                        Per-Record Credentials
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.per_record.title')}
                     </h3>
-                    <p class="card-text small">Let editors manage secrets per record (e.g., per-integration or per-client settings). Values encrypted automatically via TCA.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.per_record.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">'api_key' => [
     'label' => 'Client API Key',
     'config' => [
@@ -158,9 +157,9 @@
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-text-php" size="small" />
-                        Extension Services
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.extension.title')}
                     </h3>
-                    <p class="card-text small">When your extension needs secrets programmatically - API clients, payment processors, external integrations.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.extension.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">public function __construct(
     private readonly VaultServiceInterface $vault,
 ) {}
@@ -178,9 +177,9 @@ public function callExternalApi(): Response
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-cloud" size="small" />
-                        HTTP Client with Secrets
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.http_client.title')}
                     </h3>
-                    <p class="card-text small">PSR-18 compatible API calls with automatic secret injection. Supports Bearer, API-Key, Basic Auth, OAuth2, and more.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.http_client.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">public function __construct(
     private readonly VaultHttpClientInterface $http,
 ) {}
@@ -203,9 +202,9 @@ public function fetchData(): array
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-terminal" size="small" />
-                        Deployment &amp; CI/CD
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.deployment.title')}
                     </h3>
-                    <p class="card-text small">Automate secret provisioning in deployment pipelines, or manage secrets via scripts without backend access.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.deployment.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body"># In deployment script
 bin/typo3 vault:store smtp_password "$SMTP_PASS"
 bin/typo3 vault:store api_key "$API_KEY"
@@ -220,9 +219,9 @@ bin/typo3 vault:rotate api_key "$NEW_KEY"</code></pre>
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="mimetypes-text-typoscript" size="small" />
-                        Frontend Rendering <small class="text-warning">(use sparingly)</small>
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.frontend.title')} <small class="text-warning">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.frontend.sparingly')}</small>
                     </h3>
-                    <p class="card-text small">When secrets must appear in rendered output (e.g., JS API keys). Requires <code>frontend_accessible</code> flag and cache disabled.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.frontend.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">lib.mapsKey = TEXT
 lib.mapsKey.value = %vault(google_maps_key)%
 lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
@@ -234,9 +233,9 @@ lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-cog" size="small" />
-                        TCA Helper API
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.tca_helper.title')}
                     </h3>
-                    <p class="card-text small">Shorthand for common vault field patterns with sensible defaults (exclude: true, l10n_mode: exclude).</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.usage.tca_helper.description')}</p>
                     <pre class="bg-body-tertiary p-3 rounded mb-0"><code class="text-body">use Netresearch\NrVault\TCA\VaultFieldHelper;
 
 'api_key' => VaultFieldHelper::getSecureFieldConfig(
@@ -249,43 +248,43 @@ lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
     </div>
 
     <!-- CLI Commands Reference -->
-    <h2>CLI Commands</h2>
+    <h2>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.title')}</h2>
     <div class="table-fit mb-4">
         <table class="table table-striped table-sm">
             <thead>
                 <tr>
-                    <th>Command</th>
-                    <th>Description</th>
+                    <th>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.col.command')}</th>
+                    <th>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.col.description')}</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td><code>vault:init</code></td><td>Initialize vault and generate master key</td></tr>
-                <tr><td><code>vault:store</code></td><td>Store a new secret</td></tr>
-                <tr><td><code>vault:retrieve</code></td><td>Retrieve a secret value</td></tr>
-                <tr><td><code>vault:list</code></td><td>List all secrets</td></tr>
-                <tr><td><code>vault:rotate</code></td><td>Rotate a secret's value</td></tr>
-                <tr><td><code>vault:delete</code></td><td>Delete a secret</td></tr>
-                <tr><td><code>vault:audit</code></td><td>View audit log entries</td></tr>
-                <tr><td><code>vault:scan</code></td><td>Scan for plaintext secrets in database</td></tr>
-                <tr><td><code>vault:migrate-field</code></td><td>Migrate a database field to vault</td></tr>
-                <tr><td><code>vault:rotate-master-key</code></td><td>Rotate the master encryption key</td></tr>
-                <tr><td><code>vault:cleanup-orphans</code></td><td>Remove orphaned secrets</td></tr>
+                <tr><td><code>vault:init</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.init')}</td></tr>
+                <tr><td><code>vault:store</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.store')}</td></tr>
+                <tr><td><code>vault:retrieve</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.retrieve')}</td></tr>
+                <tr><td><code>vault:list</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.list')}</td></tr>
+                <tr><td><code>vault:rotate</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.rotate')}</td></tr>
+                <tr><td><code>vault:delete</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.delete')}</td></tr>
+                <tr><td><code>vault:audit</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.audit')}</td></tr>
+                <tr><td><code>vault:scan</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.scan')}</td></tr>
+                <tr><td><code>vault:migrate-field</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.migrate_field')}</td></tr>
+                <tr><td><code>vault:rotate-master-key</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.rotate_master_key')}</td></tr>
+                <tr><td><code>vault:cleanup-orphans</code></td><td>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.cleanup_orphans')}</td></tr>
             </tbody>
         </table>
-        <small class="text-muted">Run <code>bin/typo3 vault:&lt;command&gt; --help</code> for detailed usage.</small>
+        <small class="text-muted">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.cli.help_hint')}</small>
     </div>
 
     <!-- Security Features -->
-    <h2>Security Features</h2>
+    <h2>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.title')}</h2>
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-lock" size="small" />
-                        Envelope Encryption
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.envelope.title')}
                     </h3>
-                    <p class="card-text small">Each secret is encrypted with its own unique Data Encryption Key (DEK), which is then encrypted with the master key.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.envelope.description')}</p>
                 </div>
             </div>
         </div>
@@ -294,9 +293,9 @@ lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-shield" size="small" />
-                        Access Control
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.access.title')}
                     </h3>
-                    <p class="card-text small">Secrets can be restricted to specific backend users or groups. Every access is logged in the audit trail.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.access.description')}</p>
                 </div>
             </div>
         </div>
@@ -305,19 +304,19 @@ lib.mapsKey.stdWrap.cache.disable = 1</code></pre>
                 <div class="card-body">
                     <h3 class="card-title h5">
                         <core:icon identifier="actions-document-history-open" size="small" />
-                        Audit Logging
+                        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.audit.title')}
                     </h3>
-                    <p class="card-text small">Tamper-evident audit chain records all secret operations with cryptographic integrity verification.</p>
+                    <p class="card-text small">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.security.audit.description')}</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Documentation Link -->
-    <f:be.infobox title="Documentation" state="-1">
-        For detailed information, see the
+    <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.documentation.title')}" state="-1">
+        {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.documentation.text')}
         <a href="https://docs.typo3.org/p/netresearch/nr-vault/main/en-us/" target="_blank" rel="noopener" class="text-decoration-underline">
-            extension documentation
+            {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.documentation.link')}
         </a>.
     </f:be.infobox>
 </f:section>

@@ -10,9 +10,10 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Hook;
 
 use Exception;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\Dto\PendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -40,6 +41,9 @@ final class DataHandlerHook
      * @var array<string, array<string|int, array<string, PendingSecret>>>
      */
     private array $pendingSecrets = [];
+
+    /** @var array<string, list<string>> Per-table cache of vault field names */
+    private array $vaultFieldCache = [];
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -91,7 +95,7 @@ final class DataHandlerHook
 
             // Determine vault identifier
             $isNewSecret = $existingIdentifier === '' || $originalChecksum === '';
-            $vaultIdentifier = $isNewSecret ? $this->generateUuid() : $existingIdentifier;
+            $vaultIdentifier = $isNewSecret ? IdentifierValidator::generateUuid() : $existingIdentifier;
 
             // Store pending secret for post-processing
             $this->pendingSecrets[$table][$id][$fieldName] = $isNewSecret
@@ -150,7 +154,7 @@ final class DataHandlerHook
                     // Update existing - use rotate to maintain audit trail
                     $this->vaultService->rotate($vaultIdentifier, $secretValue, 'TCA field updated');
                 }
-            } catch (VaultException $e) {
+            } catch (Throwable $e) {
                 // Roll back the dangling UUID - clear the field so no orphan reference remains
                 $this->rollBackField($table, $uid, $fieldName, $isNew ? '' : ($pending->originalChecksum !== '' ? $vaultIdentifier : ''));
 
@@ -229,7 +233,7 @@ final class DataHandlerHook
 
             try {
                 $this->vaultService->delete($vaultIdentifier, 'Record deleted');
-            } catch (VaultException $e) {
+            } catch (Throwable $e) {
                 /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
@@ -304,7 +308,7 @@ final class DataHandlerHook
                 }
 
                 // Generate new UUID for copied record
-                $newIdentifier = $this->generateUuid();
+                $newIdentifier = IdentifierValidator::generateUuid();
 
                 // Store as new secret
                 $this->vaultService->store($newIdentifier, $sourceValue, [
@@ -317,7 +321,7 @@ final class DataHandlerHook
 
                 // Track update for the copied record
                 $updates[$fieldName] = $newIdentifier;
-            } catch (VaultException $e) {
+            } catch (Throwable $e) {
                 /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
@@ -383,7 +387,13 @@ final class DataHandlerHook
      */
     private function getVaultFieldNames(string $table): array
     {
+        if (isset($this->vaultFieldCache[$table])) {
+            return $this->vaultFieldCache[$table];
+        }
+
         if (!$this->tcaSchemaFactory->has($table)) {
+            $this->vaultFieldCache[$table] = [];
+
             return [];
         }
 
@@ -398,37 +408,8 @@ final class DataHandlerHook
             }
         }
 
+        $this->vaultFieldCache[$table] = $vaultFields;
+
         return $vaultFields;
-    }
-
-    /**
-     * Generate a UUID v7 for vault identifiers.
-     *
-     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
-     * This provides time-ordered IDs with better database index performance.
-     */
-    private function generateUuid(): string
-    {
-        // 48-bit timestamp in milliseconds
-        $time = (int) (microtime(true) * 1000);
-
-        // 10 random bytes for the remaining fields
-        $random = random_bytes(10);
-
-        // Build UUID v7:
-        // - Bytes 0-5: timestamp (48 bits)
-        // - Byte 6: version (0111) + 4 random bits
-        // - Byte 7: 8 random bits
-        // - Byte 8: variant (10) + 6 random bits
-        // - Bytes 9-15: 56 random bits
-        return \sprintf(
-            '%08x-%04x-7%03x-%04x-%012x',
-            ($time >> 16) & 0xFFFFFFFF,           // timestamp high 32 bits
-            $time & 0xFFFF,                        // timestamp low 16 bits
-            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF, // version 7 + 12 random bits
-            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000, // variant 10 + 14 random bits
-            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
-                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]), // 48 random bits
-        );
     }
 }

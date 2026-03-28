@@ -120,7 +120,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -140,7 +140,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30, // 30 days old
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -165,7 +165,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 3, // 3 days old
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -186,12 +186,12 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
             $this->createSecretMetadata(
                 'tx_other__secret__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_other'],
+                ['source' => 'tca_field', 'table' => 'tx_other', 'field' => 'secret', 'uid' => 1],
             ),
         ]);
 
@@ -219,7 +219,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -243,7 +243,7 @@ final class OrphanCleanupTaskTest extends UnitTestCase
             $this->createSecretMetadata(
                 'tx_myext__api_key__1',
                 time() - 86400 * 30,
-                ['source' => 'migration', 'table' => 'tx_myext'],
+                ['source' => 'migration', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 1],
             ),
         ]);
 
@@ -262,19 +262,101 @@ final class OrphanCleanupTaskTest extends UnitTestCase
     }
 
     #[Test]
-    public function skipsInvalidIdentifierFormats(): void
+    public function skipsSecretsWithInvalidMetadata(): void
     {
         $this->vaultService->method('list')->willReturn([
             $this->createSecretMetadata(
                 'invalid_format',
                 time() - 86400 * 30,
-                ['source' => 'tca_field', 'table' => 'tx_myext'],
+                ['source' => 'tca_field'],
             ),
         ]);
 
         $this->vaultService->expects($this->never())->method('delete');
 
         $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $result = $task->execute();
+
+        self::assertTrue($result);
+    }
+
+    #[Test]
+    public function skipsSecretsWithZeroUidInMetadata(): void
+    {
+        $this->vaultService->method('list')->willReturn([
+            $this->createSecretMetadata(
+                'some_uuid_identifier',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 0],
+            ),
+        ]);
+
+        $this->vaultService->expects($this->never())->method('delete');
+
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $result = $task->execute();
+
+        self::assertTrue($result);
+    }
+
+    #[Test]
+    public function skipsSecretsWithNonNumericUidInMetadata(): void
+    {
+        $this->vaultService->method('list')->willReturn([
+            $this->createSecretMetadata(
+                'some_uuid_identifier',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'field' => 'api_key', 'uid' => 'not_a_number'],
+            ),
+        ]);
+
+        $this->vaultService->expects($this->never())->method('delete');
+
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $result = $task->execute();
+
+        self::assertTrue($result);
+    }
+
+    #[Test]
+    public function skipsSecretsWithEmptyTableInMetadata(): void
+    {
+        $this->vaultService->method('list')->willReturn([
+            $this->createSecretMetadata(
+                'some_uuid_identifier',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => '', 'field' => 'api_key', 'uid' => 1],
+            ),
+        ]);
+
+        $this->vaultService->expects($this->never())->method('delete');
+
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $result = $task->execute();
+
+        self::assertTrue($result);
+    }
+
+    #[Test]
+    public function parsesFlexFieldFromMetadata(): void
+    {
+        $this->vaultService->method('list')->willReturn([
+            $this->createSecretMetadata(
+                'uuid_flex_secret',
+                time() - 86400 * 30,
+                ['source' => 'tca_field', 'table' => 'tx_myext', 'flexField' => 'settings.apiKey', 'uid' => 1],
+            ),
+        ]);
+
+        $this->mockRecordExists(1, false);
+
+        $this->vaultService
+            ->expects($this->once())
+            ->method('delete')
+            ->with('uuid_flex_secret', 'Scheduler orphan cleanup');
+
+        $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
+        $task->setTaskParameters(['nr_vault_retention_days' => 0]);
         $result = $task->execute();
 
         self::assertTrue($result);

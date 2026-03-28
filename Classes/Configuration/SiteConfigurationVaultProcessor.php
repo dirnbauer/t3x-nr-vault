@@ -142,17 +142,19 @@ final readonly class SiteConfigurationVaultProcessor implements SiteConfiguratio
         }
 
         // Support site-prefixed identifiers: site:{siteIdentifier}:{secretId}
+        // Use exists() first to avoid full retrieval (decrypt + audit) on misses
         if ($site instanceof Site && !str_contains($identifier, ':')) {
-            // Try site-specific identifier first
             $siteIdentifier = \sprintf('site:%s:%s', $site->getIdentifier(), $identifier);
 
-            try {
-                $secret = $this->vaultService->retrieve($siteIdentifier);
-                if ($secret !== null) {
-                    return $secret;
+            if ($this->vaultService->exists($siteIdentifier)) {
+                try {
+                    $secret = $this->vaultService->retrieve($siteIdentifier);
+                    if ($secret !== null) {
+                        return $secret;
+                    }
+                } catch (Throwable) {
+                    // Fall through to global identifier
                 }
-            } catch (Throwable) {
-                // Fall through to global identifier
             }
         }
 
@@ -162,7 +164,6 @@ final readonly class SiteConfigurationVaultProcessor implements SiteConfiguratio
             return $secret ?? $value;
         } catch (Throwable $e) {
             $this->logger->warning('Failed to resolve vault reference', [
-                'identifier' => $identifier,
                 'site' => $site?->getIdentifier(),
                 'error' => $e->getMessage(),
             ]);

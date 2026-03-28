@@ -104,7 +104,9 @@ class VaultSecretInput {
             }
         } catch (error) {
             console.error('Error revealing secret:', error);
-            top.TYPO3.Notification.error('Error', error.message || 'Failed to reveal secret');
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.error('Error', error.message || 'Failed to reveal secret');
+            }
             button.innerHTML = originalIcon;
             button.disabled = false;
         }
@@ -186,13 +188,17 @@ class VaultSecretInput {
         // Get from cache
         const secret = this.revealedSecrets.get(identifier);
         if (!secret) {
-            top.TYPO3.Notification.warning('Warning', 'Reveal the secret first before copying');
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.warning('Warning', 'Reveal the secret first before copying');
+            }
             return;
         }
 
         try {
             await navigator.clipboard.writeText(secret);
-            top.TYPO3.Notification.success('Success', 'Secret copied to clipboard');
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.success('Success', 'Secret copied to clipboard');
+            }
 
             // Visual feedback
             const icon = button.querySelector('.t3js-icon');
@@ -206,7 +212,9 @@ class VaultSecretInput {
             }
         } catch (error) {
             console.error('Failed to copy:', error);
-            top.TYPO3.Notification.error('Error', 'Failed to copy to clipboard');
+            if (top.TYPO3?.Notification) {
+                top.TYPO3.Notification.error('Error', 'Failed to copy to clipboard');
+            }
         }
     }
 }

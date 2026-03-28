@@ -269,6 +269,38 @@ final class FileMasterKeyProviderTest extends TestCase
     }
 
     #[Test]
+    public function getMasterKeyReadsBinaryKeyExactly32Bytes(): void
+    {
+        // Raw binary 32 bytes read directly without any trimming
+        $key = random_bytes(32);
+        $keyPath = vfsStream::url('vault/binary.key');
+        file_put_contents($keyPath, $key);
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn($keyPath);
+
+        $provider = new FileMasterKeyProvider($config);
+
+        self::assertEquals($key, $provider->getMasterKey());
+    }
+
+    #[Test]
+    public function getMasterKeyHandlesBase64WithWhitespace(): void
+    {
+        // Base64 key with trailing newline (common when piped to file)
+        $key = random_bytes(32);
+        $keyPath = vfsStream::url('vault/base64-newline.key');
+        file_put_contents($keyPath, base64_encode($key) . "\n");
+
+        $config = $this->createMock(ExtensionConfigurationInterface::class);
+        $config->method('getMasterKeySource')->willReturn($keyPath);
+
+        $provider = new FileMasterKeyProvider($config);
+
+        self::assertEquals($key, $provider->getMasterKey());
+    }
+
+    #[Test]
     public function generateMasterKeyReturns32Bytes(): void
     {
         $config = $this->createMock(ExtensionConfigurationInterface::class);

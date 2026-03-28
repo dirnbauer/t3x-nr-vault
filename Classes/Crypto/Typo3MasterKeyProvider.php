@@ -17,7 +17,7 @@ use Netresearch\NrVault\Exception\MasterKeyException;
  * Derives the master key from TYPO3's encryption key using HKDF-SHA256.
  * This is the default provider as it requires no additional configuration.
  */
-final class Typo3MasterKeyProvider implements MasterKeyProviderInterface
+final readonly class Typo3MasterKeyProvider implements MasterKeyProviderInterface
 {
     private const KEY_LENGTH = 32; // 256 bits
 

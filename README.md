@@ -146,6 +146,7 @@ class MyService
 Make authenticated API calls without exposing secrets to your code:
 
 ```php
+use GuzzleHttp\Psr7\Request;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClientInterface;
 
@@ -157,15 +158,17 @@ class PaymentService
 
     public function chargeCustomer(array $payload): array
     {
-        // Secret is injected by vault - never visible to this code
-        $response = $this->httpClient->post(
+        // Configure vault-based authentication (returns a new immutable client)
+        $client = $this->httpClient->withAuthentication('stripe_api_key', SecretPlacement::Bearer);
+
+        // Send a standard PSR-7 request - the secret is injected automatically
+        $request = new Request(
+            'POST',
             'https://api.stripe.com/v1/charges',
-            [
-                'auth_secret' => 'stripe_api_key',
-                'placement' => SecretPlacement::Bearer,
-                'json' => $payload,
-            ],
+            ['Content-Type' => 'application/json'],
+            json_encode($payload),
         );
+        $response = $client->sendRequest($request);
 
         return json_decode($response->getBody()->getContents(), true);
     }

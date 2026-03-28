@@ -57,6 +57,13 @@ interface VaultAdapterInterface
     public function list(?SecretFilters $filters = null): array;
 
     /**
+     * List all secrets matching filters with groups batch-loaded.
+     *
+     * @return Secret[]
+     */
+    public function listSecrets(?SecretFilters $filters = null): array;
+
+    /**
      * Get metadata for a secret without decrypting value.
      *
      * @return array<string, mixed>|null
@@ -69,4 +76,9 @@ interface VaultAdapterInterface
      * @param array<string, mixed> $metadata
      */
     public function updateMetadata(string $identifier, array $metadata): void;
+
+    /**
+     * Increment read count and update last_read_at atomically.
+     */
+    public function incrementReadCount(int $uid): void;
 }

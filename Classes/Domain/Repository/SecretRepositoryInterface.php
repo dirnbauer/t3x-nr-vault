@@ -31,4 +31,16 @@ interface SecretRepositoryInterface
      * @return list<string>
      */
     public function findIdentifiers(?SecretFilters $filters = null): array;
+
+    /**
+     * Find all secrets matching filters with groups batch-loaded.
+     *
+     * @return Secret[]
+     */
+    public function findAllWithFilters(?SecretFilters $filters = null): array;
+
+    /**
+     * Increment read count and update last_read_at atomically.
+     */
+    public function incrementReadCount(int $uid): void;
 }

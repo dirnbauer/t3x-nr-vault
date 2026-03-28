@@ -17,7 +17,7 @@ namespace Netresearch\NrVault\Crypto;
  *
  * Contains the new encrypted DEK and its nonce, both base64-encoded.
  */
-readonly class ReEncryptedDek
+final readonly class ReEncryptedDek
 {
     public function __construct(
         /** Base64-encoded encrypted DEK with new master key */

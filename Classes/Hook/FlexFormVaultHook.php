@@ -10,12 +10,16 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Hook;
 
 use Exception;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\Dto\FlexFormPendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Utility\IdentifierValidator;
+use Throwable;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 
 /**
  * DataHandler hook for vault secrets in FlexForm fields.
@@ -34,6 +38,7 @@ final class FlexFormVaultHook
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly VaultServiceInterface $vaultService,
         private readonly FlexFormTools $flexFormTools,
+        private readonly FlashMessageService $flashMessageService,
     ) {}
 
     /**
@@ -197,7 +202,7 @@ final class FlexFormVaultHook
 
                 // Determine vault identifier (generate new UUID if needed)
                 $isNewSecret = $existingIdentifier === '' || $originalChecksum === '';
-                $vaultIdentifier = $isNewSecret ? $this->generateUuid() : $existingIdentifier;
+                $vaultIdentifier = $isNewSecret ? IdentifierValidator::generateUuid() : $existingIdentifier;
 
                 // Store for post-processing
                 $this->pendingFlexSecrets[$table][$id][] = $isNewSecret
@@ -252,7 +257,7 @@ final class FlexFormVaultHook
                 // Update existing
                 $this->vaultService->rotate($pending->identifier, $pending->value, 'FlexForm field updated');
             }
-        } catch (VaultException $e) {
+        } catch (Throwable $e) {
             /** @phpstan-ignore method.internal */
             $dataHandler->log(
                 $table,
@@ -262,32 +267,37 @@ final class FlexFormVaultHook
                 1,
                 'Vault error for FlexForm field "' . $pending->fieldPath . '": ' . $e->getMessage(),
             );
+
+            $this->addFlashMessage(
+                \sprintf(
+                    'Vault storage failed for FlexForm field "%s" on %s:%d: %s',
+                    $pending->fieldPath,
+                    $table,
+                    $uid,
+                    $e->getMessage(),
+                ),
+                'Vault Error',
+                ContextualFeedbackSeverity::ERROR,
+            );
         }
     }
 
     /**
-     * Generate a UUID v7 for vault identifiers.
-     *
-     * UUID v7 contains a 48-bit Unix timestamp (milliseconds) followed by random data.
-     * This provides time-ordered IDs with better database index performance.
+     * Add a flash message visible to the backend user.
      */
-    private function generateUuid(): string
-    {
-        // 48-bit timestamp in milliseconds
-        $time = (int) (microtime(true) * 1000);
-
-        // 10 random bytes for the remaining fields
-        $random = random_bytes(10);
-
-        return \sprintf(
-            '%08x-%04x-7%03x-%04x-%012x',
-            ($time >> 16) & 0xFFFFFFFF,
-            $time & 0xFFFF,
-            \ord($random[0]) << 4 | \ord($random[1]) >> 4 & 0x0FFF,
-            (\ord($random[1]) & 0x0F) << 8 | \ord($random[2]) & 0x3FFF | 0x8000,
-            (\ord($random[3]) << 40) | (\ord($random[4]) << 32) | (\ord($random[5]) << 24)
-                | (\ord($random[6]) << 16) | (\ord($random[7]) << 8) | \ord($random[8]),
-        );
+    private function addFlashMessage(
+        string $message,
+        string $title,
+        ContextualFeedbackSeverity $severity,
+    ): void {
+        try {
+            $flashMessage = new FlashMessage($message, $title, $severity, true);
+            $this->flashMessageService
+                ->getMessageQueueByIdentifier()
+                ->addMessage($flashMessage);
+        } catch (Exception) {
+            // Flash message service may not be available in all contexts (e.g., CLI)
+        }
     }
 
     /**
