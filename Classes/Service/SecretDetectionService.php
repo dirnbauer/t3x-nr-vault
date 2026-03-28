@@ -13,16 +13,16 @@ use Doctrine\DBAL\Exception as DbalException;
 use Doctrine\DBAL\Types\BlobType;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\TextType;
-use Exception;
 use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
 use Netresearch\NrVault\Service\Detection\SecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
+use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Package\PackageManager;
-use TYPO3\CMS\Core\SingletonInterface;
-
 /**
  * Service for detecting potential plaintext secrets in the TYPO3 installation.
  *
@@ -30,7 +30,7 @@ use TYPO3\CMS\Core\SingletonInterface;
  * for values that appear to be unencrypted secrets based on naming patterns
  * and known API key formats.
  */
-final class SecretDetectionService implements SecretDetectionServiceInterface, SingletonInterface
+final class SecretDetectionService implements SecretDetectionServiceInterface
 {
     /**
      * Table.column combinations that should be excluded (contain hashes, not secrets).
@@ -119,6 +119,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         private readonly ConnectionPool $connectionPool,
         private readonly PackageManager $packageManager,
         private readonly ExtensionConfiguration $extensionConfiguration,
+        private readonly LoggerInterface $logger,
     ) {}
 
     /**
@@ -171,8 +172,10 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
 
                 $this->scanTable($tableName);
             }
-        } catch (DbalException) {
-            // Silently fail if database is not accessible
+        } catch (DbalException $e) {
+            $this->logger->warning('Secret detection: database scan failed', [
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -191,7 +194,7 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $configArray = $config;
                     $this->scanConfigArray($configArray, "extension:{$extKey}");
                 }
-            } catch (Exception) {
+            } catch (ExtensionConfigurationExtensionNotConfiguredException | ExtensionConfigurationPathDoesNotExistException) {
                 // Extension has no configuration - skip
             }
         }
@@ -300,8 +303,11 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $this->analyzeTableColumn($tableName, $columnName);
                 }
             }
-        } catch (DbalException) {
-            // Silently skip tables that cannot be analyzed
+        } catch (DbalException $e) {
+            $this->logger->warning('Secret detection: failed to scan table', [
+                'table' => $tableName,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -377,8 +383,12 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
                     $this->detectedSecrets[$finding->getKey()] = $finding;
                 }
             }
-        } catch (DbalException) {
-            // Silently skip columns that cannot be analyzed
+        } catch (DbalException $e) {
+            $this->logger->warning('Secret detection: failed to analyze column', [
+                'table' => $tableName,
+                'column' => $columnName,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -505,12 +515,12 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
         }
 
         // Check for base64-encoded encrypted data (typically > 50 chars, high entropy)
-        if (\strlen($value) > 50 && preg_match('/^[A-Za-z0-9+\/=]+$/', $value)) {
+        if (\strlen($value) > 80 && preg_match('/^[A-Za-z0-9+\/]{40,}={0,2}$/', $value)) {
             return true;
         }
 
-        // Check for hex-encoded data
-        return \strlen($value) > 50 && preg_match('/^[0-9a-f]+$/i', $value);
+        // Check for hex-encoded data (require longer length to reduce false positives)
+        return \strlen($value) > 80 && preg_match('/^[0-9a-f]+$/i', $value);
     }
 
     /**
@@ -518,8 +528,9 @@ final class SecretDetectionService implements SecretDetectionServiceInterface, S
      */
     private function detectValuePattern(string $value): ?string
     {
+        $trimmed = trim($value);
         foreach (self::VALUE_PATTERNS as $name => $pattern) {
-            if (preg_match($pattern, $value)) {
+            if (preg_match($pattern, $trimmed)) {
                 return $name;
             }
         }

@@ -19,6 +19,8 @@ return [
     // Reveal a secret value (for FormEngine and list view)
     'vault_reveal' => [
         'path' => '/vault/reveal',
+        'methods' => ['POST'],
+        'access' => 'admin',
         'target' => AjaxController::class . '::revealAction',
     ],
 
@@ -26,6 +28,7 @@ return [
     'vault_rotate' => [
         'path' => '/vault/rotate',
         'methods' => ['POST'],
+        'access' => 'admin',
         'target' => AjaxController::class . '::rotateAction',
     ],
 ];

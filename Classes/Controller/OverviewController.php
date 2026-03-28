@@ -210,6 +210,7 @@ final readonly class OverviewController
                         $result['hasIssues'] = true;
                     } else {
                         $result['encryptionWorking'] = true;
+                        sodium_memzero($key);
                     }
                 } catch (Exception $e) {
                     $result['encryptionError'] = $e->getMessage();

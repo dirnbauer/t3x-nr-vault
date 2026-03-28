@@ -311,7 +311,7 @@ final readonly class SecretsController
             $this->auditLogService->log($identifier, 'update', false, 'Secret not found');
             if ($isAjax) {
                 /** @phpstan-ignore new.internalClass, method.internalClass */
-                return new JsonResponse(['success' => false, 'error' => 'Secret not found: ' . $identifier], 404);
+                return new JsonResponse(['success' => false, 'error' => 'Secret not found'], 404);
             }
             $this->addFlashMessage(
                 \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.notFound'), $identifier),
@@ -321,7 +321,7 @@ final readonly class SecretsController
             $this->auditLogService->log($identifier, 'update', false, $e->getMessage());
             if ($isAjax) {
                 /** @phpstan-ignore new.internalClass, method.internalClass */
-                return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+                return new JsonResponse(['success' => false, 'error' => 'An internal error occurred'], 500);
             }
             $this->addFlashMessage(
                 \sprintf($lang->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.error'), $e->getMessage()),

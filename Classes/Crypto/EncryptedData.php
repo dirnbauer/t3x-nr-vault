@@ -18,7 +18,7 @@ namespace Netresearch\NrVault\Crypto;
  * Contains the encrypted value, encrypted DEK, nonces, and checksum.
  * All values are base64-encoded for safe storage/transport.
  */
-readonly class EncryptedData
+final readonly class EncryptedData
 {
     public function __construct(
         /** Base64-encoded ciphertext */

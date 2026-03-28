@@ -17,7 +17,7 @@ namespace Netresearch\NrVault\Audit;
  *
  * Used to validate audit log integrity by checking the hash chain.
  */
-readonly class HashChainVerificationResult
+final readonly class HashChainVerificationResult
 {
     /**
      * @param bool $valid Whether the hash chain is valid

@@ -40,9 +40,9 @@ final class OrphanCleanupTask extends AbstractTask
     protected string $tableFilter = '';
 
     public function __construct(
-        private readonly ConnectionPool $connectionPool,
-        private readonly ?VaultServiceInterface $vaultService = null,
-        private readonly ?LogManager $logManager = null,
+        private ?ConnectionPool $connectionPool = null,
+        private ?VaultServiceInterface $vaultService = null,
+        private ?LogManager $logManager = null,
     ) {
         parent::__construct();
     }
@@ -105,23 +105,20 @@ final class OrphanCleanupTask extends AbstractTask
                 continue;
             }
 
+            // Extract reference from metadata (table, field, uid are stored by DataHandlerHook)
+            $reference = $this->parseMetadataReference($metadata);
+            if (!$reference instanceof OrphanReference) {
+                continue;
+            }
+
             // Apply table filter if specified
-            if ($this->tableFilter !== '') {
-                $table = $metadata['table'] ?? '';
-                if ($table !== $this->tableFilter) {
-                    continue;
-                }
+            if ($this->tableFilter !== '' && $reference->table !== $this->tableFilter) {
+                continue;
             }
 
             $checked++;
             $identifier = $secret->identifier;
             $createdAt = $secret->createdAt;
-
-            // Parse identifier
-            $reference = $this->parseIdentifier($identifier);
-            if (!$reference instanceof OrphanReference) {
-                continue;
-            }
 
             // Check if record still exists
             // Only include if older than retention period
@@ -168,23 +165,32 @@ final class OrphanCleanupTask extends AbstractTask
         return implode(', ', $info);
     }
 
-    private function parseIdentifier(string $identifier): ?OrphanReference
+    /**
+     * Extract orphan reference from secret metadata.
+     *
+     * TCA-sourced secrets store their origin in metadata (table, field, uid)
+     * rather than encoding it in the identifier (which is a UUID).
+     *
+     * @param array<string, mixed> $metadata Secret metadata
+     */
+    private function parseMetadataReference(array $metadata): ?OrphanReference
     {
-        $parts = explode('__', $identifier);
-        if (\count($parts) !== 3) {
+        $table = $metadata['table'] ?? '';
+        $field = $metadata['field'] ?? $metadata['flexField'] ?? '';
+        $uid = $metadata['uid'] ?? null;
+
+        if (!\is_string($table) || $table === '') {
             return null;
         }
 
-        [$table, $field, $uidStr] = $parts;
-
-        if (!is_numeric($uidStr)) {
+        if (!is_numeric($uid) || (int) $uid <= 0) {
             return null;
         }
 
         return new OrphanReference(
             table: $table,
-            field: $field,
-            uid: (int) $uidStr,
+            field: \is_string($field) ? $field : '',
+            uid: (int) $uid,
         );
     }
 
@@ -217,7 +223,7 @@ final class OrphanCleanupTask extends AbstractTask
 
     private function getConnectionPool(): ConnectionPool
     {
-        return $this->connectionPool;
+        return $this->connectionPool ?? GeneralUtility::makeInstance(ConnectionPool::class);
     }
 
     private function getLogger(): LoggerInterface

@@ -427,6 +427,8 @@ final class Secret
 
     /**
      * Create from database row.
+     *
+     * @param array<string, mixed> $row
      */
     public static function fromDatabaseRow(array $row): self
     {
@@ -474,6 +476,8 @@ final class Secret
 
     /**
      * Convert to database row.
+     *
+     * @return array<string, mixed>
      */
     public function toDatabaseRow(): array
     {

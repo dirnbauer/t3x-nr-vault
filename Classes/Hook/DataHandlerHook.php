@@ -10,8 +10,8 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Hook;
 
 use Exception;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\Dto\PendingSecret;
+use Throwable;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
@@ -40,6 +40,9 @@ final class DataHandlerHook
      * @var array<string, array<string|int, array<string, PendingSecret>>>
      */
     private array $pendingSecrets = [];
+
+    /** @var array<string, list<string>> Per-table cache of vault field names */
+    private array $vaultFieldCache = [];
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -150,7 +153,7 @@ final class DataHandlerHook
                     // Update existing - use rotate to maintain audit trail
                     $this->vaultService->rotate($vaultIdentifier, $secretValue, 'TCA field updated');
                 }
-            } catch (VaultException $e) {
+            } catch (Throwable $e) {
                 // Roll back the dangling UUID - clear the field so no orphan reference remains
                 $this->rollBackField($table, $uid, $fieldName, $isNew ? '' : ($pending->originalChecksum !== '' ? $vaultIdentifier : ''));
 
@@ -229,7 +232,7 @@ final class DataHandlerHook
 
             try {
                 $this->vaultService->delete($vaultIdentifier, 'Record deleted');
-            } catch (VaultException $e) {
+            } catch (Throwable $e) {
                 /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
@@ -317,7 +320,7 @@ final class DataHandlerHook
 
                 // Track update for the copied record
                 $updates[$fieldName] = $newIdentifier;
-            } catch (VaultException $e) {
+            } catch (Throwable $e) {
                 /** @phpstan-ignore method.internal */
                 $dataHandler->log(
                     $table,
@@ -383,7 +386,12 @@ final class DataHandlerHook
      */
     private function getVaultFieldNames(string $table): array
     {
+        if (isset($this->vaultFieldCache[$table])) {
+            return $this->vaultFieldCache[$table];
+        }
+
         if (!$this->tcaSchemaFactory->has($table)) {
+            $this->vaultFieldCache[$table] = [];
             return [];
         }
 
@@ -397,6 +405,8 @@ final class DataHandlerHook
                 $vaultFields[] = $field->getName();
             }
         }
+
+        $this->vaultFieldCache[$table] = $vaultFields;
 
         return $vaultFields;
     }

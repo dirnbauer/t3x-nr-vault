@@ -137,6 +137,10 @@ services:
   Netresearch\NrVault\Service\SecretDetectionService:
     public: true
 
+  Netresearch\NrVault\Service\SecretDetectionServiceInterface:
+    alias: Netresearch\NrVault\Service\SecretDetectionService
+    public: true
+
   # Site configuration vault processor
   Netresearch\NrVault\Configuration\SiteConfigurationVaultProcessor:
     public: true

@@ -43,44 +43,55 @@ final readonly class AuditLogService implements AuditLogServiceInterface
     ): void {
         $connection = $this->getConnection();
 
-        // Get previous hash for chain
-        $previousHash = $this->getLatestHash() ?? '';
+        // Use a transaction to serialize hash chain writes and prevent race conditions
+        $connection->beginTransaction();
 
-        // Build entry data
-        $data = [
-            'pid' => 0,
-            'secret_identifier' => $secretIdentifier,
-            'action' => $action,
-            'success' => $success ? 1 : 0,
-            'error_message' => $errorMessage ?? '',
-            'reason' => $reason ?? '',
-            'actor_uid' => $this->accessControlService->getCurrentActorUid(),
-            'actor_type' => $this->accessControlService->getCurrentActorType(),
-            'actor_username' => $this->accessControlService->getCurrentActorUsername(),
-            'actor_role' => $this->getCurrentUserRole(),
-            'ip_address' => $this->getClientIp(),
-            'user_agent' => $this->getUserAgent(),
-            'request_id' => $this->getRequestId(),
-            'previous_hash' => $previousHash,
-            'hash_before' => $hashBefore ?? '',
-            'hash_after' => $hashAfter ?? '',
-            'crdate' => time(),
-            'context' => $context instanceof AuditContextInterface ? json_encode($context->toArray()) : '{}',
-        ];
+        try {
+            // Get previous hash for chain (within transaction for consistency)
+            $previousHash = $this->getLatestHash() ?? '';
 
-        // Insert to get UID
-        $connection->insert(self::TABLE_NAME, $data);
-        $uid = (int) $connection->lastInsertId();
+            // Build entry data
+            $data = [
+                'pid' => 0,
+                'secret_identifier' => $secretIdentifier,
+                'action' => $action,
+                'success' => $success ? 1 : 0,
+                'error_message' => $errorMessage ?? '',
+                'reason' => $reason ?? '',
+                'actor_uid' => $this->accessControlService->getCurrentActorUid(),
+                'actor_type' => $this->accessControlService->getCurrentActorType(),
+                'actor_username' => $this->accessControlService->getCurrentActorUsername(),
+                'actor_role' => $this->getCurrentUserRole(),
+                'ip_address' => $this->getClientIp(),
+                'user_agent' => $this->getUserAgent(),
+                'request_id' => $this->getRequestId(),
+                'previous_hash' => $previousHash,
+                'hash_before' => $hashBefore ?? '',
+                'hash_after' => $hashAfter ?? '',
+                'crdate' => time(),
+                'context' => $context instanceof AuditContextInterface ? json_encode($context->toArray()) : '{}',
+            ];
 
-        // Calculate entry hash
-        $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash);
+            // Reserve UID first via INSERT, then calculate hash and UPDATE
+            $connection->insert(self::TABLE_NAME, $data);
+            $uid = (int) $connection->lastInsertId();
 
-        // Update with hash
-        $connection->update(
-            self::TABLE_NAME,
-            ['entry_hash' => $entryHash],
-            ['uid' => $uid],
-        );
+            // Calculate entry hash with the known UID
+            $entryHash = $this->calculateEntryHash($uid, $secretIdentifier, $action, $data['actor_uid'], $data['crdate'], $previousHash);
+
+            // Set the hash
+            $connection->update(
+                self::TABLE_NAME,
+                ['entry_hash' => $entryHash],
+                ['uid' => $uid],
+            );
+
+            $connection->commit();
+        } catch (\Throwable $e) {
+            $connection->rollBack();
+
+            throw $e;
+        }
     }
 
     public function query(?AuditLogFilter $filter = null, int $limit = 100, int $offset = 0): array

@@ -295,22 +295,7 @@ final readonly class MigrationController
             $column = \is_string($columnVal) ? $columnVal : '';
             $identifierPatternVal = $migration['identifierPattern'] ?? '';
             $identifierPattern = \is_string($identifierPatternVal) ? $identifierPatternVal : '';
-            if ($table === '') {
-                continue;
-            }
-            if ($table === '0') {
-                continue;
-            }
-            if ($column === '') {
-                continue;
-            }
-            if ($column === '0') {
-                continue;
-            }
-            if ($identifierPattern === '') {
-                continue;
-            }
-            if ($identifierPattern === '0') {
+            if ($table === '' || $column === '' || $identifierPattern === '') {
                 continue;
             }
 
@@ -414,6 +399,30 @@ final readonly class MigrationController
         $migrated = 0;
         $failed = 0;
         $skipped = 0;
+
+        // Validate table and column names against database schema to prevent SQL injection
+        try {
+            $schemaManager = $this->connectionPool
+                ->getConnectionByName(ConnectionPool::DEFAULT_CONNECTION_NAME)
+                ->createSchemaManager();
+            $tableNames = array_map(
+                static fn($t): string => $t->getName(),
+                $schemaManager->listTables(),
+            );
+            if (!in_array($table, $tableNames, true)) {
+                return MigrationResult::error($table, $column, 'Invalid table name');
+            }
+
+            $columns = array_map(
+                static fn($col): string => $col->getName(),
+                $schemaManager->listTableColumns($table),
+            );
+            if (!in_array($column, $columns, true)) {
+                return MigrationResult::error($table, $column, 'Invalid column name');
+            }
+        } catch (DbalException $e) {
+            return MigrationResult::error($table, $column, 'Schema validation failed');
+        }
 
         try {
             $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);

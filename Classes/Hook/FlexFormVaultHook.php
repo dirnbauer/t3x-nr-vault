@@ -10,12 +10,15 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Hook;
 
 use Exception;
-use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\Dto\FlexFormPendingSecret;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Throwable;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 
 /**
  * DataHandler hook for vault secrets in FlexForm fields.
@@ -34,6 +37,7 @@ final class FlexFormVaultHook
         private readonly TcaSchemaFactory $tcaSchemaFactory,
         private readonly VaultServiceInterface $vaultService,
         private readonly FlexFormTools $flexFormTools,
+        private readonly FlashMessageService $flashMessageService,
     ) {}
 
     /**
@@ -252,7 +256,7 @@ final class FlexFormVaultHook
                 // Update existing
                 $this->vaultService->rotate($pending->identifier, $pending->value, 'FlexForm field updated');
             }
-        } catch (VaultException $e) {
+        } catch (Throwable $e) {
             /** @phpstan-ignore method.internal */
             $dataHandler->log(
                 $table,
@@ -262,6 +266,36 @@ final class FlexFormVaultHook
                 1,
                 'Vault error for FlexForm field "' . $pending->fieldPath . '": ' . $e->getMessage(),
             );
+
+            $this->addFlashMessage(
+                \sprintf(
+                    'Vault storage failed for FlexForm field "%s" on %s:%d: %s',
+                    $pending->fieldPath,
+                    $table,
+                    $uid,
+                    $e->getMessage(),
+                ),
+                'Vault Error',
+                ContextualFeedbackSeverity::ERROR,
+            );
+        }
+    }
+
+    /**
+     * Add a flash message visible to the backend user.
+     */
+    private function addFlashMessage(
+        string $message,
+        string $title,
+        ContextualFeedbackSeverity $severity,
+    ): void {
+        try {
+            $flashMessage = new FlashMessage($message, $title, $severity, true);
+            $this->flashMessageService
+                ->getMessageQueueByIdentifier()
+                ->addMessage($flashMessage);
+        } catch (Exception) {
+            // Flash message service may not be available in all contexts (e.g., CLI)
         }
     }
 
