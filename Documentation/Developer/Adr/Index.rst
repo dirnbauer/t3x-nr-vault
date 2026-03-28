@@ -33,7 +33,7 @@ ADR      Title                                       Status
 006      :ref:`adr-006-audit-logging`                Accepted
 007      :ref:`adr-007-secret-metadata`              Accepted
 008      :ref:`adr-008-http-client`                  Accepted
-009      :ref:`adr-009`                              Accepted
+009      :ref:`adr-009-extension-configuration-secrets`                              Accepted
 010      :ref:`adr-010-secure-outbound`              Accepted
 011      :ref:`adr-011-credential-sets`              Accepted
 012      :ref:`adr-012-secure-http-transports`       Accepted

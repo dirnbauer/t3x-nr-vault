@@ -95,7 +95,7 @@ Implement :php:`VaultAdapterInterface` to add new storage backends:
            // Check if secret exists
        }
 
-       public function list(array $filters = []): array
+       public function list(?\Netresearch\NrVault\Domain\Dto\SecretFilters $filters = null): array
        {
            // List secret identifiers
        }
@@ -108,6 +108,11 @@ Implement :php:`VaultAdapterInterface` to add new storage backends:
        public function updateMetadata(string $identifier, array $metadata): void
        {
            // Update metadata
+       }
+
+       public function incrementReadCount(int $uid): void
+       {
+           // Increment read counter atomically
        }
    }
 

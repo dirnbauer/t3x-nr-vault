@@ -1,6 +1,6 @@
 .. include:: /Includes.rst.txt
 
-.. _adr-009:
+.. _adr-009-extension-configuration-secrets:
 
 ==========================================
 ADR-009: Extension configuration secrets

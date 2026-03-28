@@ -3,6 +3,7 @@
 ####################
 
 # cat=Storage; type=options[local,hashicorp,aws]; label=Storage Adapter: Backend storage for encrypted secrets (local = database, hashicorp = HashiCorp Vault, aws = AWS Secrets Manager)
+# NOTE: Only 'local' is currently implemented. 'hashicorp' and 'aws' are planned for a future release.
 storageAdapter = local
 
 #################
@@ -45,6 +46,7 @@ cacheEnabled = 1
 ########################
 ### HASHICORP VAULT ###
 ########################
+# NOTE: HashiCorp Vault adapter is planned but not yet implemented. These settings are reserved for future use.
 
 # cat=HashiCorp Vault; type=string; label=Vault Address: HashiCorp Vault server address (e.g., https://vault.example.com:8200)
 hashicorp.address =
@@ -61,6 +63,7 @@ hashicorp.token =
 ################################
 ### AWS SECRETS MANAGER ###
 ################################
+# NOTE: AWS Secrets Manager adapter is planned but not yet implemented. These settings are reserved for future use.
 
 # cat=AWS Secrets Manager; type=string; label=AWS Region: AWS region for Secrets Manager (e.g., eu-central-1)
 aws.region =

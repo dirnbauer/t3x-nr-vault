@@ -58,7 +58,7 @@ Store a vault reference in extension settings, resolve at runtime.
 The admin enters a vault reference like ``vault:deepl_api_key`` (not the actual key).
 
 The ``vault:`` prefix makes it clear this is a vault reference and enables
-validation. See :ref:`adr-009` for the design rationale.
+validation. See :ref:`adr-009-extension-configuration-secrets` for the design rationale.
 
 **Service implementation:**
 
