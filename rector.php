@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\SetList;
+use Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRector;
 use Rector\ValueObject\PhpVersion;
 use Ssch\TYPO3Rector\Set\Typo3LevelSetList;
 use Ssch\TYPO3Rector\Set\Typo3SetList;
@@ -41,5 +42,10 @@ return RectorConfig::configure()
         __DIR__ . '/Classes/Task/OrphanCleanupTask.php',
         // Factory is called via GeneralUtility::makeInstance without constructor args
         __DIR__ . '/Classes/Http/SecureHttpClientFactory.php',
+        // TER cannot parse ext_emconf.php with declare(strict_types=1); the repo
+        // lint check (.github/workflows) forbids it, so Rector must defer here.
+        SafeDeclareStrictTypesRector::class => [
+            __DIR__ . '/ext_emconf.php',
+        ],
     ])
     ->withImportNames(removeUnusedImports: true);
