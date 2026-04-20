@@ -98,7 +98,9 @@ class SecretsList {
             const result = await response.json();
 
             if (result.success) {
-                // Update UI
+                // Restore original children BEFORE updateButtonState so it can
+                // find the .icon <span> and flip the SVG <use href="..."> href.
+                button.replaceChildren(...originalChildren);
                 this.updateRowState(row, result.hidden);
                 this.updateButtonState(button, result.hidden);
                 Notification.success('Success', result.message, 3);
@@ -109,7 +111,7 @@ class SecretsList {
             Notification.error('Error', error.message || 'An error occurred', 5);
         } finally {
             button.disabled = false;
-            // Restore original children if updateButtonState didn't replace them
+            // Restore original children on any non-success path (error/thrown).
             if (!button.querySelector('.icon')) {
                 button.replaceChildren(...originalChildren);
             }
@@ -458,8 +460,12 @@ class SecretsList {
         btn.className = 'btn btn-default';
         btn.id = id;
         btn.title = title;
+        // aria-label: screen readers don't consistently expose `title` as the
+        // accessible name for icon-only buttons.
+        btn.setAttribute('aria-label', title);
         const icon = document.createElement('span');
         icon.className = `icon icon-size-small icon-state-default ${iconClass}`;
+        icon.setAttribute('aria-hidden', 'true');
         btn.append(icon);
         return btn;
     }

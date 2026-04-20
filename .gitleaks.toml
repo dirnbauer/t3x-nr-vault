@@ -11,9 +11,6 @@ paths = [
     '''\.php-cs-fixer\.cache''',
     '''\.ddev/docker-compose\..*\.yaml''',
 ]
-regexes = [
-    # Synthetic tokens used by SecretDetectionService tests (clearly marked FAKE).
-    '''(ghp|gho|ghs|ghu|ghr)_FAKE[0-9A-Za-z]{30,}''',
-    '''AKIAEXAMPLEFAKEKEY[0-9A-Za-z]+''',
-    '''AIzaFAKEEXAMPLEKEY[0-9A-Za-z]+''',
-]
+# NOTE: regex allowlists are intentionally omitted. The synthetic FAKE tokens
+# live only in SecretDetectionServiceTest.php, which is already path-allowlisted
+# above. A repo-wide regex would mask a real leak of the same shape elsewhere.
