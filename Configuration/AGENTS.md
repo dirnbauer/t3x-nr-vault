@@ -1,58 +1,84 @@
-# AGENTS.md - Configuration
+<!-- Managed by agent: keep sections and order; edit content, not structure -->
+<!-- Last updated: 2026-04-20 | Last verified: 2026-04-20 -->
 
-> TYPO3 configuration guidelines for nr-vault.
+# AGENTS.md — Configuration
 
-## Structure
+## Overview
+TYPO3 configuration for nr-vault: TCA, DI (`Services.yaml`), backend modules, AJAX routes, icons, JS modules, site sets.
 
-```
-Configuration/
-├── Backend/
-│   └── Modules.php       # Backend module registration
-├── Sets/
-│   └── NrVault/          # Site set configuration
-├── TCA/
-│   ├── tx_nrvault_secret.php  # Secret table TCA
-│   └── Overrides/             # TCA overrides for core tables
-├── Icons.php             # Icon registration
-├── JavaScriptModules.php # ES6 module registration
-└── Services.yaml         # Dependency injection
-```
+## Key Files
+| File | Purpose |
+|------|---------|
+| `Configuration/Services.yaml` | DI definitions (services, factories, public aliases) |
+| `Configuration/Backend/Modules.php` | Backend module + submodule registration |
+| `Configuration/Backend/AjaxRoutes.php` | AJAX endpoints (reveal, verify-chain, etc.) |
+| `Configuration/Icons.php` | Icon registry (SVG, bitmap) |
+| `Configuration/JavaScriptModules.php` | ES module (`@netresearch/nr-vault/...`) registration |
+| `Configuration/TCA/tx_nrvault_secret.php` | Secret table TCA |
+| `Configuration/TCA/Overrides/*.php` | TCA overrides for core tables |
+| `Configuration/Sets/NrVault/config.yaml` | Site set metadata |
+| `Configuration/Sets/NrVault/settings.yaml` | Default settings |
 
-## Services.yaml Patterns
+## Golden Samples
+| Pattern | Reference |
+|---------|-----------|
+| Interface alias | See `Services.yaml` — `VaultServiceInterface → VaultService` |
+| Factory-provided service | `MasterKeyProviderInterface` factory entry |
+| CLI command registration | `Classes/Command/*` + `console.command` tag in `Services.yaml` |
+| Backend module route | `Configuration/Backend/Modules.php` |
+| AJAX route | `Configuration/Backend/AjaxRoutes.php` |
 
-### Interface Aliasing
+## Setup
+No separate setup — configuration is loaded by TYPO3 at bootstrap. After editing:
+- Flush caches: `ddev exec vendor/bin/typo3 cache:flush`
+- Reload DI container via backend Install Tool or `cache:flush`
+
+## Build/Tests
+| Task | Command |
+|------|---------|
+| Validate YAML | `make lint` covers PHP only — use `ddev exec yq eval Configuration/Services.yaml` |
+| Validate DI wiring | `make test-functional` — DI container boots during kernel setup |
+| PHPStan on TCA/config | `make phpstan` |
+| TCA schema check | `ddev exec vendor/bin/typo3 extension:setup` rebuilds schema |
+
+## Code Style
+- **Services.yaml**: two-space indent; leading underscore for defaults (`_defaults:`); explicit `public: true` only where needed (controllers, commands, listeners).
+- **TCA**: return a single array literal; no side effects; use `LLL:EXT:nr_vault/Resources/Private/Language/locallang_db.xlf:…` for labels.
+- **Backend modules**: short label format `nr_vault.modules.<name>`; POST-only routes declare `methods: ['POST']`.
+- **AJAX routes**: name them `vault_<action>`; controller returns `JsonResponse`.
+- **Do not** use `$GLOBALS['TYPO3_CONF_VARS']` edits inside `Configuration/` — keep them in `ext_localconf.php`.
+
+## Security
+- **No secrets in YAML/PHP config** — master-key material comes from providers (env/file/TYPO3 encryptionKey).
+- **AJAX routes** require backend user context (`'access' => 'admin'` on modules).
+- **TCA**: every column exposing vault data must set `'displayCond'` or guard access via hooks — secrets must not render unredacted in list views.
+- **DI boundary**: avoid making internal classes `public: true`; only controllers, CLI commands, event listeners, and interfaces consumed via DI need it.
+
+## Checklist
+- [ ] `Services.yaml` validates via functional test bootstrap
+- [ ] New service has interface + alias in `Services.yaml`
+- [ ] New CLI command tagged `console.command`
+- [ ] New backend module route paired with controller + template + XLIFF label
+- [ ] New TCA column: matching `ext_tables.sql` + `locallang_db.xlf` entry
+- [ ] `make phpstan` clean
+- [ ] AJAX route registered with appropriate HTTP method
+
+## Examples
+### Interface alias
 ```yaml
 Netresearch\NrVault\Service\VaultServiceInterface:
   alias: Netresearch\NrVault\Service\VaultService
   public: true
 ```
 
-### Factory Pattern
+### Factory-provided service
 ```yaml
 Netresearch\NrVault\Crypto\MasterKeyProviderInterface:
   factory: ['@Netresearch\NrVault\Crypto\MasterKeyProviderFactory', 'create']
   public: true
 ```
 
-### Controller Registration
-```yaml
-Netresearch\NrVault\Controller\SecretsController:
-  public: true
-  tags:
-    - name: backend.controller
-```
-
-### CLI Command Registration
-```yaml
-Netresearch\NrVault\Command\VaultStoreCommand:
-  tags:
-    - name: console.command
-```
-
-## Backend Module Configuration
-
-TYPO3 v14 uses PHP arrays for module registration:
-
+### Backend module route
 ```php
 // Configuration/Backend/Modules.php
 return [
@@ -60,85 +86,28 @@ return [
         'parent' => 'admin',
         'access' => 'admin',
         'path' => '/module/admin/vault',
-        'labels' => 'nr_vault.modules.overview',  // Short format
+        'labels' => 'nr_vault.modules.overview',
         'routes' => [
-            '_default' => [
-                'target' => Controller::class . '::action',
-            ],
+            '_default' => ['target' => Controller::class . '::handleRequest'],
         ],
     ],
 ];
 ```
 
-Key patterns:
-- Use short label format: `ext_key.modules.name`
-- Labels map to `Resources/Private/Language/Modules/{name}.xlf`
-- Submodules use `parent` to nest under parent module
-- POST routes require `'methods' => ['POST']`
-
-## TCA Configuration
-
-### Custom Table
+### AJAX route
 ```php
-// Configuration/TCA/tx_nrvault_secret.php
+// Configuration/Backend/AjaxRoutes.php
 return [
-    'ctrl' => [
-        'title' => 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_db.xlf:tx_nrvault_secret',
-        'label' => 'identifier',
-        'security' => [
-            'ignorePageTypeRestriction' => true,
-        ],
-    ],
-    'columns' => [ ... ],
-    'types' => [ ... ],
-];
-```
-
-### TCA Overrides
-```php
-// Configuration/TCA/Overrides/tt_content.php
-$GLOBALS['TCA']['tt_content']['columns']['my_field'] = [ ... ];
-```
-
-## Icon Registration
-
-```php
-// Configuration/Icons.php
-return [
-    'module-vault' => [
-        'provider' => SvgIconProvider::class,
-        'source' => 'EXT:nr_vault/Resources/Public/Icons/module-vault.svg',
+    'vault_reveal' => [
+        'path' => '/vault/reveal',
+        'target' => AjaxController::class . '::revealAction',
+        'methods' => ['POST'],
     ],
 ];
 ```
 
-## Site Sets
-
-Site sets provide configurable settings:
-
-```
-Configuration/Sets/NrVault/
-├── config.yaml     # Set metadata
-└── settings.yaml   # Default settings
-```
-
-## Common Tasks
-
-### Add New Backend Module Route
-1. Add route to `Configuration/Backend/Modules.php`
-2. Add controller action in `Classes/Controller/`
-3. Add template in `Resources/Private/Templates/`
-
-### Add New TCA Field
-1. Add column definition in TCA file
-2. Add to `showitem` in types
-3. Add label in `locallang_db.xlf`
-
-### Register New Service
-1. Create interface in `Classes/`
-2. Create implementation in `Classes/`
-3. Add alias in `Configuration/Services.yaml`
-
----
-
-*[n] Netresearch DTT GmbH*
+## When Stuck
+- TYPO3 DI docs: <https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/ApiOverview/DependencyInjection/>
+- TCA reference: <https://docs.typo3.org/m/typo3/reference-tca/main/en-us/>
+- Backend module howto: <https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/ApiOverview/BackendRouting/BackendModules/>
+- Invoke skill: `typo3-typoscript-ref` for TypoScript-adjacent patterns

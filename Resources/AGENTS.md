@@ -1,161 +1,122 @@
-# AGENTS.md - Resources
+<!-- Managed by agent: keep sections and order; edit content, not structure -->
+<!-- Last updated: 2026-04-20 | Last verified: 2026-04-20 -->
 
-> Frontend resources guidelines for nr-vault.
+# AGENTS.md — Resources
 
-## Structure
+## Overview
+Fluid templates, backend JS/CSS, and XLIFF translation files for the nr-vault TYPO3 extension.
 
+## Key Files
+| File | Purpose |
+|------|---------|
+| `Resources/Private/Templates/Overview/Index.html` | Module landing page (status, shortcuts) |
+| `Resources/Private/Templates/Overview/Help.html` | Docheader help tab |
+| `Resources/Private/Templates/Secrets/List.html` | Secrets list + reveal/copy UI |
+| `Resources/Private/Templates/Audit/List.html` | Audit log listing |
+| `Resources/Private/Templates/Audit/VerifyChain.html` | HMAC chain verification view |
+| `Resources/Private/Templates/Migration/*.html` | Migration wizard steps |
+| `Resources/Private/Language/locallang_mod.xlf` | Main translation catalogue |
+| `Resources/Public/JavaScript/SecretReveal.js` | AJAX reveal + clipboard copy |
+| `Resources/Public/JavaScript/SecretsList.js` | List filtering/interaction |
+| `Resources/Public/JavaScript/vault-secret-input.js` | TCA field widget |
+| `Resources/Public/Css/backend.css` | Backend module styles |
+
+## Golden Samples
+| Pattern | Reference |
+|---------|-----------|
+| Fluid template with docheader | `Resources/Private/Templates/Overview/Index.html` |
+| List/detail view | `Resources/Private/Templates/Secrets/List.html` |
+| AJAX-driven JS module | `Resources/Public/JavaScript/SecretReveal.js` |
+| TCA input widget | `Resources/Public/JavaScript/vault-secret-input.js` |
+| XLIFF structure | `Resources/Private/Language/locallang_mod.xlf` |
+
+## Setup
+- Templates consumed by `Classes/Controller/*Controller.php`
+- JS loaded via `ext_localconf.php` / backend module registration
+- XLIFF keys referenced in PHP as `LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:<key>`
+
+## Build/Tests
+| Task | Command |
+|------|---------|
+| Render templates (integration) | `make test-functional` |
+| E2E through UI | See `Tests/E2E/AGENTS.md` |
+| CS for JS (none yet) | `make lint` (PHP only) |
+
+## Directory Structure
 ```
 Resources/
 ├── Private/
-│   ├── Language/
-│   │   ├── Modules/              # Module-specific labels
-│   │   │   ├── overview.xlf
-│   │   │   ├── secrets.xlf
-│   │   │   ├── audit.xlf
-│   │   │   └── migration.xlf
-│   │   ├── locallang.xlf         # General labels
-│   │   ├── locallang_mod.xlf     # Module labels (legacy)
-│   │   └── locallang_tca.xlf     # TCA field labels
-│   ├── Partials/                 # Reusable Fluid partials
-│   └── Templates/                # Fluid templates
-│       ├── Overview/
-│       ├── Secrets/
+│   ├── Language/        # XLIFF translations (locallang_mod.xlf + locales)
+│   ├── Layouts/         # Fluid layouts
+│   ├── Partials/        # Fluid partials
+│   └── Templates/
 │       ├── Audit/
-│       └── Migration/
+│       ├── Migration/
+│       ├── Overview/
+│       └── Secrets/
 └── Public/
-    ├── Icons/                    # SVG icons
-    ├── Css/                      # Stylesheets
-    └── JavaScript/               # ES6 modules
+    ├── Css/
+    ├── Icons/
+    └── JavaScript/
 ```
 
-## Language Files (XLIFF)
+## Code Style
+- **Fluid**:
+  - Prefer `{variable -> f:format.htmlspecialchars()}` where raw rendering is needed; `{variable}` is auto-escaped.
+  - Use `<f:be.pageRenderer>` for backend modules; `<f:be.container>` for docheader.
+  - Keep logic in controllers — templates stay declarative.
+- **JavaScript**:
+  - ES modules (`import`/`export`), no jQuery.
+  - Use TYPO3 backend APIs: `@typo3/backend/modal.js`, `@typo3/backend/notification.js`, `@typo3/core/ajax/ajax-request.js`.
+  - CSP-compliant: no inline handlers, no `eval`.
+- **CSS**: scope to `.module-body` / module-specific classes; no global resets.
+- **XLIFF**: one `<trans-unit id="..."><source>...</source></trans-unit>` per string; keep IDs stable.
 
-### File Naming Convention
-- `locallang.xlf` - General extension labels
-- `locallang_tca.xlf` - TCA/database field labels
-- `Modules/{name}.xlf` - Module-specific labels
+## Security
+- **Auto-escape** — never `<f:format.raw>` on user-controlled values (secrets, identifiers, audit context).
+- **CSP** — inline `<script>` forbidden; load JS via `<f:be.pageRenderer includeJsModules="...">`.
+- **No secrets in templates** — secret values arrive via AJAX at reveal time, rendered to a short-lived container, then cleared.
+- **Clipboard** — use `navigator.clipboard.writeText`; show toast then wipe local variable.
+- **AJAX** — routes declared in `Configuration/Backend/AjaxRoutes.php`; CSRF protected by `@typo3/core/ajax/ajax-request.js`.
 
-### XLIFF Format
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-    <file source-language="en" datatype="plaintext" original="messages">
-        <body>
-            <trans-unit id="title">
-                <source>Secret Management</source>
-            </trans-unit>
-            <trans-unit id="button.save">
-                <source>Save Secret</source>
-            </trans-unit>
-        </body>
-    </file>
-</xliff>
-```
+## Checklist
+- [ ] New XLIFF keys added to base `locallang_mod.xlf` and referenced from PHP/Fluid
+- [ ] Fluid output escaping verified (no `format.raw` on secret/user data)
+- [ ] JS modules use `@typo3/backend/*` imports — no direct DOM globals
+- [ ] No inline event handlers (CSP)
+- [ ] Images optimized; stored under `Resources/Public/Icons/`
+- [ ] Functional test exercising the controller → template render path
 
-### Usage in Fluid
+## Examples
 ```html
-<f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang.xlf:title" />
-```
-
-### Short Format (TYPO3 v12+)
-```php
-// In Modules.php
-'labels' => 'nr_vault.modules.secrets',
-// Maps to: EXT:nr_vault/Resources/Private/Language/Modules/secrets.xlf
-```
-
-## Fluid Templates
-
-### Controller → Template Mapping
-```
-Controller: SecretsController::listAction()
-Template:   Resources/Private/Templates/Secrets/List.html
-```
-
-### Template Structure
-```html
+<!-- Backend module layout -->
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-      xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
-      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
       data-namespace-typo3-fluid="true">
-
-<f:layout name="Module" />
-
-<f:section name="Content">
-    <!-- Template content -->
-</f:section>
-
+  <f:layout name="Module"/>
+  <f:section name="Content">
+    <h1>{f:translate(key:'title.secrets')}</h1>
+    <f:render partial="Secrets/ListTable" arguments="{secrets: secrets}"/>
+  </f:section>
 </html>
 ```
 
-### Partials
-Reusable components in `Partials/`:
-```html
-<f:render partial="SecretRow" arguments="{secret: secret}" />
+```js
+// Backend JS module entry point
+import Notification from '@typo3/backend/notification.js';
+import AjaxRequest from '@typo3/core/ajax/ajax-request.js';
+
+class SecretReveal {
+  async reveal(id) {
+    const resp = await new AjaxRequest(TYPO3.settings.ajaxUrls['vault_reveal'])
+      .post({ id });
+    const body = await resp.resolve();
+    // render then clear
+  }
+}
 ```
 
-## JavaScript (ES6 Modules)
-
-### Registration
-```php
-// Configuration/JavaScriptModules.php
-return [
-    'imports' => [
-        '@netresearch/nr-vault/' => 'EXT:nr_vault/Resources/Public/JavaScript/',
-    ],
-];
-```
-
-### Usage in Templates
-```html
-<script type="module">
-    import VaultModule from '@netresearch/nr-vault/vault-module.js';
-</script>
-```
-
-## Icons
-
-### SVG Requirements
-- Viewbox: `0 0 16 16` or `0 0 24 24`
-- Single color (uses `currentColor`)
-- No embedded styles
-
-### Registration
-```php
-// Configuration/Icons.php
-return [
-    'vault-secret' => [
-        'provider' => SvgIconProvider::class,
-        'source' => 'EXT:nr_vault/Resources/Public/Icons/secret.svg',
-    ],
-];
-```
-
-## CSS
-
-### TYPO3 Backend Styles
-Follow TYPO3 backend styling patterns:
-- Use CSS custom properties where possible
-- Prefix custom classes with `vault-`
-- Use TYPO3 utility classes when available
-
-## Common Tasks
-
-### Add New Translation
-1. Add `<trans-unit>` to appropriate `.xlf` file
-2. Use `<f:translate>` in template
-3. Test in both frontend and backend contexts
-
-### Add New Template
-1. Create `.html` file matching controller action
-2. Use `<f:layout name="Module" />` for backend
-3. Define `<f:section name="Content">`
-
-### Add New Icon
-1. Add SVG to `Resources/Public/Icons/`
-2. Register in `Configuration/Icons.php`
-3. Use with `<core:icon identifier="..." />`
-
----
-
-*[n] Netresearch DTT GmbH*
+## When Stuck
+- Check `Classes/Controller/` for the assigned variables
+- XLIFF reference: <https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/Internationalization/>
+- Fluid ViewHelpers: <https://docs.typo3.org/other/typo3/view-helper-reference/main/en-us/>
+- Backend JS modules: <https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/ApiOverview/JavaScript/>
