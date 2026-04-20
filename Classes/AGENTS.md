@@ -1,129 +1,116 @@
-# AGENTS.md - Classes
+<!-- Managed by agent: keep sections and order; edit content, not structure -->
+<!-- Last updated: 2026-04-20 | Last verified: 2026-04-20 -->
 
-> Source code guidelines for nr-vault.
+# AGENTS.md — Classes
 
-## Architecture Overview
+## Overview
+PHP sources for the nr-vault TYPO3 extension. PSR-4 namespace `Netresearch\NrVault\` rooted here.
+Strict types, final classes, readonly properties, constructor promotion. DI via `Configuration/Services.yaml`.
 
+## Key Files
+| File | Purpose |
+|------|---------|
+| `Classes/Service/VaultService.php` | Core secret CRUD + rotation; binds vault adapters |
+| `Classes/Service/VaultServiceInterface.php` | Public contract for store/retrieve/rotate/delete |
+| `Classes/Crypto/EncryptionService.php` | libsodium envelope-encryption (plaintext ↔ ciphertext) |
+| `Classes/Crypto/FileMasterKeyProvider.php` | Reads master key from filesystem (config-driven) |
+| `Classes/Crypto/EnvironmentMasterKeyProvider.php` | Reads master key from env var |
+| `Classes/Crypto/Typo3MasterKeyProvider.php` | Uses TYPO3 encryptionKey as fallback |
+| `Classes/Audit/AuditLogService.php` | Tamper-evident audit log (HMAC hash chain) |
+| `Classes/Controller/SecretsController.php` | Backend module: list/create/rotate UI |
+| `Classes/Controller/AjaxController.php` | AJAX reveal/copy endpoints |
+| `Classes/Hook/FlexFormVaultHook.php` | Rewrites vault placeholders in FlexForms |
+| `Classes/Hook/DataHandlerHook.php` | DataHandler integration for vault fields |
+| `Classes/Command/VaultMigrateFieldCommand.php` | `vault:migrate-field` CLI |
+| `Classes/Command/VaultRotateMasterKeyCommand.php` | `vault:rotate-master-key` CLI |
+| `Classes/Upgrades/AuditHmacMigrationWizard.php` | Install-tool migration to HMAC chain |
+
+## Golden Samples
+| Pattern | Reference |
+|---------|-----------|
+| Service with DI + interface | `Classes/Service/VaultService.php` |
+| Crypto boundary (libsodium) | `Classes/Crypto/EncryptionService.php` |
+| TYPO3 hook integration | `Classes/Hook/FlexFormVaultHook.php` |
+| AJAX controller | `Classes/Controller/AjaxController.php` |
+| Symfony Console command | `Classes/Command/VaultMigrateFieldCommand.php` |
+| Upgrade wizard | `Classes/Upgrades/AuditHmacMigrationWizard.php` |
+| Interface-first API | `Classes/Service/VaultServiceInterface.php` |
+
+## Setup
+- `make up` — DDEV + TYPO3 v14 install
+- `make shell` — container shell
+- PHP `^8.2`, TYPO3 `^13.4 || ^14.0`
+
+## Directory Structure
 ```
 Classes/
-├── Adapter/        # Vault backend adapters
-├── Audit/          # Audit logging
-├── Command/        # CLI commands (Symfony Console)
-├── Configuration/  # Extension configuration
-├── Controller/     # Backend module controllers (Extbase)
-├── Crypto/         # Encryption services (libsodium)
-├── Domain/         # Models and repositories
-├── Event/          # PSR-14 events
-├── EventListener/  # Event listeners
-├── Exception/      # Custom exceptions
-├── Form/           # FormEngine integration
-├── Hook/           # TYPO3 hooks (DataHandler)
-├── Http/           # HTTP client for external vaults
-├── Security/       # Access control
-├── Service/        # Core business logic
-├── Task/           # Scheduler tasks
-├── TCA/            # TCA field configuration
-└── Utility/        # Helper utilities
+├── Adapter/       # Vault backend adapters (LocalEncryptionAdapter, external)
+├── Audit/         # AuditLogService, HashChainVerificationResult
+├── Command/       # Symfony Console commands (vault:*)
+├── Configuration/ # ExtensionConfiguration wrapper
+├── Controller/    # Backend module + AJAX controllers
+├── Crypto/        # Encryption services + master-key providers
+├── Domain/
+│   ├── Model/      # Secret
+│   └── Repository/ # SecretRepository
+├── EventListener/ # SiteConfigurationVaultListener
+├── Exception/     # OAuthException + domain exceptions
+├── Hook/          # FlexFormVaultHook, DataHandlerHook
+├── Http/          # VaultHttpClient, OAuth token manager
+├── Service/       # VaultService, SecretDetectionService
+├── Task/          # OrphanCleanupTask (scheduler)
+├── Upgrades/      # Install-tool upgrade wizards
+└── Utility/       # IdentifierValidator, VaultFieldResolver
 ```
 
-## Design Principles
+## Build/Tests
+| Task | Command |
+|------|---------|
+| Lint | `make lint` |
+| CS check | `make cgl` |
+| CS fix | `make fix` |
+| PHPStan | `make phpstan` |
+| Rector (dry-run) | `make rector` |
+| Unit tests | `make test-unit` |
+| Functional tests | `make test-functional` |
+| Mutation tests | `make test-mutation` |
+| All CI | `make ci` |
 
-1. **Interface-driven**: All services have interfaces for testability
-2. **Dependency Injection**: Constructor injection via `Services.yaml`
-3. **Final by default**: Classes are `final` unless extension is needed
-4. **Readonly properties**: Use `readonly` for immutable dependencies
-5. **Strict types**: All files use `declare(strict_types=1)`
+## Code Style
+- **PSR-12** + TYPO3 CGL (`.php-cs-fixer.dist.php`)
+- `declare(strict_types=1);` on every file
+- `final` classes by default; extend only where necessary
+- `readonly` properties + constructor promotion
+- No `@author` tags in docblocks
+- DI via `Services.yaml` — avoid `GeneralUtility::makeInstance()`
+- Doctrine QueryBuilder only — never `$GLOBALS['TYPO3_DB']`, never raw SQL
+- Prefer `*Interface.php` seams at public boundaries (services, adapters, providers)
 
-## Encryption Architecture
+## Security
+This directory contains the crypto + audit core. Review bar is high:
+- **libsodium only** — no `openssl_*` fallbacks
+- **Constant-time equality** — `hash_equals()`
+- **Memory scrub** — `sodium_memzero()` once plaintext is consumed
+- **No secrets in logs/exceptions** — pass `[REDACTED]` to context
+- **Audit every access** — `AuditLogServiceInterface::log()` before returning plaintext
+- **Identifier validation** — use `IdentifierValidator` (no path traversal, no control chars)
+- **Access control** — call `AccessControlServiceInterface::canRead/canWrite/canCreate` before mutation
 
-```
-┌─────────────────────────────────────────────────────┐
-│                  Envelope Encryption                │
-├─────────────────────────────────────────────────────┤
-│  Master Key (MEK)                                   │
-│    └── encrypts → Data Encryption Key (DEK)         │
-│                      └── encrypts → Secret Value    │
-└─────────────────────────────────────────────────────┘
-```
+## Checklist
+- [ ] `make ci` passes (lint + cs + phpstan + rector + tests)
+- [ ] New public methods have interfaces + tests
+- [ ] Audit log entry for any new secret operation
+- [ ] TCA changes accompanied by `ext_tables.sql` update
+- [ ] No new `GeneralUtility::makeInstance()` (use DI)
+- [ ] PHPStan level untouched (check `phpstan.neon`)
+- [ ] `ext_emconf.php` version bumped if publishable
 
-- **Algorithm**: AES-256-GCM or XChaCha20-Poly1305 (configurable)
-- **Library**: libsodium (PHP native)
-- **Key storage**: Environment variable or file
+## Examples
+Look at real code — prefer Golden Samples above. No template snippets; copy from existing files.
 
-## Service Layer
-
-| Interface | Implementation | Purpose |
-|-----------|----------------|---------|
-| `VaultServiceInterface` | `VaultService` | Core CRUD operations |
-| `EncryptionServiceInterface` | `EncryptionService` | Encrypt/decrypt |
-| `MasterKeyProviderInterface` | `MasterKeyProvider` | Master key access |
-| `AccessControlServiceInterface` | `AccessControlService` | Permission checks |
-| `AuditLogServiceInterface` | `AuditLogService` | Audit trail |
-| `VaultAdapterInterface` | `LocalEncryptionAdapter` | Storage backend |
-
-## Adding New Features
-
-### New CLI Command
-```php
-#[AsCommand(name: 'vault:example', description: 'Example command')]
-final class VaultExampleCommand extends Command
-{
-    public function __construct(
-        private readonly VaultServiceInterface $vaultService,
-    ) {
-        parent::__construct();
-    }
-
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        // Implementation
-        return Command::SUCCESS;
-    }
-}
-```
-Register in `Configuration/Services.yaml` with `console.command` tag.
-
-### New Event
-```php
-// Classes/Event/SecretExampleEvent.php
-final readonly class SecretExampleEvent
-{
-    public function __construct(
-        public string $identifier,
-        public array $context = [],
-    ) {}
-}
-
-// Dispatch from service
-$this->eventDispatcher->dispatch(new SecretExampleEvent($identifier));
-```
-
-### New Exception
-```php
-final class CustomVaultException extends \RuntimeException {}
-```
-Exceptions don't need DI registration (excluded in Services.yaml).
-
-## Security Patterns
-
-```php
-// ALWAYS use constant-time comparison for secrets
-if (!hash_equals($expected, $actual)) { ... }
-
-// ALWAYS clear sensitive data from memory
-sodium_memzero($plaintext);
-
-// NEVER log secret values
-$this->logger->info('Secret accessed', ['identifier' => $identifier]);
-// NOT: $this->logger->info('Secret value', ['value' => $secret]);
-```
-
-## Testing Approach
-
-- **Unit tests**: Mock all dependencies, test in isolation
-- **Functional tests**: Test TYPO3 integration with real database
-- Use `#[CoversClass]` attribute for coverage tracking
-
----
-
-*[n] Netresearch DTT GmbH*
+## When Stuck
+- Root AGENTS.md for project-wide rules
+- ADRs: `Documentation/Developer/Adr/ADR-*.rst`
+- TYPO3 v14 docs: <https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/>
+- Invoke skill: `typo3-conformance` for extension standards
+- Invoke skill: `php-modernization` for PHP 8.2+ patterns

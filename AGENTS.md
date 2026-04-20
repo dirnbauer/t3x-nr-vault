@@ -1,198 +1,201 @@
-# AGENTS.md - nr-vault
+<!-- FOR AI AGENTS - Human readability is a side effect, not a goal -->
+<!-- Managed by agent: keep sections and order; edit content, not structure -->
+<!-- Last updated: 2026-04-20 | Last verified: 2026-04-20 -->
 
-> AI agent guidelines for the nr-vault TYPO3 extension.
+# AGENTS.md — nr-vault
 
-## Precedence
+> Secure secrets management for TYPO3 (envelope encryption, access control, tamper-evident audit log).
 
-1. This file (root)
-2. Directory-specific AGENTS.md files:
-   - `Classes/AGENTS.md` - Source code patterns
-   - `Configuration/AGENTS.md` - TYPO3 configuration
-   - `Documentation/AGENTS.md` - RST documentation
-   - `Resources/AGENTS.md` - Templates, language, assets
-   - `Tests/AGENTS.md` - Testing patterns
-   - `Tests/E2E/AGENTS.md` - E2E testing specifics
-3. TYPO3 coding standards
+**Precedence:** the **closest `AGENTS.md`** to the files you're changing wins. Root holds global defaults only. Explicit user prompts override files.
 
 ## Project Overview
 
-**nr-vault** is a TYPO3 v13.4/v14 extension providing secure secrets management with envelope encryption, access control, and audit logging.
+- **Stack:** PHP 8.2+, TYPO3 ^13.4 || ^14.0, libsodium (XChaCha20-Poly1305 / AES-256-GCM envelope encryption)
+- **Environment:** DDEV for local development
+- **License:** GPL-2.0-or-later
+- **Namespace:** `Netresearch\NrVault\` (PSR-4 from `Classes/`)
+- **Extension key:** `nr_vault`
 
-- **Stack**: PHP 8.2+, TYPO3 v13.4/v14, libsodium (AES-256-GCM)
-- **Environment**: DDEV for local development
-- **License**: GPL-2.0-or-later
+## Commands
+> Source: `Makefile` (primary) and `composer.json` scripts
 
-## Quick Reference
+| Task | Command | Notes |
+|------|---------|-------|
+| Start env | `make up` | DDEV + install TYPO3 v14 |
+| Stop env | `make down` | |
+| Shell | `make shell` | Container shell |
+| Lint (syntax) | `make lint` | `php -l` across sources |
+| CS check | `make cgl` | php-cs-fixer --dry-run |
+| CS fix | `make fix` | alias of `make cgl-fix` |
+| PHPStan | `make phpstan` | Static analysis |
+| Rector (dry-run) | `make rector` | |
+| Unit tests | `make test-unit` | `composer ci:test:php:unit` |
+| Functional tests | `make test-functional` | `composer ci:test:php:functional` |
+| All tests | `make test` | unit + functional |
+| Mutation tests | `make test-mutation` | Infection |
+| All CI | `make ci` | lint+cs+phpstan+rector+tests |
+| Docs render | `make docs` | |
 
-```bash
-# Environment
-make up                    # Start DDEV + install TYPO3 v14
-make down                  # Stop DDEV
-make shell                 # Open container shell
+Direct composer (without make):
+- `composer ci` — unit + fuzz + phpstan + cgl
+- `composer ci:test:php:functional` — functional suite
+- `composer ci:cgl` — fix code style
 
-# Testing
-make test                  # Run all tests (unit + functional)
-make unit                  # Unit tests only
-make functional            # Functional tests only
+## Response Style
+- Answer first, elaborate only if needed. No sycophantic openers.
+- For yes/no or status questions, lead with the answer.
+- Skip preamble. Match response length to task complexity.
 
-# Quality
-make cs                    # Check code style
-make fix                   # Fix code style
-make phpstan               # Static analysis
-make lint                  # PHP syntax check
+## Workflow
+1. **Before coding**: Read nearest `AGENTS.md` + inspect Golden Samples.
+2. **After each change**: Run the smallest relevant check (`make lint` → `make phpstan` → single test).
+3. **Before committing**: `make ci` when changes affect >2 files or touch shared code.
+4. **Before claiming done**: Run verification and **paste output as evidence** — never say "should work now" / "tested" / "all green" without showing output.
 
-# CI
-make ci                    # Run all CI checks locally
-
-# Documentation
-make docs                  # Render documentation
+## File Map
+```
+Classes/         → PHP sources (Adapter, Audit, Command, Controller, Crypto, Domain, Hook, Http, Service, Task, Upgrades, Utility)
+Configuration/   → TYPO3 config (TCA, Backend routes, Services.yaml)
+Documentation/   → reStructuredText docs + ADRs
+Resources/       → Templates (Fluid), JS/CSS, XLIFF language files
+Tests/           → Unit + Functional + E2E (Playwright)
+Build/           → phpunit.xml, FunctionalTests.xml
+.ddev/           → DDEV environment (mock-oauth sidecar, phpunit extras)
+.github/         → workflows, CODEOWNERS, renovate, labeler
 ```
 
-## Code Style
+## Golden Samples
+| For | Reference |
+|-----|-----------|
+| Domain service | `Classes/Service/VaultService.php` |
+| Crypto boundary | `Classes/Crypto/EncryptionService.php` |
+| Controller (backend module) | `Classes/Controller/SecretsController.php` |
+| AJAX controller | `Classes/Controller/AjaxController.php` |
+| TYPO3 hook | `Classes/Hook/FlexFormVaultHook.php` |
+| Audit writer | `Classes/Audit/AuditLogService.php` |
+| Upgrade wizard | `Classes/Upgrades/AuditHmacMigrationWizard.php` |
+| Functional test | `Tests/Functional/Crypto/MasterKeyRotationTest.php` |
 
-- **Standard**: PSR-12 + TYPO3 CGL
-- **Tool**: PHP-CS-Fixer (`.php-cs-fixer.dist.php`)
-- **Run before commit**: `make fix`
-
-Key conventions:
-- `declare(strict_types=1);` in all PHP files
-- `final` classes by default (extend only when necessary)
-- `readonly` properties where possible
-- Constructor property promotion
-- No `@author` tags in docblocks
-- Use dependency injection via constructor
-
-## Architecture
-
-```
-Classes/
-├── Adapter/       # Vault backend adapters (local, external)
-├── Audit/         # Audit logging service
-├── Command/       # CLI commands (vault:init, vault:rotate, etc.)
-├── Configuration/ # Extension configuration
-├── Controller/    # Backend module controllers
-├── Crypto/        # Encryption/decryption services
-├── Domain/        # Domain models (Secret, Repository)
-├── Event/         # PSR-14 events
-├── EventListener/ # Event listeners (TypoScript, SiteConfig)
-├── Exception/     # Custom exceptions
-├── Form/          # FormEngine integration (NodeFactory, elements)
-├── Hook/          # TYPO3 hooks
-├── Http/          # HTTP middleware
-├── Security/      # Access control services
-├── Service/       # Core VaultService
-├── Task/          # Scheduler tasks (TCA-based registration)
-├── TCA/           # TCA field configuration
-└── Utility/       # Helper utilities
-```
+## Heuristics
+| When | Do |
+|------|-----|
+| Adding class | PSR-4 under `Classes/`, namespace `Netresearch\NrVault\*` |
+| New command | `Classes/Command/` + register in `Configuration/Services.yaml` |
+| AJAX route | Add to `Configuration/Backend/AjaxRoutes.php` + controller in `Classes/Controller/` |
+| Touching secrets | Audit log every read/write via `AuditLogServiceInterface::log()` |
+| Running locally | `make up` then `make shell` |
+| Committing | Conventional Commits (feat:/fix:/chore:/docs:/refactor:/test:) |
+| Merging PRs | Merge commit (not squash, not rebase) — preserves GPG signatures |
 
 ## Security Requirements
+This extension handles sensitive data. Non-negotiable rules:
 
-This extension handles sensitive data. Follow these rules:
-
-1. **Never log secrets** - Use `[REDACTED]` placeholders
-2. **Constant-time comparisons** - Use `hash_equals()` for secret comparison
-3. **Memory clearing** - Use `sodium_memzero()` after processing secrets
-4. **No plaintext storage** - All secrets encrypted with envelope encryption
-5. **Audit all access** - Every read/write creates an audit log entry
-6. **Access control** - Respect backend user groups and ownership
-
-## Testing
-
-| Type | Location | Purpose |
-|------|----------|---------|
-| Unit | `Tests/Unit/` | Isolated class testing |
-| Functional | `Tests/Functional/` | TYPO3 integration |
-| E2E | `Tests/E2E/` | Playwright browser tests |
-| Architecture | `Tests/Architecture/` | PHPat dependency rules |
-| Fuzz | `Tests/Fuzz/` | Input fuzzing |
-
-Run tests in container:
-```bash
-ddev exec .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit
-```
-
-## Pre-Commit Checklist
-
-Before committing:
-
-- [ ] `make fix` - Code style fixed
-- [ ] `make phpstan` - No new errors
-- [ ] `make test` - All tests pass
-- [ ] No secrets in code or tests
-- [ ] Audit logging added for new operations
-
-## Commit Format
-
-Use conventional commits:
-```
-feat: add OAuth token refresh support
-fix: prevent timing attacks in secret comparison
-refactor: extract encryption to dedicated service
-test: add unit tests for OrphanCleanupTask
-docs: update TCA integration examples
-```
-
-## CLI Commands
-
-```bash
-# Initialization
-vault:init                  # Initialize vault with master key
-
-# Secret management
-vault:store                 # Store a new secret
-vault:retrieve              # Retrieve a secret by identifier
-vault:delete                # Delete a secret
-vault:list                  # List all secrets (identifiers only)
-vault:rotate                # Rotate a secret value
-
-# Key management
-vault:rotate-master-key     # Rotate the master encryption key
-
-# Maintenance
-vault:cleanup-orphans       # Remove orphaned secrets
-vault:scan                  # Scan for vault placeholder usage
-vault:migrate-field         # Migrate field values to vault
-vault:audit                 # View audit log entries
-```
+1. **Never log secrets** — use `[REDACTED]` placeholders in logs & exceptions.
+2. **Constant-time comparisons** — `hash_equals()` for secret comparison.
+3. **Memory clearing** — `sodium_memzero()` after processing plaintext secrets.
+4. **No plaintext storage** — all secrets via envelope encryption (master key wraps per-secret DEK).
+5. **Audit every access** — reads/writes/rotations/deletes all create audit log entries.
+6. **Access control** — respect backend user groups & ownership via `AccessControlServiceInterface`.
+7. **Tamper-evident audit log** — HMAC hash chain; verify on schedule (see `VaultAuditCommand`).
 
 ## Key Interfaces
+> Authoritative source: the `*Interface.php` files. This is a cheat-sheet — read the PHP for full docblocks.
 
 ```php
-// Core vault operations
-VaultServiceInterface::store(string $identifier, string $secret, array $options): void
+// Core vault operations — Classes/Service/VaultServiceInterface.php
+VaultServiceInterface::store(string $identifier, string $secret, array $options = []): void
 VaultServiceInterface::retrieve(string $identifier): ?string
-VaultServiceInterface::rotate(string $identifier, string $newSecret, ?string $reason): void
-VaultServiceInterface::delete(string $identifier, ?string $reason): void
+VaultServiceInterface::exists(string $identifier): bool
+VaultServiceInterface::delete(string $identifier, string $reason = ''): void
+VaultServiceInterface::rotate(string $identifier, string $newSecret, string $reason = ''): void
+VaultServiceInterface::list(?string $pattern = null): array
+VaultServiceInterface::getMetadata(string $identifier): SecretDetails
+VaultServiceInterface::clearCache(): void
+VaultServiceInterface::http(): VaultHttpClientInterface
 
-// Access control
-AccessControlServiceInterface::canRead(Secret $secret): bool
-AccessControlServiceInterface::canWrite(Secret $secret): bool
-AccessControlServiceInterface::canCreate(): bool
+// Encryption — Classes/Crypto/EncryptionServiceInterface.php
+EncryptionServiceInterface::encrypt(string $plaintext, string $identifier): EncryptedData
+EncryptionServiceInterface::decrypt(
+    string $encryptedValue, string $encryptedDek,
+    string $dekNonce, string $valueNonce, string $identifier
+): string
+EncryptionServiceInterface::generateDek(): string
+EncryptionServiceInterface::calculateChecksum(string $plaintext): string
 
-// Encryption
-EncryptionServiceInterface::encrypt(string $plaintext, string $dataKey): string
-EncryptionServiceInterface::decrypt(string $ciphertext, string $dataKey): string
+// Master key — Classes/Crypto/MasterKeyProviderInterface.php
 MasterKeyProviderInterface::getMasterKey(): string
 
-// Audit logging
-AuditLogServiceInterface::log(string $operation, string $identifier, array $context): void
+// Audit logging — Classes/Audit/AuditLogServiceInterface.php
+AuditLogServiceInterface::log(
+    string $secretIdentifier, string $action, bool $success,
+    ?string $errorMessage = null, ?string $reason = null,
+    ?string $hashBefore = null, ?string $hashAfter = null,
+    ?AuditContextInterface $context = null,
+): void
+AuditLogServiceInterface::query(?AuditLogFilter $filter = null, int $limit = 100, int $offset = 0): array
+AuditLogServiceInterface::verifyHashChain(?int $fromUid = null, ?int $toUid = null): HashChainVerificationResult
 ```
 
+## CLI Commands (TYPO3 `vendor/bin/typo3`)
+```
+vault:audit                # View / verify audit log entries
+vault:audit-migrate-hmac   # Migrate audit log hash chain from SHA-256 to HMAC-SHA256
+vault:migrate-field        # Move DB field values into the vault
+vault:rotate-master-key    # Re-encrypt all DEKs with a new master key
+vault:cleanup-orphans      # Scheduled task wrapper
+```
+
+## Boundaries
+
+### Always Do
+- Use `declare(strict_types=1);`, `final` classes by default, `readonly` properties, constructor promotion.
+- Dependency injection via `Configuration/Services.yaml` — not `GeneralUtility::makeInstance()`.
+- Run `make fix && make phpstan && make test` before pushing.
+- Use atomic commits (one logical change per commit); preserve GPG signatures.
+- Force-push only with `--force-with-lease`.
+- Follow PSR-12 + TYPO3 CGL.
+
+### Ask First
+- Adding new dependencies (composer / npm).
+- Modifying CI/CD configuration.
+- Changing public API signatures of `*Interface.php`.
+- Rotating / regenerating cryptographic keys in fixtures.
+
+### Never Do
+- Commit secrets, credentials, or real master keys (test fixtures only — allowlisted in `.gitleaks.toml`).
+- Commit `composer.lock` (extension, not application).
+- Push directly to `main` — open a PR.
+- Merge a PR before all review threads are resolved.
+- Squash or rebase-merge (loses GPG signatures — use merge commits).
+- Use `secrets: inherit` in reusable GitHub Actions workflows (pass secrets explicitly).
+- Modify `.Build/`, `vendor/`, `Documentation-GENERATED-temp/`, `.php-cs-fixer.cache`.
+- Use `$GLOBALS['TYPO3_DB']` (deprecated) — use Doctrine QueryBuilder.
+
+## Index of scoped AGENTS.md
+MUST read when working in these directories:
+- `./Classes/AGENTS.md` — PHP sources, crypto, services, hooks
+- `./Configuration/AGENTS.md` — TCA, Services.yaml, routes
+- `./Documentation/AGENTS.md` — RST docs + ADRs
+- `./Resources/AGENTS.md` — Fluid templates, JS/CSS, XLIFF
+- `./Tests/AGENTS.md` — PHPUnit unit + functional + fuzz
+- `./Tests/E2E/AGENTS.md` — Playwright E2E
+- `./.ddev/AGENTS.md` — DDEV environment
+- `./.github/workflows/AGENTS.md` — CI workflows
+
+> **Agents**: When you read or edit files in a listed directory, load its AGENTS.md first.
+
+## Repository Settings
+- **Default branch:** `main`
+- **Merge strategy:** merge commit (required for GPG signature preservation)
+- **Signed commits:** required (GPG/SSH)
+- **DCO:** required (`Signed-off-by:` trailer on every commit)
+
 ## When Stuck
-
-1. Check TYPO3 v14 documentation: https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/
-2. Review existing tests for patterns
+1. TYPO3 v14 docs: <https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/>
+2. Review ADRs in `Documentation/Developer/Adr/`
 3. Run `make phpstan` for type hints
-4. Check audit logs for access issues
-
-## Files to Never Modify
-
-- `composer.lock` (auto-generated)
-- `.Build/` (vendor directory)
-- `Documentation-GENERATED-temp/` (rendered docs)
-- `.php-cs-fixer.cache`
+4. Check audit logs (`vault:audit`) for access issues
+5. Root AGENTS.md for project-wide conventions
 
 ---
-
-*[n] Netresearch DTT GmbH*
+*© Netresearch DTT GmbH — GPL-2.0-or-later*

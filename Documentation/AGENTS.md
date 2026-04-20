@@ -1,160 +1,107 @@
-# AGENTS.md - Documentation
+<!-- Managed by agent: keep sections and order; edit content, not structure -->
+<!-- Last updated: 2026-04-20 | Last verified: 2026-04-20 -->
 
-> Documentation guidelines for nr-vault using TYPO3 docs standards.
+# AGENTS.md — Documentation
 
-## Critical Requirement: Backend-First Documentation
+## Overview
+RST documentation for <https://docs.typo3.org> + Architecture Decision Records.
+Invoke skill **`typo3-docs`** for deeper guidance (rendering, directives, screenshots).
 
-**nr-vault is fully usable without CLI or file access.** All documentation
-examples MUST show both approaches:
+## Key Files
+| File | Purpose |
+|------|---------|
+| `Documentation/Index.rst` | Main entry point; version table, toctree |
+| `Documentation/guides.xml` | Render metadata (replaces old Settings.cfg) |
+| `Documentation/Introduction/Index.rst` | Product intro |
+| `Documentation/Installation/Index.rst` | Install + environment prep |
+| `Documentation/Usage/ExtensionSettings.rst` | Admin tooling reference |
+| `Documentation/Security/Index.rst` | Threat model + hardening guidance |
+| `Documentation/Troubleshooting/Index.rst` | Common issues + diagnostics |
+| `Documentation/Developer/Index.rst` | Developer toctree |
+| `Documentation/Developer/Commands.rst` | `vault:*` CLI reference |
+| `Documentation/Developer/Adr/Index.rst` | ADR index |
+| `Documentation/Developer/Adr/ADR-006-AuditLogging.rst` | Audit log design |
+| `Documentation/Developer/Adr/ADR-018-FlexFormSecretLifecycle.rst` | FlexForm integration |
+| `Documentation/Developer/Adr/ADR-023-AuditHashChainHmac.rst` | Tamper-evident audit chain |
+| `Documentation/Sitemap.rst` | Page index |
 
-1. **Backend UI** (primary) - For editors and admins without server access
-2. **CLI commands** (secondary) - For developers and automation
+## Golden Samples
+| Pattern | Reference |
+|---------|-----------|
+| Top-level section | `Documentation/Introduction/Index.rst` |
+| ADR structure | `Documentation/Developer/Adr/ADR-023-AuditHashChainHmac.rst` |
+| CLI reference page | `Documentation/Developer/Commands.rst` |
+| Troubleshooting entry | `Documentation/Troubleshooting/Index.rst` |
 
-This is a key feature: secure secret management accessible to non-technical
-users through the TYPO3 backend.
+## Setup
+- Docker required for local rendering.
+- PNG images live in `Documentation/Images/` (subfolders mirror page paths).
 
-### Example Pattern
+## Build/Tests
+| Task | Command |
+|------|---------|
+| Render (Make target) | `make docs` |
+| Render (direct) | `docker run --rm --pull always -v "$(pwd)":/project -t ghcr.io/typo3-documentation/render-guides:latest --config=Documentation` |
+| Preview output | Open `Documentation-GENERATED-temp/Index.html` |
+| Clean output | `rm -rf Documentation-GENERATED-temp/` |
 
+## Code Style
+- RST, not Markdown.
+- Headings: `=` H1, `-` H2, `~` H3, `^` H4.
+- **One sentence per line** — diffs stay readable.
+- Line width ~80 chars where natural.
+- Admonitions: `.. note::`, `.. warning::`, `.. tip::`.
+- Tables: `.. t3-field-list-table::` or grid tables.
+- Cross-reference with `:ref:` and explicit labels.
+- Code blocks: `.. code-block:: php|bash|yaml|rst`.
+
+## Security
+Docs in `Documentation/Security/` are load-bearing — any crypto/access-control claim **must** match source behaviour. When the behaviour changes, update the docs in the same PR.
+
+- Do not publish sample master keys, DEKs, or real audit entries.
+- Redact org-specific paths in examples.
+- Link to ADRs for design decisions, not source comments.
+
+## Checklist
+- [ ] `make docs` renders without warnings
+- [ ] All `:ref:` targets resolve
+- [ ] Screenshots exist for any new UI; `:alt:` present; `:zoom: lightbox`
+- [ ] Images are PNG, viewport ≥ 1440×900
+- [ ] ADRs updated for non-trivial behaviour changes
+- [ ] New CLI commands documented in `Documentation/Developer/Commands.rst`
+
+## Examples
+### Screenshot figure
 ```rst
-**Via backend:**
+.. figure:: /Images/Configuration/ExtensionSettings.png
+   :alt: Vault extension configuration — master key providers
+   :zoom: lightbox
+   :class: with-border with-shadow
 
-1. Go to :guilabel:`Admin Tools > Vault > Secrets`
-2. Click :guilabel:`Create Secret`
-3. Enter identifier ``deepl_api_key`` and paste your API key
-4. Click :guilabel:`Save`
-
-**Via CLI:**
-
-.. code-block:: bash
-   :caption: Alternative: CLI command
-
-   ./vendor/bin/typo3 vault:store deepl_api_key "your-api-key"
+   Configure master-key provider under Admin Tools → Settings.
 ```
 
-Always show backend first, CLI second. Never assume users have CLI access.
-
-## Structure
-
-```
-Documentation/
-├── Index.rst              # Main entry point
-├── Includes.rst.txt       # Common includes
-├── Sitemap.rst            # Auto-generated sitemap
-├── guides.xml             # phpDocumentor configuration
-├── Configuration/         # Extension configuration docs
-├── Developer/             # Developer/API documentation
-├── Installation/          # Installation guide
-├── Introduction/          # Overview and features
-├── Security/              # Security considerations
-└── Usage/                 # User guide
-```
-
-## Rendering Documentation
-
-```bash
-# Render locally
-make docs
-
-# Output in Documentation-GENERATED-temp/
-```
-
-## RST Conventions
-
-### Headings
+### ADR skeleton
 ```rst
+:navigation-title: ADR-NNN Title
+..  include:: /Includes.rst.txt
+
+==============================
+ADR-NNN: Concise decision line
+==============================
+
+Context
 =======
-Level 1
-=======
-
-Level 2
-=======
-
-Level 3
--------
-
-Level 4
-~~~~~~~
+…
+Decision
+========
+…
+Consequences
+============
+…
 ```
 
-### TYPO3-Specific Directives
-
-```rst
-.. confval:: masterKeyPath
-   :type: string
-   :default: /var/secrets/vault.key
-
-   Path to the master encryption key file.
-
-.. versionadded:: 1.2.0
-   Added support for XChaCha20-Poly1305.
-
-.. deprecated:: 1.3.0
-   Use `vault:rotate-master-key` instead.
-```
-
-### Code Blocks
-```rst
-.. code-block:: php
-   :caption: Example usage
-
-   $vault->store('api-key', $secret);
-
-.. code-block:: bash
-
-   ddev exec bin/typo3 vault:init
-```
-
-### Cards (TYPO3 v12+)
-```rst
-.. card-grid::
-   :columns: 2
-
-   .. card:: :ref:`Quick Start <quickstart>`
-
-      Get started in 5 minutes.
-
-   .. card:: :ref:`CLI Reference <cli>`
-
-      Command-line tools.
-```
-
-### Cross-References
-```rst
-See :ref:`installation` for setup instructions.
-
-External: :t3coreapi:`DependencyInjection`
-```
-
-## File Naming
-
-- `Index.rst` - Main file in each directory
-- Use lowercase with hyphens for other files
-- Each major section gets its own directory
-
-## Adding New Documentation
-
-1. Create new `.rst` file in appropriate directory
-2. Add to `toctree` in parent `Index.rst`
-3. Run `make docs` to verify rendering
-4. Check for warnings in build output
-
-## Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Missing reference | Add `:ref:` label above heading |
-| Broken indentation | RST requires exact spacing (3 spaces) |
-| Image not found | Use relative path from current file |
-| Build warnings | Check `Documentation-GENERATED-temp/` output |
-
-## External References
-
-Inventories defined in `guides.xml`:
-- `t3coreapi` - TYPO3 Core API Reference
-- `t3tca` - TCA Reference
-
-Usage: `:t3coreapi:`SectionName``
-
----
-
-*[n] Netresearch DTT GmbH*
+## When Stuck
+- Invoke skill: `typo3-docs`
+- RST reference: <https://docs.typo3.org/m/typo3/docs-how-to-document/main/en-us/>
+- Render output log: `Documentation-GENERATED-temp/`
