@@ -18,10 +18,12 @@ class VaultBackend {
 
     async handleVerifyChain(event) {
         const button = event.currentTarget;
-        const originalText = button.innerHTML;
+        const originalChildren = Array.from(button.childNodes);
 
         button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verifying...';
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        button.replaceChildren(spinner, document.createTextNode(' Verifying...'));
 
         try {
             const response = await new AjaxRequest(TYPO3.settings.ajaxUrls['system_vault'])
@@ -47,7 +49,7 @@ class VaultBackend {
             Notification.error('Verification Failed', error.message || 'An error occurred', 10);
         } finally {
             button.disabled = false;
-            button.innerHTML = originalText;
+            button.replaceChildren(...originalChildren);
         }
     }
 }

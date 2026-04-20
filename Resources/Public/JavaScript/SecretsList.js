@@ -77,8 +77,12 @@ class SecretsList {
 
         // Disable button and show loading state
         button.disabled = true;
-        const originalHTML = button.innerHTML;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        const originalChildren = Array.from(button.childNodes);
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+        spinner.setAttribute('aria-hidden', 'true');
+        button.replaceChildren(spinner);
 
         try {
             const formData = new FormData(form);
@@ -94,7 +98,9 @@ class SecretsList {
             const result = await response.json();
 
             if (result.success) {
-                // Update UI
+                // Restore original children BEFORE updateButtonState so it can
+                // find the .icon <span> and flip the SVG <use href="..."> href.
+                button.replaceChildren(...originalChildren);
                 this.updateRowState(row, result.hidden);
                 this.updateButtonState(button, result.hidden);
                 Notification.success('Success', result.message, 3);
@@ -105,9 +111,9 @@ class SecretsList {
             Notification.error('Error', error.message || 'An error occurred', 5);
         } finally {
             button.disabled = false;
-            // Restore button with new state if needed
-            if (!button.innerHTML.includes('icon')) {
-                button.innerHTML = originalHTML;
+            // Restore original children on any non-success path (error/thrown).
+            if (!button.querySelector('.icon')) {
+                button.replaceChildren(...originalChildren);
             }
         }
     }
@@ -220,22 +226,7 @@ class SecretsList {
      * Show the reveal modal with secret value.
      */
     showRevealModal(identifier, secret) {
-        const content = document.createElement('div');
-        content.innerHTML = `
-            <div class="form-group mb-3">
-                <label class="form-label fw-bold">Secret Value</label>
-                <div class="input-group">
-                    <input type="password" class="form-control font-monospace" id="reveal-modal-secret" value="${this.escapeHtml(secret)}" readonly />
-                    <button type="button" class="btn btn-default" id="reveal-modal-toggle" title="Toggle visibility">
-                        <span class="icon icon-size-small icon-state-default icon-actions-eye"></span>
-                    </button>
-                    <button type="button" class="btn btn-default" id="reveal-modal-copy" title="Copy to clipboard">
-                        <span class="icon icon-size-small icon-state-default icon-actions-clipboard"></span>
-                    </button>
-                </div>
-            </div>
-            <p class="text-muted small mb-0">Secret value for: <code>${this.escapeHtml(identifier)}</code></p>
-        `;
+        const content = this.buildRevealModalContent(identifier, secret);
 
         const modal = Modal.advanced({
             title: 'Secret Value',
@@ -293,22 +284,7 @@ class SecretsList {
             return;
         }
 
-        const content = document.createElement('div');
-        content.innerHTML = `
-            <div class="form-group mb-3">
-                <label class="form-label fw-bold" for="rotate-modal-secret">New Secret Value</label>
-                <div class="input-group">
-                    <input type="password" class="form-control" id="rotate-modal-secret" placeholder="Enter new secret value" autocomplete="new-password" />
-                    <button type="button" class="btn btn-default" id="rotate-modal-toggle" title="Toggle visibility">
-                        <span class="icon icon-size-small icon-state-default icon-actions-eye"></span>
-                    </button>
-                </div>
-                <div class="form-text">Enter the new secret value. This will replace the existing secret.</div>
-            </div>
-            <p class="text-warning small mb-0">
-                <strong>Warning:</strong> Rotating a secret is irreversible. The previous value cannot be recovered.
-            </p>
-        `;
+        const content = this.buildRotateModalContent();
 
         const modal = Modal.advanced({
             title: 'Rotate Secret: ' + identifier,
@@ -393,6 +369,105 @@ class SecretsList {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    /**
+     * Build reveal-modal DOM safely (no innerHTML interpolation).
+     */
+    buildRevealModalContent(identifier, secret) {
+        const root = document.createElement('div');
+
+        const group = document.createElement('div');
+        group.className = 'form-group mb-3';
+        const label = document.createElement('label');
+        label.className = 'form-label fw-bold';
+        label.textContent = 'Secret Value';
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group';
+
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.className = 'form-control font-monospace';
+        input.id = 'reveal-modal-secret';
+        input.readOnly = true;
+        input.value = secret;
+        inputGroup.append(input);
+
+        inputGroup.append(
+            this.buildIconButton('reveal-modal-toggle', 'Toggle visibility', 'icon-actions-eye'),
+            this.buildIconButton('reveal-modal-copy', 'Copy to clipboard', 'icon-actions-clipboard'),
+        );
+
+        group.append(label, inputGroup);
+
+        const hint = document.createElement('p');
+        hint.className = 'text-muted small mb-0';
+        hint.append(document.createTextNode('Secret value for: '));
+        const code = document.createElement('code');
+        code.textContent = identifier;
+        hint.append(code);
+
+        root.append(group, hint);
+        return root;
+    }
+
+    /**
+     * Build rotate-modal DOM safely (no innerHTML interpolation).
+     */
+    buildRotateModalContent() {
+        const root = document.createElement('div');
+
+        const group = document.createElement('div');
+        group.className = 'form-group mb-3';
+        const label = document.createElement('label');
+        label.className = 'form-label fw-bold';
+        label.setAttribute('for', 'rotate-modal-secret');
+        label.textContent = 'New Secret Value';
+
+        const inputGroup = document.createElement('div');
+        inputGroup.className = 'input-group';
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.className = 'form-control';
+        input.id = 'rotate-modal-secret';
+        input.placeholder = 'Enter new secret value';
+        input.autocomplete = 'new-password';
+        inputGroup.append(input);
+        inputGroup.append(this.buildIconButton('rotate-modal-toggle', 'Toggle visibility', 'icon-actions-eye'));
+
+        const help = document.createElement('div');
+        help.className = 'form-text';
+        help.textContent = 'Enter the new secret value. This will replace the existing secret.';
+
+        group.append(label, inputGroup, help);
+
+        const warning = document.createElement('p');
+        warning.className = 'text-warning small mb-0';
+        const strong = document.createElement('strong');
+        strong.textContent = 'Warning:';
+        warning.append(strong, document.createTextNode(' Rotating a secret is irreversible. The previous value cannot be recovered.'));
+
+        root.append(group, warning);
+        return root;
+    }
+
+    /**
+     * Build an input-group icon button (e.g. toggle/copy).
+     */
+    buildIconButton(id, title, iconClass) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-default';
+        btn.id = id;
+        btn.title = title;
+        // aria-label: screen readers don't consistently expose `title` as the
+        // accessible name for icon-only buttons.
+        btn.setAttribute('aria-label', title);
+        const icon = document.createElement('span');
+        icon.className = `icon icon-size-small icon-state-default ${iconClass}`;
+        icon.setAttribute('aria-hidden', 'true');
+        btn.append(icon);
+        return btn;
     }
 }
 

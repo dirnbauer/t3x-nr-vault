@@ -18,7 +18,7 @@ import { test, expect, getModuleFrame, waitForModuleContent } from '../fixtures/
  */
 
 // Generate unique identifier for test isolation
-const generateTestId = () => `e2e_tca_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+const generateTestId = () => `e2e_tca_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
 test.describe('TYPO3 FormEngine/TCA Integration', () => {
   test.describe('TCA-001: FormEngine Edit Form Rendering', () => {

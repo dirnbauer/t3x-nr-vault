@@ -76,8 +76,11 @@ class VaultSecretInput {
 
         // Show loading state
         button.disabled = true;
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+        const originalChildren = Array.from(button.childNodes);
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner-border spinner-border-sm';
+        spinner.setAttribute('role', 'status');
+        button.replaceChildren(spinner);
 
         try {
             const response = await fetch(TYPO3.settings.ajaxUrls['vault_reveal'], {
@@ -97,7 +100,7 @@ class VaultSecretInput {
             if (data.success && data.secret !== undefined) {
                 this.revealedSecrets.set(identifier, data.secret);
                 // Restore icon before showing revealed secret
-                button.innerHTML = originalIcon;
+                button.replaceChildren(...originalChildren);
                 this.showRevealedSecret(button, data.secret);
             } else {
                 throw new Error(data.error || 'Failed to reveal secret');
@@ -107,7 +110,7 @@ class VaultSecretInput {
             if (top.TYPO3?.Notification) {
                 top.TYPO3.Notification.error('Error', error.message || 'Failed to reveal secret');
             }
-            button.innerHTML = originalIcon;
+            button.replaceChildren(...originalChildren);
             button.disabled = false;
         }
     }

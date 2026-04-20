@@ -6,6 +6,11 @@ description = "Allow test fixtures, documentation examples, and build cache fals
 paths = [
     '''Tests/Unit/Service/SecretDetectionServiceTest\.php''',
     '''Tests/Unit/Crypto/EnvironmentMasterKeyProviderTest\.php''',
+    '''Tests/Fuzz/.*\.php''',
     '''docs/implementation-plan\.md''',
     '''\.php-cs-fixer\.cache''',
+    '''\.ddev/docker-compose\..*\.yaml''',
 ]
+# NOTE: regex allowlists are intentionally omitted. The synthetic FAKE tokens
+# live only in SecretDetectionServiceTest.php, which is already path-allowlisted
+# above. A repo-wide regex would mask a real leak of the same shape elsewhere.
