@@ -67,14 +67,14 @@ Tests/
 ## Code Style
 - Unit tests extend `\TYPO3\TestingFramework\Core\Unit\UnitTestCase`.
 - Functional tests extend `\TYPO3\TestingFramework\Core\Functional\FunctionalTestCase`.
-- Test class name: `<SourceClass>Test`; methods use `@Test` attribute or `test` prefix.
+- Test class name: `<SourceClass>Test`; methods use the `#[Test]` PHPUnit attribute (`PHPUnit\Framework\Attributes\Test`) or a `test` prefix — never the legacy `@test` docblock annotation.
 - Use `#[DataProvider]` (native PHPUnit 10 attribute) for parameterized cases.
 - One assertion concept per test; split by behaviour, not by line count.
 - No real HTTP / filesystem calls — mock adapters (`VaultAdapterInterface`).
 - Functional fixtures: `Tests/.../Fixtures/*.csv`, loaded via `$this->importCSVDataSet()`.
 
 ## Security
-- **Never commit real secrets** — fixtures use clearly synthetic values. `.gitleaks.toml` allowlists `Tests/` and `Documentation/` paths for known test strings.
+- **Never commit real secrets** — fixtures use clearly synthetic values. `.gitleaks.toml` allowlists only a narrow set of specific paths (see the `[allowlist] paths` list) for known synthetic tokens; new files are scanned by default.
 - **Master keys in tests** are generated per-test (`sodium_crypto_secretbox_keygen()`), never hard-coded.
 - **Do not** test against production vault backends.
 - **Audit logs** in tests must still verify HMAC chain integrity when the code path produces entries.

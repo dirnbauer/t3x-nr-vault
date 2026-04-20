@@ -32,7 +32,11 @@ Playwright browser E2E tests for the nr-vault TYPO3 backend module. Targets the 
 # 1. Start the TYPO3 instance
 make up
 
-# 2. (First run) install Playwright browsers
+# 2. Install Node dependencies declared in package.json
+#    (@playwright/test, @axe-core/playwright, etc.)
+npm install
+
+# 3. (First run) install Playwright browsers + system deps
 npx playwright install --with-deps
 ```
 
@@ -63,8 +67,8 @@ Tests/E2E/
 
 ## Code Style
 - TypeScript, ES modules.
-- Each test fully isolated — generate unique identifiers per run:
-  `const uniqueId = \`test-${Date.now()}-${Math.random().toString(36).slice(2,8)}\``
+- Each test fully isolated — generate unique identifiers per run. Vault identifiers must start with a letter and contain only letters/digits/underscores (see `Classes/Utility/IdentifierValidator.php`), so use **underscores, not hyphens**:
+  `const uniqueId = \`e2e_test_${Date.now()}_${crypto.randomUUID().slice(0, 8)}\`;`
 - Always await inside tests; never mix fire-and-forget promises.
 - Prefer role/label locators over CSS selectors.
 - No `page.waitForTimeout(ms)` — use `waitForModuleContent` or explicit `waitFor`.
@@ -74,7 +78,7 @@ Tests/E2E/
 - **Test credentials** (`admin` / DDEV default) are for local DDEV only — never commit production credentials.
 - **Never** point E2E tests at a production instance.
 - **Clipboard access** — tests that read clipboard require browser permissions in `playwright.config.ts`.
-- **Fixtures** — no real secrets; use placeholders like `fixture-secret-<uniqueId>`.
+- **Fixtures** — no real secrets; use identifier-safe placeholders like `fixture_secret_<uniqueId>` (letters/digits/underscores only — see `IdentifierValidator`).
 
 ## Checklist
 - [ ] Test uses `getModuleFrame(page)` for any assertion inside the module iframe

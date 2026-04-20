@@ -99,29 +99,50 @@ This extension handles sensitive data. Non-negotiable rules:
 7. **Tamper-evident audit log** — HMAC hash chain; verify on schedule (see `VaultAuditCommand`).
 
 ## Key Interfaces
-```php
-// Core vault operations
-VaultServiceInterface::store(string $identifier, string $secret, array $options): void
-VaultServiceInterface::retrieve(string $identifier): ?string
-VaultServiceInterface::rotate(string $identifier, string $newSecret, ?string $reason): void
-VaultServiceInterface::delete(string $identifier, ?string $reason): void
+> Authoritative source: the `*Interface.php` files. This is a cheat-sheet — read the PHP for full docblocks.
 
-// Encryption
-EncryptionServiceInterface::encrypt(string $plaintext, string $dataKey): string
-EncryptionServiceInterface::decrypt(string $ciphertext, string $dataKey): string
+```php
+// Core vault operations — Classes/Service/VaultServiceInterface.php
+VaultServiceInterface::store(string $identifier, string $secret, array $options = []): void
+VaultServiceInterface::retrieve(string $identifier): ?string
+VaultServiceInterface::exists(string $identifier): bool
+VaultServiceInterface::delete(string $identifier, string $reason = ''): void
+VaultServiceInterface::rotate(string $identifier, string $newSecret, string $reason = ''): void
+VaultServiceInterface::list(?string $pattern = null): array
+VaultServiceInterface::getMetadata(string $identifier): SecretDetails
+VaultServiceInterface::clearCache(): void
+VaultServiceInterface::http(): VaultHttpClientInterface
+
+// Encryption — Classes/Crypto/EncryptionServiceInterface.php
+EncryptionServiceInterface::encrypt(string $plaintext, string $identifier): EncryptedData
+EncryptionServiceInterface::decrypt(
+    string $encryptedValue, string $encryptedDek,
+    string $dekNonce, string $valueNonce, string $identifier
+): string
+EncryptionServiceInterface::generateDek(): string
+EncryptionServiceInterface::calculateChecksum(string $plaintext): string
+
+// Master key — Classes/Crypto/MasterKeyProviderInterface.php
 MasterKeyProviderInterface::getMasterKey(): string
 
-// Audit logging
-AuditLogServiceInterface::log(string $operation, string $identifier, array $context): void
+// Audit logging — Classes/Audit/AuditLogServiceInterface.php
+AuditLogServiceInterface::log(
+    string $secretIdentifier, string $action, bool $success,
+    ?string $errorMessage = null, ?string $reason = null,
+    ?string $hashBefore = null, ?string $hashAfter = null,
+    ?AuditContextInterface $context = null,
+): void
+AuditLogServiceInterface::query(?AuditLogFilter $filter = null, int $limit = 100, int $offset = 0): array
+AuditLogServiceInterface::verifyHashChain(?int $fromUid = null, ?int $toUid = null): HashChainVerificationResult
 ```
 
 ## CLI Commands (TYPO3 `vendor/bin/typo3`)
 ```
-vault:audit              # View / verify audit log entries
-vault:audit:migrate      # Migrate audit log to HMAC hash chain
-vault:migrate-field      # Move DB field values into the vault
-vault:rotate-master-key  # Re-encrypt all DEKs with a new master key
-vault:cleanup-orphans    # Scheduled task wrapper
+vault:audit                # View / verify audit log entries
+vault:audit-migrate-hmac   # Migrate audit log hash chain from SHA-256 to HMAC-SHA256
+vault:migrate-field        # Move DB field values into the vault
+vault:rotate-master-key    # Re-encrypt all DEKs with a new master key
+vault:cleanup-orphans      # Scheduled task wrapper
 ```
 
 ## Boundaries

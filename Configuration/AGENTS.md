@@ -44,7 +44,7 @@ No separate setup — configuration is loaded by TYPO3 at bootstrap. After editi
 ## Code Style
 - **Services.yaml**: two-space indent; leading underscore for defaults (`_defaults:`); explicit `public: true` only where needed (controllers, commands, listeners).
 - **TCA**: return a single array literal; no side effects; use `LLL:EXT:nr_vault/Resources/Private/Language/locallang_db.xlf:…` for labels.
-- **Backend modules**: short label format `nr_vault.modules.<name>`; POST-only routes declare `methods: ['POST']`.
+- **Backend modules**: use `LLL:EXT:nr_vault/Resources/Private/Language/Modules/<name>.xlf` label paths (one XLIFF per module); POST-only routes declare `methods: ['POST']`.
 - **AJAX routes**: name them `vault_<action>`; controller returns `JsonResponse`.
 - **Do not** use `$GLOBALS['TYPO3_CONF_VARS']` edits inside `Configuration/` — keep them in `ext_localconf.php`.
 
@@ -82,13 +82,20 @@ Netresearch\NrVault\Crypto\MasterKeyProviderInterface:
 ```php
 // Configuration/Backend/Modules.php
 return [
-    'admin_vault' => [
-        'parent' => 'admin',
+    'admin_vault_secrets' => [
+        // 'tools' works on v13 natively and is an alias for 'admin' on v14.
+        'parent' => 'tools',
         'access' => 'admin',
-        'path' => '/module/admin/vault',
-        'labels' => 'nr_vault.modules.overview',
+        'workspaces' => 'live',
+        'path' => '/module/admin/vault/secrets',
+        'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/secrets.xlf',
+        'iconIdentifier' => 'module-vault-secrets',
         'routes' => [
-            '_default' => ['target' => Controller::class . '::handleRequest'],
+            // Route target is <Controller>::<action>Action — one action per route.
+            // Only Migration flows use a single dispatch method (handleRequest).
+            '_default' => ['target' => SecretsController::class . '::listAction'],
+            'create'   => ['target' => SecretsController::class . '::createAction'],
+            'toggle'   => ['target' => SecretsController::class . '::toggleAction', 'methods' => ['POST']],
         ],
     ],
 ];
