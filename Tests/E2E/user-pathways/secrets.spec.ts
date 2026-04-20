@@ -25,7 +25,7 @@ import { test, expect, getModuleFrame, waitForModuleContent } from '../fixtures/
 
 // Generate unique identifier for test isolation
 // Must start with a letter and contain only letters, numbers, and underscores
-const generateTestId = () => `e2e_test_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+const generateTestId = () => `e2e_test_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
 test.describe('Secrets Module User Pathways', () => {
   test.describe('UP-SEC-001: View Secrets List', () => {

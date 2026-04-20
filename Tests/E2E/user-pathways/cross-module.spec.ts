@@ -13,7 +13,7 @@ import { test, expect, getModuleFrame, waitForModuleContent } from '../fixtures/
  */
 
 // Generate unique identifier for test isolation (underscore format for valid identifiers)
-const generateTestId = () => `e2e_cross_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+const generateTestId = () => `e2e_cross_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
 test.describe('Cross-Module User Pathways', () => {
   test.describe('UP-CROSS-001: Full Secret Lifecycle', () => {

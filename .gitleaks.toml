@@ -6,6 +6,14 @@ description = "Allow test fixtures, documentation examples, and build cache fals
 paths = [
     '''Tests/Unit/Service/SecretDetectionServiceTest\.php''',
     '''Tests/Unit/Crypto/EnvironmentMasterKeyProviderTest\.php''',
+    '''Tests/Fuzz/.*\.php''',
     '''docs/implementation-plan\.md''',
     '''\.php-cs-fixer\.cache''',
+    '''\.ddev/docker-compose\..*\.yaml''',
+]
+regexes = [
+    # Synthetic tokens used by SecretDetectionService tests (clearly marked FAKE).
+    '''(ghp|gho|ghs|ghu|ghr)_FAKE[0-9A-Za-z]{30,}''',
+    '''AKIAEXAMPLEFAKEKEY[0-9A-Za-z]+''',
+    '''AIzaFAKEEXAMPLEKEY[0-9A-Za-z]+''',
 ]

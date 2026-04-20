@@ -9,6 +9,12 @@
 .DS_Store
 Thumbs.db
 
+# Environment files (never commit secrets)
+.env
+.env.*
+!.env.example
+!.env.dist
+
 # Build artifacts
 /vendor/
 /var/
