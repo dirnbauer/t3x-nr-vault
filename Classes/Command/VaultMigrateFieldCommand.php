@@ -110,6 +110,12 @@ final class VaultMigrateFieldCommand extends Command
         \assert(\is_string($field));
         \assert(\is_string($uidField));
 
+        if (trim($uidField) === '') {
+            $io->error('--uid-field must be a non-empty column name.');
+
+            return Command::FAILURE;
+        }
+
         $dryRun = (bool) $input->getOption('dry-run');
         $batchSize = $input->getOption('batch-size');
         $whereClause = $input->getOption('where');
