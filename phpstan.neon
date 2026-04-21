@@ -1,11 +1,18 @@
 includes:
     - .Build/vendor/phpstan/phpstan/conf/bleedingEdge.neon
-    - .Build/vendor/phpstan/phpstan-phpunit/extension.neon
-    - .Build/vendor/phpstan/phpstan-phpunit/rules.neon
-    - .Build/vendor/phpstan/phpstan-strict-rules/rules.neon
-    - .Build/vendor/phpat/phpat/extension.neon
     - Build/phpstan-baseline.neon
     - phpat.neon
+    # PHPStan extensions (phpstan-phpunit, phpstan-strict-rules,
+    # phpstan-deprecation-rules, saschaegerer/phpstan-typo3, phpat) are
+    # auto-registered on CI by phpstan/extension-installer (pulled via
+    # netresearch/typo3-ci-workflows). Do NOT list their .neon files
+    # here — double-load triggers a PHPStan warning that fails the run.
+    #
+    # For the local `composer install --no-plugins` workflow (documented
+    # in typo3-ci-workflows README for git worktrees), override this
+    # config by creating Build/phpstan.no-plugins.neon that manually
+    # includes the extension files, then run:
+    #   .Build/bin/phpstan analyse --configuration=Build/phpstan.no-plugins.neon
 
 parameters:
     level: 10
