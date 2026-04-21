@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Exception;
 
 use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 #[CoversNothing]

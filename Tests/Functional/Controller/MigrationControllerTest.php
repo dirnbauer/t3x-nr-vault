@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Functional\Controller;
 
 use Netresearch\NrVault\Controller\MigrationController;
 use Netresearch\NrVault\Service\SecretDetectionServiceInterface;
+use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Functional tests for MigrationController.
@@ -22,54 +22,9 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * These tests verify that the controller's dependencies are properly configured.
  */
 #[CoversClass(MigrationController::class)]
-final class MigrationControllerTest extends FunctionalTestCase
+final class MigrationControllerTest extends AbstractVaultFunctionalTestCase
 {
-    protected array $testExtensionsToLoad = [
-        'netresearch/nr-vault',
-    ];
-
-    protected array $coreExtensionsToLoad = [
-        'backend',
-    ];
-
-    private ?string $masterKeyPath = null;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Create a temporary master key for testing
-        $this->masterKeyPath = $this->instancePath . '/master.key';
-        $masterKey = sodium_crypto_secretbox_keygen();
-        file_put_contents($this->masterKeyPath, $masterKey);
-        chmod($this->masterKeyPath, 0o600);
-
-        // Configure extension to use file-based master key
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_vault'] = [
-            'masterKeySource' => $this->masterKeyPath,
-            'autoKeyPath' => $this->masterKeyPath,
-            'enableCache' => false,
-        ];
-
-        // Create backend user
-        $this->importCSVDataSet(__DIR__ . '/../Hook/Fixtures/be_users.csv');
-        $this->setUpBackendUser(1);
-    }
-
-    protected function tearDown(): void
-    {
-        // Clean up master key
-        if ($this->masterKeyPath !== null && file_exists($this->masterKeyPath)) {
-            $content = file_get_contents($this->masterKeyPath);
-            if ($content !== false) {
-                sodium_memzero($content);
-            }
-            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
-            unlink($this->masterKeyPath);
-        }
-
-        parent::tearDown();
-    }
+    protected ?string $backendUserFixture = __DIR__ . '/../Hook/Fixtures/be_users.csv';
 
     #[Test]
     public function secretDetectionServiceIsInjectable(): void

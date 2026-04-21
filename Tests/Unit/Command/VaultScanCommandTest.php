@@ -14,11 +14,11 @@ use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\DatabaseSecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
 use Netresearch\NrVault\Service\SecretDetectionServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -39,7 +39,7 @@ final class VaultScanCommandTest extends TestCase
         $command = new VaultScanCommand($this->detectionService);
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $this->commandTester = new CommandTester($command);
     }

@@ -10,14 +10,16 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Http;
 
 use Netresearch\NrVault\Http\SecureHttpClientFactory;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 
 #[CoversClass(SecureHttpClientFactory::class)]
 final class SecureHttpClientFactoryTest extends TestCase
 {
+    protected bool $resetSingletonInstances = true;
+
     private SecureHttpClientFactory $factory;
 
     protected function setUp(): void
@@ -29,8 +31,8 @@ final class SecureHttpClientFactoryTest extends TestCase
 
     protected function tearDown(): void
     {
-        parent::tearDown();
         unset($GLOBALS['TYPO3_CONF_VARS']);
+        parent::tearDown();
     }
 
     #[Test]

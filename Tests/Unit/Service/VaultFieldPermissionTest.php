@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Service;
 
 use Netresearch\NrVault\Service\VaultFieldPermission;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 // Enums are not valid coverage targets in PHPUnit 12
 #[CoversNothing]

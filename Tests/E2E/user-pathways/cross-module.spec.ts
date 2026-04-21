@@ -10,12 +10,17 @@ import { test, expect, getModuleFrame, waitForModuleContent } from '../fixtures/
  * - UP-CROSS-001: Full Secret Lifecycle
  * - UP-CROSS-002: Dashboard Statistics Accuracy
  * - UP-CROSS-003: Module Navigation Consistency
+ *
+ * These tests mutate shared DB state (creating and deleting secrets that feed
+ * the overview counters). Run them serially within a worker to avoid races
+ * where one test's teardown sees another test's newly-created row.
  */
 
 // Generate unique identifier for test isolation (underscore format for valid identifiers)
-const generateTestId = () => `e2e_cross_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+const generateTestId = (): string =>
+  `e2e_cross_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
-test.describe('Cross-Module User Pathways', () => {
+test.describe.serial('Cross-Module User Pathways', () => {
   test.describe('UP-CROSS-001: Full Secret Lifecycle', () => {
     test('complete secret lifecycle with audit trail', async ({ authenticatedPage: page }) => {
       const testIdentifier = generateTestId();
@@ -31,25 +36,31 @@ test.describe('Cross-Module User Pathways', () => {
       const secretInput = frame.locator('input[data-vault-is-new="1"]').first();
       await secretInput.fill('lifecycle-test-value');
 
-      const descriptionField = frame.locator('textarea[data-formengine-input-name*="description"], input[data-formengine-input-name*="description"]');
+      const descriptionField = frame.locator(
+        'textarea[data-formengine-input-name*="description"], input[data-formengine-input-name*="description"]',
+      );
       if (await descriptionField.isVisible()) {
         await descriptionField.fill('Lifecycle test secret');
       }
 
       await frame.locator('button[name="_savedok"], button:has-text("Save")').click();
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
 
       // Verify creation succeeded
       const newFrame = getModuleFrame(page);
       await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
 
-      // Step 2: Check audit log for create entry
-      await page.goto('/typo3/module/admin/vault/audit');
+      // Step 2: Check audit log for create entry — concrete row assertion.
+      await page.goto(
+        `/typo3/module/admin/vault/audit?secretIdentifier=${encodeURIComponent(testIdentifier)}`,
+      );
       await waitForModuleContent(page);
 
       const auditFrame = getModuleFrame(page);
       await expect(auditFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
+      await expect(
+        auditFrame.locator('table tbody tr', { hasText: testIdentifier }).first(),
+      ).toBeVisible({ timeout: 10000 });
 
       // Step 3: View the secret in list
       await page.goto('/typo3/module/admin/vault/secrets');
@@ -57,19 +68,26 @@ test.describe('Cross-Module User Pathways', () => {
 
       const listFrame = getModuleFrame(page);
       await listFrame.getByRole('textbox', { name: 'Identifier' }).fill(testIdentifier);
+      const filterResp = page.waitForResponse(
+        (resp) => resp.url().includes('admin_vault_secrets') && resp.status() === 200,
+        { timeout: 10000 },
+      );
       await listFrame.locator('button:has-text("Filter")').click();
-      await page.waitForTimeout(1000);
+      await filterResp.catch(() => undefined);
 
       const filteredFrame = getModuleFrame(page);
-      const secretRow = filteredFrame.locator(`text=${testIdentifier}`);
-      await expect(secretRow.first()).toBeVisible();
+      const secretRow = filteredFrame.locator(`[data-testid="secret-row-${testIdentifier}"]`);
+      await expect(secretRow).toBeVisible({ timeout: 5000 });
 
       // Step 4: Delete the secret (cleanup)
-      const deleteButton = filteredFrame.locator('button[title*="Delete"]').first();
+      const deleteButton = secretRow.getByTestId('vault-delete-btn').first();
       if (await deleteButton.isVisible()) {
-        page.on('dialog', (dialog) => dialog.accept());
         await deleteButton.click();
-        await page.waitForTimeout(1000);
+        const confirm = page.getByRole('button', { name: 'Delete', exact: true });
+        if (await confirm.isVisible().catch(() => false)) {
+          await confirm.click();
+          await page.waitForLoadState('networkidle');
+        }
       }
     });
   });
@@ -85,9 +103,8 @@ test.describe('Cross-Module User Pathways', () => {
       // Should show some statistics
       await expect(frame.locator('text=Oops, an error occurred')).not.toBeVisible();
 
-      // Look for stats elements (cards, badges, numbers)
-      const statsElements = frame.locator('.card, .badge, [class*="stat"]');
-      const hasStats = (await statsElements.count()) > 0;
+      // Statistics group MUST render (template attaches data-testid).
+      await expect(frame.getByTestId('vault-stats')).toBeVisible();
 
       // At least the overview page loads
       await expect(frame.locator('h1')).toBeVisible();
@@ -99,14 +116,16 @@ test.describe('Cross-Module User Pathways', () => {
 
       const frame = getModuleFrame(page);
 
-      // Look for active/inactive or total counts
-      const activeIndicator = frame.locator('text=Active, text=active');
-      const totalIndicator = frame.locator('text=Total, text=Secrets, text=secrets');
+      // Concrete check: each stat card must render with a numeric value.
+      await expect(frame.getByTestId('stat-card-total')).toBeVisible();
+      await expect(frame.getByTestId('stat-card-active')).toBeVisible();
+      await expect(frame.getByTestId('stat-card-disabled')).toBeVisible();
 
-      const hasActiveIndicator = await activeIndicator.first().isVisible().catch(() => false);
-      const hasTotalIndicator = await totalIndicator.first().isVisible().catch(() => false);
+      for (const testid of ['stat-value-total', 'stat-value-active', 'stat-value-disabled']) {
+        const value = await frame.getByTestId(testid).innerText();
+        expect(value.trim(), `${testid} must be numeric`).toMatch(/^\d[\d,]*$/);
+      }
 
-      // Overview should show some status information
       await expect(frame.locator('text=Oops, an error occurred')).not.toBeVisible();
     });
   });
@@ -144,9 +163,9 @@ test.describe('Cross-Module User Pathways', () => {
 
       // Go back
       await page.goBack();
-      await page.waitForTimeout(500);
+      await page.waitForLoadState('networkidle');
 
-      // URL should be secrets or overview
+      // URL should still be within vault module.
       const currentUrl = page.url();
       expect(currentUrl).toMatch(/vault/);
     });
@@ -215,30 +234,36 @@ test.describe('Cross-Module User Pathways', () => {
       await secretInput.fill('feedback-test');
       await frame.locator('button[name="_savedok"], button:has-text("Save")').click();
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
 
-      // Should see success (redirect to list or flash message)
-      const newFrame = getModuleFrame(page);
-      await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
-
-      // Cleanup
+      // Verify the secret exists in the list (concrete state check).
       await page.goto('/typo3/module/admin/vault/secrets');
       await waitForModuleContent(page);
 
       const listFrame = getModuleFrame(page);
       await listFrame.getByRole('textbox', { name: 'Identifier' }).fill(testIdentifier);
+      const filterResp = page.waitForResponse(
+        (resp) => resp.url().includes('admin_vault_secrets') && resp.status() === 200,
+        { timeout: 10000 },
+      );
       await listFrame.locator('button:has-text("Filter")').click();
-      await page.waitForTimeout(1000);
+      await filterResp.catch(() => undefined);
 
       const filteredFrame = getModuleFrame(page);
-      const deleteButton = filteredFrame.locator('button[title*="Delete"]').first();
+      await expect(
+        filteredFrame.locator(`[data-testid="secret-row-${testIdentifier}"]`),
+      ).toBeVisible({ timeout: 5000 });
+
+      // Cleanup
+      const deleteButton = filteredFrame
+        .locator(`[data-testid="secret-row-${testIdentifier}"]`)
+        .getByTestId('vault-delete-btn')
+        .first();
       if (await deleteButton.isVisible()) {
         await deleteButton.click();
-        await page.waitForTimeout(500);
-        // Handle TYPO3 Modal confirmation
         const confirmButton = page.getByRole('button', { name: 'Delete', exact: true });
-        if (await confirmButton.isVisible()) {
+        if (await confirmButton.isVisible().catch(() => false)) {
           await confirmButton.click();
+          await page.waitForLoadState('networkidle');
         }
       }
     });
@@ -258,14 +283,15 @@ test.describe('Cross-Module User Pathways', () => {
       const secretInput = frame.locator('input[data-vault-is-new="1"]').first();
       await secretInput.fill('consistency-test');
 
-      const descField = frame.locator('textarea[data-formengine-input-name*="description"], input[data-formengine-input-name*="description"]');
+      const descField = frame.locator(
+        'textarea[data-formengine-input-name*="description"], input[data-formengine-input-name*="description"]',
+      );
       if (await descField.isVisible()) {
         await descField.fill(testDescription);
       }
 
       await frame.locator('button[name="_savedok"], button:has-text("Save")').first().click();
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
 
       // Check in list view
       await page.goto('/typo3/module/admin/vault/secrets');
@@ -273,24 +299,29 @@ test.describe('Cross-Module User Pathways', () => {
 
       const listFrame = getModuleFrame(page);
       await listFrame.getByRole('textbox', { name: 'Identifier' }).fill(testIdentifier);
+      const filterResp = page.waitForResponse(
+        (resp) => resp.url().includes('admin_vault_secrets') && resp.status() === 200,
+        { timeout: 10000 },
+      );
       await listFrame.locator('button:has-text("Filter")').click();
-      await page.waitForTimeout(1000);
+      await filterResp.catch(() => undefined);
 
       const filteredFrame = getModuleFrame(page);
-
-      // Verify filter found results - identifier is shown in filter, not table
-      const secretsCount = filteredFrame.getByLabel('secrets found');
-      await expect(secretsCount).toBeVisible();
+      await expect(
+        filteredFrame.locator(`[data-testid="secret-row-${testIdentifier}"]`),
+      ).toBeVisible({ timeout: 5000 });
 
       // Cleanup
-      const deleteButton = filteredFrame.locator('button[title*="Delete"]').first();
+      const deleteButton = filteredFrame
+        .locator(`[data-testid="secret-row-${testIdentifier}"]`)
+        .getByTestId('vault-delete-btn')
+        .first();
       if (await deleteButton.isVisible()) {
         await deleteButton.click();
-        await page.waitForTimeout(500);
-        // Handle TYPO3 Modal confirmation
         const confirmButton = page.getByRole('button', { name: 'Delete', exact: true });
-        if (await confirmButton.isVisible()) {
+        if (await confirmButton.isVisible().catch(() => false)) {
           await confirmButton.click();
+          await page.waitForLoadState('networkidle');
         }
       }
     });
@@ -306,7 +337,8 @@ test.describe('Cross-Module User Pathways', () => {
       // Should have table or empty state
       const table = frame.locator('table');
       const emptyState = frame.locator('.callout-info, text=No');
-      const hasContent = await table.first().isVisible() || await emptyState.first().isVisible();
+      const hasContent =
+        (await table.first().isVisible()) || (await emptyState.first().isVisible());
       expect(hasContent).toBe(true);
     });
   });

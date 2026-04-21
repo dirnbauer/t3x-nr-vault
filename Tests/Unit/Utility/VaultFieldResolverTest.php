@@ -12,24 +12,21 @@ namespace Netresearch\NrVault\Tests\Unit\Utility;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
-use TYPO3\CMS\Core\Schema\Field\FieldCollection;
-use TYPO3\CMS\Core\Schema\Field\FieldTypeInterface;
-use TYPO3\CMS\Core\Schema\TcaSchema;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
-use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[AllowMockObjectsWithoutExpectations]
-final class VaultFieldResolverTest extends UnitTestCase
+final class VaultFieldResolverTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;
 
-    private TcaSchemaFactory&MockObject $tcaSchemaFactory;
+    protected TcaSchemaFactory&MockObject $tcaSchemaFactory;
 
     private LoggerInterface&MockObject $logger;
 
@@ -348,25 +345,132 @@ final class VaultFieldResolverTest extends UnitTestCase
         self::assertSame($record, $result);
     }
 
+
     /**
-     * @param array<string, array<string, mixed>> $fields
+     * Kill Continue_ mutation on line 57 — `continue` (not `break`) when a
+     * field is missing. Second field must still be resolved.
      */
-    private function mockTcaSchemaForTable(string $table, array $fields): void
+    #[Test]
+    public function resolveFieldsContinuesToLaterFieldsWhenEarlierOnesAreMissing(): void
     {
-        $schema = $this->createMock(TcaSchema::class);
-        $fieldMocks = [];
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $resolved = 'resolved-value';
 
-        foreach ($fields as $fieldName => $config) {
-            $field = $this->createMock(FieldTypeInterface::class);
-            $field->method('getName')->willReturn($fieldName);
-            $field->method('getConfiguration')->willReturn($config);
-            $fieldMocks[$fieldName] = $field;
-        }
+        $this->vaultService
+            ->expects(self::once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($resolved);
 
-        $fieldCollection = new FieldCollection($fieldMocks);
-        $schema->method('getFields')->willReturn($fieldCollection);
+        // First field is missing → `continue` skips it, second field is a vault identifier.
+        $data = [
+            'present' => $identifier,
+            // 'missing' is NOT set in $data.
+        ];
 
-        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
-        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
+        $result = $this->subject->resolveFields($data, ['missing', 'present']);
+
+        self::assertSame($resolved, $result['present']);
+    }
+
+    /**
+     * Kill Continue_ mutation on line 63 — `continue` (not `break`) when a
+     * value is NOT a vault identifier. Later vault-identifier fields must still
+     * be resolved even when an earlier non-vault field appears first.
+     */
+    #[Test]
+    public function resolveFieldsContinuesToLaterFieldsWhenEarlierOnesAreNotVaultIdentifiers(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+        $resolved = 'real-secret';
+
+        $this->vaultService
+            ->expects(self::once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn($resolved);
+
+        // Earlier field is a plain string → `continue` skips it, later field is a UUID.
+        $data = [
+            'title' => 'plain-string-not-a-uuid',
+            'api_key' => $identifier,
+        ];
+
+        $result = $this->subject->resolveFields($data, ['title', 'api_key']);
+
+        self::assertSame('plain-string-not-a-uuid', $result['title']);
+        self::assertSame($resolved, $result['api_key']);
+    }
+
+    /**
+     * Kill ReturnRemoval on line 97 — resolve() returns null, not void.
+     */
+    #[Test]
+    public function resolveReturnsNullExplicitlyForNonUuid(): void
+    {
+        // If ReturnRemoval mutation applies, the function would fall through and
+        // try to call vaultService->retrieve('not-a-uuid'), which would never match
+        // the expectation set below — but more importantly, the return value must
+        // be strictly null (not void/undefined).
+        $this->vaultService->expects(self::never())->method('retrieve');
+
+        $result = $this->subject->resolve('not-a-uuid');
+
+        self::assertNull($result);
+    }
+
+    /**
+     * Kill ReturnRemoval on line 122 + ArrayOneItem — resolveRecord must return
+     * the untouched record when there are no vault fields for the table.
+     */
+    #[Test]
+    public function resolveRecordReturnsExactRecordWhenNoVaultFields(): void
+    {
+        $this->tcaSchemaFactory->method('has')->with('tx_nonexistent')->willReturn(false);
+
+        $record = [
+            'title' => 'Test',
+            'description' => 'description with multiple items',
+            'count' => 42,
+        ];
+
+        $result = $this->subject->resolveRecord('tx_nonexistent', $record);
+
+        // Exact array match — kills ArrayOneItem (would truncate to 1 item).
+        self::assertSame($record, $result);
+        self::assertCount(3, $result);
+    }
+
+    /**
+     * Kill Continue_ on lines 57 and 63 together — mix missing, non-UUID and
+     * real UUID fields, verify vault is called exactly once.
+     */
+    #[Test]
+    public function resolveFieldsHandlesMixedFieldsRobustly(): void
+    {
+        $identifier = '01937b6e-4b6c-7abc-8def-0123456789ab';
+
+        $this->vaultService
+            ->expects(self::once())
+            ->method('retrieve')
+            ->with($identifier)
+            ->willReturn('secret-value');
+
+        $data = [
+            'plain' => 'not-a-uuid',
+            'vault' => $identifier,
+            // 'missing' is absent.
+            'another_plain' => 'also-not-a-uuid',
+        ];
+
+        $result = $this->subject->resolveFields(
+            $data,
+            ['missing', 'plain', 'vault', 'another_plain'],
+        );
+
+        self::assertSame('not-a-uuid', $result['plain']);
+        self::assertSame('secret-value', $result['vault']);
+        self::assertSame('also-not-a-uuid', $result['another_plain']);
+        self::assertArrayNotHasKey('missing', $result);
     }
 }

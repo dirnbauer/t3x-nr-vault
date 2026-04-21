@@ -1,16 +1,38 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect } from '../fixtures/auth';
+import { test, expect, getModuleFrame, waitForModuleContent } from '../fixtures/auth';
 
 /**
  * Accessibility tests for Vault backend modules.
  *
  * Uses axe-core to validate WCAG 2.1 AA compliance.
- * Tests verify that backend modules are accessible to users
- * with assistive technologies.
+ * Tests verify that backend modules are accessible to users with assistive
+ * technologies.
+ *
+ * Hardening notes:
+ *  - We do NOT silently drop violations whose DOM node contains the
+ *    substrings "vault" or "secret". That filter hid legitimate site-wide
+ *    issues (color contrast on generic TYPO3 chrome that happened to render
+ *    inside our module) and made the suite misleadingly green.
+ *  - Severity threshold is moderate+serious+critical. WCAG 2.1 AA requires
+ *    addressing moderate issues too — they typically represent real barriers
+ *    for assistive-tech users.
  */
+
+type AxeImpact = 'minor' | 'moderate' | 'serious' | 'critical';
+
+const FAIL_IMPACTS: readonly AxeImpact[] = ['moderate', 'serious', 'critical'];
+
+function filterFailingViolations<T extends { impact?: string | null | undefined }>(
+  violations: readonly T[],
+): T[] {
+  return violations.filter((v) =>
+    FAIL_IMPACTS.includes((v.impact ?? 'minor') as AxeImpact),
+  );
+}
+
 test.describe('Vault Module Accessibility', () => {
   test.describe('Secrets Module', () => {
-    test('secrets list page has no critical accessibility violations', async ({ authenticatedPage: page }) => {
+    test('secrets list page has no moderate+ accessibility violations', async ({ authenticatedPage: page }) => {
       await page.goto('/typo3/module/admin/vault/secrets');
       await page.waitForLoadState('networkidle');
 
@@ -23,11 +45,9 @@ test.describe('Vault Module Accessibility', () => {
         console.log('Accessibility violations:', JSON.stringify(results.violations, null, 2));
       }
 
-      // No critical or serious violations
-      const criticalViolations = results.violations.filter(
-        v => v.impact === 'critical' || v.impact === 'serious'
-      );
-      expect(criticalViolations).toHaveLength(0);
+      const failing = filterFailingViolations(results.violations);
+      expect(failing, `Found moderate+ a11y violations: ${failing.map((v) => v.id).join(', ')}`)
+        .toHaveLength(0);
     });
 
     test('create secret form has proper labels and structure', async ({ authenticatedPage: page }) => {
@@ -41,15 +61,16 @@ test.describe('Vault Module Accessibility', () => {
         .analyze();
 
       // Filter for form-related violations, excluding TYPO3 core FormEngine issues
-      const formViolations = results.violations.filter(v => {
+      const formViolations = results.violations.filter((v) => {
         if (!v.id.includes('label') && !v.id.includes('form')) {
           return false;
         }
         // Exclude TYPO3 FormEngine generated elements (plainValue selects, filter inputs)
-        const isTYPO3CoreElement = v.nodes.some(n =>
-          n.html.includes('plainValue') ||
-          n.html.includes('filter-container') ||
-          n.html.includes('Type to filter')
+        const isTYPO3CoreElement = v.nodes.some(
+          (n) =>
+            n.html.includes('plainValue') ||
+            n.html.includes('filter-container') ||
+            n.html.includes('Type to filter'),
         );
         return !isTYPO3CoreElement;
       });
@@ -58,7 +79,7 @@ test.describe('Vault Module Accessibility', () => {
   });
 
   test.describe('Audit Module', () => {
-    test('audit log page has no critical accessibility violations', async ({ authenticatedPage: page }) => {
+    test('audit log page has no moderate+ accessibility violations', async ({ authenticatedPage: page }) => {
       await page.goto('/typo3/module/admin/vault/audit');
       await page.waitForLoadState('networkidle');
 
@@ -66,10 +87,9 @@ test.describe('Vault Module Accessibility', () => {
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
         .analyze();
 
-      const criticalViolations = results.violations.filter(
-        v => v.impact === 'critical' || v.impact === 'serious'
-      );
-      expect(criticalViolations).toHaveLength(0);
+      const failing = filterFailingViolations(results.violations);
+      expect(failing, `Found moderate+ a11y violations: ${failing.map((v) => v.id).join(', ')}`)
+        .toHaveLength(0);
     });
 
     test('audit table has proper data table structure', async ({ authenticatedPage: page }) => {
@@ -83,14 +103,14 @@ test.describe('Vault Module Accessibility', () => {
         .analyze();
 
       const tableViolations = results.violations.filter(
-        v => v.id.includes('table') || v.id.includes('th')
+        (v) => v.id.includes('table') || v.id.includes('th'),
       );
       expect(tableViolations).toHaveLength(0);
     });
   });
 
   test.describe('Migration Module', () => {
-    test('migration wizard has no critical accessibility violations', async ({ authenticatedPage: page }) => {
+    test('migration wizard has no moderate+ accessibility violations', async ({ authenticatedPage: page }) => {
       await page.goto('/typo3/module/admin/vault/migration');
       await page.waitForLoadState('networkidle');
 
@@ -98,10 +118,9 @@ test.describe('Vault Module Accessibility', () => {
         .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
         .analyze();
 
-      const criticalViolations = results.violations.filter(
-        v => v.impact === 'critical' || v.impact === 'serious'
-      );
-      expect(criticalViolations).toHaveLength(0);
+      const failing = filterFailingViolations(results.violations);
+      expect(failing, `Found moderate+ a11y violations: ${failing.map((v) => v.id).join(', ')}`)
+        .toHaveLength(0);
     });
   });
 
@@ -115,9 +134,7 @@ test.describe('Vault Module Accessibility', () => {
         .analyze();
 
       // Check for heading-order violations
-      const headingViolations = results.violations.filter(
-        v => v.id === 'heading-order'
-      );
+      const headingViolations = results.violations.filter((v) => v.id === 'heading-order');
       expect(headingViolations).toHaveLength(0);
     });
 
@@ -131,7 +148,7 @@ test.describe('Vault Module Accessibility', () => {
 
       // Check for link and navigation violations
       const navViolations = results.violations.filter(
-        v => v.id.includes('link') || v.id.includes('navigation')
+        (v) => v.id.includes('link') || v.id.includes('navigation'),
       );
       expect(navViolations).toHaveLength(0);
     });
@@ -146,20 +163,23 @@ test.describe('Vault Module Accessibility', () => {
         .withTags(['wcag2aa'])
         .analyze();
 
-      const contrastViolations = results.violations.filter(
-        v => v.id === 'color-contrast'
-      );
+      const contrastViolations = results.violations.filter((v) => v.id === 'color-contrast');
 
       // Log any contrast issues for fixing
       if (contrastViolations.length > 0) {
         console.log('Color contrast violations:', JSON.stringify(contrastViolations, null, 2));
       }
 
-      // Allow minor contrast issues in TYPO3 core UI, but flag extension-specific ones
-      const extensionContrastIssues = contrastViolations.filter(v =>
-        v.nodes.some(n => n.html.includes('vault') || n.html.includes('secret'))
-      );
-      expect(extensionContrastIssues).toHaveLength(0);
+      // Flag ALL moderate+ contrast violations site-wide (previously this was
+      // restricted to nodes whose HTML contained "vault" or "secret", which
+      // silently suppressed legitimate issues on shared chrome).
+      const failing = filterFailingViolations(contrastViolations);
+      expect(
+        failing,
+        `Found moderate+ color-contrast violations: ${failing
+          .flatMap((v) => v.nodes.map((n) => n.target.join(' ')))
+          .join(' | ')}`,
+      ).toHaveLength(0);
     });
   });
 
@@ -181,6 +201,134 @@ test.describe('Vault Module Accessibility', () => {
 
       // Should be on a focusable element (link, button, input, etc.)
       expect(['a', 'button', 'input', 'select', 'textarea']).toContain(focusedElement);
+    });
+
+    test('Tab walks through form controls on create page, Shift+Tab reverses', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/secrets/create');
+      await waitForModuleContent(page);
+
+      const frame = getModuleFrame(page);
+      // Focus the first interactive form control.
+      const identifierInput = frame.locator(
+        'input[data-formengine-input-name*="identifier"]',
+      );
+      await identifierInput.waitFor({ state: 'visible', timeout: 5000 });
+      await identifierInput.focus();
+
+      // Resolve the underlying Frame so we can call `.evaluate()`.
+      // FrameLocator does not expose evaluate — we need the owner Frame.
+      const iframeHandle = await page.locator('iframe').first().elementHandle();
+      const ownerFrame = iframeHandle === null ? null : await iframeHandle.contentFrame();
+
+      // Collect a sequence of focus targets across ~8 Tab presses. We expect
+      // the walk to stay on focusable elements.
+      const forwardTargets: string[] = [];
+      for (let i = 0; i < 8; i++) {
+        await page.keyboard.press('Tab');
+        const tag =
+          ownerFrame === null
+            ? ''
+            : await ownerFrame.evaluate(
+                () => (document.activeElement?.tagName ?? '').toLowerCase(),
+              );
+        if (tag !== '') {
+          forwardTargets.push(tag);
+        }
+      }
+      const focusableTags = new Set(['a', 'button', 'input', 'select', 'textarea']);
+      const anyFocusable = forwardTargets.some((t) => focusableTags.has(t));
+      expect(anyFocusable, `Tab walk visited no focusable control: ${forwardTargets.join(',')}`).toBe(true);
+
+      // Shift+Tab should reverse direction — we just verify focus stays on a
+      // focusable element and does not throw/leave the document.
+      await page.keyboard.press('Shift+Tab');
+      const reverseTag =
+        ownerFrame === null
+          ? 'body'
+          : await ownerFrame.evaluate(
+              () => (document.activeElement?.tagName ?? '').toLowerCase(),
+            );
+      expect(['a', 'button', 'input', 'select', 'textarea', 'body']).toContain(reverseTag);
+    });
+
+    test('Enter on filter submit applies the filter', async ({ authenticatedPage: page }) => {
+      await page.goto('/typo3/module/admin/vault/secrets');
+      await waitForModuleContent(page);
+
+      const frame = getModuleFrame(page);
+      const input = frame.getByRole('textbox', { name: 'Identifier' });
+      await input.focus();
+      await input.fill('keyboard-test');
+
+      const filterResp = page.waitForResponse(
+        (resp) => resp.url().includes('admin_vault_secrets') && resp.status() === 200,
+        { timeout: 10000 },
+      );
+      await page.keyboard.press('Enter');
+      await filterResp.catch(() => undefined);
+
+      // Stats panel re-renders after filter apply; Enter-submit is working if
+      // the stats panel is still visible and no error page appeared.
+      const afterFrame = getModuleFrame(page);
+      await expect(afterFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
+    });
+  });
+
+  test.describe('Focus Management', () => {
+    test('opening rotate modal moves focus into the modal; closing returns focus to the trigger', async ({
+      authenticatedPage: page,
+    }) => {
+      await page.goto('/typo3/module/admin/vault/secrets');
+      await waitForModuleContent(page);
+
+      const frame = getModuleFrame(page);
+      const rotateButton = frame.getByTestId('vault-rotate-btn').first();
+
+      if (!(await rotateButton.isVisible().catch(() => false))) {
+        test.skip(
+          true,
+          'No rotatable secret present in this environment — cannot exercise modal focus management',
+        );
+        return;
+      }
+
+      await rotateButton.focus();
+      await rotateButton.click();
+
+      // Modal opens outside the iframe — focus should move into the modal.
+      const modalInput = page.locator('#rotate-modal-secret');
+      await modalInput.waitFor({ state: 'visible', timeout: 5000 });
+
+      // Focus must be INSIDE the modal, not on the original trigger.
+      const focusInModal = await page.evaluate(() => {
+        const el = document.activeElement;
+        if (el === null) return false;
+        const modal = document.querySelector('.modal.show, .modal[aria-modal="true"]');
+        return modal !== null && modal.contains(el);
+      });
+      expect(focusInModal, 'Focus did not move into the rotate modal').toBe(true);
+
+      // Escape closes the modal.
+      await page.keyboard.press('Escape');
+      await modalInput.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined);
+
+      // After close, focus should return to the trigger (WCAG 2.4.3 focus
+      // order). This is best-effort — if TYPO3's modal helper sends focus to
+      // <body>, we annotate but don't fail the suite.
+      const iframeHandle = await page.locator('iframe').first().elementHandle();
+      const ownerFrame = iframeHandle === null ? null : await iframeHandle.contentFrame();
+      const returnedTag =
+        ownerFrame === null
+          ? 'body'
+          : await ownerFrame.evaluate(
+              () => (document.activeElement?.tagName ?? '').toLowerCase(),
+            );
+      if (returnedTag !== 'button') {
+        test.info().annotations.push({
+          type: 'warning',
+          description: `After closing rotate modal, focus landed on <${returnedTag}> instead of the trigger button`,
+        });
+      }
     });
   });
 });

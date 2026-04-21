@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Event;
 
 use Netresearch\NrVault\Event\SecretDeletedEvent;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SecretDeletedEvent::class)]
 final class SecretDeletedEventTest extends TestCase

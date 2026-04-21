@@ -62,14 +62,16 @@ test.describe('Audit Module User Pathways', () => {
       const frame = getModuleFrame(page);
 
       // Select an action type if the selector is available
-      const actionSelect = frame.locator('select[name="action"]');
+      const actionSelect = frame.locator('select[name="action"], select[name="filterAction"]').first();
       if (await actionSelect.isVisible()) {
         await actionSelect.selectOption({ index: 1 });
 
-        const filterButton = frame.locator('button:has-text("Filter")');
-        await filterButton.click();
-
-        await page.waitForTimeout(1000);
+        const filterResp = page.waitForResponse(
+          (resp) => resp.url().includes('admin_vault_audit') && resp.status() === 200,
+          { timeout: 10000 },
+        );
+        await frame.locator('button:has-text("Filter")').click();
+        await filterResp.catch(() => undefined);
 
         // Should not error
         const newFrame = getModuleFrame(page);
@@ -90,10 +92,12 @@ test.describe('Audit Module User Pathways', () => {
         const today = new Date().toISOString().split('T')[0];
         await dateFrom.fill(today);
 
-        const filterButton = frame.locator('button:has-text("Filter")');
-        await filterButton.click();
-
-        await page.waitForTimeout(1000);
+        const filterResp = page.waitForResponse(
+          (resp) => resp.url().includes('admin_vault_audit') && resp.status() === 200,
+          { timeout: 10000 },
+        );
+        await frame.locator('button:has-text("Filter")').click();
+        await filterResp.catch(() => undefined);
 
         const newFrame = getModuleFrame(page);
         await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
@@ -111,10 +115,12 @@ test.describe('Audit Module User Pathways', () => {
       if (await successSelect.isVisible()) {
         await successSelect.selectOption('1'); // Success
 
-        const filterButton = frame.locator('button:has-text("Filter")');
-        await filterButton.click();
-
-        await page.waitForTimeout(1000);
+        const filterResp = page.waitForResponse(
+          (resp) => resp.url().includes('admin_vault_audit') && resp.status() === 200,
+          { timeout: 10000 },
+        );
+        await frame.locator('button:has-text("Filter")').click();
+        await filterResp.catch(() => undefined);
 
         const newFrame = getModuleFrame(page);
         await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();

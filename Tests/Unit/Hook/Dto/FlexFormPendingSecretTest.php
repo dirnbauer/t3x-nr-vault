@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Hook\Dto;
 
 use Netresearch\NrVault\Hook\Dto\FlexFormPendingSecret;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(FlexFormPendingSecret::class)]
 final class FlexFormPendingSecretTest extends TestCase

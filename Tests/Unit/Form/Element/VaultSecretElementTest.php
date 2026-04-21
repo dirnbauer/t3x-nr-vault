@@ -13,6 +13,7 @@ use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Form\Element\VaultSecretElement;
 use Netresearch\NrVault\Service\VaultFieldPermissionService;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,11 +30,10 @@ use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\IconRegistry;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(VaultSecretElement::class)]
 #[AllowMockObjectsWithoutExpectations]
-final class VaultSecretElementTest extends UnitTestCase
+final class VaultSecretElementTest extends TestCase
 {
     protected bool $resetSingletonInstances = true;
 

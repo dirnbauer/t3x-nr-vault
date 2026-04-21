@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Audit;
 
 use Netresearch\NrVault\Audit\AuditLogEntry;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AuditLogEntry::class)]
 final class AuditLogEntryTest extends TestCase

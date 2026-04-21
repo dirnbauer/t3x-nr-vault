@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Domain\Dto;
 
 use Netresearch\NrVault\Domain\Dto\OrphanSecretInfo;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(OrphanSecretInfo::class)]
 final class OrphanSecretInfoTest extends TestCase

@@ -13,10 +13,9 @@ use Exception;
 use Netresearch\NrVault\Controller\OverviewController;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
@@ -29,7 +28,13 @@ use ReflectionClass;
 #[CoversClass(OverviewController::class)]
 final class OverviewControllerTest extends TestCase
 {
-    private MasterKeyProviderFactoryInterface&MockObject $masterKeyProviderFactory;
+    /**
+     * PHPUnit 12 `createStub()` returns an opaque TestStub class that does not
+     * implement the `Stub` interface nor inherit from `MockObject`; declaring
+     * the intersection type `Interface&Stub` fails at runtime. Use the bare
+     * interface type — `createStub()` returns an instance of it.
+     */
+    private MasterKeyProviderFactoryInterface $masterKeyProviderFactory;
 
     private OverviewController $subject;
 
@@ -37,7 +42,7 @@ final class OverviewControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->masterKeyProviderFactory = $this->createMock(MasterKeyProviderFactoryInterface::class);
+        $this->masterKeyProviderFactory = $this->createStub(MasterKeyProviderFactoryInterface::class);
 
         // Build controller using newInstanceWithoutConstructor to bypass
         // final readonly ModuleTemplateFactory, then initialize the property
@@ -52,7 +57,7 @@ final class OverviewControllerTest extends TestCase
     #[Test]
     public function healthCheckReturnsGreenWhenProviderAvailableAndKeyWorks(): void
     {
-        $provider = $this->createMock(MasterKeyProviderInterface::class);
+        $provider = $this->createStub(MasterKeyProviderInterface::class);
         $provider->method('getIdentifier')->willReturn('file');
         $provider->method('isAvailable')->willReturn(true);
         $provider->method('getMasterKey')->willReturn('a-valid-32-byte-master-key------');
@@ -89,7 +94,7 @@ final class OverviewControllerTest extends TestCase
     #[Test]
     public function healthCheckReturnsErrorWhenProviderNotAvailable(): void
     {
-        $provider = $this->createMock(MasterKeyProviderInterface::class);
+        $provider = $this->createStub(MasterKeyProviderInterface::class);
         $provider->method('getIdentifier')->willReturn('env');
         $provider->method('isAvailable')->willReturn(false);
 
@@ -109,7 +114,7 @@ final class OverviewControllerTest extends TestCase
     #[Test]
     public function healthCheckReturnsErrorWhenKeyDerivationFails(): void
     {
-        $provider = $this->createMock(MasterKeyProviderInterface::class);
+        $provider = $this->createStub(MasterKeyProviderInterface::class);
         $provider->method('getIdentifier')->willReturn('file');
         $provider->method('isAvailable')->willReturn(true);
         $provider->method('getMasterKey')->willThrowException(new Exception('Key file not readable'));
@@ -129,7 +134,7 @@ final class OverviewControllerTest extends TestCase
     #[Test]
     public function healthCheckReturnsErrorWhenMasterKeyReturnsEmptyString(): void
     {
-        $provider = $this->createMock(MasterKeyProviderInterface::class);
+        $provider = $this->createStub(MasterKeyProviderInterface::class);
         $provider->method('getIdentifier')->willReturn('file');
         $provider->method('isAvailable')->willReturn(true);
         $provider->method('getMasterKey')->willReturn('');

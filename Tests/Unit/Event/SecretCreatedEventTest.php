@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Unit\Event;
 
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Event\SecretCreatedEvent;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SecretCreatedEvent::class)]
 final class SecretCreatedEventTest extends TestCase

@@ -12,9 +12,9 @@ namespace Netresearch\NrVault\Tests\Unit\Service\Detection;
 use Netresearch\NrVault\Service\Detection\ConfigSecretFinding;
 use Netresearch\NrVault\Service\Detection\SecretFinding;
 use Netresearch\NrVault\Service\Detection\Severity;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(ConfigSecretFinding::class)]
 final class ConfigSecretFindingTest extends TestCase

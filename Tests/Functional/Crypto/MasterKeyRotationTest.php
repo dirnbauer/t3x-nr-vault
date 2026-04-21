@@ -12,10 +12,14 @@ namespace Netresearch\NrVault\Tests\Functional\Crypto;
 use Netresearch\NrVault\Crypto\EncryptionService;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
+use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
+use Netresearch\NrVault\Exception\EncryptionException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Throwable;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -289,6 +293,139 @@ final class MasterKeyRotationTest extends FunctionalTestCase
             // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
             unlink($newKeyPath);
         }
+    }
+
+    /**
+     * Atomicity property under failure: after a mid-rotation failure, the
+     * observable state MUST be all-or-nothing — every secret decryptable
+     * either under the old key OR under the new key, never a mix.
+     *
+     * Strategy: mirror the approach in VaultRotateMasterKeyCommand — wrap the
+     * whole rotation in a DB transaction, catch the failure on secret #3
+     * (induced by swapping in a DELIBERATELY WRONG old key) and rollBack().
+     * After rollback we must be able to decrypt every one of the 5 seeded
+     * secrets with the original key.
+     */
+    #[Test]
+    public function masterKeyRotationIsAtomicUnderFailure(): void
+    {
+        $vaultService = $this->get(VaultServiceInterface::class);
+        $encryptionService = $this->get(EncryptionServiceInterface::class);
+        $secretRepository = $this->get(SecretRepositoryInterface::class);
+        $connectionPool = $this->get(ConnectionPool::class);
+
+        // Seed 5 secrets with the original master key.
+        $seeded = [];
+        for ($i = 0; $i < 5; ++$i) {
+            $identifier = $this->generateUuidV7();
+            $value = 'atomic-rot-value-' . $i;
+            $vaultService->store($identifier, $value);
+            $seeded[$identifier] = $value;
+        }
+
+        $identifiers = array_keys($seeded);
+
+        // Prepare the target new key.
+        $newKeyPath = $this->instancePath . '/master-new-atomic.key';
+        $newKey = sodium_crypto_secretbox_keygen();
+        file_put_contents($newKeyPath, $newKey);
+
+        FileMasterKeyProvider::clearCachedKey();
+        $oldKeyFromFile = $this->readKeyFromFile($this->masterKeyPath);
+        $newKeyFromFile = $this->readKeyFromFile($newKeyPath);
+
+        // A DELIBERATELY WRONG "old" key used for secret #3 onwards — this
+        // forces reEncryptDek() to throw because it cannot decrypt the DEK.
+        $bogusOldKey = sodium_crypto_secretbox_keygen();
+
+        // Use the secrets table connection's transaction scope. The production
+        // rotate command uses the same pattern (see
+        // VaultRotateMasterKeyCommand::execute()).
+        $connection = $connectionPool->getConnectionForTable('tx_nrvault_secret');
+        $connection->beginTransaction();
+
+        $caught = null;
+        try {
+            foreach ($identifiers as $index => $identifier) {
+                $secret = $secretRepository->findByIdentifier($identifier);
+                self::assertInstanceOf(Secret::class, $secret);
+
+                // On the 3rd iteration, swap the old key for a bogus one so
+                // the re-encryption fails mid-flight.
+                $oldKeyForThisIter = $index === 2
+                    ? $bogusOldKey
+                    : $oldKeyFromFile;
+
+                $reEncrypted = $encryptionService->reEncryptDek(
+                    $secret->getEncryptedDek(),
+                    $secret->getDekNonce(),
+                    $secret->getIdentifier(),
+                    $oldKeyForThisIter,
+                    $newKeyFromFile,
+                );
+
+                // reEncryptDek zeroes its key params; re-read from file for
+                // the next iteration.
+                FileMasterKeyProvider::clearCachedKey();
+                $oldKeyFromFile = $this->readKeyFromFile($this->masterKeyPath);
+                $newKeyFromFile = $this->readKeyFromFile($newKeyPath);
+
+                $secret->setEncryptedDek($reEncrypted->encryptedDek);
+                $secret->setDekNonce($reEncrypted->nonce);
+                $secretRepository->save($secret);
+            }
+
+            self::fail('Rotation should have failed on the 3rd secret due to bogus old key');
+        } catch (EncryptionException $e) {
+            // Expected: reEncryptDek() rejects the bogus old key.
+            $connection->rollBack();
+            $caught = $e;
+        } catch (Throwable $e) {
+            $connection->rollBack();
+
+            throw $e;
+        }
+
+        self::assertInstanceOf(
+            EncryptionException::class,
+            $caught,
+            'Expected EncryptionException from bogus-key reEncryptDek',
+        );
+
+        // === ATOMICITY PROPERTY ===
+        //
+        // After the rollback every seeded secret MUST still be retrievable
+        // with the original key. A mix (some under new, some under old) is
+        // a failure of atomicity.
+        FileMasterKeyProvider::clearCachedKey();
+        $vaultService->clearCache();
+
+        foreach ($seeded as $identifier => $expectedValue) {
+            $retrieved = $vaultService->retrieve($identifier);
+            self::assertSame(
+                $expectedValue,
+                $retrieved,
+                \sprintf(
+                    'Secret "%s" MUST still decrypt with original master key after rollback — '
+                    . 'rotation is not atomic if we see a mixed state.',
+                    $identifier,
+                ),
+            );
+        }
+
+        // Cleanup
+        foreach ($identifiers as $identifier) {
+            try {
+                $vaultService->delete($identifier, 'atomicity test cleanup');
+            } catch (Throwable) {
+                // ignore cleanup errors
+            }
+        }
+        if (file_exists($newKeyPath)) {
+            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
+            unlink($newKeyPath);
+        }
+        sodium_memzero($bogusOldKey);
     }
 
     /**

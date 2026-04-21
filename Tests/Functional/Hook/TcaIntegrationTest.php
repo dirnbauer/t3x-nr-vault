@@ -10,13 +10,13 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Functional\Hook;
 
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use Netresearch\NrVault\Utility\VaultFieldResolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Functional tests for TCA vault field integration with DataHandler.
@@ -35,67 +35,29 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 #[CoversClass(VaultFieldResolver::class)]
 #[Group('wip')]
 #[Group('not-sqlite')]
-final class TcaIntegrationTest extends FunctionalTestCase
+final class TcaIntegrationTest extends AbstractVaultFunctionalTestCase
 {
     private const SKIP_MESSAGE = 'DataHandler integration tests require full TYPO3 v14 environment. '
         . 'The TCA hooks work in production; these tests need additional setup for isolated testing.';
 
-    protected array $testExtensionsToLoad = [
-        'netresearch/nr-vault',
-    ];
-
-    protected array $coreExtensionsToLoad = [
-        'backend',
-    ];
-
-    private ?string $masterKeyPath = null;
-
-    private bool $setupCompleted = false;
+    protected ?string $backendUserFixture = __DIR__ . '/Fixtures/be_users.csv';
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->setupCompleted = true;
 
-        // Create a temporary master key for testing
-        $this->masterKeyPath = $this->instancePath . '/master.key';
-        $masterKey = sodium_crypto_secretbox_keygen();
-        file_put_contents($this->masterKeyPath, $masterKey);
-        chmod($this->masterKeyPath, 0o600);
-
-        // Configure extension to use file-based master key
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_vault'] = [
-            'masterKeySource' => $this->masterKeyPath,
-            'autoKeyPath' => $this->masterKeyPath,
-            'enableCache' => false,
-        ];
-
-        // Register test table with vault field
+        // Register test table with vault field (in addition to the base-class
+        // master-key + backend-user setup).
         $this->registerTestTable();
-
-        // Create backend user for DataHandler
-        $this->importCSVDataSet(__DIR__ . '/Fixtures/be_users.csv');
-        $this->setUpBackendUser(1);
     }
 
     protected function tearDown(): void
     {
-        // Clean up master key
-        if ($this->masterKeyPath !== null && file_exists($this->masterKeyPath)) {
-            $content = file_get_contents($this->masterKeyPath);
-            if ($content !== false) {
-                sodium_memzero($content);
-            }
-            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
-            unlink($this->masterKeyPath);
-        }
-
-        // Clean up test table TCA
+        // Clean up test table TCA registered in setUp() before the base class
+        // tears down the instance path.
         unset($GLOBALS['TCA']['tx_nrvault_test']);
 
-        if ($this->setupCompleted) {
-            parent::tearDown();
-        }
+        parent::tearDown();
     }
 
     #[Test]
@@ -239,33 +201,4 @@ final class TcaIntegrationTest extends FunctionalTestCase
         ');
     }
 
-    /**
-     * Generate a UUID v7 for testing.
-     *
-     * UUID v7 format: xxxxxxxx-xxxx-7xxx-yxxx-xxxxxxxxxxxx
-     * where y is 8, 9, a, or b (variant bits).
-     */
-    private function generateUuidV7(): string
-    {
-        // Get current timestamp in milliseconds
-        $timestamp = (int) (microtime(true) * 1000);
-
-        // Convert to hex (48 bits = 12 hex chars)
-        $timestampHex = str_pad(dechex($timestamp), 12, '0', STR_PAD_LEFT);
-
-        // Generate random bytes for the rest
-        $randomBytes = random_bytes(10);
-        $randomHex = bin2hex($randomBytes);
-
-        // Format as UUID v7: timestamp (48 bits) + version (4 bits) + random (12 bits) + variant (2 bits) + random (62 bits)
-        return \sprintf(
-            '%s-%s-7%s-%s%s-%s',
-            substr($timestampHex, 0, 8),
-            substr($timestampHex, 8, 4),
-            substr($randomHex, 0, 3),
-            dechex(8 + random_int(0, 3)), // variant: 8, 9, a, or b
-            substr($randomHex, 3, 3),
-            substr($randomHex, 6, 12),
-        );
-    }
 }

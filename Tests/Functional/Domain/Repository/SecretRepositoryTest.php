@@ -39,7 +39,7 @@ final class SecretRepositoryTest extends FunctionalTestCase
     {
         parent::setUp();
 
-        $this->importCSVDataSet(__DIR__ . '/../../../Functional/Service/Fixtures/be_users.csv');
+        $this->importCSVDataSet(__DIR__ . '/../../Fixtures/Users/be_users.csv');
         $this->setUpBackendUser(1);
 
         $this->subject = $this->get(SecretRepositoryInterface::class);

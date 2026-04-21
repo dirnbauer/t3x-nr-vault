@@ -13,9 +13,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
 
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 #[CoversClass(OAuthConfig::class)]

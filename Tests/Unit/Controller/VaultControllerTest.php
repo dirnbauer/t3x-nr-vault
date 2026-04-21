@@ -9,9 +9,9 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Controller;
 
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Imaging\IconSize;
 
 /**
