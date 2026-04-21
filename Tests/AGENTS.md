@@ -1,5 +1,5 @@
 <!-- Managed by agent: keep sections and order; edit content, not structure -->
-<!-- Last updated: 2026-04-20 | Last verified: 2026-04-20 -->
+<!-- Last updated: 2026-04-21 | Last verified: 2026-04-21 -->
 
 # AGENTS.md — Tests
 
@@ -47,6 +47,8 @@ Invoke skill **`typo3-testing`** for deeper guidance on fixtures, mocking, and C
 | Mutation (Infection) | `make test-mutation` |
 | Single file | `ddev exec vendor/bin/phpunit -c Build/phpunit.xml Tests/Unit/Path/ToTest.php` |
 | Coverage | `ddev exec vendor/bin/phpunit -c Build/phpunit.xml --coverage-html .Build/coverage` |
+| Test-base convention check | `php Tests/scripts/check-test-base-class.php` |
+| Regenerate legacy allow-list | `php Tests/scripts/check-test-base-class.php --update-allowlist` |
 
 ## Directory Structure
 ```
@@ -65,8 +67,16 @@ Tests/
 ```
 
 ## Code Style
-- Unit tests extend `\TYPO3\TestingFramework\Core\Unit\UnitTestCase`.
-- Functional tests extend `\TYPO3\TestingFramework\Core\Functional\FunctionalTestCase`.
+- **Unit tests MUST extend `\Netresearch\NrVault\Tests\Unit\TestCase`**
+  (the project base; composes `TcaSchemaMockTrait` + `BackendUserMockTrait`).
+  Direct extension of `UnitTestCase` or `PHPUnit\Framework\TestCase` is gated by
+  `Tests/scripts/check-test-base-class.php` — existing files are allow-listed
+  as tech debt and migrated in a separate PR.
+- **Functional tests that need the master-key lifecycle MUST extend
+  `\Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase`**
+  (handles key generation, `$GLOBALS` wiring, tearDown zeroing, UUID v7
+  helper). Pure "no-secret" functional tests may extend
+  `FunctionalTestCase` directly.
 - Test class name: `<SourceClass>Test`; methods use the `#[Test]` PHPUnit attribute (`PHPUnit\Framework\Attributes\Test`) or a `test` prefix — never the legacy `@test` docblock annotation.
 - Use `#[DataProvider]` (native PHPUnit 10 attribute) for parameterized cases.
 - One assertion concept per test; split by behaviour, not by line count.
@@ -90,11 +100,11 @@ Tests/
 
 ## Examples
 ```php
-// Unit test with DataProvider attribute
+// Unit test with DataProvider attribute, project base class
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
-use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-final class IdentifierValidatorTest extends UnitTestCase
+final class IdentifierValidatorTest extends TestCase
 {
     #[DataProvider('invalidIdentifierProvider')]
     public function testRejectsInvalidIdentifier(string $input, string $reason): void
@@ -110,6 +120,27 @@ final class IdentifierValidatorTest extends UnitTestCase
     }
 }
 ```
+
+```php
+// Functional test — extend the project abstract base
+use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
+
+final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
+{
+    protected ?string $backendUserFixture = __DIR__ . '/Fixtures/be_users.csv';
+    // backendUserUid defaults to 1; masterKeyPath is wired automatically.
+}
+```
+
+## Shared Test Infrastructure
+| Helper | Purpose |
+|--------|---------|
+| `Tests/Functional/AbstractVaultFunctionalTestCase.php` | Master-key lifecycle + UUID v7 helper (deduplicates ~17 functional tests) |
+| `Tests/Unit/TestCase.php` | Project base composing the two mock traits below |
+| `Tests/Unit/Traits/TcaSchemaMockTrait.php` | `mockTcaSchemaForTable()` (was duplicated 4x) |
+| `Tests/Unit/Traits/BackendUserMockTrait.php` | `createMockBackendUser()` (was duplicated 3x) |
+| `Tests/Unit/Fixtures/SecretFixtureBuilder.php` | Fluent builder for `SecretDetails` / `SecretMetadata` / `Secret` DTOs (replaces ~6 hand-rolled factory methods) |
+| `Tests/scripts/check-test-base-class.php` | Architecture check enforcing the project base on new unit tests |
 
 ## When Stuck
 - Invoke skill: `typo3-testing`

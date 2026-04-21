@@ -1,0 +1,9 @@
+# Tech-debt allow-list: nr-vault unit tests still extending PHPUnit's TestCase
+# or TYPO3's UnitTestCase directly (instead of the project base).
+#
+# Managed by: php Tests/scripts/check-test-base-class.php --update-allowlist
+# Rule:       New tests MUST extend Netresearch\NrVault\Tests\Unit\TestCase.
+#
+# This file is intentionally empty: all 84 legacy tests were migrated to the
+# project base in a dedicated refactor PR. Keep it empty -- new tests must
+# extend Netresearch\NrVault\Tests\Unit\TestCase directly.

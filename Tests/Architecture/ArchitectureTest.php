@@ -382,4 +382,35 @@ final class ArchitectureTest
             ->shouldBeFinal()
             ->because('enums are implicitly final but this documents intent');
     }
+
+    // =========================================================================
+    // TEST CONVENTION RULES - Ensure tests use the shared infrastructure
+    // =========================================================================
+
+    /**
+     * Unit-test support classes (traits, fixtures, the project base) must
+     * live under the dedicated `Tests\Unit\*` sub-namespaces.
+     *
+     * PHPat cannot directly express "every *Test must extend TestCase" (the
+     * rule set exposes no `shouldExtend()` for concrete classes beyond
+     * inheritance hierarchies); that invariant is enforced by the
+     * lightweight static scanner at `Tests/scripts/check-test-base-class.php`,
+     * wired into `composer ci:test:php:arch`. This rule covers the
+     * complementary half: the shared infrastructure must not leak into
+     * production code.
+     */
+    public function testSharedTestInfrastructureDoesNotLeakIntoProduction(): BuildStep
+    {
+        return PHPat::rule()
+            ->classes(Selector::inNamespace('Netresearch\NrVault'))
+            ->excluding(Selector::inNamespace('Netresearch\NrVault\Tests'))
+            ->shouldNotDependOn()
+            ->classes(
+                Selector::inNamespace('Netresearch\NrVault\Tests\Unit\Traits'),
+                Selector::inNamespace('Netresearch\NrVault\Tests\Unit\Fixtures'),
+                Selector::classname(\Netresearch\NrVault\Tests\Unit\TestCase::class),
+                Selector::classname(\Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase::class),
+            )
+            ->because('test-only helpers must not bleed into production code paths');
+    }
 }
