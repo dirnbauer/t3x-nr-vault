@@ -45,13 +45,15 @@ final class AuditHmacMigrationWizardTest extends AbstractVaultFunctionalTestCase
 
     protected function setUp(): void
     {
-        // The wizard implements TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface,
-        // which moved from cms-install to cms-core only in TYPO3 v14. On
-        // v13 the class cannot be autoloaded at all — phpstan.neon
-        // already excludes the source file from v13 analysis for the
-        // same reason. Detect the interface presence BEFORE calling
-        // parent::setUp() so v13 matrix cells exit cleanly instead of
-        // attempting to boot the vault container.
+        // parent::setUp() must run FIRST so tearDown can access
+        // $this->instancePath (inherited from FunctionalTestCase) without
+        // "accessed before initialization" errors even when we skip.
+        // Only then check for UpgradeWizardInterface — the wizard
+        // implements it, and the interface moved from cms-install to
+        // cms-core only in TYPO3 v14 (phpstan.neon excludes the wizard
+        // source file from v13 analysis for the same reason).
+        parent::setUp();
+
         if (!interface_exists(UpgradeWizardInterface::class)) {
             self::markTestSkipped(
                 'AuditHmacMigrationWizard requires TYPO3 v14 '
@@ -62,8 +64,6 @@ final class AuditHmacMigrationWizardTest extends AbstractVaultFunctionalTestCase
                 . 'matrix cell.',
             );
         }
-
-        parent::setUp();
     }
 
     #[Test]
