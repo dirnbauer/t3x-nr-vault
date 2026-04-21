@@ -199,8 +199,11 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         $rows = $queryBuilder->executeQuery()->fetchAllAssociative();
         $errors = [];
         $warnings = [];
+        /** @var list<int> $missingUids */
+        $missingUids = [];
         $previousHash = '';
         $previousEpoch = -1;
+        $previousUid = -1;
 
         // Derive the HMAC key once for all HMAC-epoch entries
         $hmacKey = $this->getHmacKey();
@@ -219,6 +222,36 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 $crdate = is_numeric($rowCrdate) ? (int) $rowCrdate : 0;
                 $rowEpoch = $row['hmac_key_epoch'] ?? 0;
                 $epoch = is_numeric($rowEpoch) ? (int) $rowEpoch : 0;
+
+                // BUG FIX: Detect UID gaps.
+                //
+                // A malicious actor could delete entry N AND patch entry N+1's
+                // previous_hash so that the per-row chain check still succeeds.
+                // Such an attack is invisible to the per-row hash check, but it
+                // leaves a gap in the UID sequence that we CAN see from here.
+                //
+                // We flag every gap as an error (chain invalid) AND record the
+                // missing UID range so operators can distinguish legitimate
+                // deletions (e.g. retention-based purges, which callers may
+                // tolerate) from unexpected holes.
+                //
+                // The iteration window is bounded by $fromUid/$toUid: if the
+                // caller explicitly requested a sub-range we use that as the
+                // lower bound, otherwise we start at the first UID we saw.
+                if ($previousUid !== -1 && $uid - $previousUid > 1) {
+                    $gapStart = $previousUid + 1;
+                    $gapEnd = $uid - 1;
+                    for ($missing = $gapStart; $missing <= $gapEnd; $missing++) {
+                        $missingUids[] = $missing;
+                    }
+                    $errors[$uid] = \sprintf(
+                        'Audit log uid gap detected: missing uids %d..%d (chain could have been tampered by deletion + previous_hash patch)',
+                        $gapStart,
+                        $gapEnd,
+                    );
+                }
+
+                $previousUid = $uid;
 
                 // Detect epoch boundary and report warning
                 if ($previousEpoch >= 0 && $epoch !== $previousEpoch) {
@@ -260,8 +293,8 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         }
 
         return $errors === []
-            ? HashChainVerificationResult::valid($warnings)
-            : HashChainVerificationResult::invalid($errors, $warnings);
+            ? HashChainVerificationResult::valid($warnings, $missingUids)
+            : HashChainVerificationResult::invalid($errors, $warnings, $missingUids);
     }
 
     public function getLatestHash(): ?string
