@@ -38,6 +38,8 @@ final class DataHandlerHookTest extends TestCase
 
     protected bool $resetSingletonInstances = true;
 
+    protected TcaSchemaFactory&MockObject $tcaSchemaFactory;
+
     private DataHandlerHook $subject;
 
     private VaultServiceInterface&MockObject $vaultService;
@@ -47,8 +49,6 @@ final class DataHandlerHookTest extends TestCase
     private DataHandler&MockObject $dataHandler;
 
     private ConnectionPool&MockObject $connectionPool;
-
-    protected TcaSchemaFactory&MockObject $tcaSchemaFactory;
 
     private FlashMessageService&MockObject $flashMessageService;
 
@@ -1457,5 +1457,4 @@ final class DataHandlerHookTest extends TestCase
             false,
         );
     }
-
 }

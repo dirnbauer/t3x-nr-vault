@@ -14,7 +14,9 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Throwable;
 use TYPO3\CMS\Core\Http\ServerRequest;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 
 /**
  * Functional smoke tests for {@see OverviewController}.
@@ -36,6 +38,27 @@ use TYPO3\CMS\Core\Http\ServerRequest;
 final class OverviewControllerTest extends AbstractVaultFunctionalTestCase
 {
     protected ?string $backendUserFixture = __DIR__ . '/../Fixtures/Users/be_users.csv';
+
+    /** @var list<string> */
+    protected array $coreExtensionsToLoad = ['backend', 'frontend', 'install'];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // OverviewController::indexAction() touches LanguageService via
+        // $GLOBALS['LANG']->sL(...) and BackendUserAuthentication via
+        // $GLOBALS['BE_USER']. FunctionalTestCase sets BE_USER via
+        // setUpBackendUser() but does not wire LANG by default — the
+        // module template factory crashes with "getOption()/getTSConfig()
+        // on null" when the controller calls into its own doc-header
+        // menu without LANG available. Wire both explicitly so the
+        // indexAction path is fully exercised.
+        $backendUser = $GLOBALS['BE_USER'] ?? null;
+        $GLOBALS['LANG'] = LanguageServiceFactory::createFromUserPreferences(
+            \is_object($backendUser) ? $backendUser : null,
+        );
+    }
 
     #[Test]
     public function indexActionRendersOverviewTemplate(): void
@@ -150,13 +173,13 @@ final class OverviewControllerTest extends AbstractVaultFunctionalTestCase
         // fail fast in that case. This characterises the "no backend user"
         // state rather than the framework-level redirect-to-login flow,
         // because the latter sits outside the controller under test.
-        unset($GLOBALS['BE_USER']);
-        unset($GLOBALS['LANG']);
+        unset($GLOBALS['BE_USER'], $GLOBALS['LANG']);
 
         $controller = $this->get(OverviewController::class);
         $request = $this->createBackendRequest('/module/admin/vault');
 
         $threw = false;
+
         try {
             $response = $controller->indexAction($request);
             // If it didn't throw, it must NOT have rendered a full 200 page
@@ -166,7 +189,7 @@ final class OverviewControllerTest extends AbstractVaultFunctionalTestCase
                 $response->getStatusCode(),
                 'indexAction must not serve 200 without a backend user',
             );
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $threw = true;
         }
 
@@ -201,7 +224,7 @@ final class OverviewControllerTest extends AbstractVaultFunctionalTestCase
             if ($vaultService->exists($identifier)) {
                 $vaultService->delete($identifier, 'test cleanup');
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // best-effort cleanup
         }
     }

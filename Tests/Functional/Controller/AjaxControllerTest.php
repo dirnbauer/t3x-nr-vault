@@ -201,5 +201,4 @@ final class AjaxControllerTest extends AbstractVaultFunctionalTestCase
             ->withHeader('Content-Type', 'application/json')
             ->withBody($stream);
     }
-
 }

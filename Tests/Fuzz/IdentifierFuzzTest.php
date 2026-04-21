@@ -194,7 +194,7 @@ final class IdentifierFuzzTest extends TestCase
             'zero-width non-joiner' => ["01937b6e\u{200C}-4b6c-7abc-8def-0123456789ab"],
             'zero-width no-break space' => ["\u{FEFF}01937b6e-4b6c-7abc-8def-0123456789ab"],
             'left-to-right mark' => ["\u{200E}01937b6e-4b6c-7abc-8def-0123456789ab"],
-            'homoglyph: cyrillic a' => ["01937b6е-4b6c-7abc-8def-0123456789ab"], // е is U+0435
+            'homoglyph: cyrillic a' => ['01937b6е-4b6c-7abc-8def-0123456789ab'], // е is U+0435
 
             // Path traversal variants
             'path traversal unix' => ['../../../etc/passwd'],

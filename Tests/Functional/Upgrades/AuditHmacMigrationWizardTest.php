@@ -20,6 +20,7 @@ use Netresearch\NrVault\Upgrades\AuditHmacMigrationWizard;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface;
 
 /**
  * Functional tests for the AuditHmacMigrationWizard upgrade wizard.
@@ -41,6 +42,29 @@ final class AuditHmacMigrationWizardTest extends AbstractVaultFunctionalTestCase
     protected array $extensionConfiguration = [
         'auditHmacEpoch' => 0,
     ];
+
+    protected function setUp(): void
+    {
+        // The wizard implements TYPO3\CMS\Core\Upgrades\UpgradeWizardInterface,
+        // which moved from cms-install to cms-core only in TYPO3 v14. On
+        // v13 the class cannot be autoloaded at all — phpstan.neon
+        // already excludes the source file from v13 analysis for the
+        // same reason. Detect the interface presence BEFORE calling
+        // parent::setUp() so v13 matrix cells exit cleanly instead of
+        // attempting to boot the vault container.
+        if (!interface_exists(UpgradeWizardInterface::class)) {
+            self::markTestSkipped(
+                'AuditHmacMigrationWizard requires TYPO3 v14 '
+                . '(UpgradeWizardInterface moved from cms-install to '
+                . 'cms-core). The unit suite at Tests/Unit/Upgrades/'
+                . 'AuditHmacMigrationWizardTest.php covers the migration '
+                . 'logic with a stubbed interface and runs on every '
+                . 'matrix cell.',
+            );
+        }
+
+        parent::setUp();
+    }
 
     #[Test]
     public function updateNecessaryReturnsFalseWhenEpochIsZero(): void
@@ -291,8 +315,7 @@ final class AuditHmacMigrationWizardTest extends AbstractVaultFunctionalTestCase
             $action,
             1,
             $crdate,
-            $previousHash,
-            null, // null = legacy SHA-256
+            $previousHash, // null = legacy SHA-256
         );
 
         $connection->update(
@@ -301,5 +324,4 @@ final class AuditHmacMigrationWizardTest extends AbstractVaultFunctionalTestCase
             ['uid' => $uid],
         );
     }
-
 }

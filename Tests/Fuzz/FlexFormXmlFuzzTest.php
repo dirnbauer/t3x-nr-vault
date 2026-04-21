@@ -18,6 +18,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use stdClass;
 
 /**
  * Fuzz tests for FlexForm XML / array resolution pathways.
@@ -42,9 +43,6 @@ use Psr\Log\NullLogger;
 #[AllowMockObjectsWithoutExpectations]
 final class FlexFormXmlFuzzTest extends TestCase
 {
-    /** @var VaultServiceInterface&MockObject */
-    private VaultServiceInterface $vaultService;
-
     private FlexFormVaultResolver $resolver;
 
     /** @var list<string> */
@@ -59,11 +57,10 @@ final class FlexFormXmlFuzzTest extends TestCase
         $vaultService->method('retrieve')->willReturnCallback(
             function (string $identifier): string {
                 $this->retrievedIdentifiers[] = $identifier;
+
                 return 'resolved_' . $identifier;
             },
         );
-
-        $this->vaultService = $vaultService;
         $this->resolver = new FlexFormVaultResolver($vaultService, new NullLogger());
         $this->retrievedIdentifiers = [];
     }
@@ -150,7 +147,7 @@ final class FlexFormXmlFuzzTest extends TestCase
             'float' => [3.14],
             'array empty' => [[]],
             'array nested' => [[[['uuid' => '01937b6e-4b6c-7abc-8def-000000000001']]]],
-            'stdclass' => [new \stdClass()],
+            'stdclass' => [new stdClass()],
             'empty string' => [''],
             'short string' => ['abc'],
             'uuid v1' => ['00000000-0000-1000-8000-000000000001'],

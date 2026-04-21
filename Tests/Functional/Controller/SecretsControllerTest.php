@@ -118,5 +118,4 @@ final class SecretsControllerTest extends AbstractVaultFunctionalTestCase
         // Cleanup
         $vaultService->delete($identifier, 'Test cleanup');
     }
-
 }

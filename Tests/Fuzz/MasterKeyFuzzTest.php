@@ -14,7 +14,6 @@ use Netresearch\NrVault\Crypto\EnvironmentMasterKeyProvider;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
 use Netresearch\NrVault\Exception\MasterKeyException;
 use org\bovigo\vfs\vfsStream;
-use org\bovigo\vfs\vfsStreamDirectory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -36,15 +35,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(EnvironmentMasterKeyProvider::class)]
 final class MasterKeyFuzzTest extends TestCase
 {
-    private vfsStreamDirectory $vfs;
-
     private int $seed;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->vfs = vfsStream::setup('keys');
         $this->seed = (int) ($_ENV['PHPUNIT_SEED'] ?? crc32(__FILE__));
         mt_srand($this->seed);
 
@@ -219,6 +214,7 @@ final class MasterKeyFuzzTest extends TestCase
         $provider = new FileMasterKeyProvider($config);
 
         $this->expectException(MasterKeyException::class);
+
         try {
             $provider->getMasterKey();
         } finally {

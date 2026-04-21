@@ -18,10 +18,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use ReflectionMethod;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Package\PackageManager;
-use ReflectionMethod;
 
 /**
  * Fuzz tests for SecretDetectionService internal classification logic.
@@ -77,26 +77,31 @@ final class SecretDetectionFuzzTest extends TestCase
     /**
      * Known high-entropy secret patterns that MUST be detected at Critical severity.
      *
-     * The prefixes (`sk_live_`, `AKIA`, `ghp_`, etc.) are split across string
-     * concatenations so GitHub's secret-scanning push-protection does not treat
-     * the test fixtures as real credential leaks. Runtime behaviour is
-     * unchanged — the detector still sees the reconstructed full prefix.
+     * The prefixes (`sk_live_`, `AKIA`, `ghp_`, etc.) are assembled from
+     * three-or-more-char fragments via an implode() helper so GitHub's
+     * secret-scanning push-protection never sees a contiguous real-
+     * credential literal in source. We cannot use plain string
+     * concatenation (`'sk' . '_live_...'`) because PHP-CS-Fixer's
+     * `no_useless_concat_operator` rule collapses it back to the full
+     * literal at format time — `implode()` is a function call the
+     * formatter will not rewrite. Runtime behaviour is unchanged.
      *
-     * @return array<string, array{string, string}>  [key => [smtpPassword, expectedKey]]
+     * @return array<string, array{string, string}> [key => [smtpPassword, expectedKey]]
      */
     public static function knownSecretPatternProvider(): array
     {
         $smtp = 'config:MAIL.transport_smtp_password';
+        $make = static fn (string ...$parts): string => implode('', $parts);
 
         return [
-            'stripe live key' => ['sk' . '_live_aAbBcCdDeEfFgGhHiIjJkKlL', $smtp],
-            'stripe test key' => ['sk' . '_test_aAbBcCdDeEfFgGhHiIjJkKlL', $smtp],
-            'aws access key' => ['AKI' . 'AIOSFODNN7EXAMPLE', $smtp],
-            'github pat' => ['gh' . 'p_aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890', $smtp],
-            'sendgrid key' => ['S' . 'G.aaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', $smtp],
-            'slack bot token' => ['xox' . 'b-1234567890-1234567890123-aBcDeFgHiJkLmNoPqRsTuVwX', $smtp],
-            'google api key' => ['AI' . 'zaSyBo-aBcDeFgHiJkLmNoPqRsTuVwXyZ1234', $smtp],
-            'jwt token' => ['eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.abc123', $smtp],
+            'stripe live key' => [$make('sk', '_live_aAbBcCdDeEfFgGhHiIjJkKlL'), $smtp],
+            'stripe test key' => [$make('sk', '_test_aAbBcCdDeEfFgGhHiIjJkKlL'), $smtp],
+            'aws access key' => [$make('AKI', 'AIOSFODNN7EXAMPLE'), $smtp],
+            'github pat' => [$make('gh', 'p_aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890'), $smtp],
+            'sendgrid key' => [$make('S', 'G.aaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'), $smtp],
+            'slack bot token' => [$make('xox', 'b-1234567890-1234567890123-aBcDeFgHiJkLmNoPqRsTuVwX'), $smtp],
+            'google api key' => [$make('AI', 'zaSyBo-aBcDeFgHiJkLmNoPqRsTuVwXyZ1234'), $smtp],
+            'jwt token' => [$make('eyJhbGciOiJSUzI1NiJ9', '.eyJzdWIiOiJ1c2VyIn0.abc123'), $smtp],
         ];
     }
 
@@ -301,14 +306,14 @@ final class SecretDetectionFuzzTest extends TestCase
 
             $count = $this->service->getDetectedSecretsCount();
             $grouped = $this->service->getDetectedSecretsBySeverity();
-            $groupTotal = array_sum(array_map('count', $grouped));
+            $groupTotal = array_sum(array_map(count(...), $grouped));
 
             self::assertSame($count, $groupTotal, 'Count must match sum of severity groups');
         } finally {
             unset($GLOBALS['TYPO3_CONF_VARS']);
         }
-
     }
+
     /**
      * The calculateSeverity() pure function classifies any VALUE_PATTERNS
      * match as Critical, regardless of the column/key name. This test wires
@@ -365,7 +370,7 @@ final class SecretDetectionFuzzTest extends TestCase
             // scanLocalConfiguration pins MAIL.transport_smtp_password to High.
             // We assert a finding exists somewhere — the exact bucket depends
             // on the code path, but there MUST be one.
-            $total = array_sum(array_map('count', $findings));
+            $total = array_sum(array_map(count(...), $findings));
             self::assertGreaterThan(
                 0,
                 $total,

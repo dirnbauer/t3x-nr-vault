@@ -289,95 +289,6 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         self::assertStringContainsString('orphan', strtolower($this->commandTester->getDisplay()));
     }
 
-    private function mockRecordExists(int $uid, bool $exists): void
-    {
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $schemaManager->method('tablesExist')->willReturn(true);
-
-        $connection = $this->createMock(Connection::class);
-        $connection->method('createSchemaManager')->willReturn($schemaManager);
-
-        $this->connectionPool
-            ->method('getConnectionByName')
-            ->willReturn($connection);
-
-        $result = $this->createMock(Result::class);
-        $result->method('fetchOne')->willReturn($exists ? 1 : 0);
-
-        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
-
-        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
-        $expressionBuilder->method('eq')->willReturn('uid = ' . $uid);
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('count')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('getRestrictions')->willReturn($restrictions);
-        $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
-        $queryBuilder->method('executeQuery')->willReturn($result);
-
-        $this->connectionPool
-            ->method('getQueryBuilderForTable')
-            ->willReturn($queryBuilder);
-    }
-
-    private function mockRecordDoesNotExist(): void
-    {
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $schemaManager->method('tablesExist')->willReturn(true);
-
-        $connection = $this->createMock(Connection::class);
-        $connection->method('createSchemaManager')->willReturn($schemaManager);
-
-        $this->connectionPool
-            ->method('getConnectionByName')
-            ->willReturn($connection);
-
-        $result = $this->createMock(Result::class);
-        $result->method('fetchOne')->willReturn(0);
-
-        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
-
-        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
-        $expressionBuilder->method('eq')->willReturn('uid = 1');
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('count')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('getRestrictions')->willReturn($restrictions);
-        $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
-        $queryBuilder->method('executeQuery')->willReturn($result);
-
-        $this->connectionPool
-            ->method('getQueryBuilderForTable')
-            ->willReturn($queryBuilder);
-    }
-
-    /**
-     * @param array<string, mixed> $metadata
-     */
-    private function createSecretMetadata(
-        string $identifier,
-        int $createdAt,
-        array $metadata = [],
-    ): SecretMetadata {
-        return new SecretMetadata(
-            identifier: $identifier,
-            ownerUid: 1,
-            createdAt: $createdAt,
-            updatedAt: $createdAt,
-            readCount: 0,
-            lastReadAt: null,
-            description: '',
-            version: 1,
-            metadata: $metadata,
-        );
-    }
-
     // =========================================================================
     // Strict boundary tests for retention-days, batch-size and mode strings.
     // =========================================================================
@@ -922,7 +833,7 @@ final class VaultCleanupOrphansCommandTest extends TestCase
             ->willReturnCallback(static function () use (&$calls): void {
                 $calls++;
                 if ($calls === 2) {
-                    throw new VaultException('fail');
+                    throw new VaultException('fail', 3285362926);
                 }
             });
 
@@ -1200,5 +1111,94 @@ final class VaultCleanupOrphansCommandTest extends TestCase
         self::assertStringContainsString('Orphaned secrets that would be deleted', $this->commandTester->getDisplay());
         // delete MUST NOT be called in dry run.
         $this->vaultService->expects(self::never())->method('delete');
+    }
+
+    private function mockRecordExists(int $uid, bool $exists): void
+    {
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('tablesExist')->willReturn(true);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+
+        $this->connectionPool
+            ->method('getConnectionByName')
+            ->willReturn($connection);
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn($exists ? 1 : 0);
+
+        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->method('eq')->willReturn('uid = ' . $uid);
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('count')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('getRestrictions')->willReturn($restrictions);
+        $queryBuilder->method('expr')->willReturn($expressionBuilder);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+    }
+
+    private function mockRecordDoesNotExist(): void
+    {
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('tablesExist')->willReturn(true);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+
+        $this->connectionPool
+            ->method('getConnectionByName')
+            ->willReturn($connection);
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn(0);
+
+        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->method('eq')->willReturn('uid = 1');
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('count')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('getRestrictions')->willReturn($restrictions);
+        $queryBuilder->method('expr')->willReturn($expressionBuilder);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    private function createSecretMetadata(
+        string $identifier,
+        int $createdAt,
+        array $metadata = [],
+    ): SecretMetadata {
+        return new SecretMetadata(
+            identifier: $identifier,
+            ownerUid: 1,
+            createdAt: $createdAt,
+            updatedAt: $createdAt,
+            readCount: 0,
+            lastReadAt: null,
+            description: '',
+            version: 1,
+            metadata: $metadata,
+        );
     }
 }

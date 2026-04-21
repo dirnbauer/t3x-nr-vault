@@ -52,9 +52,7 @@ abstract class AbstractVaultFunctionalTestCase extends FunctionalTestCase
      */
     protected ?string $backendUserFixture = null;
 
-    /**
-     * Backend user UID to set up via `setUpBackendUser()`. Null skips login.
-     */
+    /** Backend user UID to set up via `setUpBackendUser()`. Null skips login. */
     protected ?int $backendUserUid = 1;
 
     /**

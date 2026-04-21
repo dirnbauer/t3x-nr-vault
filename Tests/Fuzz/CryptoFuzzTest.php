@@ -46,7 +46,7 @@ final class CryptoFuzzTest extends TestCase
 
         /** @var MasterKeyProviderInterface&MockObject $provider */
         $provider = $this->createStub(MasterKeyProviderInterface::class);
-        $provider->method('getMasterKey')->willReturnCallback(fn () => $this->masterKey);
+        $provider->method('getMasterKey')->willReturnCallback(fn (): string => $this->masterKey);
 
         /** @var ExtensionConfigurationInterface&MockObject $xchachaConfig */
         $xchachaConfig = $this->createStub(ExtensionConfigurationInterface::class);
@@ -90,7 +90,7 @@ final class CryptoFuzzTest extends TestCase
             for ($j = 0; $j < $length; $j++) {
                 $plaintext .= \chr(mt_rand(0, 255));
             }
-            $id = sprintf('01937b6e-4b6c-7abc-8def-%012d', $i + 100);
+            $id = \sprintf('01937b6e-4b6c-7abc-8def-%012d', $i + 100);
             $cases["random_{$i}_len{$length}"] = [$plaintext, $id];
         }
 
@@ -192,6 +192,7 @@ final class CryptoFuzzTest extends TestCase
             // the ciphertext carries no plaintext bytes to protect, but the AAD
             // check still applies; we cover it separately.
             self::assertTrue(true);
+
             return;
         }
 
@@ -243,7 +244,7 @@ final class CryptoFuzzTest extends TestCase
                 // of positions that covers first, last, and interior bytes.
                 foreach (['encryptedValue', 'encryptedDek', 'dekNonce', 'valueNonce'] as $component) {
                     foreach ([0, 1, 3, 7, 11, 15, 23, 24, 31, 47] as $pos) {
-                        $key = sprintf('%s_%s_pos%d_xor%02x', $ptName, $component, $pos, $mask);
+                        $key = \sprintf('%s_%s_pos%d_xor%02x', $ptName, $component, $pos, $mask);
                         yield $key => [$plaintext, $identifier, $component, $pos, $mask];
                     }
                 }

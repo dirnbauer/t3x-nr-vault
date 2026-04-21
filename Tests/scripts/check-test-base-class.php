@@ -7,6 +7,9 @@
 
 declare(strict_types=1);
 
+use Netresearch\NrVault\Tests\Unit\TestCase;
+use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
+
 /*
  * Architecture check: new nr-vault unit tests must extend the project
  * `Netresearch\NrVault\Tests\Unit\TestCase` base class.
@@ -27,7 +30,7 @@ declare(strict_types=1);
  *       is stale — unknown entry that no longer needs an exemption)
  */
 
-$projectRoot = \dirname(__DIR__, 2);
+$projectRoot = dirname(__DIR__, 2);
 $unitDir = $projectRoot . '/Tests/Unit';
 
 if (!is_dir($unitDir)) {
@@ -51,14 +54,17 @@ if (is_file($allowListFile)) {
     $lines = file($allowListFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#')) {
+        if ($line === '') {
+            continue;
+        }
+        if (str_starts_with($line, '#')) {
             continue;
         }
         $allowList[$line] = true;
     }
 }
 
-$updateMode = \in_array('--update-allowlist', $argv, true);
+$updateMode = in_array('--update-allowlist', $argv, true);
 
 /** @var list<string> $violations */
 $violations = [];
@@ -69,17 +75,21 @@ $legacyFiles = [];
 
 /** @var SplFileInfo $file */
 foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($unitDir, RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
-    if (!$file->isFile() || $file->getExtension() !== 'php') {
+    if (!$file->isFile()) {
         continue;
     }
-
+    if ($file->getExtension() !== 'php') {
+        continue;
+    }
     // Skip the base class itself, traits, fixtures.
     $relative = ltrim(str_replace($projectRoot, '', $file->getPathname()), '/');
-    if (
-        str_ends_with($relative, 'Tests/Unit/TestCase.php')
-        || str_contains($relative, '/Traits/')
-        || str_contains($relative, '/Fixtures/')
-    ) {
+    if (str_ends_with($relative, 'Tests/Unit/TestCase.php')) {
+        continue;
+    }
+    if (str_contains($relative, '/Traits/')) {
+        continue;
+    }
+    if (str_contains($relative, '/Fixtures/')) {
         continue;
     }
 
@@ -95,12 +105,9 @@ foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($unitDir, 
 
     $parent = ltrim($matches[1], '\\');
     $isProjectBase = $parent === 'TestCase'
-        || $parent === 'Netresearch\\NrVault\\Tests\\Unit\\TestCase';
+        || $parent === TestCase::class;
 
-    $isLegacyBase = $parent === 'UnitTestCase'
-        || $parent === 'TYPO3\\TestingFramework\\Core\\Unit\\UnitTestCase'
-        || $parent === 'TestCase' // resolved via `use PHPUnit\Framework\TestCase;`
-        || $parent === 'PHPUnit\\Framework\\TestCase';
+    $isLegacyBase = in_array($parent, ['UnitTestCase', UnitTestCase::class, 'TestCase', PHPUnit\Framework\TestCase::class], true);
 
     // Disambiguate: `TestCase` (unqualified) can mean either the project
     // base OR PHPUnit's — inspect `use` statements.
@@ -142,15 +149,15 @@ $staleAllowList = array_keys($allowList);
 if ($updateMode) {
     sort($legacyFiles);
     $header = <<<'TXT'
-# Tech-debt allow-list: nr-vault unit tests still extending PHPUnit's TestCase
-# or TYPO3's UnitTestCase directly (instead of the project base).
-#
-# Managed by: php Tests/scripts/check-test-base-class.php --update-allowlist
-# Rule:       New tests MUST extend Netresearch\NrVault\Tests\Unit\TestCase.
+    # Tech-debt allow-list: nr-vault unit tests still extending PHPUnit's TestCase
+    # or TYPO3's UnitTestCase directly (instead of the project base).
+    #
+    # Managed by: php Tests/scripts/check-test-base-class.php --update-allowlist
+    # Rule:       New tests MUST extend Netresearch\NrVault\Tests\Unit\TestCase.
 
-TXT;
+    TXT;
     file_put_contents($allowListFile, $header . implode("\n", $legacyFiles) . "\n");
-    echo 'Updated allow-list: ' . \count($legacyFiles) . " legacy tests.\n";
+    echo 'Updated allow-list: ' . count($legacyFiles) . " legacy tests.\n";
     exit(0);
 }
 
@@ -179,7 +186,7 @@ if ($staleAllowList !== []) {
 }
 
 if ($exitCode === 0) {
-    echo 'OK: ' . \count($legacyFiles) . " legacy tests allow-listed, no new violations.\n";
+    echo 'OK: ' . count($legacyFiles) . " legacy tests allow-listed, no new violations.\n";
 }
 
 exit($exitCode);

@@ -378,61 +378,6 @@ final class OrphanCleanupTaskTest extends TestCase
         $task->execute();
     }
 
-    private function mockRecordExists(int $uid, bool $exists): void
-    {
-        $schemaManager = $this->createMock(AbstractSchemaManager::class);
-        $schemaManager->method('tablesExist')->willReturn(true);
-
-        $connection = $this->createMock(Connection::class);
-        $connection->method('createSchemaManager')->willReturn($schemaManager);
-
-        $this->connectionPool
-            ->method('getConnectionByName')
-            ->willReturn($connection);
-
-        $result = $this->createMock(Result::class);
-        $result->method('fetchOne')->willReturn($exists ? 1 : 0);
-
-        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
-
-        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
-        $expressionBuilder->method('eq')->willReturn('uid = ' . $uid);
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('count')->willReturnSelf();
-        $queryBuilder->method('from')->willReturnSelf();
-        $queryBuilder->method('where')->willReturnSelf();
-        $queryBuilder->method('getRestrictions')->willReturn($restrictions);
-        $queryBuilder->method('expr')->willReturn($expressionBuilder);
-        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
-        $queryBuilder->method('executeQuery')->willReturn($result);
-
-        $this->connectionPool
-            ->method('getQueryBuilderForTable')
-            ->willReturn($queryBuilder);
-    }
-
-    /**
-     * @param array<string, mixed> $metadata
-     */
-    private function createSecretMetadata(
-        string $identifier,
-        int $createdAt,
-        array $metadata = [],
-    ): SecretMetadata {
-        return new SecretMetadata(
-            identifier: $identifier,
-            ownerUid: 1,
-            createdAt: $createdAt,
-            updatedAt: $createdAt,
-            readCount: 0,
-            lastReadAt: null,
-            description: '',
-            version: 1,
-            metadata: $metadata,
-        );
-    }
-
     // =========================================================================
     // Targeted mutation-killers — Task/OrphanCleanupTask.php
     // =========================================================================
@@ -530,13 +475,9 @@ final class OrphanCleanupTaskTest extends TestCase
             ->expects($this->atLeastOnce())
             ->method('info')
             ->with(
-                self::callback(function (string $message): bool {
-                    return $message !== '';
-                }),
-                self::callback(function (array $context): bool {
-                    return (array_key_exists('retentionDays', $context) && array_key_exists('tableFilter', $context))
-                        || (array_key_exists('secretsChecked', $context) && array_key_exists('orphansFound', $context));
-                }),
+                self::callback(fn (string $message): bool => $message !== ''),
+                self::callback(fn (array $context): bool => (\array_key_exists('retentionDays', $context) && \array_key_exists('tableFilter', $context))
+                    || (\array_key_exists('secretsChecked', $context) && \array_key_exists('orphansFound', $context))),
             );
 
         $logManager = $this->createMock(LogManager::class);
@@ -867,9 +808,9 @@ final class OrphanCleanupTaskTest extends TestCase
             ->with(
                 self::stringContains('Failed to delete orphan secret'),
                 self::callback(fn (array $context): bool =>
-                    array_key_exists('error', $context)
+                    \array_key_exists('error', $context)
                     && $context['error'] === 'exact exception text'
-                    && array_key_exists('identifier', $context)),
+                    && \array_key_exists('identifier', $context)),
             );
 
         $logManager = $this->createMock(LogManager::class);
@@ -1041,5 +982,60 @@ final class OrphanCleanupTaskTest extends TestCase
         $task = new OrphanCleanupTask($this->connectionPool, $this->vaultService);
         $task->setTaskParameters(['nr_vault_retention_days' => 29]);  // cutoff: 29 days ago
         self::assertTrue($task->execute());
+    }
+
+    private function mockRecordExists(int $uid, bool $exists): void
+    {
+        $schemaManager = $this->createMock(AbstractSchemaManager::class);
+        $schemaManager->method('tablesExist')->willReturn(true);
+
+        $connection = $this->createMock(Connection::class);
+        $connection->method('createSchemaManager')->willReturn($schemaManager);
+
+        $this->connectionPool
+            ->method('getConnectionByName')
+            ->willReturn($connection);
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn($exists ? 1 : 0);
+
+        $restrictions = $this->createMock(QueryRestrictionContainerInterface::class);
+
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder->method('eq')->willReturn('uid = ' . $uid);
+
+        $queryBuilder = $this->createMock(QueryBuilder::class);
+        $queryBuilder->method('count')->willReturnSelf();
+        $queryBuilder->method('from')->willReturnSelf();
+        $queryBuilder->method('where')->willReturnSelf();
+        $queryBuilder->method('getRestrictions')->willReturn($restrictions);
+        $queryBuilder->method('expr')->willReturn($expressionBuilder);
+        $queryBuilder->method('createNamedParameter')->willReturn(':dcValue1');
+        $queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->connectionPool
+            ->method('getQueryBuilderForTable')
+            ->willReturn($queryBuilder);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    private function createSecretMetadata(
+        string $identifier,
+        int $createdAt,
+        array $metadata = [],
+    ): SecretMetadata {
+        return new SecretMetadata(
+            identifier: $identifier,
+            ownerUid: 1,
+            createdAt: $createdAt,
+            updatedAt: $createdAt,
+            readCount: 0,
+            lastReadAt: null,
+            description: '',
+            version: 1,
+            metadata: $metadata,
+        );
     }
 }

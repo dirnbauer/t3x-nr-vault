@@ -54,8 +54,6 @@ final class SecretFixtureBuilder
 
     private int $uid = 1;
 
-    private string $identifier;
-
     private string $description = 'Test secret';
 
     private int $ownerUid = 1;
@@ -88,10 +86,7 @@ final class SecretFixtureBuilder
 
     private bool $disabled = false;
 
-    private function __construct(string $identifier)
-    {
-        $this->identifier = $identifier;
-    }
+    private function __construct(private string $identifier) {}
 
     public static function create(string $identifier = 'test-secret'): self
     {

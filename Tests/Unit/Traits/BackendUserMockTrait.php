@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Traits;
 
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 /**
@@ -20,7 +21,7 @@ use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
  *  - `Tests/Unit/Security/AccessControlServiceTest.php`
  *  - `Tests/Unit/Form/Element/VaultSecretElementTest.php`
  *
- * @phpstan-require-extends \PHPUnit\Framework\TestCase
+ * @phpstan-require-extends TestCase
  */
 trait BackendUserMockTrait
 {

@@ -16,6 +16,8 @@ use Netresearch\NrVault\Http\OAuth\OAuthToken;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
 use Netresearch\NrVault\Service\Detection\Severity;
+use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPat\Selector\Selector;
 use PHPat\Test\Builder\BuildStep;
 use PHPat\Test\PHPat;
@@ -408,8 +410,8 @@ final class ArchitectureTest
             ->classes(
                 Selector::inNamespace('Netresearch\NrVault\Tests\Unit\Traits'),
                 Selector::inNamespace('Netresearch\NrVault\Tests\Unit\Fixtures'),
-                Selector::classname(\Netresearch\NrVault\Tests\Unit\TestCase::class),
-                Selector::classname(\Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase::class),
+                Selector::classname(TestCase::class),
+                Selector::classname(AbstractVaultFunctionalTestCase::class),
             )
             ->because('test-only helpers must not bleed into production code paths');
     }

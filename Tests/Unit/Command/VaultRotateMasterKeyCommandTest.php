@@ -23,6 +23,7 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
+use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Database\Connection;
@@ -483,7 +484,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
                 }
 
                 // Actual rotation — unexpected exception
-                throw new \RuntimeException('Unexpected error');
+                throw new RuntimeException('Unexpected error', 6436183956);
             });
 
         $connection = $this->createMock(Connection::class);

@@ -25,6 +25,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
+use Throwable;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -56,34 +57,6 @@ final class VaultMigrateFieldCommandTest extends TestCase
         $this->rebuildCommandTester();
     }
 
-    /**
-     * Rebuilds the command tester using the current $vaultService / $connectionPool
-     * doubles. Tests that need to upgrade $vaultService to a mock with expects()
-     * call {@see useStrictVaultServiceMock()} first, which swaps the double and
-     * rebuilds the tester.
-     */
-    private function rebuildCommandTester(): void
-    {
-        $command = new VaultMigrateFieldCommand(
-            $this->vaultService,
-            $this->connectionPool,
-        );
-
-        $application = new Application();
-        $application->addCommand($command);
-
-        $this->commandTester = new CommandTester($command);
-    }
-
-    private function useStrictVaultServiceMock(): VaultServiceInterface&MockObject
-    {
-        $mock = $this->createMock(VaultServiceInterface::class);
-        $this->vaultService = $mock;
-        $this->rebuildCommandTester();
-
-        return $mock;
-    }
-
     #[Test]
     public function hasCorrectName(): void
     {
@@ -99,7 +72,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
      * Combines the two "does not exist" failure paths (table missing and field
      * missing) via a data provider since the structure is identical.
      *
-     * @param array<string, \Doctrine\DBAL\Schema\Column> $columns
+     * @param array<string, Column> $columns
      */
     #[Test]
     #[DataProvider('missingSchemaProvider')]
@@ -142,7 +115,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     public function succeedsWithNoRecordsToMigrate(): void
     {
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', []);
+        $this->mockQueryReturnsRecords([]);
 
         $exitCode = $this->commandTester->execute([
             'table' => 'tx_myext_settings',
@@ -158,7 +131,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret123'],
             ['uid' => 2, 'api_key' => 'secret456'],
         ]);
@@ -182,7 +155,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret123'],
         ]);
 
@@ -225,7 +198,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret123'],
         ]);
 
@@ -245,7 +218,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     public function handlesVaultExceptionDuringMigration(): void
     {
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret123'],
         ]);
 
@@ -277,7 +250,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         for ($i = 1; $i <= 25; $i++) {
             $records[] = ['uid' => $i, 'api_key' => 'secret' . $i];
         }
-        $this->mockQueryReturnsRecords('tx_myext_settings', $records);
+        $this->mockQueryReturnsRecords($records);
 
         $exitCode = $this->commandTester->execute([
             'table' => 'tx_myext_settings',
@@ -296,7 +269,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret1'],
             ['uid' => 2, 'api_key' => 'secret2'],
         ]);
@@ -318,7 +291,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     public function displaysNextStepsAfterMigration(): void
     {
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret123'],
         ]);
 
@@ -338,7 +311,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     public function displaysMigrationSummary(): void
     {
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret123'],
             ['uid' => 2, 'api_key' => 'secret456'],
         ]);
@@ -361,7 +334,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
         $schemaManager->method('listTableColumns')->willReturn([
-            'api_key' => self::createColumn('api_key'),
+            'api_key' => $this->createColumn('api_key'),
         ]);
 
         $connection = $this->createStub(Connection::class);
@@ -421,7 +394,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         $this->mockTableAndFieldExist('api_key');
 
         // With --force, records with UUID v7 values should also be returned
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => '01234567-89ab-7cde-f012-3456789abcde'],
         ]);
 
@@ -445,7 +418,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 5, 'api_key' => 'secret5'],
         ]);
 
@@ -470,7 +443,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
         for ($i = 1; $i <= 15; $i++) {
             $records[] = ['uid' => $i, 'api_key' => 'secret' . $i];
         }
-        $this->mockQueryReturnsRecords('tx_myext_settings', $records);
+        $this->mockQueryReturnsRecords($records);
 
         $this->vaultService
             ->method('store')
@@ -491,7 +464,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     public function dryRunShowsNonStringValueAsNonString(): void
     {
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 42],
         ]);
 
@@ -518,11 +491,11 @@ final class VaultMigrateFieldCommandTest extends TestCase
     public function failsWithInvalidBatchSize(): void
     {
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 1, 'api_key' => 'secret'],
         ]);
 
-        $this->expectException(\Throwable::class);
+        $this->expectException(Throwable::class);
 
         $this->commandTester->setInputs(['yes']);
         $this->commandTester->execute([
@@ -563,7 +536,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => 7, 'api_key' => null],
         ]);
 
@@ -595,7 +568,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     {
         $vaultService = $this->useStrictVaultServiceMock();
         $this->mockTableAndFieldExist('api_key');
-        $this->mockQueryReturnsRecords('tx_myext_settings', [
+        $this->mockQueryReturnsRecords([
             ['uid' => '42', 'api_key' => 'secret-str-uid'],
         ]);
 
@@ -618,12 +591,40 @@ final class VaultMigrateFieldCommandTest extends TestCase
         self::assertSame(0, $exitCode);
     }
 
+    /**
+     * Rebuilds the command tester using the current $vaultService / $connectionPool
+     * doubles. Tests that need to upgrade $vaultService to a mock with expects()
+     * call {@see useStrictVaultServiceMock()} first, which swaps the double and
+     * rebuilds the tester.
+     */
+    private function rebuildCommandTester(): void
+    {
+        $command = new VaultMigrateFieldCommand(
+            $this->vaultService,
+            $this->connectionPool,
+        );
+
+        $application = new Application();
+        $application->addCommand($command);
+
+        $this->commandTester = new CommandTester($command);
+    }
+
+    private function useStrictVaultServiceMock(): VaultServiceInterface&MockObject
+    {
+        $mock = $this->createMock(VaultServiceInterface::class);
+        $this->vaultService = $mock;
+        $this->rebuildCommandTester();
+
+        return $mock;
+    }
+
     private function mockTableAndFieldExist(string $field): void
     {
         $schemaManager = $this->createStub(AbstractSchemaManager::class);
         $schemaManager->method('tablesExist')->willReturn(true);
         $schemaManager->method('listTableColumns')->willReturn([
-            $field => self::createColumn($field),
+            $field => $this->createColumn($field),
         ]);
 
         $connection = $this->createStub(Connection::class);
@@ -637,7 +638,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
     /**
      * @param array<int, array<string, mixed>> $records
      */
-    private function mockQueryReturnsRecords(string $table, array $records): void
+    private function mockQueryReturnsRecords(array $records): void
     {
         $result = $this->createStub(Result::class);
         $result->method('fetchAllAssociative')->willReturn($records);
@@ -666,7 +667,7 @@ final class VaultMigrateFieldCommandTest extends TestCase
      * Build a real Doctrine Column so the SUT's `isset($columns[$field])` check
      * exercises actual schema-object semantics rather than a brittle stdClass.
      */
-    private static function createColumn(string $name): Column
+    private function createColumn(string $name): Column
     {
         return new Column($name, Type::getType(Types::STRING));
     }

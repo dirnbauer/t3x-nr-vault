@@ -24,6 +24,7 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\NullLogger;
+use Throwable;
 
 /**
  * Fuzz tests for OAuth token parsing / response handling.
@@ -75,7 +76,7 @@ final class OAuthFuzzTest extends TestCase
     /**
      * Adversarial token-endpoint JSON payloads.
      *
-     * @return array<string, array{string, bool}>  [jsonBody, expectException]
+     * @return array<string, array{string, bool}> [jsonBody, expectException]
      */
     public static function adversarialTokenResponseProvider(): array
     {
@@ -178,6 +179,7 @@ final class OAuthFuzzTest extends TestCase
         if ($expectException) {
             $this->expectException(OAuthException::class);
             $manager->getAccessToken($config);
+
             return;
         }
 
@@ -268,10 +270,10 @@ final class OAuthFuzzTest extends TestCase
                 $token->isExpired($buffer),
                 "Token expiry check for buffer={$buffer} should be " . ($expectedExpired ? 'true' : 'false'),
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // PHP_INT_MAX buffer causes DateTime overflow — surfacing as Throwable
             // is acceptable; what is NOT acceptable is wrong-answer silent success.
-            self::assertInstanceOf(\Throwable::class, $e);
+            self::assertInstanceOf(Throwable::class, $e);
         }
     }
 

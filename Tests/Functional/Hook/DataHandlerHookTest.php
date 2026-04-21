@@ -11,11 +11,14 @@ namespace Netresearch\NrVault\Tests\Functional\Hook;
 
 use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
+use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Hook\DataHandlerHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionProperty;
+use Throwable;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -74,7 +77,7 @@ final class DataHandlerHookTest extends AbstractVaultFunctionalTestCase
     public function hookRotatesExistingSecretWhenUpdateProvided(): void
     {
         $vaultService = $this->get(VaultServiceInterface::class);
-        $encryptionService = $this->get(\Netresearch\NrVault\Crypto\EncryptionServiceInterface::class);
+        $encryptionService = $this->get(EncryptionServiceInterface::class);
         $hook = $this->createHookWithVaultFields('tx_test', ['secret_field']);
 
         // Pre-create the secret
@@ -199,7 +202,7 @@ final class DataHandlerHookTest extends AbstractVaultFunctionalTestCase
      * WHY REFLECTION (code smell — documented, not hidden):
      *
      * DataHandlerHook discovers vault fields via
-     * {@see \TYPO3\CMS\Core\Schema\TcaSchemaFactory}, which only sees tables
+     * {@see TcaSchemaFactory}, which only sees tables
      * registered at **bootstrap time** (via each loaded extension's
      * `ext_tables.sql`). Functional tests cannot easily register synthetic
      * tables into the schema factory mid-test, so we short-circuit the
@@ -229,7 +232,7 @@ final class DataHandlerHookTest extends AbstractVaultFunctionalTestCase
         );
 
         // Pre-seed the field cache via reflection (setAccessible is a no-op since PHP 8.1)
-        $cacheProperty = new \ReflectionProperty(DataHandlerHook::class, 'vaultFieldCache');
+        $cacheProperty = new ReflectionProperty(DataHandlerHook::class, 'vaultFieldCache');
         $cacheProperty->setValue($hook, [$table => $vaultFields]);
 
         return $hook;
@@ -279,7 +282,7 @@ final class DataHandlerHookTest extends AbstractVaultFunctionalTestCase
             if ($vaultService->exists($identifier)) {
                 $vaultService->delete($identifier, 'test cleanup');
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // best-effort cleanup
         }
     }

@@ -60,12 +60,8 @@ final class AccessControlService implements AccessControlServiceInterface
         if ($backendUser instanceof BackendUserAuthentication) {
             // Defence-in-depth: disabled users must not create secrets,
             // even if a stale session is still active.
-            if ($this->isBackendUserDisabled($backendUser)) {
-                return false;
-            }
-
+            return !($this->isBackendUserDisabled($backendUser));
             // Any authenticated backend user can create
-            return true;
         }
 
         // CLI check (only when no backend user)
@@ -178,10 +174,7 @@ final class AccessControlService implements AccessControlServiceInterface
             return [];
         }
 
-        $filtered = array_values(array_intersect($groupIds, $existing));
-
-        /** @var list<int> $filtered */
-        return $filtered;
+        return array_values(array_intersect($groupIds, $existing));
     }
 
     /**

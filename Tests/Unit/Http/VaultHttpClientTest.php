@@ -16,6 +16,7 @@ use Netresearch\NrVault\Audit\AuditContextInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
@@ -882,7 +883,7 @@ final class VaultHttpClientTest extends TestCase
 
         $request = new Request('GET', 'ftp://files.example.com/data');
 
-        $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+        $this->expectException(VaultException::class);
         $this->expectExceptionMessageMatches('/Unsupported URI scheme/');
 
         $client->sendRequest($request);
@@ -899,7 +900,7 @@ final class VaultHttpClientTest extends TestCase
 
         $request = new Request('GET', 'file:///etc/passwd');
 
-        $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+        $this->expectException(VaultException::class);
 
         $client->sendRequest($request);
     }
@@ -918,7 +919,7 @@ final class VaultHttpClientTest extends TestCase
 
             $request = new Request('GET', 'https://untrusted.other.com/data');
 
-            $this->expectException(\Netresearch\NrVault\Exception\VaultException::class);
+            $this->expectException(VaultException::class);
             $this->expectExceptionMessageMatches('/not in the allowed hosts list/');
 
             $client->sendRequest($request);

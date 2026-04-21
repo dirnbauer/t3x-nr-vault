@@ -27,6 +27,16 @@ final class OrphanCleanupTaskTest extends AbstractVaultFunctionalTestCase
 {
     protected ?string $backendUserFixture = __DIR__ . '/../Fixtures/Users/be_users.csv';
 
+    /**
+     * Load scheduler core extension — AbstractTask::__construct() reaches
+     * for Scheduler\Scheduler via GeneralUtility::makeInstance, so the
+     * scheduler container entry must be wired before the task is
+     * instantiated.
+     *
+     * @var list<string>
+     */
+    protected array $coreExtensionsToLoad = ['backend', 'scheduler'];
+
     /** @var array<string, mixed> */
     protected array $extensionConfiguration = [
         'auditHmacEpoch' => 1,
@@ -173,5 +183,4 @@ final class OrphanCleanupTaskTest extends AbstractVaultFunctionalTestCase
 
         self::assertStringContainsString('tt_content', $info);
     }
-
 }

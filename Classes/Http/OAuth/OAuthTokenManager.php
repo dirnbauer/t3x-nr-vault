@@ -288,7 +288,7 @@ final class OAuthTokenManager
                         if (\is_array($errorBody) && isset($errorBody['error']) && \is_string($errorBody['error'])) {
                             $oauthError = $errorBody['error'];
                         }
-                    } catch (\JsonException) {
+                    } catch (JsonException) {
                         // Non-JSON error body; leave $oauthError null.
                     }
                 }

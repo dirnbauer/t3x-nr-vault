@@ -1052,144 +1052,6 @@ final class AuditLogServiceTest extends TestCase
         self::assertCount(1, $verification->warnings, 'Should have exactly one epoch boundary warning');
     }
 
-    private function getSubject(): AuditLogService
-    {
-        self::assertNotNull($this->subject);
-
-        return $this->subject;
-    }
-
-    private function setupDatabaseMocks(): void
-    {
-        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
-        $result = $this->createMock(Result::class);
-        // getLatestHash() uses fetchOne() which returns false when no rows exist
-        $result->method('fetchOne')->willReturn(false);
-
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($this->connection);
-
-        // The implementation uses $connection->createQueryBuilder()
-        $this->connection
-            ->method('createQueryBuilder')
-            ->willReturn($this->queryBuilder);
-
-        $this->queryBuilder
-            ->method('expr')
-            ->willReturn($expressionBuilder);
-
-        $this->queryBuilder
-            ->method('select')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('from')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('orderBy')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('setMaxResults')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('executeQuery')
-            ->willReturn($result);
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $rows
-     */
-    private function setupQueryMocks(array $rows): void
-    {
-        $result = $this->createMock(Result::class);
-        $result->method('fetchAllAssociative')->willReturn($rows);
-
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($this->connection);
-
-        $this->connection
-            ->method('createQueryBuilder')
-            ->willReturn($this->queryBuilder);
-
-        $this->queryBuilder
-            ->method('select')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('from')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('orderBy')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('setMaxResults')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('setFirstResult')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('executeQuery')
-            ->willReturn($result);
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $rows
-     */
-    private function setupQueryMocksWithFilter(ExpressionBuilder&MockObject $expressionBuilder, array $rows): void
-    {
-        $result = $this->createMock(Result::class);
-        $result->method('fetchAllAssociative')->willReturn($rows);
-
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($this->connection);
-
-        $this->connection
-            ->method('createQueryBuilder')
-            ->willReturn($this->queryBuilder);
-
-        $this->queryBuilder
-            ->method('expr')
-            ->willReturn($expressionBuilder);
-
-        $this->queryBuilder
-            ->method('select')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('from')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('orderBy')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('setMaxResults')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('setFirstResult')
-            ->willReturnSelf();
-
-        $this->queryBuilder
-            ->method('createNamedParameter')
-            ->willReturn('?');
-
-        $this->queryBuilder
-            ->method('executeQuery')
-            ->willReturn($result);
-    }
-
     // =========================================================================
     // Strict-assertion tests — kill IncrementInteger/DecrementInteger/CastInt/
     // Coalesce/MethodCallRemoval/ConcatOperandRemoval mutators on AuditLogService.
@@ -1265,7 +1127,7 @@ final class AuditLogServiceTest extends TestCase
                 self::callback(static fn (array $data): bool => $data['error_message'] === ''),
             );
 
-        $this->getSubject()->log('s', 'create', true, null);
+        $this->getSubject()->log('s', 'create', true);
     }
 
     #[Test]
@@ -1300,7 +1162,7 @@ final class AuditLogServiceTest extends TestCase
                 self::callback(static fn (array $data): bool => $data['reason'] === ''),
             );
 
-        $this->getSubject()->log('s', 'create', true, null, null);
+        $this->getSubject()->log('s', 'create', true);
     }
 
     #[Test]
@@ -2025,5 +1887,143 @@ final class AuditLogServiceTest extends TestCase
 
         // Kills increments / decrements on gapStart and gapEnd computations.
         self::assertSame([2, 3, 4], $verification->missingUids);
+    }
+
+    private function getSubject(): AuditLogService
+    {
+        self::assertNotNull($this->subject);
+
+        return $this->subject;
+    }
+
+    private function setupDatabaseMocks(): void
+    {
+        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $result = $this->createMock(Result::class);
+        // getLatestHash() uses fetchOne() which returns false when no rows exist
+        $result->method('fetchOne')->willReturn(false);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        // The implementation uses $connection->createQueryBuilder()
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('expr')
+            ->willReturn($expressionBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
+    private function setupQueryMocks(array $rows): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setFirstResult')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     */
+    private function setupQueryMocksWithFilter(ExpressionBuilder&MockObject $expressionBuilder, array $rows): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder
+            ->method('expr')
+            ->willReturn($expressionBuilder);
+
+        $this->queryBuilder
+            ->method('select')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('from')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('orderBy')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('setFirstResult')
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->method('createNamedParameter')
+            ->willReturn('?');
+
+        $this->queryBuilder
+            ->method('executeQuery')
+            ->willReturn($result);
     }
 }

@@ -164,21 +164,24 @@ final class SecretDetectionServiceTest extends TestCase
      */
     public static function valuePatternProvider(): array
     {
-        // Note: Using runtime-constructed values to avoid triggering GitHub's secret scanner
-        // Values are assembled from parts so they don't appear as complete secrets in source
-        $stripePrefix = 'sk_live_';
-        $stripeTestPrefix = 'sk_test_';
-        $stripePubPrefix = 'pk_live_';
+        // Synthetic test fixtures: assemble each "secret" from fragments
+        // via implode() so GitHub secret-scanning push-protection does
+        // not treat them as real leaked credentials. implode() is used
+        // rather than string concatenation because PHP-CS-Fixer's
+        // `no_useless_concat_operator` rule would otherwise collapse
+        // `'sk' . '_live_'` back into the triggering literal at
+        // format time.
+        $make = static fn (string ...$parts): string => implode('', $parts);
         $fakeSuffix = '0123456789ABCDEFGHIJKLMNOP'; // 26 chars, meets 24+ requirement
 
         return [
-            'Stripe live key' => [$stripePrefix . $fakeSuffix, 'Stripe live key'],
-            'Stripe test key' => [$stripeTestPrefix . $fakeSuffix, 'Stripe test key'],
-            'Stripe publishable live' => [$stripePubPrefix . $fakeSuffix, 'Stripe publishable live'],
-            'AWS access key' => ['AKIAEXAMPLEFAKEKEY12', 'AWS Access Key'],
-            'GitHub PAT' => ['ghp_FAKE000000000000000000000000000000AB', 'GitHub Personal Access Token'],
-            'GitHub OAuth' => ['gho_FAKE000000000000000000000000000000AB', 'GitHub OAuth Token'],
-            'Google API Key' => ['AIzaFAKEEXAMPLEKEYNOTREAL000000000000ab', 'Google API Key'],
+            'Stripe live key' => [$make('sk', '_live_', $fakeSuffix), 'Stripe live key'],
+            'Stripe test key' => [$make('sk', '_test_', $fakeSuffix), 'Stripe test key'],
+            'Stripe publishable live' => [$make('pk', '_live_', $fakeSuffix), 'Stripe publishable live'],
+            'AWS access key' => [$make('AKI', 'AEXAMPLEFAKEKEY12'), 'AWS Access Key'],
+            'GitHub PAT' => [$make('gh', 'p_FAKE000000000000000000000000000000AB'), 'GitHub Personal Access Token'],
+            'GitHub OAuth' => [$make('gh', 'o_FAKE000000000000000000000000000000AB'), 'GitHub OAuth Token'],
+            'Google API Key' => [$make('AI', 'zaFAKEEXAMPLEKEYNOTREAL000000000000ab'), 'Google API Key'],
             // Non-matches
             'regular string' => ['just a regular value', null],
             'short token' => ['abc123', null],
@@ -206,7 +209,8 @@ final class SecretDetectionServiceTest extends TestCase
             'vault reference' => ['%vault(my_secret_key)%', true],
             'old TCA format (no longer detected)' => ['tx_myext_config__api_key__123', false],
             'regular value' => ['some_regular_value', false],
-            'API key' => ['sk_live_abcdefghij', false],
+            // Stripe-looking key fragmented so push-protection does not flag it.
+            'API key' => [implode('', ['sk', '_live_abcdefghij']), false],
             'password' => ['mySecretPassword123', false],
         ];
     }
@@ -957,10 +961,11 @@ final class SecretDetectionServiceTest extends TestCase
 
         $sampleResult = $this->createMock(Result::class);
         // Stripe live key pattern — should be detected as Critical.
-        // Prefix split to bypass GitHub secret-scanning push-protection
-        // on the synthetic test fixture.
+        // Fragmented via implode() so GitHub push-protection does not
+        // flag the synthetic test fixture, and so PHP-CS-Fixer's
+        // `no_useless_concat_operator` cannot collapse it back.
         $sampleResult->method('fetchAllAssociative')->willReturn([
-            ['stripe_api_key' => 'sk' . '_live_0123456789ABCDEFGHIJKLMNOP'],
+            ['stripe_api_key' => implode('', ['sk', '_live_0123456789ABCDEFGHIJKLMNOP'])],
         ]);
 
         $countQb = $this->createMock(QueryBuilder::class);
@@ -1126,7 +1131,7 @@ final class SecretDetectionServiceTest extends TestCase
         $firstCount = $this->service->getDetectedSecretsCount();
 
         // Second scan should reset and rescan
-        $this->extensionConfiguration = $this->createMock(\TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class);
+        $this->extensionConfiguration = $this->createMock(ExtensionConfiguration::class);
         $this->extensionConfiguration->method('get')->willReturn([]);
 
         // Create new service instance to test clean slate

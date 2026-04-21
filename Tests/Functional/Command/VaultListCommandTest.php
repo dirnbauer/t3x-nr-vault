@@ -15,6 +15,7 @@ use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
+use Throwable;
 
 /**
  * Functional tests for VaultListCommand end-to-end via CommandTester.
@@ -148,7 +149,7 @@ final class VaultListCommandTest extends AbstractVaultFunctionalTestCase
             if ($vaultService->exists($identifier)) {
                 $vaultService->delete($identifier, 'test cleanup');
             }
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // best-effort cleanup
         }
     }

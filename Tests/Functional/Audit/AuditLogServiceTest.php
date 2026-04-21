@@ -18,6 +18,7 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use Throwable;
 
 /**
  * Functional tests for AuditLogService — log creation, hash-chain computation,
@@ -83,11 +84,11 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
 
         $createForIdent = array_filter(
             $createEntries,
-            static fn ($e) => $e->secretIdentifier === $identifier,
+            static fn ($e): bool => $e->secretIdentifier === $identifier,
         );
         $readForIdent = array_filter(
             $readEntries,
-            static fn ($e) => $e->secretIdentifier === $identifier,
+            static fn ($e): bool => $e->secretIdentifier === $identifier,
         );
 
         self::assertNotEmpty($createForIdent, 'create entries must contain entry for our identifier');
@@ -133,7 +134,7 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
 
         $forIdent = array_filter(
             $entries,
-            static fn ($e) => $e->secretIdentifier === $identifier,
+            static fn ($e): bool => $e->secretIdentifier === $identifier,
         );
         self::assertNotEmpty($forIdent, 'Date range filter must return entries within range');
 
@@ -295,16 +296,21 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
         self::assertGreaterThanOrEqual(10, \count($allEntries), 'Must have at least 10 entries');
 
         // Take the last 10 (our seeded entries)
-        $seededEntries = array_slice($allEntries, -10);
+        $seededEntries = \array_slice($allEntries, -10);
 
         // Entry at index 4 = the 5th seeded entry (0-based)
         $tamperedEntry = $seededEntries[4];
 
-        // Tamper the action column on entry 5 directly in the DB
+        // Tamper row 5's `entry_hash` directly. Changing `entry_hash` (not
+        // just `action`) is what propagates, because row 6's `previous_hash`
+        // is bound to row 5's *stored* `entry_hash`. Once row 5's
+        // `entry_hash` mismatches its recomputed hash, row 6's
+        // `previous_hash` == row 5's old hash no longer equals row 5's
+        // current stored hash → row 6 also fails its chain check.
         $connection = $this->getConnectionPool()->getConnectionForTable('tx_nrvault_audit_log');
         $connection->update(
             'tx_nrvault_audit_log',
-            ['action' => 'tampered_propagation'],
+            ['entry_hash' => str_repeat('0', 64)],
             ['uid' => $tamperedEntry->uid],
         );
 
@@ -323,7 +329,7 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
         // proving the chain propagation check, not just single-row detection.
         $subsequentUids = array_map(
             static fn ($e) => $e->uid,
-            array_slice($seededEntries, 5),
+            \array_slice($seededEntries, 5),
         );
         $propagatedErrors = array_intersect($errorUids, $subsequentUids);
         self::assertNotEmpty(
@@ -354,7 +360,7 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
         // Collect entries in ascending order
         $allEntries = array_reverse($auditService->query(null, 200, 0));
         self::assertGreaterThanOrEqual(5, \count($allEntries));
-        $seededEntries = array_slice($allEntries, -5);
+        $seededEntries = \array_slice($allEntries, -5);
 
         // Delete the 3rd entry (index 2) directly from the DB,
         // bypassing the audit service to simulate a malicious deletion.
@@ -383,7 +389,7 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
         // whose uid is > deleted_uid).
         $successorUids = array_map(
             static fn ($e) => $e->uid,
-            array_slice($seededEntries, 3),
+            \array_slice($seededEntries, 3),
         );
         self::assertNotEmpty(
             array_intersect(array_keys($result->errors), $successorUids),
@@ -394,7 +400,7 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
         foreach ($identifiers as $id) {
             try {
                 $vaultService->delete($id, 'cleanup');
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Entry may already be gone
             }
         }
@@ -416,7 +422,7 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
 
         $allEntries = array_reverse($auditService->query(null, 200, 0));
         self::assertGreaterThanOrEqual(5, \count($allEntries));
-        $seededEntries = array_slice($allEntries, -5);
+        $seededEntries = \array_slice($allEntries, -5);
 
         $victim = $seededEntries[2];        // to be deleted
         $successor = $seededEntries[3];     // will be patched
@@ -466,10 +472,9 @@ final class AuditLogServiceTest extends AbstractVaultFunctionalTestCase
         foreach ($identifiers as $id) {
             try {
                 $vaultService->delete($id, 'cleanup');
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Entry may already be gone
             }
         }
     }
-
 }

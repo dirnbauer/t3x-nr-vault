@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Domain\Model;
 
+use InvalidArgumentException;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Exception\ValidationException;
 use Netresearch\NrVault\Tests\Unit\TestCase;
@@ -707,7 +708,7 @@ final class SecretTest extends TestCase
             'negative' => -1,
             '+60' => time() + 60,
             '-60' => time() - 60,
-            default => throw new \InvalidArgumentException("Unknown kind: $kind"),
+            default => throw new InvalidArgumentException("Unknown kind: $kind", 7112662888),
         };
         $secret->setExpiresAt($expiresAt);
 

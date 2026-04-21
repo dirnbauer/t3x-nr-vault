@@ -14,6 +14,7 @@ namespace Netresearch\NrVault\Tests\Functional\Http\OAuth;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Netresearch\NrVault\Audit\AuditLogEntry;
 use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Domain\Dto\SecretDetails;
@@ -29,6 +30,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Throwable;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -444,7 +446,7 @@ final class OAuthIntegrationTest extends FunctionalTestCase
 
         $refreshForOurSecret = array_filter(
             $refreshEntries,
-            static fn ($e) => $e->secretIdentifier === 'fallback_refresh_token',
+            static fn (AuditLogEntry $e): bool => $e->secretIdentifier === 'fallback_refresh_token',
         );
         self::assertNotEmpty(
             $refreshForOurSecret,
@@ -459,7 +461,7 @@ final class OAuthIntegrationTest extends FunctionalTestCase
 
         $fallbackForOurSecret = array_filter(
             $fallbackEntries,
-            static fn ($e) => $e->secretIdentifier === 'fallback_client_id',
+            static fn (AuditLogEntry $e): bool => $e->secretIdentifier === 'fallback_client_id',
         );
         self::assertNotEmpty(
             $fallbackForOurSecret,
@@ -475,9 +477,10 @@ final class OAuthIntegrationTest extends FunctionalTestCase
         // Cleanup
         $vaultService->delete('fallback_client_id', 'test cleanup');
         $vaultService->delete('fallback_client_secret', 'test cleanup');
+
         try {
             $vaultService->delete('fallback_refresh_token', 'test cleanup');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // may have already been consumed
         }
     }
@@ -528,9 +531,10 @@ final class OAuthIntegrationTest extends FunctionalTestCase
             // Cleanup even on failure
             $vaultService->delete('double_fail_client_id', 'test cleanup');
             $vaultService->delete('double_fail_client_secret', 'test cleanup');
+
             try {
                 $vaultService->delete('double_fail_refresh_token', 'test cleanup');
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // ignore
             }
         }

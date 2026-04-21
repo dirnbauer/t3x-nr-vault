@@ -297,6 +297,7 @@ final class IdentifierValidatorTest extends TestCase
     {
         // Length 2 (one below) — must throw.
         $exceptionThrown = false;
+
         try {
             IdentifierValidator::validate('ab');
         } catch (ValidationException $e) {
@@ -329,6 +330,7 @@ final class IdentifierValidatorTest extends TestCase
 
         // Over boundary: must throw with exact message containing "255".
         $exceptionThrown = false;
+
         try {
             IdentifierValidator::validate($over);
         } catch (ValidationException $e) {

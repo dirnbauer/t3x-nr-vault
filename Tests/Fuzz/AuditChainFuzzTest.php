@@ -74,7 +74,7 @@ final class AuditChainFuzzTest extends TestCase
             }
             $actorUid = mt_rand(0, 1000);
             $crdate = mt_rand(1000000, 2000000000);
-            $prevHash = mt_rand(0, 1) ? str_repeat('0', 64) : '';
+            $prevHash = mt_rand(0, 1) !== 0 ? str_repeat('0', 64) : '';
 
             $cases["random_{$i}"] = [$uid, $secretId, $action, $actorUid, $crdate, $prevHash];
         }
@@ -139,7 +139,7 @@ final class AuditChainFuzzTest extends TestCase
     ): void {
         $hmacKey = random_bytes(32);
 
-        $legacyHash = AuditLogService::calculateHash($uid, $secretIdentifier, $action, $actorUid, $crdate, $previousHash, null);
+        $legacyHash = AuditLogService::calculateHash($uid, $secretIdentifier, $action, $actorUid, $crdate, $previousHash);
         $hmacHash = AuditLogService::calculateHash($uid, $secretIdentifier, $action, $actorUid, $crdate, $previousHash, $hmacKey);
 
         self::assertNotSame($legacyHash, $hmacHash, 'HMAC hash must differ from SHA-256-only hash');
@@ -252,6 +252,7 @@ final class AuditChainFuzzTest extends TestCase
             foreach ($entries as [$uid, $id, $action, $actor, $crdate]) {
                 $h = AuditLogService::calculateHash($uid, $id, $action, $actor, $crdate, $h);
             }
+
             return $h;
         };
 

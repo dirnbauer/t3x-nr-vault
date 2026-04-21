@@ -18,6 +18,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
+use RuntimeException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
@@ -64,78 +65,6 @@ final class SecretRepositoryTest extends TestCase
             ->willReturn($this->expressionBuilder);
 
         $this->subject = new SecretRepository($this->connectionPool);
-    }
-
-    /**
-     * Swap the default Connection stub for a strict MockObject and re-wire the
-     * connection pool. Call BEFORE any test-specific stubbing. Use from tests
-     * that need $connection->expects(...) verification.
-     */
-    private function useStrictConnectionMock(): Connection&MockObject
-    {
-        $mock = $this->createMock(Connection::class);
-        $mock->method('createQueryBuilder')->willReturn($this->queryBuilder);
-        $this->connection = $mock;
-
-        $pool = $this->createStub(ConnectionPool::class);
-        $pool->method('getConnectionForTable')->willReturn($mock);
-        $this->connectionPool = $pool;
-
-        $this->subject = new SecretRepository($pool);
-
-        return $mock;
-    }
-
-    /**
-     * Swap the default QueryBuilder stub for a strict MockObject and re-wire
-     * the connection chain. Call BEFORE any test-specific stubbing.
-     */
-    private function useStrictQueryBuilderMock(): QueryBuilder&MockObject
-    {
-        $mock = $this->createMock(QueryBuilder::class);
-        $mock->method('expr')->willReturn($this->expressionBuilder);
-        $this->queryBuilder = $mock;
-
-        $connection = $this->createStub(Connection::class);
-        $connection->method('createQueryBuilder')->willReturn($mock);
-        $this->connection = $connection;
-
-        $pool = $this->createStub(ConnectionPool::class);
-        $pool->method('getConnectionForTable')->willReturn($connection);
-        $this->connectionPool = $pool;
-
-        $this->subject = new SecretRepository($pool);
-
-        return $mock;
-    }
-
-    /**
-     * Swap both the default QueryBuilder AND ExpressionBuilder stubs for strict
-     * MockObjects and re-wire the connection chain. Call BEFORE any
-     * test-specific stubbing. Returns both so callers can add expectations.
-     *
-     * @return array{0: QueryBuilder&MockObject, 1: ExpressionBuilder&MockObject}
-     */
-    private function useStrictQueryBuilderAndExpressionBuilderMocks(): array
-    {
-        $exprMock = $this->createMock(ExpressionBuilder::class);
-        $this->expressionBuilder = $exprMock;
-
-        $qbMock = $this->createMock(QueryBuilder::class);
-        $qbMock->method('expr')->willReturn($exprMock);
-        $this->queryBuilder = $qbMock;
-
-        $connection = $this->createStub(Connection::class);
-        $connection->method('createQueryBuilder')->willReturn($qbMock);
-        $this->connection = $connection;
-
-        $pool = $this->createStub(ConnectionPool::class);
-        $pool->method('getConnectionForTable')->willReturn($connection);
-        $this->connectionPool = $pool;
-
-        $this->subject = new SecretRepository($pool);
-
-        return [$qbMock, $exprMock];
     }
 
     #[Test]
@@ -690,7 +619,7 @@ final class SecretRepositoryTest extends TestCase
 
         $this->expressionBuilder->method('like')->willReturn('identifier LIKE ?');
 
-        $this->subject->findAllWithFilters(new SecretFilters(context: 'myctx', scopePid: 5, prefix: 'api-'));
+        $this->subject->findAllWithFilters(new SecretFilters(prefix: 'api-', context: 'myctx', scopePid: 5));
     }
 
     #[Test]
@@ -808,9 +737,9 @@ final class SecretRepositoryTest extends TestCase
 
         $this->connection
             ->method('insert')
-            ->willThrowException(new \RuntimeException('Constraint violation'));
+            ->willThrowException(new RuntimeException('Constraint violation'));
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Constraint violation');
 
         $this->subject->save($secret);
@@ -892,6 +821,78 @@ final class SecretRepositoryTest extends TestCase
             ->with('tx_nrvault_secret_begroups_mm', ['uid_local' => 77]);
 
         $this->subject->save($secret);
+    }
+
+    /**
+     * Swap the default Connection stub for a strict MockObject and re-wire the
+     * connection pool. Call BEFORE any test-specific stubbing. Use from tests
+     * that need $connection->expects(...) verification.
+     */
+    private function useStrictConnectionMock(): Connection&MockObject
+    {
+        $mock = $this->createMock(Connection::class);
+        $mock->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->connection = $mock;
+
+        $pool = $this->createStub(ConnectionPool::class);
+        $pool->method('getConnectionForTable')->willReturn($mock);
+        $this->connectionPool = $pool;
+
+        $this->subject = new SecretRepository($pool);
+
+        return $mock;
+    }
+
+    /**
+     * Swap the default QueryBuilder stub for a strict MockObject and re-wire
+     * the connection chain. Call BEFORE any test-specific stubbing.
+     */
+    private function useStrictQueryBuilderMock(): QueryBuilder&MockObject
+    {
+        $mock = $this->createMock(QueryBuilder::class);
+        $mock->method('expr')->willReturn($this->expressionBuilder);
+        $this->queryBuilder = $mock;
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('createQueryBuilder')->willReturn($mock);
+        $this->connection = $connection;
+
+        $pool = $this->createStub(ConnectionPool::class);
+        $pool->method('getConnectionForTable')->willReturn($connection);
+        $this->connectionPool = $pool;
+
+        $this->subject = new SecretRepository($pool);
+
+        return $mock;
+    }
+
+    /**
+     * Swap both the default QueryBuilder AND ExpressionBuilder stubs for strict
+     * MockObjects and re-wire the connection chain. Call BEFORE any
+     * test-specific stubbing. Returns both so callers can add expectations.
+     *
+     * @return array{0: QueryBuilder&MockObject, 1: ExpressionBuilder&MockObject}
+     */
+    private function useStrictQueryBuilderAndExpressionBuilderMocks(): array
+    {
+        $exprMock = $this->createMock(ExpressionBuilder::class);
+        $this->expressionBuilder = $exprMock;
+
+        $qbMock = $this->createMock(QueryBuilder::class);
+        $qbMock->method('expr')->willReturn($exprMock);
+        $this->queryBuilder = $qbMock;
+
+        $connection = $this->createStub(Connection::class);
+        $connection->method('createQueryBuilder')->willReturn($qbMock);
+        $this->connection = $connection;
+
+        $pool = $this->createStub(ConnectionPool::class);
+        $pool->method('getConnectionForTable')->willReturn($connection);
+        $this->connectionPool = $pool;
+
+        $this->subject = new SecretRepository($pool);
+
+        return [$qbMock, $exprMock];
     }
 
     /**

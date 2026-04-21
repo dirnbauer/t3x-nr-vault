@@ -11,6 +11,7 @@ namespace Netresearch\NrVault\Tests\Fuzz;
 
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use InvalidArgumentException;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\SecretPlacement;
@@ -24,6 +25,7 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
+use RuntimeException;
 
 /**
  * Fuzz tests for VaultHttpClient secret-injection logic.
@@ -42,6 +44,8 @@ use Psr\Http\Message\RequestInterface;
 #[CoversClass(VaultHttpClient::class)]
 final class HttpClientFuzzTest extends TestCase
 {
+    private const TEST_IDENTIFIER = '01937b6e-4b6c-7abc-8def-000000000099';
+
     /** @var VaultServiceInterface&Stub */
     private VaultServiceInterface $vaultService;
 
@@ -50,8 +54,6 @@ final class HttpClientFuzzTest extends TestCase
 
     /** @var ClientInterface&Stub */
     private ClientInterface $innerClient;
-
-    private const TEST_IDENTIFIER = '01937b6e-4b6c-7abc-8def-000000000099';
 
     protected function setUp(): void
     {
@@ -192,6 +194,7 @@ final class HttpClientFuzzTest extends TestCase
                 self::assertStringContainsString($secretValue, $authHeader);
                 // Must NOT contain the vault identifier in the auth header
                 self::assertStringNotContainsString(self::TEST_IDENTIFIER, $authHeader);
+
                 return new Response(200);
             },
         );
@@ -218,6 +221,7 @@ final class HttpClientFuzzTest extends TestCase
                 $data = json_decode($body, true);
                 self::assertIsArray($data, 'Body must be valid JSON');
                 self::assertSame($secretValue, $data['api_key'] ?? null, 'JSON field must contain exact secret value');
+
                 return new Response(200);
             },
         );
@@ -269,6 +273,7 @@ final class HttpClientFuzzTest extends TestCase
                     $request->hasHeader('X-Injected-Header'),
                     'CRLF injection must not create extra headers',
                 );
+
                 return new Response(200);
             },
         );
@@ -278,7 +283,7 @@ final class HttpClientFuzzTest extends TestCase
             $client->sendRequest(new Request('GET', 'https://api.example.com/data'));
             // Reached inner client without throw — header-value CR/LF check
             // above must have passed. PSR-7 sanitization is acceptable.
-        } catch (\InvalidArgumentException|\RuntimeException $e) {
+        } catch (InvalidArgumentException|RuntimeException $e) {
             // PSR-7 rejected the CRLF at header-set time — expected and safe.
             self::assertTrue(true, 'PSR-7 rejected CRLF: ' . $e->getMessage());
         } catch (VaultException $e) {
@@ -286,7 +291,6 @@ final class HttpClientFuzzTest extends TestCase
             self::assertTrue(true, 'VaultException wrapping PSR-7 rejection: ' . $e->getMessage());
         }
     }
-
 
     // -----------------------------------------------------------------------
     // Tests: unsafe URI schemes
@@ -302,7 +306,7 @@ final class HttpClientFuzzTest extends TestCase
         // Secret retrieval should never be called for unsafe schemes
         $this->vaultService->method('retrieve')->willReturnCallback(
             static function (): string {
-                throw new \RuntimeException('Secret should not be retrieved for unsafe URI scheme');
+                throw new RuntimeException('Secret should not be retrieved for unsafe URI scheme', 4342757983);
             },
         );
 
@@ -362,7 +366,7 @@ final class HttpClientFuzzTest extends TestCase
     /**
      * Various header name inputs — valid names work, invalid names are rejected by PSR-7.
      *
-     * @return array<string, array{string, bool}>  [name => [headerName, expectSuccess]]
+     * @return array<string, array{string, bool}> [name => [headerName, expectSuccess]]
      */
     public static function headerNameProvider(): array
     {
@@ -397,7 +401,7 @@ final class HttpClientFuzzTest extends TestCase
                 $client = $this->buildClient(SecretPlacement::Header, ['headerName' => $headerName]);
                 $client->sendRequest(new Request('GET', 'https://api.example.com/test'));
                 // Some empty header names may just send no header at all — acceptable
-            } catch (\InvalidArgumentException|\RuntimeException|VaultException $e) {
+            } catch (InvalidArgumentException|RuntimeException|VaultException) {
                 // Expected: PSR-7 or Vault layer rejected invalid header name
                 self::assertTrue(true);
             }

@@ -200,5 +200,4 @@ final class TcaIntegrationTest extends AbstractVaultFunctionalTestCase
             )
         ');
     }
-
 }

@@ -70,19 +70,6 @@ final class VaultAuditMigrateCommandTest extends TestCase
         $this->commandTester = new CommandTester($command);
     }
 
-    /**
-     * Creates a Connection mock, wires it into the ConnectionPool stub and the
-     * queryBuilder, and returns it so the caller can set expectations.
-     */
-    private function wireConnectionMock(): Connection&MockObject
-    {
-        $connection = $this->createMock(Connection::class);
-        $connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
-        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
-
-        return $connection;
-    }
-
     #[Test]
     public function hasCorrectName(): void
     {
@@ -245,5 +232,18 @@ final class VaultAuditMigrateCommandTest extends TestCase
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Cannot migrate to epoch 0', $tester->getDisplay());
+    }
+
+    /**
+     * Creates a Connection mock, wires it into the ConnectionPool stub and the
+     * queryBuilder, and returns it so the caller can set expectations.
+     */
+    private function wireConnectionMock(): Connection&MockObject
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        return $connection;
     }
 }

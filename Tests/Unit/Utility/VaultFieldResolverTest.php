@@ -24,9 +24,9 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 #[AllowMockObjectsWithoutExpectations]
 final class VaultFieldResolverTest extends TestCase
 {
-    private VaultServiceInterface&MockObject $vaultService;
-
     protected TcaSchemaFactory&MockObject $tcaSchemaFactory;
+
+    private VaultServiceInterface&MockObject $vaultService;
 
     private LoggerInterface&MockObject $logger;
 
@@ -344,7 +344,6 @@ final class VaultFieldResolverTest extends TestCase
 
         self::assertSame($record, $result);
     }
-
 
     /**
      * Kill Continue_ mutation on line 57 — `continue` (not `break`) when a

@@ -16,6 +16,7 @@ use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
+use stdClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 #[CoversClass(VaultFieldPermissionService::class)]
@@ -294,8 +295,8 @@ final class VaultFieldPermissionServiceTest extends TestCase
     {
         // Pre-seed cache for both users (uid 10 and uid 20) to prove separate cache keys.
         // We use admin users so no TSconfig lookup (BackendUtility) is needed.
-        $this->createMockBackendUser(isAdmin: true, uid: 10);
-        $this->createMockBackendUser(isAdmin: true, uid: 20);
+        $this->createMockBackendUser(uid: 10, isAdmin: true);
+        $this->createMockBackendUser(uid: 20, isAdmin: true);
 
         // Admins skip the cache entirely (early return), so pre-seed cache directly
         $reflection = new ReflectionClass($this->service);
@@ -318,7 +319,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     {
         // Pre-seed cache to simulate a result from a previous non-admin checkPermission call.
         // Then verify the cached value is returned without invoking checkPermission again.
-        $backendUser = $this->createMockBackendUser(isAdmin: false, uid: 55);
+        $backendUser = $this->createMockBackendUser(uid: 55, isAdmin: false);
 
         $reflection = new ReflectionClass($this->service);
         $cacheProp = $reflection->getProperty('permissionCache');
@@ -357,7 +358,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
         // Non-admin, no TSconfig → built-in default for ReadOnly is false
         // Since checkPermission calls BackendUtility::getPagesTSconfig which is final,
         // we verify that the built-in default path is reachable through the cache pre-seeding path
-        $backendUser = $this->createMockBackendUser(isAdmin: false, uid: 42);
+        $backendUser = $this->createMockBackendUser(uid: 42, isAdmin: false);
 
         $reflection = new ReflectionClass($this->service);
         $cacheProp = $reflection->getProperty('permissionCache');
@@ -373,7 +374,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     public function isAllowedReturnsFalseForNonBackendUserInGlobals(): void
     {
         // GLOBALS has a non-BackendUserAuthentication object
-        $GLOBALS['BE_USER'] = new \stdClass();
+        $GLOBALS['BE_USER'] = new stdClass();
 
         $result = $this->service->isAllowed('tx_table', 'field', VaultFieldPermission::Reveal);
 
@@ -395,10 +396,10 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function isAllowedReturnsCachedValueOnSecondCallWithSameArgs(): void
     {
-        $backendUser = $this->createMockBackendUser(isAdmin: true, uid: 7);
+        $this->createMockBackendUser(uid: 7, isAdmin: true);
 
         // Admin bypasses cache (early return), so verify for non-admin
-        $backendUser2 = $this->createMockBackendUser(isAdmin: false, uid: 99);
+        $backendUser2 = $this->createMockBackendUser(uid: 99, isAdmin: false);
 
         $reflection = new ReflectionClass($this->service);
         $cacheProp = $reflection->getProperty('permissionCache');
@@ -414,7 +415,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     #[Test]
     public function getPermissionsReturnsAllFourPermissionKeysForNonAdmin(): void
     {
-        $backendUser = $this->createMockBackendUser(isAdmin: false, uid: 33);
+        $backendUser = $this->createMockBackendUser(uid: 33, isAdmin: false);
 
         // Pre-seed all four cache entries to avoid BackendUtility call
         $reflection = new ReflectionClass($this->service);
@@ -456,5 +457,4 @@ final class VaultFieldPermissionServiceTest extends TestCase
 
         self::assertNull($result);
     }
-
 }

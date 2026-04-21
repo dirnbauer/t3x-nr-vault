@@ -46,7 +46,7 @@ final class NonceUniquenessFuzzTest extends TestCase
         $this->masterKey = random_bytes(SODIUM_CRYPTO_AEAD_AES256GCM_KEYBYTES);
 
         $provider = $this->createStub(MasterKeyProviderInterface::class);
-        $provider->method('getMasterKey')->willReturnCallback(fn () => $this->masterKey);
+        $provider->method('getMasterKey')->willReturnCallback(fn (): string => $this->masterKey);
 
         $xchachaConfig = $this->createStub(ExtensionConfigurationInterface::class);
         $xchachaConfig->method('preferXChaCha20')->willReturn(true);

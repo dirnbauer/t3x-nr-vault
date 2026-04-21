@@ -12,7 +12,9 @@ namespace Netresearch\NrVault\Tests\Functional\Crypto;
 use Netresearch\NrVault\Crypto\EncryptionService;
 use Netresearch\NrVault\Crypto\EncryptionServiceInterface;
 use Netresearch\NrVault\Crypto\FileMasterKeyProvider;
+use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
+use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -138,7 +140,7 @@ final class EncryptionServiceTest extends FunctionalTestCase
 
         $dek = $encryptionService->generateDek();
 
-        self::assertSame(32, \strlen($dek), 'DEK must be exactly 32 bytes');
+        self::assertSame(32, \strlen((string) $dek), 'DEK must be exactly 32 bytes');
 
         $dek2 = $encryptionService->generateDek();
         self::assertNotSame($dek, $dek2, 'Each DEK must be unique');
@@ -151,7 +153,7 @@ final class EncryptionServiceTest extends FunctionalTestCase
 
         $checksum = $encryptionService->calculateChecksum('test-value');
 
-        self::assertSame(64, \strlen($checksum), 'SHA-256 hex hash must be 64 characters');
+        self::assertSame(64, \strlen((string) $checksum), 'SHA-256 hex hash must be 64 characters');
         self::assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $checksum);
     }
 
@@ -171,9 +173,9 @@ final class EncryptionServiceTest extends FunctionalTestCase
     {
         // This test uses the full vault service to round-trip secrets across key rotation,
         // as the raw reEncryptDek requires careful key handling (tested in MasterKeyRotationTest).
-        $vaultService = $this->get(\Netresearch\NrVault\Service\VaultServiceInterface::class);
-        $encryptionService = $this->get(EncryptionServiceInterface::class);
-        $secretRepository = $this->get(\Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface::class);
+        $vaultService = $this->get(VaultServiceInterface::class);
+        $this->get(EncryptionServiceInterface::class);
+        $secretRepository = $this->get(SecretRepositoryInterface::class);
 
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/Users/be_users.csv');
         $this->setUpBackendUser(1);
@@ -189,31 +191,10 @@ final class EncryptionServiceTest extends FunctionalTestCase
 
         // The DEK is non-empty and base64-encoded
         self::assertNotEmpty($originalEncryptedDek, 'Stored secret must have an encrypted DEK');
-        self::assertNotFalse(base64_decode($originalEncryptedDek, true), 'DEK must be base64-encoded');
+        self::assertNotFalse(base64_decode((string) $originalEncryptedDek, true), 'DEK must be base64-encoded');
 
         // Cleanup
         $vaultService->delete($identifier, 'test cleanup');
-    }
-
-    /**
-     * Generate a UUID v7 for testing.
-     */
-    private function generateUuidV7(): string
-    {
-        $timestamp = (int) (microtime(true) * 1000);
-        $timestampHex = str_pad(dechex($timestamp), 12, '0', STR_PAD_LEFT);
-        $randomBytes = random_bytes(10);
-        $randomHex = bin2hex($randomBytes);
-
-        return \sprintf(
-            '%s-%s-7%s-%s%s-%s',
-            substr($timestampHex, 0, 8),
-            substr($timestampHex, 8, 4),
-            substr($randomHex, 0, 3),
-            dechex(8 + random_int(0, 3)),
-            substr($randomHex, 3, 3),
-            substr($randomHex, 6, 12),
-        );
     }
 
     #[Test]
@@ -301,5 +282,26 @@ final class EncryptionServiceTest extends FunctionalTestCase
         );
 
         self::assertSame($plaintext, $decrypted);
+    }
+
+    /**
+     * Generate a UUID v7 for testing.
+     */
+    private function generateUuidV7(): string
+    {
+        $timestamp = (int) (microtime(true) * 1000);
+        $timestampHex = str_pad(dechex($timestamp), 12, '0', STR_PAD_LEFT);
+        $randomBytes = random_bytes(10);
+        $randomHex = bin2hex($randomBytes);
+
+        return \sprintf(
+            '%s-%s-7%s-%s%s-%s',
+            substr($timestampHex, 0, 8),
+            substr($timestampHex, 8, 4),
+            substr($randomHex, 0, 3),
+            dechex(8 + random_int(0, 3)),
+            substr($randomHex, 3, 3),
+            substr($randomHex, 6, 12),
+        );
     }
 }

@@ -9,7 +9,9 @@ declare(strict_types=1);
 
 namespace Netresearch\NrVault\Tests\Unit\Traits;
 
+use LogicException;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Schema\Field\FieldCollection;
 use TYPO3\CMS\Core\Schema\Field\FieldTypeInterface;
 use TYPO3\CMS\Core\Schema\TcaSchema;
@@ -54,7 +56,7 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
  * The trait requires the consuming test class to expose a
  * `TcaSchemaFactory&MockObject` property named `$tcaSchemaFactory`.
  *
- * @phpstan-require-extends \PHPUnit\Framework\TestCase
+ * @phpstan-require-extends TestCase
  */
 trait TcaSchemaMockTrait
 {
@@ -66,13 +68,14 @@ trait TcaSchemaMockTrait
     protected function mockTcaSchemaForTable(string $table, array $fields = []): void
     {
         if (!isset($this->tcaSchemaFactory) || !$this->tcaSchemaFactory instanceof TcaSchemaFactory) {
-            throw new \LogicException(
+            throw new LogicException(
                 \sprintf(
                     '%s requires the test to define a `$tcaSchemaFactory` property '
                     . 'of type `TcaSchemaFactory&MockObject` before calling %s().',
                     self::class,
                     __FUNCTION__,
                 ),
+                3189279350,
             );
         }
 

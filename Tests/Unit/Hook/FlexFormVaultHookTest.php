@@ -942,7 +942,7 @@ final class FlexFormVaultHookTest extends TestCase
 
         $this->vaultService
             ->method('store')
-            ->willThrowException(new \Netresearch\NrVault\Exception\VaultException('Store failed'));
+            ->willThrowException(new VaultException('Store failed'));
 
         $this->dataHandler
             ->expects(self::once())
@@ -1000,20 +1000,20 @@ final class FlexFormVaultHookTest extends TestCase
         // in any identifier extracted or vault operation triggered.
 
         $xxeXml = <<<'XML'
-            <?xml version="1.0" encoding="utf-8"?>
-            <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
-            <T3FlexForms>
-              <data>
-                <sheet index="sDEF">
-                  <language index="lDEF">
-                    <field index="settings.apiKey">
-                      <value index="vDEF">&xxe;01937b6e-4b6c-7abc-8def-0123456789ab</value>
-                    </field>
-                  </language>
-                </sheet>
-              </data>
-            </T3FlexForms>
-            XML;
+        <?xml version="1.0" encoding="utf-8"?>
+        <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+        <T3FlexForms>
+          <data>
+            <sheet index="sDEF">
+              <language index="lDEF">
+                <field index="settings.apiKey">
+                  <value index="vDEF">&xxe;01937b6e-4b6c-7abc-8def-0123456789ab</value>
+                </field>
+              </language>
+            </sheet>
+          </data>
+        </T3FlexForms>
+        XML;
 
         // The hook must NOT call vaultService->delete() for any identifier
         // that contains /etc/passwd content. It should only match the UUID.
@@ -1050,24 +1050,24 @@ final class FlexFormVaultHookTest extends TestCase
         // This test guards against memory exhaustion if XML parsing is ever introduced.
 
         $billionLaughsXml = <<<'XML'
-            <?xml version="1.0"?>
-            <!DOCTYPE lolz [
-              <!ENTITY lol "lol">
-              <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
-              <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
-            ]>
-            <T3FlexForms>
-              <data>
-                <sheet index="sDEF">
-                  <language index="lDEF">
-                    <field index="settings.token">
-                      <value index="vDEF">&lol3;01937b6e-4b6c-7abc-8def-0123456789ab</value>
-                    </field>
-                  </language>
-                </sheet>
-              </data>
-            </T3FlexForms>
-            XML;
+        <?xml version="1.0"?>
+        <!DOCTYPE lolz [
+          <!ENTITY lol "lol">
+          <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
+          <!ENTITY lol3 "&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;&lol2;">
+        ]>
+        <T3FlexForms>
+          <data>
+            <sheet index="sDEF">
+              <language index="lDEF">
+                <field index="settings.token">
+                  <value index="vDEF">&lol3;01937b6e-4b6c-7abc-8def-0123456789ab</value>
+                </field>
+              </language>
+            </sheet>
+          </data>
+        </T3FlexForms>
+        XML;
 
         $memBefore = memory_get_peak_usage();
 
@@ -1097,38 +1097,6 @@ final class FlexFormVaultHookTest extends TestCase
             $memDeltaMb,
             \sprintf('Memory delta %.2f MB exceeds 10 MB — possible entity expansion', $memDeltaMb),
         );
-    }
-
-    // ---- Helper methods ----
-
-    /**
-     * @param array<string, FieldTypeInterface&MockObject> $fields
-     */
-    private function createFieldCollection(array $fields): FieldCollection
-    {
-        return new FieldCollection($fields);
-    }
-
-    /**
-     * Mock TCA schema with flex fields for a table.
-     *
-     * @param list<string> $flexFieldNames
-     */
-    private function mockFlexFieldSchema(string $table, array $flexFieldNames): void
-    {
-        $fieldMocks = [];
-        foreach ($flexFieldNames as $fieldName) {
-            $field = $this->createMock(FieldTypeInterface::class);
-            $field->method('getName')->willReturn($fieldName);
-            $field->method('getConfiguration')->willReturn(['type' => 'flex']);
-            $fieldMocks[$fieldName] = $field;
-        }
-
-        $schema = $this->createMock(TcaSchema::class);
-        $schema->method('getFields')->willReturn($this->createFieldCollection($fieldMocks));
-
-        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
-        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
     }
 
     // =========================================================================
@@ -1748,17 +1716,49 @@ final class FlexFormVaultHookTest extends TestCase
                 1,
                 0,
                 1,
-                self::callback(function (string $message): bool {
+                self::callback(
                     // Kills both Concat and ConcatOperandRemoval on line 259:
                     // message starts with literal prefix, contains field name
                     // 'pi_flexform', then ': ', then the exception message.
-                    return str_starts_with($message, 'Vault error during copy for FlexForm field "')
-                        && str_contains($message, '"pi_flexform"')
-                        && str_contains($message, '": Boom')
-                        && str_ends_with($message, 'Boom');
-                }),
+                    fn (string $message): bool => str_starts_with($message, 'Vault error during copy for FlexForm field "')
+                    && str_contains($message, '"pi_flexform"')
+                    && str_contains($message, '": Boom')
+                    && str_ends_with($message, 'Boom'),
+                ),
             );
 
         $this->subject->processCmdmap_postProcess('copy', 'tt_content', 42, null, $this->dataHandler, false);
+    }
+
+    // ---- Helper methods ----
+
+    /**
+     * @param array<string, FieldTypeInterface&MockObject> $fields
+     */
+    private function createFieldCollection(array $fields): FieldCollection
+    {
+        return new FieldCollection($fields);
+    }
+
+    /**
+     * Mock TCA schema with flex fields for a table.
+     *
+     * @param list<string> $flexFieldNames
+     */
+    private function mockFlexFieldSchema(string $table, array $flexFieldNames): void
+    {
+        $fieldMocks = [];
+        foreach ($flexFieldNames as $fieldName) {
+            $field = $this->createMock(FieldTypeInterface::class);
+            $field->method('getName')->willReturn($fieldName);
+            $field->method('getConfiguration')->willReturn(['type' => 'flex']);
+            $fieldMocks[$fieldName] = $field;
+        }
+
+        $schema = $this->createMock(TcaSchema::class);
+        $schema->method('getFields')->willReturn($this->createFieldCollection($fieldMocks));
+
+        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
+        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
     }
 }

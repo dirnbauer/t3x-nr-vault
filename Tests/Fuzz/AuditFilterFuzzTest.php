@@ -10,6 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Fuzz;
 
 use DateTimeImmutable;
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Type;
 use Netresearch\NrVault\Audit\AuditLogFilter;
 use Netresearch\NrVault\Audit\AuditLogService;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -20,9 +23,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use TYPO3\CMS\Core\Database\Connection;
-use Doctrine\DBAL\ArrayParameterType;
-use Doctrine\DBAL\ParameterType;
-use Doctrine\DBAL\Types\Type;
 use TYPO3\CMS\Core\Database\Query\Expression\ExpressionBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 
@@ -45,6 +45,19 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 #[AllowMockObjectsWithoutExpectations]
 final class AuditFilterFuzzTest extends TestCase
 {
+    // -----------------------------------------------------------------------
+    // Tests: applyFilter binds every user value via createNamedParameter
+    // -----------------------------------------------------------------------
+
+    /**
+     * Exercise the private AuditLogService::applyFilter() against a stubbed
+     * QueryBuilder that records every `createNamedParameter` call. Any
+     * user-controlled payload MUST pass through that method and MUST NOT
+     * appear concatenated in a where-expression argument.
+     *
+     * @return list<array{mixed, int}>
+     */
+    private array $recordedParams = [];
     // -----------------------------------------------------------------------
     // Data providers
     // -----------------------------------------------------------------------
@@ -196,20 +209,6 @@ final class AuditFilterFuzzTest extends TestCase
         self::assertSame($until, $modified->until);
     }
 
-    // -----------------------------------------------------------------------
-    // Tests: applyFilter binds every user value via createNamedParameter
-    // -----------------------------------------------------------------------
-
-    /**
-     * Exercise the private AuditLogService::applyFilter() against a stubbed
-     * QueryBuilder that records every `createNamedParameter` call. Any
-     * user-controlled payload MUST pass through that method and MUST NOT
-     * appear concatenated in a where-expression argument.
-     *
-     * @return list<array{mixed, int}>
-     */
-    private array $recordedParams = [];
-
     #[Test]
     #[DataProvider('adversarialStringProvider')]
     public function applyFilterRoutesAllStringsThroughNamedParameter(string $payload): void
@@ -229,7 +228,7 @@ final class AuditFilterFuzzTest extends TestCase
         self::assertContains($payload, $values, 'secretIdentifier payload must pass through createNamedParameter');
 
         // And occur exactly as many times as we passed it
-        $occurrences = array_count_values(array_map('serialize', $values));
+        $occurrences = array_count_values(array_map(serialize(...), $values));
         self::assertGreaterThanOrEqual(
             2,
             $occurrences[serialize($payload)] ?? 0,
@@ -303,7 +302,7 @@ final class AuditFilterFuzzTest extends TestCase
 
         $intValues = array_values(array_filter(
             $this->recordedParams,
-            static fn (array $p) => $p[1] === Connection::PARAM_INT,
+            static fn (array $p): bool => $p[1] === Connection::PARAM_INT,
         ));
 
         $values = array_map(static fn (array $p) => $p[0], $intValues);
@@ -332,7 +331,7 @@ final class AuditFilterFuzzTest extends TestCase
 
         $intValues = array_values(array_filter(
             $this->recordedParams,
-            static fn (array $p) => $p[1] === Connection::PARAM_INT,
+            static fn (array $p): bool => $p[1] === Connection::PARAM_INT,
         ));
 
         self::assertNotSame([], $intValues, 'Extreme timestamp must be bound as integer');
@@ -374,8 +373,9 @@ final class AuditFilterFuzzTest extends TestCase
         $qb->method('createNamedParameter')->willReturnCallback(
             function (mixed $value, string|ParameterType|Type|ArrayParameterType $type = ParameterType::STRING) use ($test): string {
                 $test->recordedParams[] = [$value, $type];
+
                 // Return a placeholder that could never be confused with the payload
-                return ':placeholder' . count($test->recordedParams);
+                return ':placeholder' . \count($test->recordedParams);
             },
         );
 
