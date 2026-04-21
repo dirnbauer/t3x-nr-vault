@@ -79,6 +79,7 @@ final class MasterKeyRotationTest extends FunctionalTestCase
             if ($content !== false) {
                 sodium_memzero($content);
             }
+            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
             unlink($this->masterKeyPath);
         }
 
@@ -148,6 +149,7 @@ final class MasterKeyRotationTest extends FunctionalTestCase
             $vaultService->delete($identifier, 'Test cleanup');
         }
         if (file_exists($newKeyPath)) {
+            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
             unlink($newKeyPath);
         }
     }
@@ -203,6 +205,7 @@ final class MasterKeyRotationTest extends FunctionalTestCase
         $vaultService->delete($identifier1, 'Test cleanup');
         $vaultService->delete($identifier2, 'Test cleanup');
         if (file_exists($newKeyPath)) {
+            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
             unlink($newKeyPath);
         }
     }
@@ -283,6 +286,7 @@ final class MasterKeyRotationTest extends FunctionalTestCase
             $vaultService->delete($identifier, 'Test cleanup');
         }
         if (file_exists($newKeyPath)) {
+            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
             unlink($newKeyPath);
         }
     }

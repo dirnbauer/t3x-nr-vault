@@ -1,0 +1,16 @@
+# semgrepignore / opengrepignore — paths excluded from SAST scanning.
+# gitignore-style syntax; opengrep reads this file (fork of semgrep).
+
+# Fluid templates. TYPO3 Fluid is HTML-ish but NOT Django/Jinja — the auto
+# ruleset incorrectly loads Python/Django rules for .html files, producing
+# false positives (e.g. django-no-csrf-token on <form> tags that are CSRF-
+# protected by TYPO3's FormProtectionFactory, not Django middleware).
+# There are no semgrep rules that understand Fluid, so excluding .html
+# templates removes noise without losing real coverage.
+Resources/Private/Templates/
+
+# Build cache (never be in repo, belt-and-braces)
+.Build/
+Documentation-GENERATED-temp/
+node_modules/
+vendor/

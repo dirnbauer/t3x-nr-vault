@@ -77,6 +77,7 @@ final class VaultServiceTest extends FunctionalTestCase
             if ($content !== false) {
                 sodium_memzero($content);
             }
+            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
             unlink($this->masterKeyPath);
         }
 
