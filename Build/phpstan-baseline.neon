@@ -37,6 +37,16 @@ parameters:
 			path: ../Classes/Command/VaultInitCommand.php
 
 		-
+			rawMessage: '''
+				Call to deprecated method listTableColumns() of class Doctrine\DBAL\Schema\AbstractSchemaManager:
+				Use {@see introspectTableColumns()}, {@see introspectTableColumnsByUnquotedName()}
+				            or {@see introspectTableColumnsByQuotedName()} instead.
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: ../Classes/Command/VaultMigrateFieldCommand.php
+
+		-
 			rawMessage: 'Parameter #2 of function sprintf is expected to be int by placeholder #1 ("%%d"), int|string given.'
 			identifier: argument.type
 			count: 1
@@ -104,6 +114,36 @@ parameters:
 			identifier: method.deprecated
 			count: 4
 			path: ../Classes/Controller/AuditController.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method getName() of class Doctrine\DBAL\Schema\AbstractAsset:
+				Use {@see NamedObject::getObjectName()} or {@see OptionallyQualifiedName::getObjectName()} instead.
+				            In SQL context, convert the resulting {@see Name} to SQL using {@see Name::toSQL()}. In other
+				            contexts, convert the resulting name to string using {@see Name::toString()}.
+			'''
+			identifier: method.deprecated
+			count: 2
+			path: ../Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method listTableColumns() of class Doctrine\DBAL\Schema\AbstractSchemaManager:
+				Use {@see introspectTableColumns()}, {@see introspectTableColumnsByUnquotedName()}
+				            or {@see introspectTableColumnsByQuotedName()} instead.
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: ../Classes/Controller/MigrationController.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method listTables() of class Doctrine\DBAL\Schema\AbstractSchemaManager:
+				Use {@see introspectTables()} instead.
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: ../Classes/Controller/MigrationController.php
 
 		-
 			rawMessage: '''
@@ -244,6 +284,36 @@ parameters:
 			path: ../Classes/Http/VaultHttpClient.php
 
 		-
+			rawMessage: '''
+				Call to deprecated method getName() of class Doctrine\DBAL\Schema\AbstractAsset:
+				Use {@see NamedObject::getObjectName()} or {@see OptionallyQualifiedName::getObjectName()} instead.
+				            In SQL context, convert the resulting {@see Name} to SQL using {@see Name::toSQL()}. In other
+				            contexts, convert the resulting name to string using {@see Name::toString()}.
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: ../Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method listTableColumns() of class Doctrine\DBAL\Schema\AbstractSchemaManager:
+				Use {@see introspectTableColumns()}, {@see introspectTableColumnsByUnquotedName()}
+				            or {@see introspectTableColumnsByQuotedName()} instead.
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: ../Classes/Service/SecretDetectionService.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method listTableNames() of class Doctrine\DBAL\Schema\AbstractSchemaManager:
+				Use {@see introspectTableNames()} instead.
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: ../Classes/Service/SecretDetectionService.php
+
+		-
 			rawMessage: 'Only booleans are allowed in &&, int|false given on the right side.'
 			identifier: booleanAnd.rightNotBoolean
 			count: 2
@@ -278,3 +348,39 @@ parameters:
 			identifier: if.condNotBoolean
 			count: 1
 			path: ../Classes/Utility/IdentifierValidator.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method shouldBeFinal() of class PHPat\Test\Builder\AssertionStep:
+				Use ->should()->beFinal()
+			'''
+			identifier: method.deprecated
+			count: 4
+			path: ../Tests/Architecture/ArchitectureTest.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method shouldBeReadonly() of class PHPat\Test\Builder\AssertionStep:
+				Use ->should()->beReadonly()
+			'''
+			identifier: method.deprecated
+			count: 4
+			path: ../Tests/Architecture/ArchitectureTest.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method shouldImplement() of class PHPat\Test\Builder\AssertionStep:
+				Use ->should()->implement()
+			'''
+			identifier: method.deprecated
+			count: 2
+			path: ../Tests/Architecture/ArchitectureTest.php
+
+		-
+			rawMessage: '''
+				Call to deprecated method shouldNotDependOn() of class PHPat\Test\Builder\AssertionStep:
+				Use ->shouldNot()->dependOn()
+			'''
+			identifier: method.deprecated
+			count: 12
+			path: ../Tests/Architecture/ArchitectureTest.php
