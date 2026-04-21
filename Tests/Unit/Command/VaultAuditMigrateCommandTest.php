@@ -13,10 +13,10 @@ use Doctrine\DBAL\Result;
 use Netresearch\NrVault\Command\VaultAuditMigrateCommand;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Database\Connection;
@@ -27,15 +27,13 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 #[CoversClass(VaultAuditMigrateCommand::class)]
 final class VaultAuditMigrateCommandTest extends TestCase
 {
-    private ConnectionPool&MockObject $connectionPool;
+    private ConnectionPool $connectionPool;
 
-    private MasterKeyProviderInterface&MockObject $masterKeyProvider;
+    private MasterKeyProviderInterface $masterKeyProvider;
 
-    private ExtensionConfigurationInterface&MockObject $extensionConfiguration;
+    private ExtensionConfigurationInterface $extensionConfiguration;
 
-    private Connection&MockObject $connection;
-
-    private QueryBuilder&MockObject $queryBuilder;
+    private QueryBuilder $queryBuilder;
 
     private CommandTester $commandTester;
 
@@ -43,11 +41,10 @@ final class VaultAuditMigrateCommandTest extends TestCase
     {
         parent::setUp();
 
-        $this->connectionPool = $this->createMock(ConnectionPool::class);
-        $this->masterKeyProvider = $this->createMock(MasterKeyProviderInterface::class);
-        $this->extensionConfiguration = $this->createMock(ExtensionConfigurationInterface::class);
-        $this->connection = $this->createMock(Connection::class);
-        $this->queryBuilder = $this->createMock(QueryBuilder::class);
+        $this->connectionPool = $this->createStub(ConnectionPool::class);
+        $this->masterKeyProvider = $this->createStub(MasterKeyProviderInterface::class);
+        $this->extensionConfiguration = $this->createStub(ExtensionConfigurationInterface::class);
+        $this->queryBuilder = $this->createStub(QueryBuilder::class);
 
         $this->masterKeyProvider
             ->method('getMasterKey')
@@ -57,15 +54,7 @@ final class VaultAuditMigrateCommandTest extends TestCase
             ->method('getAuditHmacEpoch')
             ->willReturn(1);
 
-        $this->connectionPool
-            ->method('getConnectionForTable')
-            ->willReturn($this->connection);
-
-        $this->connection
-            ->method('createQueryBuilder')
-            ->willReturn($this->queryBuilder);
-
-        $expressionBuilder = $this->createMock(ExpressionBuilder::class);
+        $expressionBuilder = $this->createStub(ExpressionBuilder::class);
         $expressionBuilder->method('eq')->willReturn('hmac_key_epoch = 0');
         $this->queryBuilder->method('expr')->willReturn($expressionBuilder);
 
@@ -76,7 +65,7 @@ final class VaultAuditMigrateCommandTest extends TestCase
         );
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $this->commandTester = new CommandTester($command);
     }
@@ -97,15 +86,15 @@ final class VaultAuditMigrateCommandTest extends TestCase
     public function dryRunReportsChangesWithoutModifying(): void
     {
         // Count epoch-0 entries returns 1
-        $countResult = $this->createMock(Result::class);
+        $countResult = $this->createStub(Result::class);
         $countResult->method('fetchOne')->willReturn(1);
 
         // Count total entries returns 1
-        $totalCountResult = $this->createMock(Result::class);
+        $totalCountResult = $this->createStub(Result::class);
         $totalCountResult->method('fetchOne')->willReturn(1);
 
         // Select query streams rows via fetchAssociative
-        $selectResult = $this->createMock(Result::class);
+        $selectResult = $this->createStub(Result::class);
         $selectResult->method('fetchAssociative')
             ->willReturnOnConsecutiveCalls(
                 [
@@ -133,7 +122,8 @@ final class VaultAuditMigrateCommandTest extends TestCase
             ->willReturnOnConsecutiveCalls($countResult, $totalCountResult, $selectResult);
 
         // update must NOT be called in dry-run
-        $this->connection
+        $connection = $this->wireConnectionMock();
+        $connection
             ->expects(self::never())
             ->method('update');
 
@@ -149,15 +139,15 @@ final class VaultAuditMigrateCommandTest extends TestCase
     public function migrationUpdatesHashesAndEpoch(): void
     {
         // Count epoch-0 entries returns 1
-        $countResult = $this->createMock(Result::class);
+        $countResult = $this->createStub(Result::class);
         $countResult->method('fetchOne')->willReturn(1);
 
         // Count total entries returns 1
-        $totalCountResult = $this->createMock(Result::class);
+        $totalCountResult = $this->createStub(Result::class);
         $totalCountResult->method('fetchOne')->willReturn(1);
 
         // Select query streams rows via fetchAssociative
-        $selectResult = $this->createMock(Result::class);
+        $selectResult = $this->createStub(Result::class);
         $selectResult->method('fetchAssociative')
             ->willReturnOnConsecutiveCalls(
                 [
@@ -184,7 +174,8 @@ final class VaultAuditMigrateCommandTest extends TestCase
             ->willReturnOnConsecutiveCalls($countResult, $totalCountResult, $selectResult);
 
         // update must be called with HMAC hash and epoch 1
-        $this->connection
+        $connection = $this->wireConnectionMock();
+        $connection
             ->expects(self::once())
             ->method('update')
             ->with(
@@ -206,7 +197,7 @@ final class VaultAuditMigrateCommandTest extends TestCase
     #[Test]
     public function noEntriesReportsSuccess(): void
     {
-        $countResult = $this->createMock(Result::class);
+        $countResult = $this->createStub(Result::class);
         $countResult->method('fetchOne')->willReturn(0);
 
         $this->queryBuilder->method('count')->willReturnSelf();
@@ -224,7 +215,7 @@ final class VaultAuditMigrateCommandTest extends TestCase
     #[Test]
     public function epoch0ConfigurationReturnsFailure(): void
     {
-        $extensionConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $extensionConfig = $this->createStub(ExtensionConfigurationInterface::class);
         $extensionConfig->method('getAuditHmacEpoch')->willReturn(0);
 
         $command = new VaultAuditMigrateCommand(
@@ -234,12 +225,25 @@ final class VaultAuditMigrateCommandTest extends TestCase
         );
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $tester = new CommandTester($command);
         $exitCode = $tester->execute([]);
 
         self::assertSame(1, $exitCode);
         self::assertStringContainsString('Cannot migrate to epoch 0', $tester->getDisplay());
+    }
+
+    /**
+     * Creates a Connection mock, wires it into the ConnectionPool stub and the
+     * queryBuilder, and returns it so the caller can set expectations.
+     */
+    private function wireConnectionMock(): Connection&MockObject
+    {
+        $connection = $this->createMock(Connection::class);
+        $connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->connectionPool->method('getConnectionForTable')->willReturn($connection);
+
+        return $connection;
     }
 }

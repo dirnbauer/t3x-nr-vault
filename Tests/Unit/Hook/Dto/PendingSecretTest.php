@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Hook\Dto;
 
 use Netresearch\NrVault\Hook\Dto\PendingSecret;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(PendingSecret::class)]
 final class PendingSecretTest extends TestCase

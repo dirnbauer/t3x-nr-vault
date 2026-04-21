@@ -18,13 +18,9 @@ coverage:
         threshold: 5%
         informational: true
 
-parsers:
-  gcov:
-    branch_detection:
-      conditional: yes
-      loop: yes
-      method: no
-      macro: no
+# Branch / path coverage for PHP is derived from Clover XML automatically by
+# Codecov — no parser tweaks needed. (The legacy `parsers.gcov.*` block only
+# applies to C/C++ coverage sources and is ignored for PHP uploads.)
 
 flags:
   unit:

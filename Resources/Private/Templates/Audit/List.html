@@ -8,11 +8,11 @@
     <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title" /></h1>
 
     <!-- Filter Bar - TYPO3 v14 native form-row style -->
-        <form method="post" action="{f:be.uri(route: 'admin_vault_audit')}" role="search" aria-label="Filter audit log" class="mb-4">
+        <form method="post" action="{f:be.uri(route: 'admin_vault_audit')}" role="search" aria-label="Filter audit log" class="mb-4" data-testid="audit-filter-form">
             <div class="form-row">
                 <div class="form-group">
                     <label for="filter-secret" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.secret" /></label>
-                    <input type="text" id="filter-secret" name="secretIdentifier" value="{filters._form.secretIdentifier}" class="form-control" placeholder="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.secret.placeholder')}" />
+                    <input type="text" id="filter-secret" name="secretIdentifier" value="{filters._form.secretIdentifier}" class="form-control" data-testid="audit-filter-identifier" placeholder="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.secret.placeholder')}" />
                 </div>
                 <div class="form-group">
                     <label for="filter-action" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.action" /></label>
@@ -72,7 +72,7 @@
                 <f:for each="{groupedEntries}" as="dateGroup" key="date">
                     <h2 class="h5 mb-3 mt-4">{date}</h2>
                     <div class="table-fit mb-4" role="region" aria-label="Audit log entries for {date}" tabindex="0">
-                        <table class="table table-striped table-hover" aria-describedby="audit-table-{date}">
+                        <table class="table table-striped table-hover" aria-describedby="audit-table-{date}" data-testid="audit-list-table">
                             <caption id="audit-table-{date}" class="visually-hidden">Audit log entries for {date}</caption>
                             <thead>
                                 <tr>
@@ -87,16 +87,16 @@
                             </thead>
                             <tbody>
                                 <f:for each="{dateGroup}" as="entry">
-                                    <tr class="{f:if(condition: entry.success, else: 'table-warning')}">
+                                    <tr class="{f:if(condition: entry.success, else: 'table-warning')}" data-testid="audit-row-{entry.secretIdentifier}" data-audit-action="{entry.action}">
                                         <td>
                                             <f:if condition="{entry.success}">
                                                 <f:else><span class="text-warning me-1"><core:icon identifier="actions-exclamation-triangle" size="small" /></span></f:else>
                                             </f:if>
                                             {entry.time}
                                         </td>
-                                        <td><code>{entry.secretIdentifier}</code></td>
+                                        <td><code data-testid="audit-cell-identifier">{entry.secretIdentifier}</code></td>
                                         <td>
-                                            <span class="badge text-bg-{entry.actionBadgeClass}">{entry.action}</span>
+                                            <span class="badge text-bg-{entry.actionBadgeClass}" data-testid="audit-cell-action">{entry.action}</span>
                                         </td>
                                         <td>
                                             <f:if condition="{entry.success}">

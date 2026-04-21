@@ -17,12 +17,13 @@ use Netresearch\NrVault\Crypto\ReEncryptedDek;
 use Netresearch\NrVault\Domain\Model\Secret;
 use Netresearch\NrVault\Domain\Repository\SecretRepositoryInterface;
 use Netresearch\NrVault\Exception\EncryptionException;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use org\bovigo\vfs\vfsStream;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Database\Connection;
@@ -59,7 +60,7 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         );
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $this->commandTester = new CommandTester($command);
     }
@@ -457,6 +458,52 @@ final class VaultRotateMasterKeyCommandTest extends TestCase
         ]);
 
         self::assertSame(0, $exitCode);
+    }
+
+    #[Test]
+    public function rollsBackOnUnexpectedThrowableDuringRotation(): void
+    {
+        $secret = $this->createTestSecret('test-secret');
+
+        $this->secretRepository
+            ->method('findIdentifiers')
+            ->willReturn(['test-secret']);
+
+        $callCount = 0;
+        $this->secretRepository
+            ->method('findByIdentifier')
+            ->willReturn($secret);
+
+        $this->encryptionService
+            ->method('reEncryptDek')
+            ->willReturnCallback(static function () use (&$callCount): ReEncryptedDek {
+                ++$callCount;
+                if ($callCount === 1) {
+                    // Verification call — succeeds
+                    return new ReEncryptedDek('new', 'n');
+                }
+
+                // Actual rotation — unexpected exception
+                throw new RuntimeException('Unexpected error', 6436183956);
+            });
+
+        $connection = $this->createMock(Connection::class);
+        $connection->expects(self::once())->method('beginTransaction');
+        $connection->expects(self::once())->method('rollBack');
+        $connection->expects(self::never())->method('commit');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($connection);
+
+        $exitCode = $this->commandTester->execute([
+            '--old-key' => $this->createKeyFile('old', str_repeat('a', 32)),
+            '--new-key' => $this->createKeyFile('new', str_repeat('b', 32)),
+            '--confirm' => true,
+        ]);
+
+        self::assertSame(1, $exitCode);
+        self::assertStringContainsString('Unexpected error', $this->commandTester->getDisplay());
     }
 
     private function createKeyFile(string $name, string $content): string

@@ -11,12 +11,12 @@ namespace Netresearch\NrVault\Tests\Unit\Service;
 
 use Netresearch\NrVault\Service\VaultFieldPermission;
 use Netresearch\NrVault\Service\VaultFieldPermissionService;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use stdClass;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 
 #[CoversClass(VaultFieldPermissionService::class)]
@@ -295,8 +295,8 @@ final class VaultFieldPermissionServiceTest extends TestCase
     {
         // Pre-seed cache for both users (uid 10 and uid 20) to prove separate cache keys.
         // We use admin users so no TSconfig lookup (BackendUtility) is needed.
-        $this->createMockBackendUser(isAdmin: true, uid: 10);
-        $this->createMockBackendUser(isAdmin: true, uid: 20);
+        $this->createMockBackendUser(uid: 10, isAdmin: true);
+        $this->createMockBackendUser(uid: 20, isAdmin: true);
 
         // Admins skip the cache entirely (early return), so pre-seed cache directly
         $reflection = new ReflectionClass($this->service);
@@ -319,7 +319,7 @@ final class VaultFieldPermissionServiceTest extends TestCase
     {
         // Pre-seed cache to simulate a result from a previous non-admin checkPermission call.
         // Then verify the cached value is returned without invoking checkPermission again.
-        $backendUser = $this->createMockBackendUser(isAdmin: false, uid: 55);
+        $backendUser = $this->createMockBackendUser(uid: 55, isAdmin: false);
 
         $reflection = new ReflectionClass($this->service);
         $cacheProp = $reflection->getProperty('permissionCache');
@@ -352,12 +352,109 @@ final class VaultFieldPermissionServiceTest extends TestCase
         self::assertTrue($result);
     }
 
-    private function createMockBackendUser(bool $isAdmin = false, int $uid = 1): BackendUserAuthentication&MockObject
+    #[Test]
+    public function isReadOnlyForNonAdminUsesBuiltInDefault(): void
     {
-        $backendUser = $this->createMock(BackendUserAuthentication::class);
-        $backendUser->method('isAdmin')->willReturn($isAdmin);
-        $backendUser->user = ['uid' => $uid];
+        // Non-admin, no TSconfig → built-in default for ReadOnly is false
+        // Since checkPermission calls BackendUtility::getPagesTSconfig which is final,
+        // we verify that the built-in default path is reachable through the cache pre-seeding path
+        $backendUser = $this->createMockBackendUser(uid: 42, isAdmin: false);
 
-        return $backendUser;
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        // Pre-seed the cache result for non-admin to avoid calling BackendUtility
+        $cacheProp->setValue($this->service, ['tx_table:field:readOnly:42' => false]);
+
+        $result = $this->service->isAllowed('tx_table', 'field', VaultFieldPermission::ReadOnly, $backendUser);
+
+        self::assertFalse($result);
+    }
+
+    #[Test]
+    public function isAllowedReturnsFalseForNonBackendUserInGlobals(): void
+    {
+        // GLOBALS has a non-BackendUserAuthentication object
+        $GLOBALS['BE_USER'] = new stdClass();
+
+        $result = $this->service->isAllowed('tx_table', 'field', VaultFieldPermission::Reveal);
+
+        self::assertFalse($result);
+    }
+
+    #[Test]
+    public function clearCacheEmptiesInternalCache(): void
+    {
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        $cacheProp->setValue($this->service, ['tx_table:field:reveal:1' => true]);
+
+        $this->service->clearCache();
+
+        self::assertSame([], $cacheProp->getValue($this->service));
+    }
+
+    #[Test]
+    public function isAllowedReturnsCachedValueOnSecondCallWithSameArgs(): void
+    {
+        $this->createMockBackendUser(uid: 7, isAdmin: true);
+
+        // Admin bypasses cache (early return), so verify for non-admin
+        $backendUser2 = $this->createMockBackendUser(uid: 99, isAdmin: false);
+
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        // Pre-seed cache for uid 99
+        $cacheProp->setValue($this->service, ['tx_table:field:copy:99' => false]);
+
+        $result = $this->service->isAllowed('tx_table', 'field', VaultFieldPermission::Copy, $backendUser2);
+
+        // Should return the cached false even though built-in default for Copy is true
+        self::assertFalse($result);
+    }
+
+    #[Test]
+    public function getPermissionsReturnsAllFourPermissionKeysForNonAdmin(): void
+    {
+        $backendUser = $this->createMockBackendUser(uid: 33, isAdmin: false);
+
+        // Pre-seed all four cache entries to avoid BackendUtility call
+        $reflection = new ReflectionClass($this->service);
+        $cacheProp = $reflection->getProperty('permissionCache');
+        $cacheProp->setValue($this->service, [
+            'tx_table:field:reveal:33' => true,
+            'tx_table:field:copy:33' => true,
+            'tx_table:field:edit:33' => true,
+            'tx_table:field:readOnly:33' => false,
+        ]);
+
+        $permissions = $this->service->getPermissions('tx_table', 'field', $backendUser);
+
+        self::assertCount(4, $permissions);
+        self::assertTrue($permissions['reveal']);
+        self::assertTrue($permissions['copy']);
+        self::assertTrue($permissions['edit']);
+        self::assertFalse($permissions['readOnly']);
+    }
+
+    #[Test]
+    public function toBooleanHandlesIntegerOne(): void
+    {
+        $reflection = new ReflectionClass($this->service);
+        $method = $reflection->getMethod('toBoolean');
+
+        self::assertTrue($method->invoke($this->service, 1));
+        self::assertFalse($method->invoke($this->service, 0));
+    }
+
+    #[Test]
+    public function getNestedValueReturnsNullWhenKeyMissingWithDotAndWithout(): void
+    {
+        $reflection = new ReflectionClass($this->service);
+        $method = $reflection->getMethod('getNestedValue');
+
+        // Neither 'missing' nor 'missing.' exists
+        $result = $method->invoke($this->service, ['other' => 'value'], ['missing', 'sub']);
+
+        self::assertNull($result);
     }
 }

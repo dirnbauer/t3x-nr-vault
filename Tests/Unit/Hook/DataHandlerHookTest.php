@@ -14,6 +14,7 @@ use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Hook\DataHandlerHook;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use Netresearch\NrVault\Utility\IdentifierValidator;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,20 +27,18 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Messaging\FlashMessageQueue;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Schema\Field\FieldCollection;
-use TYPO3\CMS\Core\Schema\Field\FieldTypeInterface;
-use TYPO3\CMS\Core\Schema\TcaSchema;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[CoversClass(DataHandlerHook::class)]
 #[AllowMockObjectsWithoutExpectations]
-final class DataHandlerHookTest extends UnitTestCase
+final class DataHandlerHookTest extends TestCase
 {
     private const UUID_PATTERN = '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
 
     protected bool $resetSingletonInstances = true;
+
+    protected TcaSchemaFactory&MockObject $tcaSchemaFactory;
 
     private DataHandlerHook $subject;
 
@@ -50,8 +49,6 @@ final class DataHandlerHookTest extends UnitTestCase
     private DataHandler&MockObject $dataHandler;
 
     private ConnectionPool&MockObject $connectionPool;
-
-    private TcaSchemaFactory&MockObject $tcaSchemaFactory;
 
     private FlashMessageService&MockObject $flashMessageService;
 
@@ -1459,29 +1456,5 @@ final class DataHandlerHookTest extends UnitTestCase
             $this->dataHandler,
             false,
         );
-    }
-
-    /**
-     * Create a mock TcaSchema for a table with given fields.
-     *
-     * @param array<string, array{type: string, renderType?: string}> $fields
-     */
-    private function mockTcaSchemaForTable(string $table, array $fields): void
-    {
-        $schema = $this->createMock(TcaSchema::class);
-        $fieldMocks = [];
-
-        foreach ($fields as $fieldName => $config) {
-            $field = $this->createMock(FieldTypeInterface::class);
-            $field->method('getName')->willReturn($fieldName);
-            $field->method('getConfiguration')->willReturn($config);
-            $fieldMocks[$fieldName] = $field;
-        }
-
-        $fieldCollection = new FieldCollection($fieldMocks);
-        $schema->method('getFields')->willReturn($fieldCollection);
-
-        $this->tcaSchemaFactory->method('has')->with($table)->willReturn(true);
-        $this->tcaSchemaFactory->method('get')->with($table)->willReturn($schema);
     }
 }

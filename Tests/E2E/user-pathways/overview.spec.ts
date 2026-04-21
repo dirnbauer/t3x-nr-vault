@@ -91,8 +91,9 @@ test.describe('Overview Module User Pathways', () => {
       const secretsLink = navSection.locator('a[href*="vault/secrets"]');
       await secretsLink.click();
 
-      // Wait for iframe content to update
-      await page.waitForTimeout(1000);
+      // Wait for URL change to the secrets module instead of arbitrary sleep.
+      await page.waitForURL(/\/vault\/secrets/, { timeout: 10000 }).catch(() => undefined);
+      await waitForModuleContent(page);
 
       // Verify we're on the secrets page (check frame content)
       const newFrame = getModuleFrame(page);
@@ -113,7 +114,8 @@ test.describe('Overview Module User Pathways', () => {
       const auditLink = navSection.locator('a[href*="vault/audit"]');
       await auditLink.click();
 
-      await page.waitForTimeout(1000);
+      await page.waitForURL(/\/vault\/audit/, { timeout: 10000 }).catch(() => undefined);
+      await waitForModuleContent(page);
 
       const newFrame = getModuleFrame(page);
       await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();
@@ -131,7 +133,8 @@ test.describe('Overview Module User Pathways', () => {
       const migrationLink = navSection.locator('a[href*="vault/migration"]');
       await migrationLink.click();
 
-      await page.waitForTimeout(1000);
+      await page.waitForURL(/\/vault\/migration/, { timeout: 10000 }).catch(() => undefined);
+      await waitForModuleContent(page);
 
       const newFrame = getModuleFrame(page);
       await expect(newFrame.locator('text=Oops, an error occurred')).not.toBeVisible();

@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\TCA;
 
 use Netresearch\NrVault\TCA\VaultFieldHelper;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\Test;
-use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
-final class VaultFieldHelperTest extends UnitTestCase
+final class VaultFieldHelperTest extends TestCase
 {
     protected bool $resetSingletonInstances = true;
 

@@ -1,6 +1,8 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help up down shell cgl cgl-fix fix phpstan rector test test-unit test-functional test-mutation lint ci docs
+RUNTESTS := Build/Scripts/runTests.sh
+
+.PHONY: help up down shell cgl cgl-fix fix phpstan rector test test-unit test-functional test-mutation test-fuzz test-e2e test-coverage test-coverage-path lint ci docs
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -17,7 +19,7 @@ shell: ## Open container shell
 
 # Quality
 cgl: ## Check code style (dry-run)
-	composer ci:test:php:cgl
+	$(RUNTESTS) -s cgl
 
 cgl-fix: ## Fix code style
 	composer ci:cgl
@@ -25,25 +27,40 @@ cgl-fix: ## Fix code style
 fix: cgl-fix ## Alias for cgl-fix
 
 phpstan: ## Run PHPStan static analysis
-	composer ci:test:php:phpstan
+	$(RUNTESTS) -s phpstan
 
 rector: ## Run Rector dry-run
 	composer ci:test:php:rector
 
 lint: ## PHP syntax check
-	@find Classes Configuration Tests -name '*.php' -print0 | xargs -0 -n1 php -l 2>&1 | grep -v 'No syntax errors' && exit 1 || exit 0
+	$(RUNTESTS) -s lint
 
 # Testing
-test: test-unit test-functional ## Run all tests
+test: test-unit test-functional ## Run unit + functional tests via runTests.sh
 
-test-unit: ## Run unit tests
-	composer ci:test:php:unit
+test-unit: ## Run unit tests (containerized)
+	$(RUNTESTS) -s unit
 
-test-functional: ## Run functional tests
-	composer ci:test:php:functional
+test-functional: ## Run functional tests (containerized)
+	$(RUNTESTS) -s functional
 
-test-mutation: ## Run mutation tests
-	composer ci:test:php:mutation
+test-fuzz: ## Run fuzz tests (containerized)
+	$(RUNTESTS) -s fuzz
+
+test-mutation: ## Run mutation tests (containerized)
+	$(RUNTESTS) -s mutation
+
+test-coverage: ## Run unit tests with line coverage (Xdebug)
+	$(RUNTESTS) -s unitCoverage
+
+test-coverage-path: ## Run unit tests with path + branch coverage (Xdebug)
+	$(RUNTESTS) -s unitCoveragePath
+
+test-coverage-functional: ## Run functional tests with coverage (Xdebug)
+	$(RUNTESTS) -s functionalCoverage
+
+test-e2e: ## Run Playwright E2E tests (requires DDEV up)
+	npm run e2e
 
 # CI
 ci: ## Run all CI checks locally

@@ -40,7 +40,6 @@ test.describe('TYPO3 FormEngine/TCA Integration', () => {
       await saveButton.click();
 
       await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
 
       // Get the UID of the created record by finding it in the list
       await page.goto('/typo3/module/admin/vault/secrets');
@@ -48,9 +47,12 @@ test.describe('TYPO3 FormEngine/TCA Integration', () => {
 
       frame = getModuleFrame(page);
       await frame.getByRole('textbox', { name: 'Identifier' }).fill(testIdentifier);
+      const filterResp = page.waitForResponse(
+        (resp) => resp.url().includes('admin_vault_secrets') && resp.status() === 200,
+        { timeout: 10000 },
+      );
       await frame.locator('button:has-text("Filter")').click();
-
-      await page.waitForTimeout(1000);
+      await filterResp.catch(() => undefined);
 
       // Find edit button in the filtered table row (pencil icon button)
       // The identifier is not shown in the table, so we select by the row in the filtered result
@@ -110,7 +112,12 @@ test.describe('TYPO3 FormEngine/TCA Integration', () => {
       const settingsTab = frame.locator('text=Settings');
       if (await settingsTab.first().isVisible()) {
         await settingsTab.first().click();
-        await page.waitForTimeout(500);
+        // Wait for tab pane to become active instead of arbitrary sleep.
+        await frame
+          .locator('[role="tabpanel"].active, .tab-pane.active')
+          .first()
+          .waitFor({ state: 'visible', timeout: 5000 })
+          .catch(() => undefined);
 
         // scope_pid should be rendered as a group element picker
         const scopePidField = frame.locator('[data-field-name="scope_pid"], [id*="scope_pid"]');
@@ -130,7 +137,11 @@ test.describe('TYPO3 FormEngine/TCA Integration', () => {
       const accessTab = frame.locator('text=Access');
       if (await accessTab.first().isVisible()) {
         await accessTab.first().click();
-        await page.waitForTimeout(500);
+        await frame
+          .locator('[role="tabpanel"].active, .tab-pane.active')
+          .first()
+          .waitFor({ state: 'visible', timeout: 5000 })
+          .catch(() => undefined);
 
         // owner_uid should render without errors
         await expect(frame.locator('.callout-danger:has-text("503")')).not.toBeVisible();

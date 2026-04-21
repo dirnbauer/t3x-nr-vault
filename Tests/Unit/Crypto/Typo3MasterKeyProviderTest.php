@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
 use Netresearch\NrVault\Crypto\Typo3MasterKeyProvider;
 use Netresearch\NrVault\Exception\MasterKeyException;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Typo3MasterKeyProvider::class)]
 final class Typo3MasterKeyProviderTest extends TestCase
@@ -22,11 +22,15 @@ final class Typo3MasterKeyProviderTest extends TestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         $this->originalGlobals = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
     }
 
     protected function tearDown(): void
     {
+        parent::tearDown();
+
         if ($this->originalGlobals !== null) {
             $GLOBALS['TYPO3_CONF_VARS'] = $this->originalGlobals;
         } else {

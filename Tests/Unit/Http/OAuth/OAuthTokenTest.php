@@ -14,9 +14,9 @@ namespace Netresearch\NrVault\Tests\Unit\Http\OAuth;
 
 use DateTimeImmutable;
 use Netresearch\NrVault\Http\OAuth\OAuthToken;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 #[CoversClass(OAuthToken::class)]

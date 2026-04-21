@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Unit\Event;
 
 use DateTimeImmutable;
 use Netresearch\NrVault\Event\MasterKeyRotatedEvent;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(MasterKeyRotatedEvent::class)]
 final class MasterKeyRotatedEventTest extends TestCase

@@ -13,7 +13,12 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Functional\Http\OAuth;
 
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use Netresearch\NrVault\Audit\AuditLogEntry;
+use Netresearch\NrVault\Audit\AuditLogFilter;
+use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Domain\Dto\SecretDetails;
+use Netresearch\NrVault\Exception\OAuthException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\OAuth\OAuthTokenManager;
 use Netresearch\NrVault\Http\SecretPlacement;
@@ -22,6 +27,10 @@ use Netresearch\NrVault\Service\VaultServiceInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Throwable;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -80,6 +89,7 @@ final class OAuthIntegrationTest extends FunctionalTestCase
             'masterKeySource' => $this->masterKeyPath,
             'autoKeyPath' => $this->masterKeyPath,
             'enableCache' => false,
+            'auditHmacEpoch' => 1,
         ];
 
         // Import backend user for access control
@@ -308,6 +318,226 @@ final class OAuthIntegrationTest extends FunctionalTestCase
         self::assertSame('my_app_oauth_client_secret', $clientSecretMeta->identifier);
 
         // This is the documented limitation - see GitHub issue #15
+    }
+
+    /**
+     * Regression test: when the OAuth server rejects the refresh_token with
+     * HTTP 401, OAuthTokenManager must fall back to client_credentials rather
+     * than propagating the failure to the caller. Both the failed refresh and
+     * the subsequent fallback must be recorded in the audit log.
+     *
+     * The test drives OAuthTokenManager with a deterministic, in-process
+     * PSR-18 client so it runs without the mock-oauth sidecar.
+     */
+    #[Test]
+    public function oauthRefreshFailureFallsBackToClientCredentials(): void
+    {
+        $vaultService = $this->getVaultService();
+        $auditService = $this->get(AuditLogServiceInterface::class);
+        self::assertInstanceOf(AuditLogServiceInterface::class, $auditService);
+
+        // Seed credentials in the vault.
+        $vaultService->store('fallback_client_id', 'client-id-value');
+        $vaultService->store('fallback_client_secret', 'client-secret-value');
+        $vaultService->store('fallback_refresh_token', 'refresh-token-value');
+
+        // A deterministic PSR-18 client that:
+        //  - rejects the first request (refresh_token) with HTTP 401,
+        //  - accepts the second request (client_credentials) with a valid token.
+        //
+        // We ALSO capture the grant_type sent in the body of each request so
+        // we can assert the fallback grant switch actually happened.
+        $capturedRequests = [];
+        $call = 0;
+        $httpClient = new class (
+            $capturedRequests,
+            $call,
+        ) implements ClientInterface {
+            /** @var list<array{grant_type: string, body: string}> */
+            public array $capturedRequests;
+
+            public int $call;
+
+            public function __construct(array &$capturedRequests, int &$call)
+            {
+                $this->capturedRequests = &$capturedRequests;
+                $this->call = &$call;
+            }
+
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                $body = (string) $request->getBody();
+                parse_str($body, $params);
+                $grantType = \is_string($params['grant_type'] ?? null) ? $params['grant_type'] : '';
+
+                $this->capturedRequests[] = [
+                    'grant_type' => $grantType,
+                    'body' => $body,
+                ];
+                $this->call++;
+
+                if ($grantType === 'refresh_token') {
+                    return new Response(
+                        401,
+                        ['Content-Type' => 'application/json'],
+                        '{"error":"invalid_grant","error_description":"refresh token revoked"}',
+                    );
+                }
+
+                // Successful client_credentials response.
+                return new Response(
+                    200,
+                    ['Content-Type' => 'application/json'],
+                    json_encode([
+                        'access_token' => 'fallback-access-token',
+                        'token_type' => 'Bearer',
+                        'expires_in' => 3600,
+                        'scope' => 'read',
+                    ], JSON_THROW_ON_ERROR) ?: '',
+                );
+            }
+        };
+
+        $config = OAuthConfig::refreshToken(
+            tokenEndpoint: 'https://auth.example.test/token',
+            clientIdSecret: 'fallback_client_id',
+            clientSecretSecret: 'fallback_client_secret',
+            refreshTokenSecret: 'fallback_refresh_token',
+            scopes: ['read'],
+        );
+
+        $tokenManager = new OAuthTokenManager(
+            vaultService: $vaultService,
+            logger: null,
+            httpClient: $httpClient,
+            auditLogService: $auditService,
+        );
+
+        $token = $tokenManager->getAccessToken($config);
+
+        // Token came from the fallback client_credentials call.
+        self::assertSame('fallback-access-token', $token);
+
+        // Assert two HTTP calls happened: refresh first, then fallback.
+        self::assertCount(
+            2,
+            $capturedRequests,
+            'Manager must try refresh, then fall back to client_credentials',
+        );
+        self::assertSame('refresh_token', $capturedRequests[0]['grant_type']);
+        self::assertSame('client_credentials', $capturedRequests[1]['grant_type']);
+
+        // Audit log: both the failed refresh AND the fallback must be recorded.
+        $refreshEntries = $auditService->query(
+            AuditLogFilter::forAction('oauth_refresh_failed'),
+        );
+        $fallbackEntries = $auditService->query(
+            AuditLogFilter::forAction('oauth_fallback_client_credentials'),
+        );
+
+        self::assertNotEmpty(
+            $refreshEntries,
+            'Failed refresh must be recorded in audit log',
+        );
+        self::assertNotEmpty(
+            $fallbackEntries,
+            'Fallback to client_credentials must be recorded in audit log',
+        );
+
+        $refreshForOurSecret = array_filter(
+            $refreshEntries,
+            static fn (AuditLogEntry $e): bool => $e->secretIdentifier === 'fallback_refresh_token',
+        );
+        self::assertNotEmpty(
+            $refreshForOurSecret,
+            'Failed refresh entry must reference the refresh-token identifier',
+        );
+        foreach ($refreshForOurSecret as $entry) {
+            self::assertFalse(
+                $entry->success,
+                'Refresh failure entry must have success=false',
+            );
+        }
+
+        $fallbackForOurSecret = array_filter(
+            $fallbackEntries,
+            static fn (AuditLogEntry $e): bool => $e->secretIdentifier === 'fallback_client_id',
+        );
+        self::assertNotEmpty(
+            $fallbackForOurSecret,
+            'Fallback entry must reference the client-id identifier',
+        );
+        foreach ($fallbackForOurSecret as $entry) {
+            self::assertTrue(
+                $entry->success,
+                'Successful fallback must have success=true',
+            );
+        }
+
+        // Cleanup
+        $vaultService->delete('fallback_client_id', 'test cleanup');
+        $vaultService->delete('fallback_client_secret', 'test cleanup');
+
+        try {
+            $vaultService->delete('fallback_refresh_token', 'test cleanup');
+        } catch (Throwable) {
+            // may have already been consumed
+        }
+    }
+
+    /**
+     * If the refresh fails AND the fallback client_credentials request ALSO
+     * fails, the caller must see an OAuthException (no silent success).
+     */
+    #[Test]
+    public function oauthRefreshFailureAndFallbackFailureBothPropagate(): void
+    {
+        $vaultService = $this->getVaultService();
+
+        $vaultService->store('double_fail_client_id', 'id');
+        $vaultService->store('double_fail_client_secret', 'secret');
+        $vaultService->store('double_fail_refresh_token', 'refresh');
+
+        $httpClient = new class () implements ClientInterface {
+            public function sendRequest(RequestInterface $request): ResponseInterface
+            {
+                // Both grant types fail.
+                return new Response(
+                    401,
+                    ['Content-Type' => 'application/json'],
+                    '{"error":"invalid_client"}',
+                );
+            }
+        };
+
+        $config = OAuthConfig::refreshToken(
+            tokenEndpoint: 'https://auth.example.test/token',
+            clientIdSecret: 'double_fail_client_id',
+            clientSecretSecret: 'double_fail_client_secret',
+            refreshTokenSecret: 'double_fail_refresh_token',
+        );
+
+        $tokenManager = new OAuthTokenManager(
+            vaultService: $vaultService,
+            logger: null,
+            httpClient: $httpClient,
+        );
+
+        $this->expectException(OAuthException::class);
+
+        try {
+            $tokenManager->getAccessToken($config);
+        } finally {
+            // Cleanup even on failure
+            $vaultService->delete('double_fail_client_id', 'test cleanup');
+            $vaultService->delete('double_fail_client_secret', 'test cleanup');
+
+            try {
+                $vaultService->delete('double_fail_refresh_token', 'test cleanup');
+            } catch (Throwable) {
+                // ignore
+            }
+        }
     }
 
     /**

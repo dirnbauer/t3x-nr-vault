@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Crypto;
 
 use Netresearch\NrVault\Crypto\EncryptedData;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(EncryptedData::class)]
 final class EncryptedDataTest extends TestCase

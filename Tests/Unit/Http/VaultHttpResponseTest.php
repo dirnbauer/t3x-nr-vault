@@ -12,11 +12,11 @@ namespace Netresearch\NrVault\Tests\Unit\Http;
 use JsonException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\VaultHttpResponse;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 

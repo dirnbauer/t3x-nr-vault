@@ -266,6 +266,95 @@ Code quality
    # Static analysis (PHPStan)
    Build/Scripts/runTests.sh -s phpstan
 
+.. _developer-testing-mutation:
+
+Mutation testing (Infection)
+----------------------------
+
+Mutation testing validates the **strength** of the unit suite: Infection
+rewrites operators, return values, and array/ternary constructs in the
+production code and checks whether the test suite detects each mutation.
+A test suite that still passes after a mutation = a missing assertion.
+
+.. code-block:: bash
+   :caption: Run mutation tests locally
+
+   # Full run (initial tests must be green)
+   composer ci:test:php:mutation
+
+   # or via make
+   make test-mutation
+
+   # Inspect reports
+   $BROWSER .Build/infection/infection.html
+
+The current baseline and top escape concentrations are tracked in
+:file:`Documentation/Developer/mutation-baseline.md` (Markdown — developer
+artifact, not rendered in public docs).
+
+Interpreting MSI
+~~~~~~~~~~~~~~~~
+
+:MSI (Mutation Score Indicator):
+   % of all generated mutants that were detected (killed) by the test suite.
+   Raw indicator of assertion density across the whole codebase.
+
+:Covered Code MSI:
+   % of mutants **in code reachable by tests** that were killed. Removes
+   noise from intentionally untested code (e.g. interfaces, enums).
+
+:Mutation Code Coverage:
+   % of source lines that carry at least one mutant with a test. Closely
+   tracks line coverage.
+
+CI thresholds
+~~~~~~~~~~~~~
+
+Thresholds live in :file:`infection.json5`:
+
+.. code-block:: json5
+   :caption: infection.json5
+
+   {
+       "minMsi": 85,
+       "minCoveredMsi": 95
+   }
+
+A run that falls below either threshold fails CI. Ratchet these numbers
+upward as test coverage improves; avoid ratcheting them downward (use a
+brief TODO with a ticket instead).
+
+Badge generation
+~~~~~~~~~~~~~~~~
+
+After a successful Infection run, emit a shields.io-compatible badge:
+
+.. code-block:: bash
+   :caption: Generate MSI badge JSON
+
+   ./Build/Scripts/check-msi.sh > .Build/infection/badge.json
+
+The output matches the shields.io endpoint schema and can be served from
+any HTTPS endpoint (GitHub Pages, CDN, …) and referenced from the README.
+
+.. _developer-testing-security:
+
+Security scans
+--------------
+
+.. code-block:: bash
+   :caption: Run ad-hoc security scans
+
+   # Composer dependency audit (locked + strict abandoned-package policy)
+   composer ci:audit
+
+   # Semgrep crypto-hygiene ruleset (advisory; not wired into CI)
+   semgrep --config=semgrep.yml Classes/
+
+:file:`semgrep.yml` targets nr-vault-specific concerns such as
+non-constant-time secret equality, missing :php:`sodium_memzero()`, and
+debug dumps of secret-shaped variables.
+
 .. _developer-contributing:
 
 Contributing

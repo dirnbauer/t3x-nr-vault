@@ -11,11 +11,11 @@ namespace Netresearch\NrVault\Tests\Functional\Controller;
 
 use Netresearch\NrVault\Controller\AjaxController;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Stream;
-use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
  * Functional tests for AjaxController.
@@ -23,52 +23,13 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  * Tests the AJAX endpoints for revealing and rotating secrets.
  */
 #[CoversClass(AjaxController::class)]
-final class AjaxControllerTest extends FunctionalTestCase
+final class AjaxControllerTest extends AbstractVaultFunctionalTestCase
 {
-    protected array $testExtensionsToLoad = [
-        'netresearch/nr-vault',
-    ];
+    // Each test explicitly calls `setUpBackendUser()` with its own uid (admin
+    // vs. editor), so the base class must not log anyone in automatically.
+    protected ?int $backendUserUid = null;
 
-    protected array $coreExtensionsToLoad = [
-        'backend',
-    ];
-
-    private ?string $masterKeyPath = null;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        // Create a temporary master key for testing
-        $this->masterKeyPath = $this->instancePath . '/master.key';
-        $masterKey = sodium_crypto_secretbox_keygen();
-        file_put_contents($this->masterKeyPath, $masterKey);
-        chmod($this->masterKeyPath, 0o600);
-
-        // Configure extension to use file-based master key
-        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['nr_vault'] = [
-            'masterKeySource' => $this->masterKeyPath,
-            'autoKeyPath' => $this->masterKeyPath,
-            'enableCache' => false,
-        ];
-
-        // Import fixture with admin (uid=1) and editor (uid=2)
-        $this->importCSVDataSet(__DIR__ . '/Fixtures/be_users.csv');
-    }
-
-    protected function tearDown(): void
-    {
-        if ($this->masterKeyPath !== null && file_exists($this->masterKeyPath)) {
-            $content = file_get_contents($this->masterKeyPath);
-            if ($content !== false) {
-                sodium_memzero($content);
-            }
-            // nosemgrep: php.lang.security.unlink-use.unlink-use - test-owned path
-            unlink($this->masterKeyPath);
-        }
-
-        parent::tearDown();
-    }
+    protected ?string $backendUserFixture = __DIR__ . '/Fixtures/be_users.csv';
 
     #[Test]
     public function revealActionWithValidIdentifierReturnsDecryptedSecret(): void
@@ -239,26 +200,5 @@ final class AjaxControllerTest extends FunctionalTestCase
         return (new ServerRequest('https://example.com/ajax/vault/reveal', 'POST'))
             ->withHeader('Content-Type', 'application/json')
             ->withBody($stream);
-    }
-
-    /**
-     * Generate a UUID v7 for testing.
-     */
-    private function generateUuidV7(): string
-    {
-        $timestamp = (int) (microtime(true) * 1000);
-        $timestampHex = str_pad(dechex($timestamp), 12, '0', STR_PAD_LEFT);
-        $randomBytes = random_bytes(10);
-        $randomHex = bin2hex($randomBytes);
-
-        return \sprintf(
-            '%s-%s-7%s-%s%s-%s',
-            substr($timestampHex, 0, 8),
-            substr($timestampHex, 8, 4),
-            substr($randomHex, 0, 3),
-            dechex(8 + random_int(0, 3)),
-            substr($randomHex, 3, 3),
-            substr($randomHex, 6, 12),
-        );
     }
 }

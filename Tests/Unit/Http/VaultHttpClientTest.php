@@ -16,15 +16,16 @@ use Netresearch\NrVault\Audit\AuditContextInterface;
 use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Audit\HttpCallContext;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
+use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Http\OAuth\OAuthConfig;
 use Netresearch\NrVault\Http\SecretPlacement;
 use Netresearch\NrVault\Http\VaultHttpClient;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -44,6 +45,8 @@ final class VaultHttpClientTest extends TestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         $this->vaultService = $this->createMock(VaultServiceInterface::class);
         $this->auditLogService = $this->createMock(AuditLogServiceInterface::class);
         $this->innerClient = $this->createMock(ClientInterface::class);
@@ -867,6 +870,88 @@ final class VaultHttpClientTest extends TestCase
         ], '');
 
         $authenticatedClient->sendRequest($request);
+    }
+
+    #[Test]
+    public function sendRequestThrowsForUnsupportedUriScheme(): void
+    {
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $request = new Request('GET', 'ftp://files.example.com/data');
+
+        $this->expectException(VaultException::class);
+        $this->expectExceptionMessageMatches('/Unsupported URI scheme/');
+
+        $client->sendRequest($request);
+    }
+
+    #[Test]
+    public function sendRequestThrowsForFileScheme(): void
+    {
+        $client = new VaultHttpClient(
+            $this->vaultService,
+            $this->auditLogService,
+            $this->innerClient,
+        );
+
+        $request = new Request('GET', 'file:///etc/passwd');
+
+        $this->expectException(VaultException::class);
+
+        $client->sendRequest($request);
+    }
+
+    #[Test]
+    public function sendRequestThrowsWhenHostNotInAllowList(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP']['allowed_hosts'] = ['trusted.example.com'];
+
+        try {
+            $client = new VaultHttpClient(
+                $this->vaultService,
+                $this->auditLogService,
+                $this->innerClient,
+            );
+
+            $request = new Request('GET', 'https://untrusted.other.com/data');
+
+            $this->expectException(VaultException::class);
+            $this->expectExceptionMessageMatches('/not in the allowed hosts list/');
+
+            $client->sendRequest($request);
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']['HTTP']['allowed_hosts']);
+        }
+    }
+
+    #[Test]
+    public function sendRequestAllowsWildcardHostMatch(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['HTTP']['allowed_hosts'] = ['*.example.com'];
+
+        try {
+            $this->innerClient
+                ->expects(self::once())
+                ->method('sendRequest')
+                ->willReturn(new Response(200));
+
+            $client = new VaultHttpClient(
+                $this->vaultService,
+                $this->auditLogService,
+                $this->innerClient,
+            );
+
+            $request = new Request('GET', 'https://api.example.com/data');
+            $response = $client->sendRequest($request);
+
+            self::assertSame(200, $response->getStatusCode());
+        } finally {
+            unset($GLOBALS['TYPO3_CONF_VARS']['HTTP']['allowed_hosts']);
+        }
     }
 
     #[Test]

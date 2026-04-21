@@ -10,9 +10,14 @@ on:
 
 permissions: {}
 
+# Cancel in-progress runs on new PR pushes; never cancel on main/merge_group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   ci:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/ci.yml@main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/ci.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main-2026-04-20
     permissions:
       contents: read
     with:
@@ -20,32 +25,50 @@ jobs:
         typo3-versions: '["^13.4","^14.0"]'
         run-functional-tests: true
         upload-coverage: true
+        # Coverage driver trade-off:
+        # - xdebug: path + branch coverage (accurate but ~3-5x slower than PCOV)
+        # - pcov:   line-only coverage (fast, but no branch/path metrics)
+        # We accept the xdebug runtime cost because Infection mutation testing and
+        # audit-log coverage require branch-level data.
+        # TODO: upstream (netresearch/typo3-ci-workflows) does not yet expose a
+        # `coverage-matrix-cell` input to restrict Codecov uploads to a single
+        # cell — every matrix cell currently uploads (8 uploads per run).
+        coverage-tool: xdebug
         php-extensions: intl, mbstring, xml, sodium, json
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   security:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/security.yml@main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/security.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main-2026-04-20
     permissions:
       contents: read
       security-events: write
 
   fuzz:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/fuzz.yml@main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/fuzz.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main-2026-04-20
     permissions:
       contents: read
     with:
       run-fuzz-tests: true
-      run-mutation-tests: ${{ github.event_name == 'schedule' }}
+      # Mutation tests run on schedule OR when PR has the `run-mutation` label
+      # (apply label to trigger an on-demand mutation run without waiting for cron)
+      run-mutation-tests: ${{ github.event_name == 'schedule' || contains(github.event.pull_request.labels.*.name, 'run-mutation') }}
       php-extensions: intl, mbstring, xml, sodium, json
+      # TODO: Reusable fuzz.yml does NOT currently upload .Build/infection/* artifacts
+      # (infection.json, infection.html, summary.log, per-mutator.md). Once mutation
+      # tests are unblocked (pre-existing test failures fixed), propose an upstream
+      # patch to add `actions/upload-artifact` after the `Run Mutation Tests` step in
+      # netresearch/typo3-ci-workflows/.github/workflows/fuzz.yml. The `github: true`
+      # logger in infection.json5 already surfaces escaped mutants as PR annotations,
+      # but full HTML/JSON reports are only available locally today.
 
   license-check:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/license-check.yml@main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/license-check.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main-2026-04-20
     permissions:
       contents: read
 
   codeql:
-    uses: netresearch/.github/.github/workflows/codeql.yml@main
+    uses: netresearch/.github/.github/workflows/codeql.yml@5c3de827bedce35fc76b51857f8a4431f2488738 # main-2026-04-21
     permissions:
       contents: read
       security-events: write
@@ -53,7 +76,7 @@ jobs:
 
   scorecard:
     if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
-    uses: netresearch/.github/.github/workflows/scorecard.yml@main
+    uses: netresearch/.github/.github/workflows/scorecard.yml@5c3de827bedce35fc76b51857f8a4431f2488738 # main-2026-04-21
     permissions:
       contents: read
       security-events: write
@@ -62,21 +85,21 @@ jobs:
 
   dependency-review:
     if: github.event_name == 'pull_request'
-    uses: netresearch/.github/.github/workflows/dependency-review.yml@main
+    uses: netresearch/.github/.github/workflows/dependency-review.yml@5c3de827bedce35fc76b51857f8a4431f2488738 # main-2026-04-21
     permissions:
       contents: read
       pull-requests: write
 
   pr-quality:
     if: github.event_name == 'pull_request'
-    uses: netresearch/.github/.github/workflows/pr-quality.yml@main
+    uses: netresearch/.github/.github/workflows/pr-quality.yml@5c3de827bedce35fc76b51857f8a4431f2488738 # main-2026-04-21
     permissions:
       contents: read
       pull-requests: write
 
   labeler:
     if: github.event_name == 'pull_request'
-    uses: netresearch/.github/.github/workflows/labeler.yml@main
+    uses: netresearch/.github/.github/workflows/labeler.yml@5c3de827bedce35fc76b51857f8a4431f2488738 # main-2026-04-21
     permissions:
       contents: read
       pull-requests: write

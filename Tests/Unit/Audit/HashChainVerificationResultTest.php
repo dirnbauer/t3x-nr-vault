@@ -10,9 +10,9 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Audit;
 
 use Netresearch\NrVault\Audit\HashChainVerificationResult;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(HashChainVerificationResult::class)]
 final class HashChainVerificationResultTest extends TestCase
@@ -124,6 +124,8 @@ final class HashChainVerificationResultTest extends TestCase
             'valid' => true,
             'errors' => [],
             'warnings' => [],
+            'missingUids' => [],
+            'missingUidCount' => 0,
         ], $subject->toArray());
     }
 
@@ -137,15 +139,21 @@ final class HashChainVerificationResultTest extends TestCase
             'valid' => false,
             'errors' => $errors,
             'warnings' => [],
+            'missingUids' => [],
+            'missingUidCount' => 0,
         ], $subject->toArray());
     }
 
     #[Test]
-    public function toArrayContainsExactlyThreeKeys(): void
+    public function toArrayContainsExactlyFiveKeys(): void
     {
         $subject = HashChainVerificationResult::valid();
 
-        self::assertCount(3, $subject->toArray());
+        // Schema: valid, errors, warnings, missingUids, missingUidCount.
+        // missingUidCount was added alongside the enumeration cap so large
+        // gaps (mass purges) do not explode the missingUids array — callers
+        // can still detect the gap scale without holding N entries.
+        self::assertCount(5, $subject->toArray());
     }
 
     #[Test]
@@ -204,5 +212,41 @@ final class HashChainVerificationResultTest extends TestCase
 
         $array = $subject->toArray();
         self::assertSame($warnings, $array['warnings']);
+    }
+
+    #[Test]
+    public function missingUidsDefaultsToEmpty(): void
+    {
+        $subject = HashChainVerificationResult::valid();
+
+        self::assertSame([], $subject->missingUids);
+        self::assertFalse($subject->hasMissingUids());
+    }
+
+    #[Test]
+    public function missingUidsReportedInValidResult(): void
+    {
+        $subject = HashChainVerificationResult::valid([], [7]);
+
+        self::assertSame([7], $subject->missingUids);
+        self::assertTrue($subject->hasMissingUids());
+    }
+
+    #[Test]
+    public function missingUidsReportedInInvalidResult(): void
+    {
+        $subject = HashChainVerificationResult::invalid([8 => 'gap detected'], [], [7]);
+
+        self::assertFalse($subject->isValid());
+        self::assertSame([7], $subject->missingUids);
+    }
+
+    #[Test]
+    public function toArrayIncludesMissingUids(): void
+    {
+        $subject = HashChainVerificationResult::valid([], [4, 5, 6]);
+
+        $array = $subject->toArray();
+        self::assertSame([4, 5, 6], $array['missingUids']);
     }
 }

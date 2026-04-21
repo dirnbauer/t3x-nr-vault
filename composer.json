@@ -36,12 +36,17 @@
     },
     "require-dev": {
         "a9f/typo3-fractor": "^0.5.8",
+        "captainhook/captainhook": "^5.0",
         "friendsofphp/php-cs-fixer": "^3.0",
         "infection/infection": "^0.32",
         "mikey179/vfsstream": "^1.6",
         "phpat/phpat": "^0.12.1",
         "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^11.0 || ^12.0",
         "rector/rector": "^2.0",
+        "roave/security-advisories": "dev-latest",
         "ssch/typo3-rector": "^3.0",
         "typo3/cms-scheduler": "^13.4 || ^14.0",
         "typo3/testing-framework": "^9.0"
@@ -72,7 +77,7 @@
             "extension-key": "nr_vault"
         },
         "branch-alias": {
-            "dev-main": "0.x-dev"
+            "dev-main": "0.4.x-dev"
         }
     },
     "scripts": {
@@ -82,8 +87,11 @@
             "@ci:test:php:phpstan",
             "@ci:test:php:cgl"
         ],
+        "ci:audit": "@composer audit --locked --format=plain --abandoned=fail",
         "ci:cgl": "php-cs-fixer fix",
         "ci:test:php:cgl": "php-cs-fixer fix --dry-run --diff",
+        "ci:test:php:coverage": "@php -d pcov.enabled=0 -d xdebug.mode=coverage .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --path-coverage --coverage-clover=.Build/coverage/clover.xml --coverage-html=.Build/coverage/html --coverage-text",
+        "ci:test:php:coverage:functional": "@php -d pcov.enabled=0 -d xdebug.mode=coverage .Build/bin/phpunit -c Build/FunctionalTests.xml --path-coverage --coverage-clover=.Build/coverage/clover-functional.xml --coverage-html=.Build/coverage/html-functional",
         "ci:test:php:functional": "phpunit -c Build/FunctionalTests.xml",
         "ci:test:php:fuzz": "phpunit -c Build/phpunit.xml --testsuite Fuzz",
         "ci:test:php:mutation": "infection --configuration=infection.json5 --threads=4",
@@ -91,10 +99,13 @@
         "ci:test:php:rector": "rector process --dry-run",
         "ci:test:php:unit": "phpunit -c Build/phpunit.xml --testsuite Unit",
         "rector": "rector process",
-        "test": "phpunit -c Build/phpunit.xml",
+        "test": "Build/Scripts/runTests.sh -s unit",
         "test:all": [
             "@test",
             "@ci:test:php:functional"
-        ]
+        ],
+        "test:functional": "Build/Scripts/runTests.sh -s functional",
+        "test:mutation": "Build/Scripts/runTests.sh -s mutation",
+        "test:unit": "Build/Scripts/runTests.sh -s unit"
     }
 }

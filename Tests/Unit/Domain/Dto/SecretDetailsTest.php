@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Unit\Domain\Dto;
 
 use Netresearch\NrVault\Domain\Dto\SecretDetails;
 use Netresearch\NrVault\Domain\Model\Secret;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(SecretDetails::class)]
 final class SecretDetailsTest extends TestCase

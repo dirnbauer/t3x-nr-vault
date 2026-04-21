@@ -1,0 +1,126 @@
+# Semgrep ruleset — nr-vault PHP crypto hygiene.
+#
+# Advisory-only (not wired into CI yet).
+# Run locally:
+#
+#   semgrep --config=semgrep.yml Classes/
+#   semgrep --config=semgrep.yml --error --severity ERROR Classes/
+#
+# These rules are intentionally conservative to minimise false positives while
+# catching the most common crypto-hygiene mistakes in a secrets-handling codebase.
+
+rules:
+    # ---------------------------------------------------------------------------
+    # 1) Non-constant-time equality on secret-looking variables.
+    # ---------------------------------------------------------------------------
+    - id: nr-vault-secret-equality-non-constant-time
+      severity: ERROR
+      languages: [php]
+      message: |
+          Non-constant-time string comparison on a secret-looking variable.
+          Use `hash_equals($expected, $actual)` to avoid timing side-channels.
+      metadata:
+          category: security
+          cwe: 'CWE-208: Observable Timing Discrepancy'
+          references:
+              - https://www.php.net/manual/en/function.hash-equals.php
+      patterns:
+          - pattern-either:
+                - pattern: $SECRET === $OTHER
+                - pattern: $SECRET !== $OTHER
+                - pattern: $SECRET == $OTHER
+                - pattern: $SECRET != $OTHER
+          - metavariable-regex:
+                metavariable: $SECRET
+                regex: '^\$(secret|token|password|passwd|pass|hmac|mac|signature|sig|hash|key|apiKey|api_key|masterKey|master_key|dek|ciphertext|expected(Hash|Token|Mac|Signature)?|provided(Hash|Token|Mac|Signature)?)([A-Z][a-zA-Z0-9_]*)?$'
+
+    # ---------------------------------------------------------------------------
+    # 2) DEK/keygen output without sodium_memzero in the same function.
+    # ---------------------------------------------------------------------------
+    # Use `taint` mode so we flag sodium_crypto_secretbox_keygen() output that is
+    # never zeroed on the function it belongs to.
+    - id: nr-vault-missing-sodium-memzero
+      severity: WARNING
+      languages: [php]
+      message: |
+          Secret material generated via sodium_crypto_*_keygen() / sodium_crypto_*_open()
+          should be cleared with sodium_memzero() before going out of scope.
+      metadata:
+          category: security
+          cwe: 'CWE-316: Cleartext Storage of Sensitive Information in Memory'
+          references:
+              - https://www.php.net/manual/en/function.sodium-memzero.php
+      mode: taint
+      pattern-sources:
+          - pattern-either:
+                - pattern: $V = sodium_crypto_secretbox_keygen()
+                - pattern: $V = sodium_crypto_aead_xchacha20poly1305_ietf_keygen()
+                - pattern: $V = sodium_crypto_aead_aes256gcm_keygen()
+                - pattern: $V = sodium_crypto_kdf_keygen()
+                - pattern: $V = sodium_crypto_secretbox_open(...)
+                - pattern: $V = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt(...)
+      pattern-sinks:
+          - pattern: sodium_memzero($V)
+
+    # ---------------------------------------------------------------------------
+    # 3) file_get_contents() on master/key-looking paths without subsequent memzero.
+    # ---------------------------------------------------------------------------
+    - id: nr-vault-key-fileread-without-memzero
+      severity: WARNING
+      languages: [php]
+      message: |
+          Reading a key/master-key file into a variable without clearing it afterwards.
+          Call sodium_memzero() on the plaintext key before it leaves scope.
+      metadata:
+          category: security
+          cwe: 'CWE-316: Cleartext Storage of Sensitive Information in Memory'
+      mode: taint
+      pattern-sources:
+          - patterns:
+                - pattern: $V = file_get_contents($PATH)
+                - metavariable-regex:
+                      metavariable: $PATH
+                      regex: '.*(master|key|secret|dek|kek|token).*'
+      pattern-sinks:
+          - pattern: sodium_memzero($V)
+
+    # ---------------------------------------------------------------------------
+    # 4) print_r / var_dump / var_export on Secret-ish objects.
+    # ---------------------------------------------------------------------------
+    - id: nr-vault-debug-dump-secret-object
+      severity: ERROR
+      languages: [php]
+      message: |
+          Debug-dumping a secret-shaped object leaks plaintext. Replace with a
+          redacted log line (e.g. logger->debug('secret.accessed', ['id' => $id])).
+      metadata:
+          category: security
+          cwe: 'CWE-532: Insertion of Sensitive Information into Log File'
+      patterns:
+          - pattern-either:
+                - pattern: print_r($X, ...)
+                - pattern: print_r($X)
+                - pattern: var_dump($X)
+                - pattern: var_dump($X, ...)
+                - pattern: var_export($X, ...)
+                - pattern: var_export($X)
+          - metavariable-regex:
+                metavariable: $X
+                regex: '^\$(secret|plaintext|dek|kek|masterKey|master_key|credential|token|password|apiKey|encryptedData)([A-Z][a-zA-Z0-9_]*)?$'
+
+    # ---------------------------------------------------------------------------
+    # 5) Weak random sources for secret generation.
+    # ---------------------------------------------------------------------------
+    - id: nr-vault-weak-random-for-secret
+      severity: ERROR
+      languages: [php]
+      message: |
+          Do not use mt_rand()/rand()/uniqid() to generate cryptographic material.
+          Use random_bytes() or sodium_crypto_*_keygen().
+      metadata:
+          category: security
+          cwe: 'CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator'
+      pattern-either:
+          - pattern: $V = mt_rand(...)
+          - pattern: $V = rand(...)
+          - pattern: $V = uniqid(...)

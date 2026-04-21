@@ -12,16 +12,16 @@ namespace Netresearch\NrVault\Tests\Unit\Utility;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Exception\VaultException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use Netresearch\NrVault\Utility\FlexFormVaultResolver;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
-use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 
 #[AllowMockObjectsWithoutExpectations]
-final class FlexFormVaultResolverTest extends UnitTestCase
+final class FlexFormVaultResolverTest extends TestCase
 {
     private VaultServiceInterface&MockObject $vaultService;
 

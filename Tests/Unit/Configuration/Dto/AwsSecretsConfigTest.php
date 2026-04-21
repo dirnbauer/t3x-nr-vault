@@ -10,10 +10,10 @@ declare(strict_types=1);
 namespace Netresearch\NrVault\Tests\Unit\Configuration\Dto;
 
 use Netresearch\NrVault\Configuration\Dto\AwsSecretsConfig;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(AwsSecretsConfig::class)]
 final class AwsSecretsConfigTest extends TestCase

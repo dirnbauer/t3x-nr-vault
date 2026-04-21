@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Unit\Audit;
 
 use Netresearch\NrVault\Audit\AuditContextInterface;
 use Netresearch\NrVault\Audit\HttpCallContext;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversClass(HttpCallContext::class)]
 final class HttpCallContextTest extends TestCase

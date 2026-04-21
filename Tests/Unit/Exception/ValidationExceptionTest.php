@@ -11,9 +11,9 @@ namespace Netresearch\NrVault\Tests\Unit\Exception;
 
 use Netresearch\NrVault\Exception\ValidationException;
 use Netresearch\NrVault\Exception\VaultException;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 #[CoversNothing]
 final class ValidationExceptionTest extends TestCase

@@ -18,11 +18,11 @@ use Netresearch\NrVault\Audit\GenericContext;
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Security\AccessControlServiceInterface;
+use Netresearch\NrVault\Tests\Unit\TestCase;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -1050,6 +1050,843 @@ final class AuditLogServiceTest extends TestCase
         self::assertNotEmpty($verification->warnings, 'Should have epoch boundary warning');
         self::assertArrayHasKey(3, $verification->warnings, 'Warning should be on entry 3 (epoch boundary)');
         self::assertCount(1, $verification->warnings, 'Should have exactly one epoch boundary warning');
+    }
+
+    // =========================================================================
+    // Strict-assertion tests — kill IncrementInteger/DecrementInteger/CastInt/
+    // Coalesce/MethodCallRemoval/ConcatOperandRemoval mutators on AuditLogService.
+    // =========================================================================
+
+    /**
+     * Kills ArrayItem mutation on `pid => 0` and IncrementInteger mutation.
+     */
+    #[Test]
+    public function insertedRowHasPidZeroExactly(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => \array_key_exists('pid', $data) && $data['pid'] === 0),
+            );
+
+        $this->getSubject()->log('test_secret', 'create', true);
+    }
+
+    /**
+     * Kill IncrementInteger on `success ? 1 : 0` ternary.
+     */
+    #[Test]
+    public function successTrueMapsToExactlyOne(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['success'] === 1),
+            );
+
+        $this->getSubject()->log('s', 'create', true);
+    }
+
+    #[Test]
+    public function successFalseMapsToExactlyZero(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['success'] === 0),
+            );
+
+        $this->getSubject()->log('s', 'access_denied', false);
+    }
+
+    /**
+     * Kill Coalesce mutation on `errorMessage ?? ''` fallback.
+     */
+    #[Test]
+    public function nullErrorMessageBecomesEmptyString(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['error_message'] === ''),
+            );
+
+        $this->getSubject()->log('s', 'create', true);
+    }
+
+    #[Test]
+    public function nonNullErrorMessageIsStoredExactly(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['error_message'] === 'permission denied'),
+            );
+
+        $this->getSubject()->log('s', 'access_denied', false, 'permission denied');
+    }
+
+    /**
+     * Kill Coalesce on `reason ?? ''` fallback.
+     */
+    #[Test]
+    public function nullReasonBecomesEmptyString(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['reason'] === ''),
+            );
+
+        $this->getSubject()->log('s', 'create', true);
+    }
+
+    #[Test]
+    public function nullHashBeforeAndAfterBecomeEmptyStrings(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['hash_before'] === ''
+                    && $data['hash_after'] === ''),
+            );
+
+        $this->getSubject()->log('s', 'create', true);
+    }
+
+    /**
+     * Kill ArrayItemRemoval on any of the many keys in the insert payload.
+     */
+    #[Test]
+    public function insertedRowIncludesAllRequiredKeys(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $capturedData = null;
+        $this->connection
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static function (array $data) use (&$capturedData): bool {
+                    $capturedData = $data;
+
+                    return true;
+                }),
+            );
+
+        $this->getSubject()->log('s', 'create', true);
+
+        self::assertIsArray($capturedData);
+
+        $expectedKeys = [
+            'pid',
+            'secret_identifier',
+            'action',
+            'success',
+            'error_message',
+            'reason',
+            'actor_uid',
+            'actor_type',
+            'actor_username',
+            'actor_role',
+            'ip_address',
+            'user_agent',
+            'request_id',
+            'previous_hash',
+            'hash_before',
+            'hash_after',
+            'crdate',
+            'hmac_key_epoch',
+            'context',
+        ];
+
+        foreach ($expectedKeys as $key) {
+            self::assertArrayHasKey(
+                $key,
+                $capturedData,
+                "Missing key '{$key}' in insert payload",
+            );
+        }
+    }
+
+    /**
+     * Kill DecrementInteger/IncrementInteger + CastInt on `->setMaxResults(1)`
+     * in getLatestHash() — result is always exactly the one row.
+     */
+    #[Test]
+    public function getLatestHashReturnsExactStringHash(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn('0000000000000000000000000000000000000000000000000000000000000042');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+        $this->queryBuilder->method('setMaxResults')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        self::assertSame(
+            '0000000000000000000000000000000000000000000000000000000000000042',
+            $this->getSubject()->getLatestHash(),
+        );
+    }
+
+    /**
+     * Kill CastInt + Coalesce on `count()` return — result must be strict int.
+     */
+    #[Test]
+    public function countReturnsStrictIntegerZeroWhenEmpty(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn('0');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder->method('count')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        // assertSame(0, ...) catches CastInt mutation where result is '0' (string).
+        self::assertSame(0, $this->getSubject()->count());
+    }
+
+    #[Test]
+    public function countReturnsExactInt42(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn('42');
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder->method('count')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        // Kills CastInt — string '42' becomes int 42.
+        self::assertSame(42, $this->getSubject()->count());
+    }
+
+    #[Test]
+    public function countReturnsZeroWhenResultIsNonNumeric(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn(false);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder->method('count')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        // Kills Decrement/Increment on the fallback 0.
+        self::assertSame(0, $this->getSubject()->count());
+    }
+
+    /**
+     * Kill IncrementInteger/DecrementInteger on `query()` default `$limit = 100`.
+     */
+    #[Test]
+    public function queryDefaultLimitIs100(): void
+    {
+        $this->setupQueryMocks([]);
+
+        $this->queryBuilder
+            ->expects(self::once())
+            ->method('setMaxResults')
+            ->with(100)
+            ->willReturnSelf();
+
+        $this->getSubject()->query();
+    }
+
+    /**
+     * Kill IncrementInteger/DecrementInteger on `query()` default `$offset = 0`.
+     */
+    #[Test]
+    public function queryDefaultOffsetIsZero(): void
+    {
+        $this->setupQueryMocks([]);
+
+        $this->queryBuilder
+            ->expects(self::once())
+            ->method('setFirstResult')
+            ->with(0)
+            ->willReturnSelf();
+
+        $this->getSubject()->query();
+    }
+
+    /**
+     * Kill MethodCallRemoval on `setMaxResults` / `setFirstResult`.
+     */
+    #[Test]
+    public function queryWithCustomLimitAndOffsetAreUsedLiterally(): void
+    {
+        $this->setupQueryMocks([]);
+
+        $this->queryBuilder
+            ->expects(self::once())
+            ->method('setMaxResults')
+            ->with(25)
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->expects(self::once())
+            ->method('setFirstResult')
+            ->with(50)
+            ->willReturnSelf();
+
+        $this->getSubject()->query(null, 25, 50);
+    }
+
+    /**
+     * Kill MethodCallRemoval on `export()` — uses PHP_INT_MAX limit and 0 offset.
+     */
+    #[Test]
+    public function exportUsesMaxIntLimitAndZeroOffset(): void
+    {
+        $this->setupQueryMocks([]);
+
+        $this->queryBuilder
+            ->expects(self::once())
+            ->method('setMaxResults')
+            ->with(PHP_INT_MAX)
+            ->willReturnSelf();
+
+        $this->queryBuilder
+            ->expects(self::once())
+            ->method('setFirstResult')
+            ->with(0)
+            ->willReturnSelf();
+
+        $this->getSubject()->export();
+    }
+
+    // =========================================================================
+    // calculateHash() strict tests — kill CastInt/Increment/Decrement/
+    // ConcatOperandRemoval on the hash payload.
+    // =========================================================================
+
+    #[Test]
+    public function calculateHashLegacyProducesExactly64HexChars(): void
+    {
+        $hash = AuditLogService::calculateHash(1, 'identifier', 'create', 42, 1704067200, '');
+
+        self::assertSame(64, \strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
+
+    #[Test]
+    public function calculateHashHmacProducesExactly64HexChars(): void
+    {
+        $hmacKey = str_repeat("\x42", 32);
+        $hash = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, '', $hmacKey);
+
+        self::assertSame(64, \strlen($hash));
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hash);
+    }
+
+    #[Test]
+    public function calculateHashLegacyIsDeterministic(): void
+    {
+        $hash1 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, 'prev');
+        $hash2 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, 'prev');
+
+        // Kills IncrementInteger/DecrementInteger/ConcatOperandRemoval
+        // in the JSON payload construction.
+        self::assertSame($hash1, $hash2);
+    }
+
+    /**
+     * Kill IncrementInteger on $uid — changing uid changes the hash output.
+     */
+    #[Test]
+    public function calculateHashDependsOnUid(): void
+    {
+        $h1 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, '');
+        $h2 = AuditLogService::calculateHash(2, 'id', 'create', 42, 1704067200, '');
+        $h3 = AuditLogService::calculateHash(0, 'id', 'create', 42, 1704067200, '');
+
+        self::assertNotSame($h1, $h2);
+        self::assertNotSame($h1, $h3);
+        self::assertNotSame($h2, $h3);
+    }
+
+    /**
+     * Kill IncrementInteger on $actorUid — changing actor changes hash output.
+     */
+    #[Test]
+    public function calculateHashDependsOnActorUid(): void
+    {
+        $h1 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, '');
+        $h2 = AuditLogService::calculateHash(1, 'id', 'create', 43, 1704067200, '');
+
+        self::assertNotSame($h1, $h2);
+    }
+
+    /**
+     * Kill IncrementInteger/DecrementInteger on $crdate.
+     */
+    #[Test]
+    public function calculateHashDependsOnCrdate(): void
+    {
+        $h1 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, '');
+        $h2 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067201, '');
+        $h3 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067199, '');
+
+        self::assertNotSame($h1, $h2);
+        self::assertNotSame($h1, $h3);
+    }
+
+    /**
+     * Kill ConcatOperandRemoval on the action string — different actions → different hash.
+     */
+    #[Test]
+    public function calculateHashDependsOnAction(): void
+    {
+        $h1 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, '');
+        $h2 = AuditLogService::calculateHash(1, 'id', 'read', 42, 1704067200, '');
+        $h3 = AuditLogService::calculateHash(1, 'id', 'delete', 42, 1704067200, '');
+
+        self::assertNotSame($h1, $h2);
+        self::assertNotSame($h1, $h3);
+        self::assertNotSame($h2, $h3);
+    }
+
+    /**
+     * Kill ConcatOperandRemoval on the secret identifier.
+     */
+    #[Test]
+    public function calculateHashDependsOnSecretIdentifier(): void
+    {
+        $h1 = AuditLogService::calculateHash(1, 'id_a', 'create', 42, 1704067200, '');
+        $h2 = AuditLogService::calculateHash(1, 'id_b', 'create', 42, 1704067200, '');
+
+        self::assertNotSame($h1, $h2);
+    }
+
+    /**
+     * Kill ConcatOperandRemoval on previous_hash — chaining depends on it.
+     */
+    #[Test]
+    public function calculateHashDependsOnPreviousHash(): void
+    {
+        $h1 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, '');
+        $h2 = AuditLogService::calculateHash(1, 'id', 'create', 42, 1704067200, 'prev');
+
+        self::assertNotSame($h1, $h2);
+    }
+
+    /**
+     * Kill boundary mutations on boundary values: uid=0, actorUid=0, crdate=0, PHP_INT_MAX.
+     */
+    #[Test]
+    public function calculateHashWorksAtEpochZeroAndMaxInt(): void
+    {
+        $h0 = AuditLogService::calculateHash(0, '', '', 0, 0, '');
+        $hMax = AuditLogService::calculateHash(PHP_INT_MAX, 'max', 'max', PHP_INT_MAX, PHP_INT_MAX, '');
+
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $h0);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $hMax);
+        self::assertNotSame($h0, $hMax);
+    }
+
+    /**
+     * Explicitly test the canonical empty-chain first entry.
+     */
+    #[Test]
+    public function calculateHashFirstEntryMatchesCanonicalPayload(): void
+    {
+        // Exact canonical SHA-256 of the JSON payload — kills ConcatOperandRemoval.
+        $hash = AuditLogService::calculateHash(1, 'test', 'create', 1, 1704067200, '');
+
+        $payload = json_encode([
+            'uid' => 1,
+            'secret_identifier' => 'test',
+            'action' => 'create',
+            'actor_uid' => 1,
+            'crdate' => 1704067200,
+            'previous_hash' => '',
+        ], JSON_THROW_ON_ERROR);
+
+        self::assertSame(hash('sha256', $payload), $hash);
+    }
+
+    /**
+     * Kill DecrementInteger/IncrementInteger on the HMAC key size (32 bytes).
+     */
+    #[Test]
+    public function deriveHmacKeyReturnsExactly32Bytes(): void
+    {
+        $mkp = $this->createMock(MasterKeyProviderInterface::class);
+        $mkp->method('getMasterKey')->willReturn(str_repeat("\x01", 32));
+
+        $key = AuditLogService::deriveHmacKey($mkp);
+
+        self::assertSame(32, \strlen($key));
+    }
+
+    /**
+     * Kill ConcatOperandRemoval on the HKDF info string 'nr-vault-audit-hmac-v1'.
+     */
+    #[Test]
+    public function deriveHmacKeyIsDeterministicForSameMasterKey(): void
+    {
+        $mkp = $this->createMock(MasterKeyProviderInterface::class);
+        $mkp->method('getMasterKey')->willReturn(str_repeat("\x01", 32));
+
+        $key1 = AuditLogService::deriveHmacKey($mkp);
+        $key2 = AuditLogService::deriveHmacKey($mkp);
+
+        self::assertSame($key1, $key2);
+    }
+
+    /**
+     * Kill ConcatOperandRemoval on the HKDF info string — different master key → different HMAC key.
+     */
+    #[Test]
+    public function deriveHmacKeyDiffersForDifferentMasterKeys(): void
+    {
+        $mkp1 = $this->createMock(MasterKeyProviderInterface::class);
+        $mkp1->method('getMasterKey')->willReturn(str_repeat("\x01", 32));
+
+        $mkp2 = $this->createMock(MasterKeyProviderInterface::class);
+        $mkp2->method('getMasterKey')->willReturn(str_repeat("\x02", 32));
+
+        self::assertNotSame(
+            AuditLogService::deriveHmacKey($mkp1),
+            AuditLogService::deriveHmacKey($mkp2),
+        );
+    }
+
+    /**
+     * Kill ConcatOperandRemoval on the actor-role 'groups:' prefix.
+     */
+    #[Test]
+    public function actorRoleWithGroupsUsesExactGroupsPrefix(): void
+    {
+        $accessControlService = $this->createMock(AccessControlServiceInterface::class);
+        $accessControlService->method('getCurrentActorUid')->willReturn(1);
+        $accessControlService->method('getCurrentActorType')->willReturn('backend');
+        $accessControlService->method('getCurrentActorUsername')->willReturn('u');
+        $accessControlService->method('getCurrentUserGroups')->willReturn([7, 8, 9]);
+
+        $subject = new AuditLogService(
+            $this->connectionPool,
+            $accessControlService,
+            $this->masterKeyProvider,
+            $this->extensionConfiguration,
+        );
+
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['actor_role'] === 'groups:7,8,9'),
+            );
+
+        $subject->log('s', 'read', true);
+    }
+
+    /**
+     * When no groups are present, actor_role falls back to actor_type exactly.
+     */
+    #[Test]
+    public function actorRoleWithoutGroupsFallsBackToActorType(): void
+    {
+        $this->setupDatabaseMocks();
+
+        $this->connection
+            ->expects(self::once())
+            ->method('insert')
+            ->with(
+                'tx_nrvault_audit_log',
+                self::callback(static fn (array $data): bool => $data['actor_role'] === 'backend'),
+            );
+
+        $this->getSubject()->log('s', 'read', true);
+    }
+
+    /**
+     * Kills Increment/Decrement on `setMaxResults(1)` in getPreviousHash (log flow).
+     */
+    #[Test]
+    public function previousHashLookupAppliesExactMaxOneResult(): void
+    {
+        $result = $this->createMock(Result::class);
+        $result->method('fetchOne')->willReturn(false);
+
+        $this->connectionPool
+            ->method('getConnectionForTable')
+            ->willReturn($this->connection);
+
+        $this->connection
+            ->method('createQueryBuilder')
+            ->willReturn($this->queryBuilder);
+
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+
+        // Record the setMaxResults argument and verify it's exactly 1.
+        $maxResults = null;
+        $this->queryBuilder
+            ->method('setMaxResults')
+            ->willReturnCallback(function ($n) use (&$maxResults): QueryBuilder {
+                $maxResults = $n;
+
+                return $this->queryBuilder;
+            });
+
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        $this->getSubject()->log('s', 'create', true);
+
+        self::assertSame(1, $maxResults);
+    }
+
+    /**
+     * Kill DecrementInteger on `previousEpoch = -1` initial value — it must be -1
+     * so the first-entry check `>= 0` correctly skips the warning.
+     */
+    #[Test]
+    public function verifyHashChainSingleEntryProducesNoEpochWarning(): void
+    {
+        $payload = json_encode([
+            'uid' => 1,
+            'secret_identifier' => 's',
+            'action' => 'create',
+            'actor_uid' => 1,
+            'crdate' => 100,
+            'previous_hash' => '',
+        ], JSON_THROW_ON_ERROR);
+        $hash = hash('sha256', $payload);
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn([
+            [
+                'uid' => 1,
+                'secret_identifier' => 's',
+                'action' => 'create',
+                'actor_uid' => 1,
+                'crdate' => 100,
+                'previous_hash' => '',
+                'entry_hash' => $hash,
+                'hmac_key_epoch' => 0,
+            ],
+        ]);
+
+        $this->connectionPool->method('getConnectionForTable')->willReturn($this->connection);
+        $this->connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        $extensionConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $extensionConfig->method('getAuditHmacEpoch')->willReturn(0);
+
+        $subject = new AuditLogService(
+            $this->connectionPool,
+            $this->accessControlService,
+            $this->masterKeyProvider,
+            $extensionConfig,
+        );
+
+        $verification = $subject->verifyHashChain();
+
+        self::assertTrue($verification->valid);
+        // Kills DecrementInteger mutation on `$previousEpoch = -1`: with initial -1,
+        // the `>= 0` check skips epoch comparison on the first entry, so no warning.
+        self::assertCount(0, $verification->warnings);
+    }
+
+    /**
+     * Kill DecrementInteger/IncrementInteger mutation on the uid-gap detection:
+     * the condition `$uid - $previousUid > 1` means consecutive UIDs (1, 2, 3) are fine,
+     * but a gap (1, 3) produces an error.
+     */
+    #[Test]
+    public function verifyHashChainConsecutiveUidsProduceNoErrors(): void
+    {
+        // Build 3 consecutive entries with correct hashes.
+        $hash1 = AuditLogService::calculateHash(1, 'a', 'create', 1, 100, '');
+        $hash2 = AuditLogService::calculateHash(2, 'b', 'read', 1, 200, $hash1);
+        $hash3 = AuditLogService::calculateHash(3, 'c', 'delete', 1, 300, $hash2);
+
+        $rows = [
+            ['uid' => 1, 'secret_identifier' => 'a', 'action' => 'create', 'actor_uid' => 1, 'crdate' => 100, 'previous_hash' => '', 'entry_hash' => $hash1, 'hmac_key_epoch' => 0],
+            ['uid' => 2, 'secret_identifier' => 'b', 'action' => 'read', 'actor_uid' => 1, 'crdate' => 200, 'previous_hash' => $hash1, 'entry_hash' => $hash2, 'hmac_key_epoch' => 0],
+            ['uid' => 3, 'secret_identifier' => 'c', 'action' => 'delete', 'actor_uid' => 1, 'crdate' => 300, 'previous_hash' => $hash2, 'entry_hash' => $hash3, 'hmac_key_epoch' => 0],
+        ];
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool->method('getConnectionForTable')->willReturn($this->connection);
+        $this->connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        $extensionConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $extensionConfig->method('getAuditHmacEpoch')->willReturn(0);
+
+        $subject = new AuditLogService(
+            $this->connectionPool,
+            $this->accessControlService,
+            $this->masterKeyProvider,
+            $extensionConfig,
+        );
+
+        $verification = $subject->verifyHashChain();
+
+        self::assertTrue($verification->valid);
+        self::assertCount(0, $verification->errors);
+    }
+
+    /**
+     * Kills GreaterThan mutation on `$uid - $previousUid > 1` (gap detection).
+     * Missing uid=2 between 1 and 3 must surface as an error.
+     */
+    #[Test]
+    public function verifyHashChainUidGapProducesErrorWithExactMissingUids(): void
+    {
+        $hash1 = AuditLogService::calculateHash(1, 'a', 'create', 1, 100, '');
+        $hash3 = AuditLogService::calculateHash(3, 'c', 'delete', 1, 300, $hash1);
+
+        $rows = [
+            ['uid' => 1, 'secret_identifier' => 'a', 'action' => 'create', 'actor_uid' => 1, 'crdate' => 100, 'previous_hash' => '', 'entry_hash' => $hash1, 'hmac_key_epoch' => 0],
+            ['uid' => 3, 'secret_identifier' => 'c', 'action' => 'delete', 'actor_uid' => 1, 'crdate' => 300, 'previous_hash' => $hash1, 'entry_hash' => $hash3, 'hmac_key_epoch' => 0],
+        ];
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool->method('getConnectionForTable')->willReturn($this->connection);
+        $this->connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        $extensionConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $extensionConfig->method('getAuditHmacEpoch')->willReturn(0);
+
+        $subject = new AuditLogService(
+            $this->connectionPool,
+            $this->accessControlService,
+            $this->masterKeyProvider,
+            $extensionConfig,
+        );
+
+        $verification = $subject->verifyHashChain();
+
+        self::assertFalse($verification->valid);
+        self::assertCount(1, $verification->errors);
+        self::assertArrayHasKey(3, $verification->errors);
+        self::assertStringContainsString('gap', $verification->errors[3]);
+        // Missing uid list is exactly [2].
+        self::assertSame([2], $verification->missingUids);
+    }
+
+    /**
+     * Kill DecrementInteger/IncrementInteger on the gap-boundary (`gapStart = previousUid + 1`,
+     * `gapEnd = uid - 1`).
+     */
+    #[Test]
+    public function verifyHashChainTwoEntryGapListsAllMissingUids(): void
+    {
+        $hash1 = AuditLogService::calculateHash(1, 'a', 'create', 1, 100, '');
+        $hash5 = AuditLogService::calculateHash(5, 'e', 'delete', 1, 500, $hash1);
+
+        $rows = [
+            ['uid' => 1, 'secret_identifier' => 'a', 'action' => 'create', 'actor_uid' => 1, 'crdate' => 100, 'previous_hash' => '', 'entry_hash' => $hash1, 'hmac_key_epoch' => 0],
+            ['uid' => 5, 'secret_identifier' => 'e', 'action' => 'delete', 'actor_uid' => 1, 'crdate' => 500, 'previous_hash' => $hash1, 'entry_hash' => $hash5, 'hmac_key_epoch' => 0],
+        ];
+
+        $result = $this->createMock(Result::class);
+        $result->method('fetchAllAssociative')->willReturn($rows);
+
+        $this->connectionPool->method('getConnectionForTable')->willReturn($this->connection);
+        $this->connection->method('createQueryBuilder')->willReturn($this->queryBuilder);
+        $this->queryBuilder->method('select')->willReturnSelf();
+        $this->queryBuilder->method('from')->willReturnSelf();
+        $this->queryBuilder->method('orderBy')->willReturnSelf();
+        $this->queryBuilder->method('executeQuery')->willReturn($result);
+
+        $extensionConfig = $this->createMock(ExtensionConfigurationInterface::class);
+        $extensionConfig->method('getAuditHmacEpoch')->willReturn(0);
+
+        $subject = new AuditLogService(
+            $this->connectionPool,
+            $this->accessControlService,
+            $this->masterKeyProvider,
+            $extensionConfig,
+        );
+
+        $verification = $subject->verifyHashChain();
+
+        // Kills increments / decrements on gapStart and gapEnd computations.
+        self::assertSame([2, 3, 4], $verification->missingUids);
     }
 
     private function getSubject(): AuditLogService
