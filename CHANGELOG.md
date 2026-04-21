@@ -7,21 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-22
+
 ### Added
-- **Internationalization**: Translate all backend module templates to use XLF translation keys
+- **OAuth fallback**: `OAuthTokenManager::fetchTokenWithFallback()` falls
+  back to `client_credentials` when a stored `refresh_token` is
+  rejected with HTTP 400/401 + `invalid_grant` / `invalid_token`.
+  5xx / 429 / `invalid_client` errors re-throw so outages are not
+  masked. Both the failed refresh and the fallback are audit-logged.
+- **Internationalization**: Translate all backend module templates to
+  use XLF translation keys
 - **Help Page**: Add help page with docheader tab menu to backend module
 - **Security**: HMAC-SHA256 keyed audit hash chain (ADR-023)
-- **CLI**: `vault:audit-migrate-hmac` command for migrating legacy SHA-256 audit entries
+- **CLI**: `vault:audit-migrate-hmac` command for migrating legacy
+  SHA-256 audit entries
+
+### Security
+- **AccessControlService** now denies vault access to backend users
+  whose `disable` flag is set, even when a stale session somehow
+  reaches the vault layer. Any non-zero integer / numeric-string
+  value is treated as disabled (matches TYPO3 DataHandler semantics).
+- **AccessControlService** filters stale group IDs from user sessions
+  against the live `be_groups` table before intersecting with a
+  secret's `allowedGroups`. A deleted group whose UID still lingers in
+  a session no longer grants access. Lookup is cached per request.
+- **AuditLogService::verifyHashChain()** detects UID gaps in the
+  stored chain — an attacker who deletes entry N **and** patches
+  entry N+1's `previous_hash` can no longer hide the deletion. New
+  `missingUids` / `missingUidCount` fields on the verification result.
 
 ### Changed
+- **Test coverage driver**: PCOV → Xdebug. PCOV only emits line
+  coverage; Xdebug adds branch and path coverage, which Infection
+  mutation testing and audit-flow analysis both need. ~2× CI runtime
+  cost accepted for the signal quality.
+- **Testing pyramid overhaul**: unit tests 1298 → 1705 (assertions
+  3045 → 6949), fuzz tests 1 file → 10 files (1514 methods,
+  2255 assertions), functional tests 12 files → 24 files, E2E specs
+  8 → 14 including a new `Tests/E2E/security/` bundle (XSS, audit
+  tamper, CSRF, cookie attributes, full CRUD lifecycle). See
+  `Tests/E2E/USER_PATHWAY_COVERAGE.md` for the full pathway audit
+  matrix.
+- **Infection mutation testing** enabled end-to-end after years of
+  being blocked by PHPUnit 12's `failOnWarning=true`. First measured
+  baseline MSI: 72.35 % (thresholds set to 72 / 72 with a documented
+  ratchet plan toward 85 / 95 by Q4). See
+  `Documentation/Developer/mutation-baseline.md`.
+- **CI**: reusable workflows pinned to commit SHAs (no more floating
+  `@main`), concurrency block cancels stale PR runs, on-demand
+  mutation testing via the `run-mutation` PR label.
+- **Dev dependencies** consolidated via
+  `netresearch/typo3-ci-workflows` meta-package: 14 direct
+  require-dev entries reduced to 4 (`mikey179/vfsstream`,
+  `netresearch/typo3-ci-workflows`, `roave/security-advisories`,
+  `typo3/cms-scheduler`). The meta-package also brings
+  `phpstan/phpstan-deprecation-rules`, `saschaegerer/phpstan-typo3`,
+  `nikic/php-fuzzer`, `overtrue/phplint`, and `dg/bypass-finals` that
+  we did not previously have.
+- **Test infrastructure**: extract `AbstractVaultFunctionalTestCase`,
+  `TcaSchemaMockTrait`, `BackendUserMockTrait`,
+  `SecretFixtureBuilder`, and a project `Tests/Unit/TestCase.php` base
+  class. 100 tests migrated. Architecture check script enforces the
+  base on new unit tests.
+- **PHPStan**: add strict-rules + deprecation-rules + phpunit +
+  saschaegerer/phpstan-typo3 extensions (via meta-package auto-
+  installer). Baseline refreshed.
+- **runTests.sh**: dual `SIGINT`/`SIGTERM`/`EXIT` trap, collision-
+  resistant container suffix, Alpine base bumped 3.8 → 3.20, new
+  `unitCoveragePath` suite.
 - **Performance**: Fix N+1 queries in `VaultService::list()`
 - **Performance**: Optimize frontend rendering and database operations
-- **Refactoring**: Extract duplicated `generateUuid` and `looksLikeVaultIdentifier` methods
+- **Refactoring**: Extract duplicated `generateUuid` and
+  `looksLikeVaultIdentifier` methods
 
 ### Fixed
+- **CLI**: `vault:migrate-field --uid-field=''` now fails fast with a
+  clear error instead of emitting an "Undefined array key" warning
+  mid-batch.
+- **OAuthException** now carries `httpStatus` and `oauthError`
+  (parsed from the RFC 6749 §5.2 error body) so callers can
+  distinguish refresh-token rejection from server outage.
+- **Symfony 7.4**: migrate `Application::add()` → `addCommand()`
+  across command tests (eliminates a deprecation warning).
+- **DOM-XSS**: eliminate `innerHTML` sinks in frontend JS and
+  insecure test randomness
 - **Security**: Address critical and high-severity security findings
 - **Accessibility**: Improve frontend accessibility and error handling
-- **Secret Reveal**: Fix `SecretReveal.js` GET to POST and `EnvironmentMasterKeyProvider` copy-on-write bug
+- **Secret Reveal**: Fix `SecretReveal.js` GET to POST and
+  `EnvironmentMasterKeyProvider` copy-on-write bug
 - **Gitleaks**: Allowlist test fixtures and docs in gitleaks config
 
 ## [0.4.6] - 2026-03-07
