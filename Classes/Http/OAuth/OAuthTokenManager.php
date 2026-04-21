@@ -16,6 +16,7 @@ use DateTimeImmutable;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
 use JsonException;
+use Netresearch\NrVault\Audit\AuditLogServiceInterface;
 use Netresearch\NrVault\Exception\OAuthException;
 use Netresearch\NrVault\Exception\SecretNotFoundException;
 use Netresearch\NrVault\Service\VaultServiceInterface;
@@ -34,6 +35,7 @@ use Psr\Log\LoggerInterface;
  * - Support for client_credentials and refresh_token grants
  * - Secure credential retrieval from vault
  * - PSR-18 compliant HTTP client
+ * - Automatic fallback to client_credentials if refresh_token rejected
  */
 final class OAuthTokenManager
 {
@@ -54,6 +56,7 @@ final class OAuthTokenManager
         private readonly ClientInterface $httpClient = new Client(['timeout' => 30, 'connect_timeout' => 10]),
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
+        private readonly ?AuditLogServiceInterface $auditLogService = null,
     ) {
         $httpFactory = new HttpFactory();
         $this->requestFactory = $requestFactory ?? $httpFactory;
@@ -88,8 +91,8 @@ final class OAuthTokenManager
             $this->logger?->debug('OAuth token expired or about to expire, refreshing');
         }
 
-        // Fetch new token
-        $token = $this->fetchToken($config);
+        // Fetch new token, with fallback to client_credentials on refresh failure.
+        $token = $this->fetchTokenWithFallback($config);
         $this->tokenCache[$cacheKey] = $token;
 
         return $token->accessToken;
@@ -117,6 +120,77 @@ final class OAuthTokenManager
     public function clearToken(): void
     {
         $this->tokenCache = [];
+    }
+
+    /**
+     * Attempt to fetch a token; on refresh_token rejection (HTTP 401), fall back
+     * to a client_credentials grant if configured to do so.
+     *
+     * The fallback is intentionally narrow: we only retry with client_credentials
+     * when the original grant was `refresh_token` AND the failure was a token-
+     * endpoint 401 (invalid / revoked / expired refresh token). Any other failure
+     * (network error, 5xx, JSON decode error) re-throws the original exception.
+     *
+     * Both the failed refresh and the subsequent fallback are audit-logged, so an
+     * operator can see the fallback happened.
+     *
+     * @throws OAuthException If both refresh and fallback fail
+     */
+    private function fetchTokenWithFallback(OAuthConfig $config): OAuthToken
+    {
+        if ($config->grantType !== 'refresh_token') {
+            return $this->fetchToken($config);
+        }
+
+        try {
+            return $this->fetchToken($config);
+        } catch (OAuthException $e) {
+            // Only fall back when the OAuth server said "your refresh token is
+            // not valid". Code 2477018617 is tokenRequestFailed (non-200 from
+            // the token endpoint).
+            if ($e->getCode() !== 2477018617) {
+                throw $e;
+            }
+
+            $this->logger?->warning('OAuth refresh_token rejected, falling back to client_credentials', [
+                'token_endpoint' => $config->tokenEndpoint,
+                'original_error' => $e->getMessage(),
+            ]);
+
+            // Audit the failed refresh attempt so the fallback is not silent.
+            $this->auditLogService?->log(
+                $config->refreshTokenSecret ?? $config->clientIdSecret,
+                'oauth_refresh_failed',
+                false,
+                $e->getMessage(),
+                'refresh_token rejected by OAuth server (HTTP non-200)',
+            );
+
+            // Build a client_credentials config with the same endpoint & scopes.
+            $fallback = new OAuthConfig(
+                tokenEndpoint: $config->tokenEndpoint,
+                clientIdSecret: $config->clientIdSecret,
+                clientSecretSecret: $config->clientSecretSecret,
+                grantType: 'client_credentials',
+                refreshTokenSecret: null,
+                scopes: $config->scopes,
+                tokenExpiryBuffer: $config->tokenExpiryBuffer,
+                additionalParams: $config->additionalParams,
+            );
+
+            $token = $this->fetchToken($fallback);
+
+            // Audit the successful fallback.
+            $this->auditLogService?->log(
+                $config->clientIdSecret,
+                'oauth_fallback_client_credentials',
+                true,
+                null,
+                'fell back to client_credentials after refresh_token rejection',
+            );
+
+            return $token;
+        }
     }
 
     /**
