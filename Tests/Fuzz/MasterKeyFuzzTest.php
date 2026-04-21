@@ -43,6 +43,13 @@ final class MasterKeyFuzzTest extends TestCase
         $this->seed = (int) ($_ENV['PHPUNIT_SEED'] ?? crc32(__FILE__));
         mt_srand($this->seed);
 
+        // Register the `vfs://keys/` root so later `vfsStream::url('keys/...')`
+        // calls resolve to a live in-memory directory. Without the setup
+        // call, `file_put_contents('vfs://keys/master.key')` fails with
+        // "No such file or directory" on CI (the setup was implicit in the
+        // author's local libvfsstream build — never rely on that).
+        vfsStream::setup('keys');
+
         // Ensure each test starts with a clean cached key state
         FileMasterKeyProvider::clearCachedKey();
         EnvironmentMasterKeyProvider::clearCachedKey();

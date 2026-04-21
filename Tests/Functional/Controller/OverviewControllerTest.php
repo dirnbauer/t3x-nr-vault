@@ -39,25 +39,20 @@ final class OverviewControllerTest extends AbstractVaultFunctionalTestCase
 {
     protected ?string $backendUserFixture = __DIR__ . '/../Fixtures/Users/be_users.csv';
 
-    /** @var list<string> */
-    protected array $coreExtensionsToLoad = ['backend', 'frontend', 'install'];
-
     protected function setUp(): void
     {
         parent::setUp();
 
         // OverviewController::indexAction() touches LanguageService via
-        // $GLOBALS['LANG']->sL(...) and BackendUserAuthentication via
-        // $GLOBALS['BE_USER']. FunctionalTestCase sets BE_USER via
+        // $GLOBALS['LANG']->sL(...). FunctionalTestCase sets BE_USER via
         // setUpBackendUser() but does not wire LANG by default — the
         // module template factory crashes with "getOption()/getTSConfig()
-        // on null" when the controller calls into its own doc-header
-        // menu without LANG available. Wire both explicitly so the
-        // indexAction path is fully exercised.
+        // on null" when the controller's doc-header menu tries to
+        // resolve labels. Instantiate a LanguageService via the
+        // container-aware factory so the request context is complete.
         $backendUser = $GLOBALS['BE_USER'] ?? null;
-        $GLOBALS['LANG'] = LanguageServiceFactory::createFromUserPreferences(
-            \is_object($backendUser) ? $backendUser : null,
-        );
+        $GLOBALS['LANG'] = $this->get(LanguageServiceFactory::class)
+            ->createFromUserPreferences(\is_object($backendUser) ? $backendUser : null);
     }
 
     #[Test]
