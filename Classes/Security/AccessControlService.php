@@ -14,15 +14,27 @@ namespace Netresearch\NrVault\Security;
 
 use Netresearch\NrVault\Configuration\ExtensionConfigurationInterface;
 use Netresearch\NrVault\Domain\Model\Secret;
+use Throwable;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
  * Access control service implementation.
  */
-final readonly class AccessControlService implements AccessControlServiceInterface
+final class AccessControlService implements AccessControlServiceInterface
 {
+    /**
+     * Per-request cache of group UIDs that actually exist in the be_groups table.
+     * Reset only for the lifetime of the service instance.
+     *
+     * @var list<int>|null
+     */
+    private ?array $existingGroupIdsCache = null;
+
     public function __construct(
-        private ExtensionConfigurationInterface $configuration,
+        private readonly ExtensionConfigurationInterface $configuration,
+        private readonly ?ConnectionPool $connectionPool = null,
     ) {}
 
     public function canRead(Secret $secret): bool
@@ -46,6 +58,12 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
 
         // Backend user takes precedence
         if ($backendUser instanceof BackendUserAuthentication) {
+            // Defence-in-depth: disabled users must not create secrets,
+            // even if a stale session is still active.
+            if ($this->isBackendUserDisabled($backendUser)) {
+                return false;
+            }
+
             // Any authenticated backend user can create
             return true;
         }
@@ -133,6 +151,40 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
     }
 
     /**
+     * Filter a list of group UIDs to only those that actually exist in be_groups.
+     *
+     * Stale group UIDs (deleted groups still referenced in a user session)
+     * must not grant access. This is a defence-in-depth measure on top of
+     * TYPO3's own session handling.
+     *
+     * The result is cached per request (per service instance) to avoid
+     * repeated lookups on hot paths.
+     *
+     * @param int[] $groupIds
+     *
+     * @return list<int>
+     */
+    public function filterExistingGroupIds(array $groupIds): array
+    {
+        if ($groupIds === []) {
+            return [];
+        }
+
+        $existing = $this->loadExistingGroupIds();
+        if ($existing === null) {
+            // No DB available (e.g. unit tests, CLI bootstrap): fail CLOSED
+            // rather than open. The caller can still fall back to the
+            // owner/admin checks which do not require this lookup.
+            return [];
+        }
+
+        $filtered = array_values(array_intersect($groupIds, $existing));
+
+        /** @var list<int> $filtered */
+        return $filtered;
+    }
+
+    /**
      * Detect if we're in an actual CLI context (not PHPUnit tests).
      */
     private function isRealCliContext(): bool
@@ -186,6 +238,14 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
      */
     private function hasBackendUserAccess(BackendUserAuthentication $backendUser, Secret $secret): bool
     {
+        // BUG FIX: Defence-in-depth — disabled users must be rejected even if
+        // their BE_USER session somehow reaches this layer. TYPO3 core normally
+        // blocks disabled users earlier, but the vault MUST NOT rely on that
+        // alone.
+        if ($this->isBackendUserDisabled($backendUser)) {
+            return false;
+        }
+
         // Admin access
         if ($backendUser->isAdmin()) {
             return true;
@@ -209,13 +269,97 @@ final readonly class AccessControlService implements AccessControlServiceInterfa
         // Group access
         $secretGroups = $secret->getAllowedGroups();
         if ($secretGroups !== []) {
-            $userGroups = $this->getCurrentUserGroups();
+            // BUG FIX: Filter out stale / deleted group UIDs before the
+            // intersection check. A deleted group whose UID is still in the
+            // user session must NOT grant access to a secret that lists it.
+            $userGroups = $this->filterExistingGroupIds($this->getCurrentUserGroups());
+
             if (array_intersect($secretGroups, $userGroups) !== []) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Read the `disable` flag from a backend user record.
+     *
+     * Treats the record defensively — any non-zero numeric value is considered
+     * "disabled". A missing key is treated as "not disabled" to preserve
+     * existing behaviour for tests that do not set the flag.
+     */
+    private function isBackendUserDisabled(BackendUserAuthentication $backendUser): bool
+    {
+        /** @phpstan-ignore property.internal */
+        $userRecord = $backendUser->user;
+        /** @var array<string, mixed> $userRecordTyped */
+        $userRecordTyped = \is_array($userRecord) ? $userRecord : [];
+
+        $disable = $userRecordTyped['disable'] ?? 0;
+        if (\is_int($disable)) {
+            return $disable === 1;
+        }
+
+        if (is_numeric($disable)) {
+            return (int) $disable === 1;
+        }
+
+        return false;
+    }
+
+    /**
+     * Load the set of existing be_groups UIDs from the database.
+     *
+     * Returns null when the connection pool is not available (unit tests,
+     * CLI bootstrap without DB). Cached per service instance.
+     *
+     * @return list<int>|null
+     */
+    private function loadExistingGroupIds(): ?array
+    {
+        if ($this->existingGroupIdsCache !== null) {
+            return $this->existingGroupIdsCache;
+        }
+
+        if (!$this->connectionPool instanceof ConnectionPool) {
+            return null;
+        }
+
+        try {
+            $queryBuilder = $this->connectionPool
+                ->getQueryBuilderForTable('be_groups');
+            $queryBuilder->getRestrictions()->removeAll();
+
+            $rows = $queryBuilder
+                ->select('uid')
+                ->from('be_groups')
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'deleted',
+                        $queryBuilder->createNamedParameter(0, Connection::PARAM_INT),
+                    ),
+                )
+                ->executeQuery()
+                ->fetchAllAssociative();
+        } catch (Throwable) {
+            // DB query failed (schema missing, permissions, etc.) — fail
+            // closed: treat all group IDs as stale.
+            return $this->existingGroupIdsCache = [];
+        }
+
+        /** @var list<int> $uids */
+        $uids = [];
+        foreach ($rows as $row) {
+            $uid = $row['uid'] ?? null;
+            if (\is_int($uid)) {
+                $uids[] = $uid;
+            } elseif (is_numeric($uid)) {
+                $uids[] = (int) $uid;
+            }
+        }
+
+        return $this->existingGroupIdsCache = $uids;
     }
 
     private function getBackendUser(): ?BackendUserAuthentication
