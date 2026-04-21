@@ -1,9 +1,12 @@
 includes:
+    # phpstan/extension-installer (brought in by netresearch/typo3-ci-workflows)
+    # auto-registers phpstan-phpunit, phpstan-strict-rules, phpat, and the
+    # saschaegerer/phpstan-typo3 extension. Do NOT list their .neon files
+    # here — double-include triggers a PHPStan warning that fails CI.
+    # See `composer install --no-plugins` trade-off in the meta-package
+    # README; the top-level --no-plugins workflow (used for git worktrees)
+    # needs the explicit includes re-added in a variant phpstan config.
     - .Build/vendor/phpstan/phpstan/conf/bleedingEdge.neon
-    - .Build/vendor/phpstan/phpstan-phpunit/extension.neon
-    - .Build/vendor/phpstan/phpstan-phpunit/rules.neon
-    - .Build/vendor/phpstan/phpstan-strict-rules/rules.neon
-    - .Build/vendor/phpat/phpat/extension.neon
     - Build/phpstan-baseline.neon
     - phpat.neon
 
