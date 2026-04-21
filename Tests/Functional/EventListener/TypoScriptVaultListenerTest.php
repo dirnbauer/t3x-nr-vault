@@ -1,0 +1,149 @@
+<?php
+
+/*
+ * Copyright (c) 2025-2026 Netresearch DTT GmbH
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
+declare(strict_types=1);
+
+namespace Netresearch\NrVault\Tests\Functional\EventListener;
+
+use Netresearch\NrVault\EventListener\TypoScriptVaultListener;
+use Netresearch\NrVault\Service\VaultServiceInterface;
+use Netresearch\NrVault\Tests\Functional\AbstractVaultFunctionalTestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
+use TYPO3\CMS\Frontend\ContentObject\Event\AfterStdWrapFunctionsExecutedEvent;
+
+/**
+ * Functional tests for TypoScriptVaultListener.
+ *
+ * Verifies that %vault(identifier)% placeholders in TypoScript content
+ * are resolved to the actual secret values via the event listener.
+ */
+#[CoversClass(TypoScriptVaultListener::class)]
+final class TypoScriptVaultListenerTest extends AbstractVaultFunctionalTestCase
+{
+    /** @var list<string> */
+    protected array $coreExtensionsToLoad = [
+        'backend',
+        'frontend',
+    ];
+
+    protected ?string $backendUserFixture = __DIR__ . '/../Fixtures/Users/be_users.csv';
+
+    /** @var array<string, mixed> */
+    protected array $extensionConfiguration = [
+        'auditHmacEpoch' => 1,
+    ];
+
+    #[Test]
+    public function listenerResolvesVaultPlaceholderInContent(): void
+    {
+        $vaultService = $this->get(VaultServiceInterface::class);
+        $identifier = 'ts_apikey_' . bin2hex(random_bytes(4));
+        $vaultService->store($identifier, 'resolved-typoscript-secret');
+
+        $listener = $this->get(TypoScriptVaultListener::class);
+        $event = $this->createEvent(\sprintf('%%vault(%s)%%', $identifier));
+
+        $listener($event);
+
+        self::assertSame('resolved-typoscript-secret', $event->getContent());
+
+        // Cleanup
+        $vaultService->delete($identifier, 'test cleanup');
+    }
+
+    #[Test]
+    public function listenerResolvesVaultPlaceholderEmbeddedInLargerContent(): void
+    {
+        $vaultService = $this->get(VaultServiceInterface::class);
+        $identifier = 'ts_embedded_' . bin2hex(random_bytes(4));
+        $vaultService->store($identifier, 'my-api-key');
+
+        $listener = $this->get(TypoScriptVaultListener::class);
+        $content = \sprintf('Bearer %%vault(%s)%%', $identifier);
+        $event = $this->createEvent($content);
+
+        $listener($event);
+
+        self::assertSame('Bearer my-api-key', $event->getContent());
+
+        // Cleanup
+        $vaultService->delete($identifier, 'test cleanup');
+    }
+
+    #[Test]
+    public function listenerSkipsContentWithNoVaultPlaceholders(): void
+    {
+        $listener = $this->get(TypoScriptVaultListener::class);
+        $originalContent = 'No vault references here, plain text content.';
+        $event = $this->createEvent($originalContent);
+
+        $listener($event);
+
+        self::assertSame($originalContent, $event->getContent(), 'Content without vault refs must be unchanged');
+    }
+
+    #[Test]
+    public function listenerPreservesPlaceholderWhenSecretNotFound(): void
+    {
+        $listener = $this->get(TypoScriptVaultListener::class);
+        $placeholder = '%vault(nonexistent/identifier/xyz)%';
+        $event = $this->createEvent($placeholder);
+
+        $listener($event);
+
+        // Unresolvable placeholder must be preserved
+        self::assertSame($placeholder, $event->getContent(), 'Unresolvable placeholder must be preserved');
+    }
+
+    #[Test]
+    public function listenerResolvesMultipleVaultPlaceholders(): void
+    {
+        $vaultService = $this->get(VaultServiceInterface::class);
+        $prefix = 'ts_multi_' . bin2hex(random_bytes(4));
+        $id1 = $prefix . '_k1';
+        $id2 = $prefix . '_k2';
+        $vaultService->store($id1, 'first-value');
+        $vaultService->store($id2, 'second-value');
+
+        $listener = $this->get(TypoScriptVaultListener::class);
+        $content = \sprintf('%%vault(%s)%%:%%vault(%s)%%', $id1, $id2);
+        $event = $this->createEvent($content);
+
+        $listener($event);
+
+        self::assertSame('first-value:second-value', $event->getContent());
+
+        // Cleanup
+        $vaultService->delete($id1, 'test cleanup');
+        $vaultService->delete($id2, 'test cleanup');
+    }
+
+    #[Test]
+    public function listenerSkipsNullContent(): void
+    {
+        $listener = $this->get(TypoScriptVaultListener::class);
+        $event = $this->createEvent(null);
+
+        $listener($event);
+
+        self::assertNull($event->getContent(), 'Null content must remain null');
+    }
+
+    /**
+     * Create an AfterStdWrapFunctionsExecutedEvent with the given content.
+     */
+    private function createEvent(?string $content): AfterStdWrapFunctionsExecutedEvent
+    {
+        /** @phpstan-ignore new.internalClass */
+        $cObj = $this->createStub(ContentObjectRenderer::class);
+
+        /** @phpstan-ignore new.internalClass */
+        return new AfterStdWrapFunctionsExecutedEvent($content, [], $cObj);
+    }
+}

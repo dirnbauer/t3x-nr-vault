@@ -174,12 +174,44 @@ final class IdentifierFuzzTest extends TestCase
 
             // Long strings
             'very long random' => [str_repeat('a', 1000)],
+            'one kilobyte' => [str_repeat('x', 1024)],
+            'one megabyte' => [str_repeat('y', 1024 * 1024)],
 
             // Special characters
             'newline in middle' => ["01937b6e-4b6c\n-7abc-8def-0123456789ab"],
             'carriage return' => ["01937b6e-4b6c\r-7abc-8def-0123456789ab"],
             'null byte' => ["01937b6e-4b6c\x00-7abc-8def-0123456789ab"],
             'backslash' => ['01937b6e\\-4b6c-7abc-8def-0123456789ab'],
+
+            // Unicode abuse: RTL override and zero-width characters
+            'rtl override char' => ["\u{202E}01937b6e-4b6c-7abc-8def-0123456789ab"],
+            'rtl override mid-uuid' => ["01937b6e-4b6c-\u{202E}7abc-8def-0123456789ab"],
+            'zero-width joiner' => ["01937b6e\u{200D}-4b6c-7abc-8def-0123456789ab"],
+            'zero-width non-joiner' => ["01937b6e\u{200C}-4b6c-7abc-8def-0123456789ab"],
+            'zero-width no-break space' => ["\u{FEFF}01937b6e-4b6c-7abc-8def-0123456789ab"],
+            'left-to-right mark' => ["\u{200E}01937b6e-4b6c-7abc-8def-0123456789ab"],
+            'homoglyph: cyrillic a' => ["01937b6е-4b6c-7abc-8def-0123456789ab"], // е is U+0435
+
+            // Path traversal variants
+            'path traversal unix' => ['../../../etc/passwd'],
+            'path traversal windows' => ['..\\..\\windows\\system32'],
+            'path traversal encoded forward slash' => ['..%2F..%2Fetc%2Fpasswd'],
+            'path traversal double encoded' => ['..%252F..%252Fetc%252Fpasswd'],
+            'path traversal null byte' => ["../etc/passwd\x00.jpg"],
+            'path traversal url encoded dot' => ['%2e%2e%2fetc%2fpasswd'],
+
+            // Null bytes and CR/LF injection
+            'null byte only' => ["\x00"],
+            'crlf injection' => ["valid-prefix\r\nX-Injected: evil"],
+            'cr only injection' => ["valid-prefix\rX-Injected: evil"],
+            'lf only injection' => ["valid-prefix\nX-Injected: evil"],
+            'null byte mid string' => ["abc\x00def"],
+
+            // Non-UTF-8 binary data
+            'invalid utf8 continuation' => ["\x80\x81\x82"],
+            'overlong utf8 encoding' => ["\xC0\xAF"],
+            'lone surrogate' => ["\xED\xA0\x80"],
+            'raw binary 16 bytes' => ["\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10"],
 
             // Valid UUIDs
             'valid uuid lowercase' => ['01937b6e-4b6c-7abc-8def-0123456789ab'],

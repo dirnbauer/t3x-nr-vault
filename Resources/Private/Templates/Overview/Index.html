@@ -48,27 +48,27 @@
     </f:if>
 
     <!-- Statistics Cards -->
-    <div class="card-container mb-4" role="group" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}">
-        <div class="card card-size-fixed-small">
+    <div class="card-container mb-4" role="group" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}" data-testid="vault-stats">
+        <div class="card card-size-fixed-small" data-testid="stat-card-total">
             <div class="card-header">
                 <div class="card-header-body">
-                    <span class="card-title" aria-label="{stats.totalSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}">{stats.totalSecrets}</span>
+                    <span class="card-title" data-testid="stat-value-total" aria-label="{stats.totalSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}">{stats.totalSecrets}</span>
                     <span class="card-subtitle">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.total_secrets')}</span>
                 </div>
             </div>
         </div>
-        <div class="card card-size-fixed-small">
+        <div class="card card-size-fixed-small" data-testid="stat-card-active">
             <div class="card-header">
                 <div class="card-header-body">
-                    <span class="card-title text-success" aria-label="{stats.activeSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.active')}">{stats.activeSecrets}</span>
+                    <span class="card-title text-success" data-testid="stat-value-active" aria-label="{stats.activeSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.active')}">{stats.activeSecrets}</span>
                     <span class="card-subtitle">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.active')}</span>
                 </div>
             </div>
         </div>
-        <div class="card card-size-fixed-small">
+        <div class="card card-size-fixed-small" data-testid="stat-card-disabled">
             <div class="card-header">
                 <div class="card-header-body">
-                    <span class="card-title text-secondary" aria-label="{stats.disabledSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.disabled')}">{stats.disabledSecrets}</span>
+                    <span class="card-title text-secondary" data-testid="stat-value-disabled" aria-label="{stats.disabledSecrets} {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.disabled')}">{stats.disabledSecrets}</span>
                     <span class="card-subtitle">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:overview.stats.disabled')}</span>
                 </div>
             </div>
