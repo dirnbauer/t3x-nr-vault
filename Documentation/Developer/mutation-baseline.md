@@ -6,7 +6,11 @@ First successful end-to-end Infection run after the CI/tooling modernization pas
 
 - Infection: 0.32.5
 - PHPUnit: 12.5.14
-- PHP: 8.5.5 with PCOV 1.0.12
+- PHP: 8.5.5
+- Coverage driver: **Xdebug** (this PR switches the project from PCOV to
+  Xdebug so Infection and audit-flow analysis get branch + path metrics
+  that PCOV cannot report). Earlier internal capture runs showed PCOV,
+  reflecting the transient pre-switch state.
 - Threads: 4
 - Configuration: `infection.json5` (+ `Build/phpunit.infection.xml`)
 

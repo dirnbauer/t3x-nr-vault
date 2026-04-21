@@ -123,16 +123,25 @@ final class OAuthTokenManager
     }
 
     /**
-     * Attempt to fetch a token; on refresh_token rejection (HTTP 401), fall back
-     * to a client_credentials grant if configured to do so.
+     * Attempt to fetch a token; on refresh_token rejection, fall back to a
+     * client_credentials grant when the failure clearly indicates the
+     * refresh token itself is bad (not a server outage or config error).
      *
-     * The fallback is intentionally narrow: we only retry with client_credentials
-     * when the original grant was `refresh_token` AND the failure was a token-
-     * endpoint 401 (invalid / revoked / expired refresh token). Any other failure
-     * (network error, 5xx, JSON decode error) re-throws the original exception.
+     * The fallback trigger is deliberately narrow:
      *
-     * Both the failed refresh and the subsequent fallback are audit-logged, so an
-     * operator can see the fallback happened.
+     *  - original grant type MUST be `refresh_token`, AND
+     *  - the token endpoint responded HTTP 400 or 401
+     *    (RFC 6749 §5.2 permits either for invalid refresh tokens), AND
+     *  - the OAuth error field (when present) is `invalid_grant`
+     *    or `invalid_token`.
+     *
+     * Any other failure — HTTP 5xx, 429, 400 without `invalid_grant`,
+     * network errors, JSON decode errors — re-throws the original
+     * exception so the caller can see the real cause and back off /
+     * alert rather than masking it with an identical retry.
+     *
+     * Both the failed refresh and the subsequent fallback are audit-
+     * logged so an operator can see the fallback happened.
      *
      * @throws OAuthException If both refresh and fallback fail
      */
@@ -145,10 +154,16 @@ final class OAuthTokenManager
         try {
             return $this->fetchToken($config);
         } catch (OAuthException $e) {
-            // Only fall back when the OAuth server said "your refresh token is
-            // not valid". Code 2477018617 is tokenRequestFailed (non-200 from
-            // the token endpoint).
-            if ($e->getCode() !== 2477018617) {
+            // Only fall back when the OAuth server specifically rejected
+            // the refresh token. Everything else (5xx, 429, transport
+            // errors, invalid_client, invalid_request) bubbles up so a
+            // real outage / misconfig is not masked by retry noise.
+            $shouldFallBack =
+                $e->getCode() === 2477018617
+                && ($e->httpStatus === 400 || $e->httpStatus === 401)
+                && ($e->oauthError === null || \in_array($e->oauthError, ['invalid_grant', 'invalid_token'], true));
+
+            if (!$shouldFallBack) {
                 throw $e;
             }
 
@@ -260,7 +275,25 @@ final class OAuthTokenManager
 
             $statusCode = $response->getStatusCode();
             if ($statusCode !== 200) {
-                throw OAuthException::tokenRequestFailed($statusCode);
+                // Attempt to extract the RFC 6749 §5.2 `error` field so
+                // callers can distinguish invalid_grant (refresh-token
+                // rejection → fallback makes sense) from invalid_client
+                // (wrong secret → fallback would just fail again).
+                $oauthError = null;
+                $rawBody = (string) $response->getBody();
+                if ($rawBody !== '') {
+                    try {
+                        /** @var array<string, mixed>|null $errorBody */
+                        $errorBody = json_decode($rawBody, true, 512, JSON_THROW_ON_ERROR);
+                        if (\is_array($errorBody) && isset($errorBody['error']) && \is_string($errorBody['error'])) {
+                            $oauthError = $errorBody['error'];
+                        }
+                    } catch (\JsonException) {
+                        // Non-JSON error body; leave $oauthError null.
+                    }
+                }
+
+                throw OAuthException::tokenRequestFailed($statusCode, $oauthError);
             }
 
             /** @var array<string, mixed>|null $body */

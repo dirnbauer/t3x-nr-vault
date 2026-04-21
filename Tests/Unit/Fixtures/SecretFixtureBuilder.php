@@ -43,8 +43,10 @@ use Netresearch\NrVault\Domain\Model\Secret;
  *     ->buildSecret();
  * ```
  *
- * The builder is immutable on the happy path (every `with*` returns `$this`
- * after mutation — identical semantics to the existing hand-rolled helpers).
+ * This is a **mutable** fluent builder: each `with*` method mutates the current
+ * instance and returns `$this`, matching the semantics of the hand-rolled
+ * factory helpers it replaces. Call `create()` per fixture to get a fresh
+ * instance; do not share a builder between tests.
  */
 final class SecretFixtureBuilder
 {

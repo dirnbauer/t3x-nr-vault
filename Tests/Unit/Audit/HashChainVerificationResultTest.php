@@ -125,6 +125,7 @@ final class HashChainVerificationResultTest extends TestCase
             'errors' => [],
             'warnings' => [],
             'missingUids' => [],
+            'missingUidCount' => 0,
         ], $subject->toArray());
     }
 
@@ -139,17 +140,20 @@ final class HashChainVerificationResultTest extends TestCase
             'errors' => $errors,
             'warnings' => [],
             'missingUids' => [],
+            'missingUidCount' => 0,
         ], $subject->toArray());
     }
 
     #[Test]
-    public function toArrayContainsExactlyFourKeys(): void
+    public function toArrayContainsExactlyFiveKeys(): void
     {
         $subject = HashChainVerificationResult::valid();
 
-        // Updated from 3 keys after adding missingUids for gap-detection
-        // (see AuditLogService::verifyHashChain fix for UID-gap detection).
-        self::assertCount(4, $subject->toArray());
+        // Schema: valid, errors, warnings, missingUids, missingUidCount.
+        // missingUidCount was added alongside the enumeration cap so large
+        // gaps (mass purges) do not explode the missingUids array — callers
+        // can still detect the gap scale without holding N entries.
+        self::assertCount(5, $subject->toArray());
     }
 
     #[Test]

@@ -285,9 +285,11 @@ final class AccessControlService implements AccessControlServiceInterface
     /**
      * Read the `disable` flag from a backend user record.
      *
-     * Treats the record defensively — any non-zero numeric value is considered
-     * "disabled". A missing key is treated as "not disabled" to preserve
-     * existing behaviour for tests that do not set the flag.
+     * TYPO3 stores `be_users.disable` as a 0/1 integer (DataHandler casts
+     * string "1" from form submissions to int 1). Any non-zero value
+     * therefore indicates a disabled user. A missing key is treated as
+     * "not disabled" to preserve existing behaviour for tests that do not
+     * set the flag.
      */
     private function isBackendUserDisabled(BackendUserAuthentication $backendUser): bool
     {
@@ -298,11 +300,11 @@ final class AccessControlService implements AccessControlServiceInterface
 
         $disable = $userRecordTyped['disable'] ?? 0;
         if (\is_int($disable)) {
-            return $disable === 1;
+            return $disable !== 0;
         }
 
         if (is_numeric($disable)) {
-            return (int) $disable === 1;
+            return (int) $disable !== 0;
         }
 
         return false;

@@ -172,10 +172,14 @@ final class IdentifierFuzzTest extends TestCase
             'old format table__field__uid' => ['tx_test__api_key__42'],
             'old format flexform' => ['tt_content__pi_flexform__settings__apiKey__123'],
 
-            // Long strings
+            // Long strings. The identifier validator clamps on MAX_LENGTH long
+            // before these; we only need to prove handlers never crash on
+            // oversized input. 8 KB is 200x the realistic UUID length — enough
+            // to exercise any length-guard regressions without ballooning
+            // PHPUnit memory usage when the provider runs under mutation
+            // testing (each case is re-serialised per mutant).
             'very long random' => [str_repeat('a', 1000)],
-            'one kilobyte' => [str_repeat('x', 1024)],
-            'one megabyte' => [str_repeat('y', 1024 * 1024)],
+            'eight kilobytes' => [str_repeat('y', 8 * 1024)],
 
             // Special characters
             'newline in middle' => ["01937b6e-4b6c\n-7abc-8def-0123456789ab"],

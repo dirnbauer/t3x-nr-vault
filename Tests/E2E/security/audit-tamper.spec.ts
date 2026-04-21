@@ -30,7 +30,11 @@ const generateTestId = () => `e2e_tamper_${Date.now()}_${crypto.randomUUID().sli
 function runDdevMysql(sql: string): string | null {
   try {
     const result = execFileSync('ddev', ['mysql', '-N', '-B'], {
-      cwd: '/home/cybot/projects/t3x-nr-vault/main',
+      // DDEV resolves the project from the CWD; running Playwright from the
+      // repo root is the convention, so trust process.cwd() rather than
+      // hardcoding an absolute path that breaks on CI + every other dev's
+      // machine.
+      cwd: process.cwd(),
       encoding: 'utf8',
       input: sql,
       timeout: 15000,

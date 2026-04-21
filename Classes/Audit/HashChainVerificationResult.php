@@ -27,12 +27,18 @@ final readonly class HashChainVerificationResult
      *                               (detected via non-contiguous UID sequence). May be
      *                               legitimate (purged rows) or malicious deletions —
      *                               the verifier reports them so callers can decide.
+     *                               Capped at 1000 entries (see `missingUidCount` for
+     *                               the true total when the cap is exceeded).
+     * @param int $missingUidCount Total number of missing UIDs detected, before the
+     *                             per-call cap applied to `$missingUids`. Equals
+     *                             count($missingUids) when below the cap.
      */
     public function __construct(
         public bool $valid,
         public array $errors = [],
         public array $warnings = [],
         public array $missingUids = [],
+        public int $missingUidCount = 0,
     ) {}
 
     /**
@@ -40,10 +46,17 @@ final readonly class HashChainVerificationResult
      *
      * @param array<int, string> $warnings Map of UID => warning message
      * @param list<int> $missingUids UID values missing from the chain (may be empty)
+     * @param int $missingUidCount Total number of missing UIDs detected
      */
-    public static function valid(array $warnings = [], array $missingUids = []): self
+    public static function valid(array $warnings = [], array $missingUids = [], int $missingUidCount = 0): self
     {
-        return new self(valid: true, errors: [], warnings: $warnings, missingUids: $missingUids);
+        return new self(
+            valid: true,
+            errors: [],
+            warnings: $warnings,
+            missingUids: $missingUids,
+            missingUidCount: $missingUidCount > 0 ? $missingUidCount : \count($missingUids),
+        );
     }
 
     /**
@@ -52,10 +65,17 @@ final readonly class HashChainVerificationResult
      * @param array<int, string> $errors Map of UID => error message
      * @param array<int, string> $warnings Map of UID => warning message
      * @param list<int> $missingUids UID values missing from the chain
+     * @param int $missingUidCount Total number of missing UIDs detected
      */
-    public static function invalid(array $errors, array $warnings = [], array $missingUids = []): self
+    public static function invalid(array $errors, array $warnings = [], array $missingUids = [], int $missingUidCount = 0): self
     {
-        return new self(valid: false, errors: $errors, warnings: $warnings, missingUids: $missingUids);
+        return new self(
+            valid: false,
+            errors: $errors,
+            warnings: $warnings,
+            missingUids: $missingUids,
+            missingUidCount: $missingUidCount > 0 ? $missingUidCount : \count($missingUids),
+        );
     }
 
     /**
@@ -87,13 +107,13 @@ final readonly class HashChainVerificationResult
      */
     public function hasMissingUids(): bool
     {
-        return $this->missingUids !== [];
+        return $this->missingUidCount > 0;
     }
 
     /**
      * Convert to array for JSON serialization.
      *
-     * @return array{valid: bool, errors: array<int, string>, warnings: array<int, string>, missingUids: list<int>}
+     * @return array{valid: bool, errors: array<int, string>, warnings: array<int, string>, missingUids: list<int>, missingUidCount: int}
      */
     public function toArray(): array
     {
@@ -102,6 +122,7 @@ final readonly class HashChainVerificationResult
             'errors' => $this->errors,
             'warnings' => $this->warnings,
             'missingUids' => $this->missingUids,
+            'missingUidCount' => $this->missingUidCount,
         ];
     }
 }

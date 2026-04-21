@@ -201,9 +201,15 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         $warnings = [];
         /** @var list<int> $missingUids */
         $missingUids = [];
+        $missingUidCount = 0;
         $previousHash = '';
         $previousEpoch = -1;
-        $previousUid = -1;
+        // When the caller specified $fromUid, treat $fromUid-1 as the
+        // previous UID so a leading gap (first row > $fromUid) is still
+        // detected. Otherwise start at -1 meaning "no prior row yet".
+        $previousUid = $fromUid !== null ? $fromUid - 1 : -1;
+        /** @var int Cap on $missingUids enumeration — beyond this we count only */
+        $missingUidCap = 1000;
 
         // Derive the HMAC key once for all HMAC-epoch entries
         $hmacKey = $this->getHmacKey();
@@ -235,14 +241,22 @@ final readonly class AuditLogService implements AuditLogServiceInterface
                 // deletions (e.g. retention-based purges, which callers may
                 // tolerate) from unexpected holes.
                 //
-                // The iteration window is bounded by $fromUid/$toUid: if the
-                // caller explicitly requested a sub-range we use that as the
-                // lower bound, otherwise we start at the first UID we saw.
+                // `$missingUids` is capped at `$missingUidCap` entries to
+                // bound memory on systems with huge gaps (e.g. after a mass
+                // purge). `$missingUidCount` reports the true total so the
+                // verifier can still detect the gap scale.
                 if ($previousUid !== -1 && $uid - $previousUid > 1) {
                     $gapStart = $previousUid + 1;
                     $gapEnd = $uid - 1;
-                    for ($missing = $gapStart; $missing <= $gapEnd; $missing++) {
-                        $missingUids[] = $missing;
+                    $gapSize = $gapEnd - $gapStart + 1;
+                    $missingUidCount += $gapSize;
+
+                    $remaining = $missingUidCap - \count($missingUids);
+                    if ($remaining > 0) {
+                        $enumerateEnd = min($gapEnd, $gapStart + $remaining - 1);
+                        for ($missing = $gapStart; $missing <= $enumerateEnd; $missing++) {
+                            $missingUids[] = $missing;
+                        }
                     }
                     $errors[$uid] = \sprintf(
                         'Audit log uid gap detected: missing uids %d..%d (chain could have been tampered by deletion + previous_hash patch)',
@@ -293,8 +307,8 @@ final readonly class AuditLogService implements AuditLogServiceInterface
         }
 
         return $errors === []
-            ? HashChainVerificationResult::valid($warnings, $missingUids)
-            : HashChainVerificationResult::invalid($errors, $warnings, $missingUids);
+            ? HashChainVerificationResult::valid($warnings, $missingUids, $missingUidCount)
+            : HashChainVerificationResult::invalid($errors, $warnings, $missingUids, $missingUidCount);
     }
 
     public function getLatestHash(): ?string
