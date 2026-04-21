@@ -1,5 +1,9 @@
 includes:
     - .Build/vendor/phpstan/phpstan/conf/bleedingEdge.neon
+    - .Build/vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - .Build/vendor/phpstan/phpstan-phpunit/extension.neon
+    - .Build/vendor/phpstan/phpstan-phpunit/rules.neon
+    - .Build/vendor/phpstan/phpstan-strict-rules/rules.neon
     - .Build/vendor/phpat/phpat/extension.neon
     - Build/phpstan-baseline.neon
     - phpat.neon

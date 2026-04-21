@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PHPUnit config for Infection mutation runs.
+
+  Infection's initial run needs to collect coverage across the Unit suite and
+  is very sensitive to PHPUnit 12 "coverage target" warnings emitted for
+  final/readonly classes. The main Build/phpunit.xml sets failOnWarning="true"
+  which aborts the initial run before any mutants are generated.
+
+  This variant disables failOnRisky/failOnWarning so coverage collection
+  completes; the main suite (run standalone) keeps the strict flags.
+-->
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
@@ -6,23 +17,18 @@
     bootstrap="../Tests/bootstrap.php"
     cacheDirectory=".phpunit.cache"
     colors="true"
-    displayDetailsOnPhpunitDeprecations="true"
-    displayDetailsOnTestsThatTriggerDeprecations="true"
+    displayDetailsOnPhpunitDeprecations="false"
+    displayDetailsOnTestsThatTriggerDeprecations="false"
     displayDetailsOnTestsThatTriggerErrors="true"
-    displayDetailsOnTestsThatTriggerNotices="true"
-    displayDetailsOnTestsThatTriggerWarnings="true"
-    failOnRisky="true"
-    failOnWarning="true"
+    displayDetailsOnTestsThatTriggerNotices="false"
+    displayDetailsOnTestsThatTriggerWarnings="false"
+    failOnRisky="false"
+    failOnWarning="false"
 >
     <testsuites>
         <testsuite name="Unit">
             <directory>../Tests/Unit</directory>
         </testsuite>
-        <testsuite name="Fuzz">
-            <directory>../Tests/Fuzz</directory>
-        </testsuite>
-        <!-- Functional tests require TYPO3 bootstrap - run via 'composer test:functional' -->
-        <!-- Architecture tests use PHPat and are run via 'composer phpat' -->
     </testsuites>
 
     <source ignoreSuppressionOfDeprecations="true">
@@ -31,15 +37,11 @@
         </include>
         <exclude>
             <directory>../Classes/Exception</directory>
-            <!-- Backend controllers depend on final TYPO3 classes that cannot be mocked in unit tests -->
-            <!-- They are tested through functional tests instead -->
             <file>../Classes/Controller/AuditController.php</file>
             <file>../Classes/Controller/MigrationController.php</file>
             <file>../Classes/Controller/OverviewController.php</file>
             <file>../Classes/Controller/SecretsController.php</file>
-            <!-- Form elements: VaultSecretInputElement depends on final TYPO3 classes -->
             <file>../Classes/Form/Element/VaultSecretInputElement.php</file>
-            <!-- Interfaces define contracts, not executable code -->
             <file>../Classes/Adapter/VaultAdapterInterface.php</file>
             <file>../Classes/Audit/AuditContextInterface.php</file>
             <file>../Classes/Audit/AuditLogServiceInterface.php</file>
@@ -54,7 +56,6 @@
             <file>../Classes/Service/SecretDetectionServiceInterface.php</file>
             <file>../Classes/Service/VaultServiceInterface.php</file>
             <file>../Classes/Service/Detection/SecretFinding.php</file>
-            <!-- Enums: PHPUnit 12 cannot attribute coverage to enum classes -->
             <file>../Classes/Http/SecretPlacement.php</file>
             <file>../Classes/Service/Detection/Severity.php</file>
             <file>../Classes/Service/VaultFieldPermission.php</file>

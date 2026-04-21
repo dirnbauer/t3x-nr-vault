@@ -5,7 +5,9 @@
 # Following TYPO3 core testing conventions.
 #
 
-trap 'cleanUp;exit 2' SIGINT
+# Ensure cleanUp always runs: on normal exit (EXIT) and on forced termination (SIGINT/SIGTERM)
+trap 'cleanUp; exit 2' SIGINT SIGTERM
+trap 'cleanUp' EXIT
 
 waitFor() {
     local HOST=${1}
@@ -171,7 +173,8 @@ Options:
             - phpstan: PHPStan static analysis
             - phpstanBaseline: Generate PHPStan baseline
             - unit: PHP unit tests (default)
-            - unitCoverage: PHP unit tests with coverage
+            - unitCoverage: PHP unit tests with coverage (line coverage)
+            - unitCoveragePath: PHP unit tests with path + branch coverage (requires xdebug)
             - fuzz: PHP fuzz tests
             - mutation: Mutation testing with Infection
             - rector: Apply Rector rules
@@ -418,7 +421,7 @@ if [[ -z "${CONTAINER_BIN}" ]]; then
 fi
 
 IMAGE_PHP="${TYPO3_IMAGE_PREFIX}core-testing-$(echo "php${PHP_VERSION}" | sed -e 's/\.//'):latest"
-IMAGE_ALPINE="${IMAGE_PREFIX}alpine:3.8"
+IMAGE_ALPINE="${IMAGE_PREFIX}alpine:3.20"
 IMAGE_MARIADB="docker.io/mariadb:${DBMS_VERSION}"
 IMAGE_MYSQL="docker.io/mysql:${DBMS_VERSION}"
 IMAGE_POSTGRES="docker.io/postgres:${DBMS_VERSION}-alpine"
@@ -428,7 +431,9 @@ IMAGE_MOCK_OAUTH="ghcr.io/navikt/mock-oauth2-server:3.0.1"
 # Set $1 to first mass argument, this is the optional test file or test directory to execute
 shift $((OPTIND - 1))
 
-SUFFIX=$(echo $RANDOM)
+# Collision-resistant suffix: prefer CI run ID when available, fall back to PID.
+# Appending nanosecond timestamp prevents collisions across concurrent runs.
+SUFFIX="${GITHUB_RUN_ID:-$$}-$(date +%s%N)"
 NETWORK="nr-vault-${SUFFIX}"
 ${CONTAINER_BIN} network create ${NETWORK} >/dev/null
 
@@ -613,8 +618,8 @@ case ${TEST_SUITE} in
         ;;
     functionalCoverage)
         mkdir -p .Build/coverage
-        # Coverage requires xdebug, no JIT
-        COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Build/FunctionalTests.xml --coverage-clover=.Build/coverage/functional.xml --coverage-html=.Build/coverage/html-functional --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        # Coverage requires xdebug, no JIT. pcov.enabled=0 forces xdebug driver if both are installed
+        COMMAND=(php -d opcache.enable_cli=1 -d pcov.enabled=0 .Build/bin/phpunit -c Build/FunctionalTests.xml --coverage-clover=.Build/coverage/functional.xml --coverage-html=.Build/coverage/html-functional --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
 
         # Start mock OAuth server for OAuth integration tests
         MOCK_OAUTH_CONTAINER="mock-oauth-${SUFFIX}"
@@ -706,9 +711,16 @@ case ${TEST_SUITE} in
         ;;
     unitCoverage)
         mkdir -p .Build/coverage
-        # Coverage requires xdebug, no JIT
-        COMMAND=(php -d opcache.enable_cli=1 .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --coverage-clover=.Build/coverage/unit.xml --coverage-html=.Build/coverage/html-unit --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        # Coverage requires xdebug, no JIT. pcov.enabled=0 forces xdebug driver if both are installed in the container
+        COMMAND=(php -d opcache.enable_cli=1 -d pcov.enabled=0 .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --coverage-clover=.Build/coverage/unit.xml --coverage-html=.Build/coverage/html-unit --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
         ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-coverage-${SUFFIX} -e XDEBUG_MODE=coverage ${IMAGE_PHP} "${COMMAND[@]}"
+        SUITE_EXIT_CODE=$?
+        ;;
+    unitCoveragePath)
+        mkdir -p .Build/coverage
+        # Path + branch coverage requires xdebug (PCOV does not support these metrics)
+        COMMAND=(php -d opcache.enable_cli=1 -d pcov.enabled=0 .Build/bin/phpunit -c Build/phpunit.xml --testsuite Unit --path-coverage --coverage-clover=.Build/coverage/unit-path.xml --coverage-html=.Build/coverage/html-unit-path --coverage-text ${EXTRA_TEST_OPTIONS} "$@")
+        ${CONTAINER_BIN} run ${CONTAINER_COMMON_PARAMS} --name unit-coverage-path-${SUFFIX} -e XDEBUG_MODE=coverage ${IMAGE_PHP} "${COMMAND[@]}"
         SUITE_EXIT_CODE=$?
         ;;
     fuzz)
