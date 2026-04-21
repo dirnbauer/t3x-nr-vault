@@ -167,7 +167,10 @@ test.describe('SEC-RESIL-005/006: XSS escaping', () => {
     const identifier = generateTestId();
     const xssPayload = '<script>window.__xss_fired=true</script><img src=x onerror="window.__xss_fired=true">';
 
-    await createSecret(page, identifier, 'xss-test-value', xssPayload);
+    // The XSS payload is a deliberately-crafted test fixture to exercise the
+    // escaping layer — not an untrusted user input. `identifier` is also
+    // test-generated via generateTestId().
+    await createSecret(page, identifier, 'xss-test-value', xssPayload); // nosemgrep: javascript.lang.security.audit.unknown-value-with-script-tag.unknown-value-with-script-tag
 
     // Install a sentinel BEFORE navigating so we can detect if the payload
     // fires during render.

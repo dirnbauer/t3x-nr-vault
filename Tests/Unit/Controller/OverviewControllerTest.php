@@ -14,7 +14,7 @@ use Netresearch\NrVault\Controller\OverviewController;
 use Netresearch\NrVault\Crypto\MasterKeyProviderFactoryInterface;
 use Netresearch\NrVault\Crypto\MasterKeyProviderInterface;
 use Netresearch\NrVault\Tests\Unit\TestCase;
-use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
 
@@ -22,10 +22,14 @@ use ReflectionClass;
  * Unit tests for OverviewController health checks.
  *
  * Tests the getHealthChecks() logic via reflection since the controller
- * depends on final TYPO3 classes that cannot be fully mocked for indexAction().
- * CoversClass enables coverage tracking for getHealthChecks() via unit tests.
+ * depends on final TYPO3 classes that cannot be fully mocked for
+ * indexAction(). Because the SUT is excluded from unit coverage in
+ * Build/phpunit.xml (its indexAction is covered functionally), we mark
+ * this test as `CoversNothing` so PHPUnit 12 does not raise
+ * "Class X is not a valid target for code coverage" warnings that
+ * `failOnWarning=true` would promote to errors.
  */
-#[CoversClass(OverviewController::class)]
+#[CoversNothing]
 final class OverviewControllerTest extends TestCase
 {
     /**

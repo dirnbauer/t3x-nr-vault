@@ -14,3 +14,20 @@ Resources/Private/Templates/
 Documentation-GENERATED-temp/
 node_modules/
 vendor/
+
+# Functional test CSV fixtures contain synthetic argon2 / bcrypt hashes for
+# test backend users. Opengrep's `generic.secrets.security.detected-bcrypt-hash`
+# rule cannot distinguish test fixtures from real credentials. The `.gitleaks.toml`
+# allowlist already covers these paths for the repo-level secret scanner.
+Tests/Functional/**/be_users*.csv
+Tests/Functional/**/Fixtures/**
+Tests/Functional/Fixtures/**
+
+# Synthetic secret-pattern fixtures for the secret-detection fuzz tests.
+# Every literal below is deliberately crafted to look like a real credential
+# so the detection service's pattern matcher can be exercised. The
+# `detected-jwt-token` / `detected-bcrypt-hash` rules cannot distinguish
+# test fixtures from real leaks.
+Tests/Fuzz/OAuthFuzzTest.php
+Tests/Fuzz/SecretDetectionFuzzTest.php
+Tests/Unit/Service/SecretDetectionServiceTest.php

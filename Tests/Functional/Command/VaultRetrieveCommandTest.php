@@ -107,15 +107,13 @@ final class VaultRetrieveCommandTest extends AbstractVaultFunctionalTestCase
             $tester = new CommandTester($command);
             $tester->execute(['identifier' => $identifier]);
 
-            // The retrieve operation should have written audit log entries
+            // The retrieve operation should have written audit log entries.
+            // False positive on opengrep — `$identifier` is bound via
+            // createNamedParameter, not string-concatenated into the SQL.
             $connection = $this->getConnectionPool()->getConnectionForTable('tx_nrvault_audit_log');
             $qb = $connection->createQueryBuilder();
-            $count = (int) $qb
-                ->count('uid')
-                ->from('tx_nrvault_audit_log')
-                ->where($qb->expr()->eq('secret_identifier', $qb->createNamedParameter($identifier)))
-                ->executeQuery()
-                ->fetchOne();
+            // nosemgrep: php.doctrine.security.audit.doctrine-orm-dangerous-query.doctrine-orm-dangerous-query
+            $count = (int) $qb->count('uid')->from('tx_nrvault_audit_log')->where($qb->expr()->eq('secret_identifier', $qb->createNamedParameter($identifier)))->executeQuery()->fetchOne();
 
             self::assertGreaterThan(0, $count, 'Retrieve must write to audit log');
         } finally {
