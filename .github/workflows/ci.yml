@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/ci.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/ci.yml@35a3322e1fbedf79ca3c9f08908e0751d2e37ffc # main
     permissions:
       contents: read
     with:
@@ -39,13 +39,13 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   security:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/security.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/security.yml@35a3322e1fbedf79ca3c9f08908e0751d2e37ffc # main
     permissions:
       contents: read
       security-events: write
 
   fuzz:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/fuzz.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/fuzz.yml@35a3322e1fbedf79ca3c9f08908e0751d2e37ffc # main
     permissions:
       contents: read
     with:
@@ -63,7 +63,7 @@ jobs:
       # but full HTML/JSON reports are only available locally today.
 
   license-check:
-    uses: netresearch/typo3-ci-workflows/.github/workflows/license-check.yml@f7a51aa0e97ba843f583cd18907de87285386b8b # main
+    uses: netresearch/typo3-ci-workflows/.github/workflows/license-check.yml@35a3322e1fbedf79ca3c9f08908e0751d2e37ffc # main
     permissions:
       contents: read
 
