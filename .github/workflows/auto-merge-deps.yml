@@ -10,7 +10,7 @@ jobs:
     # Only run for bot-raised dependency PRs. Prevents non-dependency PRs
     # from triggering auto-merge logic.
     if: github.actor == 'dependabot[bot]' || github.actor == 'renovate[bot]'
-    uses: netresearch/.github/.github/workflows/auto-merge-deps.yml@5c3de827bedce35fc76b51857f8a4431f2488738 # main
+    uses: netresearch/.github/.github/workflows/auto-merge-deps.yml@171d4bb5288a8bf6dce09bc295b69f53e86eaa38 # main
     permissions:
       contents: write
       pull-requests: write
