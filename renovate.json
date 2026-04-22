@@ -21,8 +21,7 @@
       "matchDepNames": [
         "/^netresearch\\//"
       ],
-      "pinDigests": false,
-      "enabled": false
+      "pinDigests": false
     }
   ]
 }
