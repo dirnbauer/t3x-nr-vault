@@ -23,6 +23,7 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Http\RedirectResponse;
@@ -71,6 +72,7 @@ final readonly class SecretsController
         }
 
         $this->addDocHeaderButtons($moduleTemplate);
+        $this->pageRenderer->loadJavaScriptModule('@typo3/backend/element/contextual-record-edit-trigger.js');
 
         // Get filter parameters from POST body (filter form uses POST to avoid iframe issues)
         $bodyRaw = $request->getParsedBody();
@@ -86,6 +88,7 @@ final readonly class SecretsController
 
         $secrets = $this->vaultService->list();
         $userCache = $this->getUsernameCache($secrets);
+        $secretUids = $this->getSecretUidMap($secrets);
 
         // Get unique owners for filter dropdown
         $ownerOptions = $this->getOwnerOptions($secrets, $userCache);
@@ -102,7 +105,9 @@ final readonly class SecretsController
             }
 
             $ownerUid = $secret->ownerUid;
+            $uid = $secretUids[$secret->identifier] ?? 0;
             $formattedSecrets[] = [
+                'uid' => $uid,
                 'identifier' => $secret->identifier,
                 'owner_uid' => $ownerUid,
                 'owner_name' => $userCache[$ownerUid] ?? 'User #' . $ownerUid,
@@ -112,6 +117,8 @@ final readonly class SecretsController
                 'last_read' => $secret->lastReadAt !== null ? date('Y-m-d H:i:s', $secret->lastReadAt) : '-',
                 'description' => $secret->description,
                 'hidden' => false,
+                'edit_url' => $this->buildRecordEditUrl($uid),
+                'contextual_edit_url' => $this->buildContextualRecordEditUrl($uid),
             ];
         }
 
@@ -418,6 +425,38 @@ final readonly class SecretsController
         // Note: Reload button is automatically added by TYPO3's DocHeaderComponent
     }
 
+    private function buildRecordEditUrl(int $uid): string
+    {
+        if ($uid <= 0) {
+            return '';
+        }
+
+        return (string) $this->uriBuilder->buildUriFromRoute('record_edit', [
+            'edit' => [
+                'tx_nrvault_secret' => [
+                    $uid => 'edit',
+                ],
+            ],
+            'returnUrl' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        ]);
+    }
+
+    private function buildContextualRecordEditUrl(int $uid): string
+    {
+        if ($uid <= 0) {
+            return '';
+        }
+
+        return (string) $this->uriBuilder->buildUriFromRoute('record_edit_contextual', [
+            'edit' => [
+                'tx_nrvault_secret' => [
+                    $uid => 'edit',
+                ],
+            ],
+            'returnUrl' => (string) $this->uriBuilder->buildUriFromRoute(self::MODULE_NAME),
+        ]);
+    }
+
     private function addFlashMessage(string $message, ContextualFeedbackSeverity $severity): void
     {
         $flashMessage = new FlashMessage($message, '', $severity, true);
@@ -440,6 +479,50 @@ final readonly class SecretsController
         $lang = $GLOBALS['LANG'];
 
         return $lang;
+    }
+
+    /**
+     * Build a cache of secret identifiers to record UIDs.
+     *
+     * @param list<SecretMetadata> $secrets
+     *
+     * @return array<string, int>
+     */
+    private function getSecretUidMap(array $secrets): array
+    {
+        $identifiers = array_values(array_unique(array_map(
+            static fn (SecretMetadata $s): string => $s->identifier,
+            $secrets,
+        )));
+
+        if ($identifiers === []) {
+            return [];
+        }
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_nrvault_secret');
+        $queryBuilder->getRestrictions()->removeAll();
+        $result = $queryBuilder
+            ->select('uid', 'identifier')
+            ->from('tx_nrvault_secret')
+            ->where(
+                $queryBuilder->expr()->in(
+                    'identifier',
+                    $queryBuilder->createNamedParameter($identifiers, Connection::PARAM_STR_ARRAY),
+                ),
+                $queryBuilder->expr()->eq('deleted', 0),
+            )
+            ->executeQuery();
+
+        $map = [];
+        while ($row = $result->fetchAssociative()) {
+            $identifier = $row['identifier'] ?? '';
+            $uid = $row['uid'] ?? 0;
+            if (\is_string($identifier) && $identifier !== '' && is_numeric($uid)) {
+                $map[$identifier] = (int) $uid;
+            }
+        }
+
+        return $map;
     }
 
     /**
