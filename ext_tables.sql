@@ -13,8 +13,8 @@ CREATE TABLE tx_nrvault_secret (
     -- Encrypted data (local adapter only)
     encrypted_value mediumblob,
     encrypted_dek text,
-    dek_nonce varchar(24) DEFAULT '' NOT NULL,
-    value_nonce varchar(24) DEFAULT '' NOT NULL,
+    dek_nonce varchar(32) DEFAULT '' NOT NULL,
+    value_nonce varchar(32) DEFAULT '' NOT NULL,
     encryption_version int(11) unsigned DEFAULT 1 NOT NULL,
 
     -- Change detection (without decrypting)
