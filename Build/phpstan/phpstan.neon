@@ -1,0 +1,35 @@
+includes:
+    - %currentWorkingDirectory%/.Build/vendor/phpstan/phpstan/conf/bleedingEdge.neon
+    - %currentWorkingDirectory%/Build/phpstan-baseline.neon
+    - %currentWorkingDirectory%/phpat.neon
+    # PHPStan extensions (phpstan-phpunit, phpstan-strict-rules,
+    # phpstan-deprecation-rules, saschaegerer/phpstan-typo3, phpat) are
+    # auto-registered on CI by phpstan/extension-installer (pulled via
+    # netresearch/typo3-ci-workflows). Do not list their .neon files
+    # here; double-loading triggers a PHPStan warning that fails the run.
+    #
+    # For local `composer install --no-plugins` workflows, use:
+    #   .Build/bin/phpstan analyse --configuration=Build/phpstan.no-plugins.neon
+
+parameters:
+    level: max
+    paths:
+        - %currentWorkingDirectory%/Classes
+        - %currentWorkingDirectory%/Tests/Architecture
+    reportUnmatchedIgnoredErrors: false
+
+    # PHP version targeting: TYPO3 v14 LTS minimum.
+    phpVersion: 80200
+
+    # Strict rules
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    checkUninitializedProperties: true
+
+    # TYPO3-specific settings
+    treatPhpDocTypesAsCertain: false
+
+    # Type coverage
+    typeAliases:
+        SecretOptions: 'array{owner?: int, groups?: int[], context?: string, description?: string, metadata?: array<string, mixed>, pid?: int, expiresAt?: int|\DateTimeInterface}'
+        EncryptedData: 'array{encrypted_value: string, encrypted_dek: string, dek_nonce: string, value_nonce: string, value_checksum: string}'
+        SecretMetadataArray: 'array{identifier: string, description: string, owner: int, groups: int[], context: string, version: int, createdAt: int, updatedAt: int, expiresAt: int|null, lastRotatedAt: int|null, metadata: array<string, mixed>}'

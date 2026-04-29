@@ -61,15 +61,12 @@ final readonly class SecretsController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
-        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
-            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-                routeIdentifier: self::MODULE_NAME,
-                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-                    . ' - '
-                    . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
-            );
-        }
+        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+            routeIdentifier: self::MODULE_NAME,
+            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                . ' - '
+                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:secrets.title'),
+        );
 
         $this->addDocHeaderButtons($moduleTemplate);
         $this->pageRenderer->loadJavaScriptModule('@typo3/backend/element/contextual-record-edit-trigger.js');
@@ -514,7 +511,7 @@ final readonly class SecretsController
             ->executeQuery();
 
         $map = [];
-        while ($row = $result->fetchAssociative()) {
+        while (($row = $result->fetchAssociative()) !== false) {
             $identifier = $row['identifier'] ?? '';
             $uid = $row['uid'] ?? 0;
             if (\is_string($identifier) && $identifier !== '' && is_numeric($uid)) {
@@ -553,7 +550,7 @@ final readonly class SecretsController
             ->executeQuery();
 
         $cache = [];
-        while ($row = $result->fetchAssociative()) {
+        while (($row = $result->fetchAssociative()) !== false) {
             $realName = $row['realName'] ?? '';
             $username = $row['username'] ?? '';
             $displayName = (\is_string($realName) && $realName !== '') ? $realName : (\is_string($username) ? $username : '');

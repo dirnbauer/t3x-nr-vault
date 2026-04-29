@@ -97,15 +97,12 @@ final readonly class MigrationController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $moduleTemplate->makeDocHeaderModuleMenu();
-        /** @phpstan-ignore function.alreadyNarrowedType (v14-only method, not available in v13) */
-        if (method_exists($moduleTemplate->getDocHeaderComponent(), 'setShortcutContext')) {
-            $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
-                routeIdentifier: self::MODULE_NAME,
-                displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
-                    . ' - '
-                    . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title'),
-            );
-        }
+        $moduleTemplate->getDocHeaderComponent()->setShortcutContext(
+            routeIdentifier: self::MODULE_NAME,
+            displayName: $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')
+                . ' - '
+                . $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:migration.title'),
+        );
 
         $moduleTemplate->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab')

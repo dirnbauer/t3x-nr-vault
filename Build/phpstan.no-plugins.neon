@@ -14,7 +14,7 @@
 # double-includes would trigger a warning that fails the run.
 
 includes:
-    - ../phpstan.neon
+    - phpstan/phpstan.neon
     - ../.Build/vendor/phpstan/phpstan-phpunit/extension.neon
     - ../.Build/vendor/phpstan/phpstan-phpunit/rules.neon
     - ../.Build/vendor/phpstan/phpstan-strict-rules/rules.neon

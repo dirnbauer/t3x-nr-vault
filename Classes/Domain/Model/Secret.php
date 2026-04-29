@@ -497,45 +497,133 @@ final class Secret
     public static function fromDatabaseRow(array $row): self
     {
         $secret = new self();
-        $secret->uid = isset($row['uid']) ? (int) $row['uid'] : null;
-        $secret->scopePid = (int) ($row['scope_pid'] ?? 0);
-        $secret->identifier = (string) ($row['identifier'] ?? '');
-        $secret->description = (string) ($row['description'] ?? '');
-        $secret->encryptedValue = $row['encrypted_value'] ?? null;
-        $secret->encryptedDek = (string) ($row['encrypted_dek'] ?? '');
-        $secret->dekNonce = (string) ($row['dek_nonce'] ?? '');
-        $secret->valueNonce = (string) ($row['value_nonce'] ?? '');
-        $secret->encryptionVersion = (int) ($row['encryption_version'] ?? 1);
-        $secret->valueChecksum = (string) ($row['value_checksum'] ?? '');
-        $secret->ownerUid = (int) ($row['owner_uid'] ?? 0);
-        $secret->context = (string) ($row['context'] ?? '');
-        $secret->frontendAccessible = (bool) ($row['frontend_accessible'] ?? false);
-        $secret->version = (int) ($row['version'] ?? 1);
-        $secret->expiresAt = (int) ($row['expires_at'] ?? 0);
-        $secret->lastRotatedAt = (int) ($row['last_rotated_at'] ?? 0);
-        $secret->adapter = (string) ($row['adapter'] ?? 'local');
-        $secret->externalReference = (string) ($row['external_reference'] ?? '');
-        $secret->tstamp = (int) ($row['tstamp'] ?? 0);
-        $secret->crdate = (int) ($row['crdate'] ?? 0);
-        $secret->cruserId = (int) ($row['cruser_id'] ?? 0);
-        $secret->deleted = (bool) ($row['deleted'] ?? false);
-        $secret->hidden = (bool) ($row['hidden'] ?? false);
-        $secret->readCount = (int) ($row['read_count'] ?? 0);
-        $secret->lastReadAt = (int) ($row['last_read_at'] ?? 0);
-
-        // Parse metadata JSON
-        if (!empty($row['metadata'])) {
-            $decoded = json_decode((string) $row['metadata'], true);
-            $secret->metadata = \is_array($decoded) ? $decoded : [];
-        }
-
-        // Parse allowed groups (comma-separated or from MM table)
-        if (!empty($row['allowed_groups'])) {
-            $groups = (string) $row['allowed_groups'];
-            $secret->allowedGroups = array_filter(array_map(\intval(...), explode(',', $groups)));
-        }
+        $secret->uid = self::readNullableInt($row, 'uid');
+        $secret->scopePid = self::readInt($row, 'scope_pid');
+        $secret->identifier = self::readString($row, 'identifier');
+        $secret->description = self::readString($row, 'description');
+        $secret->encryptedValue = self::readNullableString($row, 'encrypted_value');
+        $secret->encryptedDek = self::readString($row, 'encrypted_dek');
+        $secret->dekNonce = self::readString($row, 'dek_nonce');
+        $secret->valueNonce = self::readString($row, 'value_nonce');
+        $secret->encryptionVersion = self::readInt($row, 'encryption_version', 1);
+        $secret->valueChecksum = self::readString($row, 'value_checksum');
+        $secret->ownerUid = self::readInt($row, 'owner_uid');
+        $secret->context = self::readString($row, 'context');
+        $secret->frontendAccessible = self::readBool($row, 'frontend_accessible');
+        $secret->version = self::readInt($row, 'version', 1);
+        $secret->expiresAt = self::readInt($row, 'expires_at');
+        $secret->lastRotatedAt = self::readInt($row, 'last_rotated_at');
+        $secret->adapter = self::readString($row, 'adapter', 'local');
+        $secret->externalReference = self::readString($row, 'external_reference');
+        $secret->tstamp = self::readInt($row, 'tstamp');
+        $secret->crdate = self::readInt($row, 'crdate');
+        $secret->cruserId = self::readInt($row, 'cruser_id');
+        $secret->deleted = self::readBool($row, 'deleted');
+        $secret->hidden = self::readBool($row, 'hidden');
+        $secret->readCount = self::readInt($row, 'read_count');
+        $secret->lastReadAt = self::readInt($row, 'last_read_at');
+        $secret->metadata = self::readMetadata($row['metadata'] ?? null);
+        $secret->allowedGroups = self::readAllowedGroups($row['allowed_groups'] ?? null);
 
         return $secret;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function readInt(array $row, string $key, int $default = 0): int
+    {
+        $value = $row[$key] ?? $default;
+
+        return is_numeric($value) ? (int) $value : $default;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function readNullableInt(array $row, string $key): ?int
+    {
+        $value = $row[$key] ?? null;
+
+        return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function readString(array $row, string $key, string $default = ''): string
+    {
+        $value = $row[$key] ?? $default;
+
+        return is_scalar($value) ? (string) $value : $default;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function readNullableString(array $row, string $key): ?string
+    {
+        $value = $row[$key] ?? null;
+
+        return is_scalar($value) ? (string) $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private static function readBool(array $row, string $key, bool $default = false): bool
+    {
+        $value = $row[$key] ?? $default;
+        if (\is_bool($value)) {
+            return $value;
+        }
+        if (\is_int($value)) {
+            return $value !== 0;
+        }
+        if (\is_string($value)) {
+            return $value !== '' && $value !== '0';
+        }
+
+        return $default;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function readMetadata(mixed $value): array
+    {
+        if (!\is_string($value) || $value === '') {
+            return [];
+        }
+
+        $decoded = json_decode($value, true);
+        if (!\is_array($decoded)) {
+            return [];
+        }
+
+        $metadata = [];
+        foreach ($decoded as $key => $item) {
+            if (\is_string($key)) {
+                $metadata[$key] = $item;
+            }
+        }
+
+        return $metadata;
+    }
+
+    /**
+     * @return int[]
+     */
+    private static function readAllowedGroups(mixed $value): array
+    {
+        if (!\is_string($value) || $value === '') {
+            return [];
+        }
+
+        return array_values(array_filter(
+            array_map(static fn (string $group): int => (int) $group, explode(',', $value)),
+            static fn (int $group): bool => $group > 0,
+        ));
     }
 
     /**
