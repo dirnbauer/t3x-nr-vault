@@ -4,7 +4,7 @@
 .. |extension_key| replace:: nr_vault
 .. |extension_name| replace:: nr-vault
 .. |vendor| replace:: Netresearch DTT GmbH
-.. |typo3_version| replace:: 13.4 / 14
+.. |typo3_version| replace:: 14.3 LTS
 .. |php_version| replace:: 8.2
 
 .. _Netresearch: https://www.netresearch.de/

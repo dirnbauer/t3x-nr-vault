@@ -4,15 +4,22 @@
 [![codecov](https://codecov.io/gh/netresearch/t3x-nr-vault/graph/badge.svg)](https://codecov.io/gh/netresearch/t3x-nr-vault)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/netresearch/t3x-nr-vault/badge)](https://securityscorecards.dev/viewer/?uri=github.com/netresearch/t3x-nr-vault)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/11695/badge)](https://www.bestpractices.dev/projects/11695)
-[![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20|%2014-orange.svg)](https://typo3.org/)
+[![TYPO3](https://img.shields.io/badge/TYPO3-14.3%20LTS-orange.svg)](https://typo3.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://www.php.net/)
-[![PHPStan](https://img.shields.io/badge/PHPStan-level%2010-brightgreen.svg)](https://phpstan.org/)
+[![PHPStan](https://img.shields.io/badge/PHPStan-level%20max-brightgreen.svg)](https://phpstan.org/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 [![Latest Release](https://img.shields.io/github/v/release/netresearch/t3x-nr-vault)](https://github.com/netresearch/t3x-nr-vault/releases)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-3.0-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![SLSA 3](https://slsa.dev/images/gh-badge-level3.svg)](https://slsa.dev)
 
 *Enterprise-grade secret management without enterprise-grade complexity.*
+
+## Compatibility
+
+- TYPO3 14.3 LTS only (`typo3/cms-core:^14.3`)
+- PHP 8.2+ with the sodium extension
+- XLIFF 2.0 language files with German and English backend translations
+- Static analysis uses the TYPO3 PHPStan setup at `level: max`
 
 ## The Problem
 
@@ -211,7 +218,7 @@ vendor/bin/typo3 vault:audit --identifier=my_secret_id --days=30
 
 ## Requirements
 
-- **TYPO3**: v13.4 / v14.0+
+- **TYPO3**: 14.3 LTS only
 - **PHP**: ^8.2
 - **Extensions**: `ext-sodium` (bundled with PHP)
 - **CPU**: AES-NI support recommended (XChaCha20-Poly1305 fallback available)

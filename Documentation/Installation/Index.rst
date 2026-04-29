@@ -13,6 +13,9 @@ Requirements
 
 Before installing nr-vault, ensure your system meets these requirements:
 
+The current branch intentionally targets TYPO3 14 only. TYPO3 13 compatibility
+code has been removed, and backend translations use XLIFF 2.0.
+
 -  TYPO3 v\ |typo3_version|.
 -  PHP |php_version| or higher.
 -  PHP sodium extension (usually included in PHP 8.2+).
