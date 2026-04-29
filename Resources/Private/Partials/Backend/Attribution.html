@@ -5,26 +5,31 @@
 
 <style>
     .nr-backend-attribution {
-        display: flex;
-        justify-content: flex-end;
-        margin-block-start: calc(var(--typo3-spacing) * 2);
-        padding-block-start: var(--typo3-spacing);
+        position: fixed;
+        inset-block-end: calc(var(--typo3-spacing) * .5);
+        inset-inline-end: calc(var(--typo3-spacing) * .75);
+        z-index: 10;
+        margin: 0;
+        padding: 0;
         color: var(--typo3-text-color-variant);
+        pointer-events: none;
     }
 
     .nr-backend-attribution__link {
         display: inline-flex;
         align-items: center;
-        gap: calc(var(--typo3-spacing) * .65);
-        max-width: min(100%, 30rem);
-        padding: calc(var(--typo3-spacing) * .5) calc(var(--typo3-spacing) * .75);
+        gap: calc(var(--typo3-spacing) * .35);
+        max-width: calc(100vw - (var(--typo3-spacing) * 1.5));
+        padding: calc(var(--typo3-spacing) * .125) calc(var(--typo3-spacing) * .35);
         border: var(--typo3-component-border-width, 1px) solid var(--typo3-component-border-color);
         border-radius: var(--typo3-component-border-radius);
         background: var(--typo3-surface-container-low);
         color: inherit;
-        box-shadow: var(--typo3-component-box-shadow);
-        font-size: var(--typo3-font-size-small, .6875rem);
-        line-height: 1.35;
+        box-shadow: none;
+        font-size: .625rem;
+        line-height: 1.2;
+        opacity: .78;
+        pointer-events: auto;
         text-align: left;
         text-decoration: none;
         transition: var(--typo3-transition-color, color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out);
@@ -35,6 +40,7 @@
         border-color: var(--typo3-state-default-hover-border-color, var(--typo3-component-border-color));
         background: var(--typo3-component-hover-bg);
         color: var(--typo3-text-color-base);
+        opacity: 1;
         text-decoration: none;
     }
 
@@ -44,20 +50,16 @@
     }
 
     .nr-backend-attribution__logo {
-        width: 28px;
-        height: 28px;
-        flex: 0 0 28px;
+        width: 14px;
+        height: 14px;
+        flex: 0 0 14px;
         color: var(--typo3-text-color-base);
     }
 
-    .nr-backend-attribution__brand {
-        display: block;
-        color: var(--typo3-text-color-base);
-        font-weight: 600;
-    }
-
-    .nr-backend-attribution__meta {
-        display: block;
+    .nr-backend-attribution__text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 </style>
 
@@ -67,10 +69,7 @@
             <path fill="#2f99a4" d="M209.6,0V31.62h32.77a26.38,26.38,0,0,1,26.44,26.43V242a26.38,26.38,0,0,1-26.44,26.44H209.6V300h47.93a42.77,42.77,0,0,0,42.86-42.86V42.89A42.76,42.76,0,0,0,257.53,0ZM43.25,0A42.76,42.76,0,0,0,.39,42.89V257.18A42.76,42.76,0,0,0,43.25,300H91.18V268.46H58.4A26.38,26.38,0,0,1,32,242v-184A26.37,26.37,0,0,1,58.4,31.62H91.18V0Z" />
             <path fill="currentColor" d="M221.44,120.41c0-34.48-13.94-57.82-48.93-57.82-26.62,0-48.54,7.74-64.17,26.56l-.7-22.06-28.31.06V232.94h31.59V124.69c7.14-18.38,32.14-34.8,53-34.5,27.38.4,25.2,26.24,26,45.81v96.94h31.58" />
         </svg>
-        <span>
-            <span class="nr-backend-attribution__brand">Thank you for using this NetResearch extension.</span>
-            <span class="nr-backend-attribution__meta">We appreciate your trust. © NetResearch DTT GmbH</span>
-        </span>
+        <span class="nr-backend-attribution__text">Thank you from Kurt Dirnbauer. © NetResearch DTT GmbH</span>
     </a>
 </footer>
 </html>
