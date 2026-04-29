@@ -10,12 +10,12 @@
         <f:if condition="{valid}">
             <f:then>
                 <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid')}" state="0">
-                    The audit log hash chain has been verified successfully. No tampering or modifications have been detected.
+                    <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_valid.message" />
                 </f:be.infobox>
             </f:then>
             <f:else>
                 <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid')}" state="2">
-                    Hash chain verification failed. The audit log may have been tampered with.
+                    <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.chain_invalid.message" />
                 </f:be.infobox>
 
                 <f:if condition="{errors}">
@@ -44,7 +44,7 @@
             <div class="card card-size-medium mt-4">
                 <div class="card-header">
                     <div class="card-header-body">
-                        <h2 class="card-title">Warnings</h2>
+                        <h2 class="card-title"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.verification_warnings" /></h2>
                     </div>
                 </div>
                 <div class="card-body">

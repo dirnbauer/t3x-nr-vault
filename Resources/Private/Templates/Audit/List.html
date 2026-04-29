@@ -8,7 +8,7 @@
     <h1><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.title" /></h1>
 
     <!-- Filter Bar - TYPO3 v14 native form-row style -->
-        <form method="post" action="{f:be.uri(route: 'admin_vault_audit')}" role="search" aria-label="Filter audit log" class="mb-4" data-testid="audit-filter-form">
+        <form method="post" action="{f:be.uri(route: 'admin_vault_audit')}" role="search" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.aria')}" class="mb-4" data-testid="audit-filter-form">
             <div class="form-row">
                 <div class="form-group">
                     <label for="filter-secret" class="form-label"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.filter.secret" /></label>
@@ -62,8 +62,8 @@
 
         <!-- Stats -->
         <div class="mb-3" role="status" aria-live="polite">
-            <span class="badge badge-info">{totalCount} entries</span>
-            <span class="badge badge-secondary">Page {currentPage} of {totalPages}</span>
+            <span class="badge badge-info">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.entries', arguments: {0: totalCount})}</span>
+            <span class="badge badge-secondary">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.page_of', arguments: {0: currentPage, 1: totalPages})}</span>
         </div>
 
         <f:if condition="{entries}">
@@ -71,9 +71,9 @@
                 <!-- Group entries by date -->
                 <f:for each="{groupedEntries}" as="dateGroup" key="date">
                     <h2 class="h5 mb-3 mt-4">{date}</h2>
-                    <div class="table-fit mb-4" role="region" aria-label="Audit log entries for {date}" tabindex="0">
+                    <div class="table-fit mb-4" role="region" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.entries_for_date', arguments: {0: date})}" tabindex="0">
                         <table class="table table-striped table-hover" aria-describedby="audit-table-{date}" data-testid="audit-list-table">
-                            <caption id="audit-table-{date}" class="visually-hidden">Audit log entries for {date}</caption>
+                            <caption id="audit-table-{date}" class="visually-hidden">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.entries_for_date', arguments: {0: date})}</caption>
                             <thead>
                                 <tr>
                                     <th scope="col" style="width: 100px;"><f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.col.time" /></th>
@@ -129,17 +129,17 @@
                 </f:for>
 
                 <f:if condition="{totalPages} > 1">
-                    <nav class="pagination-wrap" aria-label="Audit log pagination">
+                    <nav class="pagination-wrap" aria-label="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.pagination.aria')}">
                         <ul class="pagination">
                             <f:if condition="{currentPage} > 1">
                                 <f:then>
                                     <li class="page-item">
-                                        <a href="{pagination.first}" title="First" class="page-link">
+                                        <a href="{pagination.first}" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.pagination.first')}" class="page-link">
                                             <core:icon identifier="actions-view-paging-first" />
                                         </a>
                                     </li>
                                     <li class="page-item">
-                                        <a href="{pagination.prev}" title="Previous" class="page-link">
+                                        <a href="{pagination.prev}" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.pagination.previous')}" class="page-link">
                                             <core:icon identifier="actions-view-paging-previous" />
                                         </a>
                                     </li>
@@ -154,17 +154,17 @@
                                 </f:else>
                             </f:if>
                             <li class="page-item">
-                                <span class="page-link">Page {currentPage} / {totalPages}</span>
+                                <span class="page-link">{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.page_short', arguments: {0: currentPage, 1: totalPages})}</span>
                             </li>
                             <f:if condition="{currentPage} < {totalPages}">
                                 <f:then>
                                     <li class="page-item">
-                                        <a href="{pagination.next}" title="Next" class="page-link">
+                                        <a href="{pagination.next}" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.pagination.next')}" class="page-link">
                                             <core:icon identifier="actions-view-paging-next" />
                                         </a>
                                     </li>
                                     <li class="page-item">
-                                        <a href="{pagination.last}" title="Last" class="page-link">
+                                        <a href="{pagination.last}" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.pagination.last')}" class="page-link">
                                             <core:icon identifier="actions-view-paging-last" />
                                         </a>
                                     </li>
@@ -179,7 +179,7 @@
                                 </f:else>
                             </f:if>
                             <li class="page-item">
-                                <a href="{pagination.current}" title="Refresh" class="page-link">
+                                <a href="{pagination.current}" title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.pagination.refresh')}" class="page-link">
                                     <core:icon identifier="actions-refresh" />
                                 </a>
                             </li>
@@ -188,7 +188,7 @@
                 </f:if>
             </f:then>
             <f:else>
-                <f:be.infobox title="No Audit Entries" state="-1">
+                <f:be.infobox title="{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.empty.title')}" state="-1">
                     <f:translate key="LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:audit.empty" />
                 </f:be.infobox>
             </f:else>

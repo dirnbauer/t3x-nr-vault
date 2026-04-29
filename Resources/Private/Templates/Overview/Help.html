@@ -27,11 +27,7 @@
 
             <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step1.title')}</h3>
             <p>
-                Visit the <a href="{dashboardUrl}">Dashboard</a> and check the health
-                indicator at the top. A green banner confirms that encryption is active and
-                working. If you see an error, ensure that
-                <code>$GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey']</code> is set in
-                your TYPO3 configuration or configure an alternative master key provider.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step1.text', arguments: {0: '$GLOBALS[\'TYPO3_CONF_VARS\'][\'SYS\'][\'encryptionKey\']'})}
             </p>
 
             <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.getting_started.step2.title')}</h3>
@@ -85,10 +81,7 @@
 
             <h3>{f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.rotation.title')}</h3>
             <p>
-                The master key can be rotated without downtime using
-                <code>bin/typo3 vault:rotate-master-key</code>. This re-encrypts all DEKs
-                with the new master key. Individual secrets can also be rotated with
-                <code>bin/typo3 vault:rotate</code>.
+                {f:translate(key: 'LLL:EXT:nr_vault/Resources/Private/Language/locallang_mod.xlf:help.encryption.rotation.text', arguments: {0: 'bin/typo3 vault:rotate-master-key', 1: 'bin/typo3 vault:rotate'})}
             </p>
         </div>
     </div>

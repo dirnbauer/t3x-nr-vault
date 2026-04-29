@@ -1491,5 +1491,170 @@
         <source>View Secrets</source>
       </segment>
     </unit>
+    <unit id="attribution.region">
+      <segment>
+        <source>Extension attribution</source>
+      </segment>
+    </unit>
+    <unit id="attribution.logo">
+      <segment>
+        <source>NetResearch</source>
+      </segment>
+    </unit>
+    <unit id="attribution.text">
+      <segment>
+        <source>Thank you from Kurt Dirnbauer. © NetResearch DTT GmbH</source>
+      </segment>
+    </unit>
+    <unit id="secrets.filter.aria">
+      <segment>
+        <source>Filter secrets</source>
+      </segment>
+    </unit>
+    <unit id="secrets.filter.results.aria">
+      <segment>
+        <source>%s secrets found</source>
+      </segment>
+    </unit>
+    <unit id="secrets.table.aria">
+      <segment>
+        <source>Secrets list</source>
+      </segment>
+    </unit>
+    <unit id="secrets.table.caption">
+      <segment>
+        <source>List of stored secrets with their metadata and management actions</source>
+      </segment>
+    </unit>
+    <unit id="secrets.identifier.aria">
+      <segment>
+        <source>Secret identifier: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.description.aria">
+      <segment>
+        <source>Description: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.status.aria">
+      <segment>
+        <source>Status: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.owner.aria">
+      <segment>
+        <source>Owner: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.created.aria">
+      <segment>
+        <source>Created: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.read_count.aria">
+      <segment>
+        <source>Read count: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.last_read.aria">
+      <segment>
+        <source>Last read: %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.actions.aria">
+      <segment>
+        <source>Actions for %s</source>
+      </segment>
+    </unit>
+    <unit id="secrets.total">
+      <segment>
+        <source>%s secrets total</source>
+      </segment>
+    </unit>
+    <unit id="secrets.empty.title">
+      <segment>
+        <source>No Secrets Found</source>
+      </segment>
+    </unit>
+    <unit id="audit.filter.aria">
+      <segment>
+        <source>Filter audit log</source>
+      </segment>
+    </unit>
+    <unit id="audit.entries">
+      <segment>
+        <source>%s entries</source>
+      </segment>
+    </unit>
+    <unit id="audit.page_of">
+      <segment>
+        <source>Page %1$s of %2$s</source>
+      </segment>
+    </unit>
+    <unit id="audit.entries_for_date">
+      <segment>
+        <source>Audit log entries for %s</source>
+      </segment>
+    </unit>
+    <unit id="audit.pagination.aria">
+      <segment>
+        <source>Audit log pagination</source>
+      </segment>
+    </unit>
+    <unit id="audit.pagination.first">
+      <segment>
+        <source>First</source>
+      </segment>
+    </unit>
+    <unit id="audit.pagination.previous">
+      <segment>
+        <source>Previous</source>
+      </segment>
+    </unit>
+    <unit id="audit.pagination.next">
+      <segment>
+        <source>Next</source>
+      </segment>
+    </unit>
+    <unit id="audit.pagination.last">
+      <segment>
+        <source>Last</source>
+      </segment>
+    </unit>
+    <unit id="audit.pagination.refresh">
+      <segment>
+        <source>Refresh</source>
+      </segment>
+    </unit>
+    <unit id="audit.page_short">
+      <segment>
+        <source>Page %1$s / %2$s</source>
+      </segment>
+    </unit>
+    <unit id="audit.empty.title">
+      <segment>
+        <source>No Audit Entries</source>
+      </segment>
+    </unit>
+    <unit id="audit.chain_valid.message">
+      <segment>
+        <source>The audit log hash chain has been verified successfully. No tampering or modifications have been detected.</source>
+      </segment>
+    </unit>
+    <unit id="audit.chain_invalid.message">
+      <segment>
+        <source>Hash chain verification failed. The audit log may have been tampered with.</source>
+      </segment>
+    </unit>
+    <unit id="audit.verification_warnings">
+      <segment>
+        <source>Warnings</source>
+      </segment>
+    </unit>
+    <unit id="common.not_applicable">
+      <segment>
+        <source>n/a</source>
+      </segment>
+    </unit>
   </file>
 </xliff>
