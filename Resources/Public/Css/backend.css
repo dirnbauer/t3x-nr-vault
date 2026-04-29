@@ -1,25 +1,9 @@
 /**
  * Backend module styles for nr_vault.
- *
- * Brand colors (Netresearch):
- * - Primary: #2F99A4 (Turquoise)
- * - Accent: #FF4D00 (Orange)
- * - Text: #585961 (Dark Gray)
- * - Light Gray: #CCCDCC
  */
 
-:root {
-    --nr-primary: #2F99A4;
-    --nr-primary-dark: #267d86;
-    --nr-accent: #FF4D00;
-    --nr-text: #585961;
-    --nr-gray: #CCCDCC;
-    --nr-white: #ffffff;
-}
-
 .vault-module {
-    padding: 1rem;
-    color: var(--nr-text);
+    color: var(--typo3-text-color-base);
 }
 
 .vault-header {
@@ -28,7 +12,7 @@
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: var(--typo3-component-border-width) solid var(--typo3-component-border-color);
 }
 
 .vault-header h1 {
@@ -86,12 +70,6 @@
     padding: 0.5rem;
 }
 
-/* Badge override for Netresearch primary color */
-.badge.text-bg-info,
-.badge.text-bg-primary {
-    background-color: var(--nr-primary) !important;
-}
-
 /* Table action buttons - remove visible styling for icon-only buttons */
 .vault-module .col-control .btn-group {
     gap: 0;
@@ -106,11 +84,11 @@
 
 .vault-module .col-control .btn-group .btn:hover,
 .vault-module .col-control .btn-group .btn:focus {
-    background: var(--bs-secondary-bg);
+    background: var(--typo3-state-default-hover-bg);
 }
 
 .vault-module .col-control .btn-group .btn:focus-visible {
-    outline: 2px solid var(--nr-primary);
+    outline: var(--typo3-outline-width) var(--typo3-outline-style) color-mix(in srgb, var(--typo3-input-focus-border-color), transparent var(--typo3-outline-transparent-mix));
     outline-offset: 1px;
 }
 
@@ -118,48 +96,22 @@
     display: inline-flex !important;
 }
 
-/* Netresearch branded buttons */
-.vault-module .btn-primary {
-    background-color: var(--nr-primary);
-    border-color: var(--nr-primary);
-}
-
-.vault-module .btn-primary:hover,
-.vault-module .btn-primary:focus {
-    background-color: var(--nr-primary-dark);
-    border-color: var(--nr-primary-dark);
-}
-
-.vault-module .btn-accent {
-    background-color: var(--nr-accent);
-    border-color: var(--nr-accent);
-    color: var(--nr-white);
-}
-
-.vault-module .btn-accent:hover,
-.vault-module .btn-accent:focus {
-    background-color: #e04400;
-    border-color: #e04400;
-    color: var(--nr-white);
-}
-
 /* Netresearch footer attribution */
 .vault-footer {
     margin-top: 2rem;
     padding-top: 1rem;
-    border-top: 1px solid var(--nr-gray);
+    border-top: var(--typo3-component-border-width) solid var(--typo3-component-border-color);
     font-size: 0.85rem;
-    color: var(--nr-text);
+    color: var(--typo3-text-color-variant);
     text-align: center;
 }
 
 .vault-footer a {
-    color: var(--nr-primary);
+    color: var(--typo3-text-color-link);
     text-decoration: none;
 }
 
 .vault-footer a:hover {
-    color: var(--nr-primary-dark);
     text-decoration: underline;
 }
 
@@ -173,10 +125,10 @@
 .vault-date-header {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--nr-text);
+    color: var(--typo3-text-color-base);
     margin: 1.5rem 0 0.5rem 0;
     padding-bottom: 0.25rem;
-    border-bottom: 2px solid var(--nr-primary);
+    border-bottom: 2px solid var(--typo3-state-primary-border-color);
 }
 
 .vault-date-header:first-of-type {
@@ -189,27 +141,44 @@
 }
 
 .vault-hash {
-    font-family: monospace;
+    font-family: var(--typo3-font-family-code);
     font-size: 0.75rem;
+}
+
+.vault-code-example {
+    margin: 0;
+    padding: 0.75rem;
+    overflow-x: auto;
+    color: var(--typo3-text-color-base);
+    background: var(--typo3-surface-container-high);
+    border: var(--typo3-component-border-width) solid var(--typo3-component-border-color);
+    border-radius: var(--typo3-component-border-radius);
+}
+
+.vault-code-example code {
+    padding: 0;
+    color: var(--typo3-text-color-code);
+    background: transparent;
+    font-family: var(--typo3-font-family-code);
 }
 
 /* Hash chain verification result */
 .vault-chain-result {
     margin-top: 1rem;
     padding: 1rem;
-    border-radius: 0.25rem;
+    border-radius: var(--typo3-component-border-radius);
 }
 
 .vault-chain-result.valid {
-    background: var(--bs-success-bg-subtle, #d4edda);
-    border: 1px solid var(--bs-success-border-subtle, #c3e6cb);
-    color: var(--bs-success-text-emphasis, inherit);
+    color: var(--typo3-surface-container-success-text);
+    background: var(--typo3-surface-container-success);
+    border: var(--typo3-component-border-width) solid var(--typo3-state-success-border-color);
 }
 
 .vault-chain-result.invalid {
-    background: var(--bs-danger-bg-subtle, #f8d7da);
-    border: 1px solid var(--bs-danger-border-subtle, #f5c6cb);
-    color: var(--bs-danger-text-emphasis, inherit);
+    color: var(--typo3-surface-container-danger-text);
+    background: var(--typo3-surface-container-danger);
+    border: var(--typo3-component-border-width) solid var(--typo3-state-danger-border-color);
 }
 
 /* Responsive */

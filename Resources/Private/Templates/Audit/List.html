@@ -62,8 +62,8 @@
 
         <!-- Stats -->
         <div class="mb-3" role="status" aria-live="polite">
-            <span class="badge text-bg-info">{totalCount} entries</span>
-            <span class="badge text-bg-secondary">Page {currentPage} of {totalPages}</span>
+            <span class="badge badge-info">{totalCount} entries</span>
+            <span class="badge badge-secondary">Page {currentPage} of {totalPages}</span>
         </div>
 
         <f:if condition="{entries}">
@@ -96,7 +96,7 @@
                                         </td>
                                         <td><code data-testid="audit-cell-identifier">{entry.secretIdentifier}</code></td>
                                         <td>
-                                            <span class="badge text-bg-{entry.actionBadgeClass}" data-testid="audit-cell-action">{entry.action}</span>
+                                            <span class="badge badge-{entry.actionBadgeClass}" data-testid="audit-cell-action">{entry.action}</span>
                                         </td>
                                         <td>
                                             <f:if condition="{entry.success}">

@@ -131,10 +131,10 @@ class SecretsList {
             const badge = statusCell.querySelector('.badge');
             if (badge) {
                 if (hidden) {
-                    badge.className = 'badge text-bg-secondary';
+                    badge.className = 'badge badge-secondary';
                     badge.textContent = 'Disabled';
                 } else {
-                    badge.className = 'badge text-bg-success';
+                    badge.className = 'badge badge-success';
                     badge.textContent = 'Active';
                 }
             }
@@ -401,7 +401,7 @@ class SecretsList {
         group.append(label, inputGroup);
 
         const hint = document.createElement('p');
-        hint.className = 'text-muted small mb-0';
+        hint.className = 'text-body-secondary small mb-0';
         hint.append(document.createTextNode('Secret value for: '));
         const code = document.createElement('code');
         code.textContent = identifier;

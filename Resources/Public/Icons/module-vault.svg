@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <path fill="currentColor" d="M18 28h28a7 7 0 0 1 7 7v15a7 7 0 0 1-7 7H18a7 7 0 0 1-7-7V35a7 7 0 0 1 7-7Zm8-3v3h-8v-3c0-8.2 6.2-14 14-14s14 5.8 14 14v3h-8v-3c0-4.2-2.4-7-6-7s-6 2.8-6 7Z"/>
-  <path fill="var(--icon-color-accent, #ff8700)" d="M32 37a5 5 0 0 1 2.5 9.3V51h-5v-4.7A5 5 0 0 1 32 37Z"/>
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M17 29h30a6 6 0 0 1 6 6v14a6 6 0 0 1-6 6H17a6 6 0 0 1-6-6V35a6 6 0 0 1 6-6Z"/>
+  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="6" d="M22 29v-5c0-7 4.5-13 10-13s10 6 10 13v5"/>
+  <path fill="var(--icon-color-accent, #ff8700)" d="M32 37a5 5 0 0 1 2.5 9.3V50h-5v-3.7A5 5 0 0 1 32 37Z"/>
+  <path fill="currentColor" d="M20 39h5v5h-5zm19 0h5v5h-5z" opacity=".72"/>
 </svg>
