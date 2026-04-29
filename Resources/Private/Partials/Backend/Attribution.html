@@ -1,0 +1,76 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+
+<style>
+    .nr-backend-attribution {
+        display: flex;
+        justify-content: flex-end;
+        margin-block-start: calc(var(--typo3-spacing) * 2);
+        padding-block-start: var(--typo3-spacing);
+        color: var(--typo3-text-color-variant);
+    }
+
+    .nr-backend-attribution__link {
+        display: inline-flex;
+        align-items: center;
+        gap: calc(var(--typo3-spacing) * .65);
+        max-width: min(100%, 30rem);
+        padding: calc(var(--typo3-spacing) * .5) calc(var(--typo3-spacing) * .75);
+        border: var(--typo3-component-border-width, 1px) solid var(--typo3-component-border-color);
+        border-radius: var(--typo3-component-border-radius);
+        background: var(--typo3-surface-container-low);
+        color: inherit;
+        box-shadow: var(--typo3-component-box-shadow);
+        font-size: var(--typo3-font-size-small, .6875rem);
+        line-height: 1.35;
+        text-align: left;
+        text-decoration: none;
+        transition: var(--typo3-transition-color, color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out);
+    }
+
+    .nr-backend-attribution__link:hover,
+    .nr-backend-attribution__link:focus {
+        border-color: var(--typo3-state-default-hover-border-color, var(--typo3-component-border-color));
+        background: var(--typo3-component-hover-bg);
+        color: var(--typo3-text-color-base);
+        text-decoration: none;
+    }
+
+    .nr-backend-attribution__link:focus-visible {
+        outline: var(--typo3-outline-width, .25rem) var(--typo3-outline-style, solid) color-mix(in srgb, var(--typo3-input-focus-border-color), transparent var(--typo3-outline-transparent-mix, 25%));
+        outline-offset: 2px;
+    }
+
+    .nr-backend-attribution__logo {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+        color: var(--typo3-text-color-base);
+    }
+
+    .nr-backend-attribution__brand {
+        display: block;
+        color: var(--typo3-text-color-base);
+        font-weight: 600;
+    }
+
+    .nr-backend-attribution__meta {
+        display: block;
+    }
+</style>
+
+<footer class="nr-backend-attribution" aria-label="Extension attribution">
+    <a class="nr-backend-attribution__link" href="https://www.netresearch.de/" target="_blank" rel="noopener noreferrer">
+        <svg class="nr-backend-attribution__logo" viewBox="0 0 300 300" role="img" aria-label="NetResearch">
+            <path fill="#2f99a4" d="M209.6,0V31.62h32.77a26.38,26.38,0,0,1,26.44,26.43V242a26.38,26.38,0,0,1-26.44,26.44H209.6V300h47.93a42.77,42.77,0,0,0,42.86-42.86V42.89A42.76,42.76,0,0,0,257.53,0ZM43.25,0A42.76,42.76,0,0,0,.39,42.89V257.18A42.76,42.76,0,0,0,43.25,300H91.18V268.46H58.4A26.38,26.38,0,0,1,32,242v-184A26.37,26.37,0,0,1,58.4,31.62H91.18V0Z" />
+            <path fill="currentColor" d="M221.44,120.41c0-34.48-13.94-57.82-48.93-57.82-26.62,0-48.54,7.74-64.17,26.56l-.7-22.06-28.31.06V232.94h31.59V124.69c7.14-18.38,32.14-34.8,53-34.5,27.38.4,25.2,26.24,26,45.81v96.94h31.58" />
+        </svg>
+        <span>
+            <span class="nr-backend-attribution__brand">This extension is brought to you by NetResearch.</span>
+            <span class="nr-backend-attribution__meta">Thank you very much from Kurt Dirnbauer. © NetResearch DTT GmbH</span>
+        </span>
+    </a>
+</footer>
+</html>
