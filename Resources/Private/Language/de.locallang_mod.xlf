@@ -1,1494 +1,1792 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="de">
   <file id="f1">
     <unit id="mlang_tabs_tab">
       <segment>
         <source>Vault</source>
+        <target state="final">Vault</target>
       </segment>
     </unit>
     <unit id="secrets.title">
       <segment>
         <source>Secrets</source>
+        <target state="final">Secrets</target>
       </segment>
     </unit>
     <unit id="secrets.identifier">
       <segment>
         <source>Identifier</source>
+        <target state="final">Bezeichner</target>
       </segment>
     </unit>
     <unit id="secrets.description">
       <segment>
         <source>Description</source>
+        <target state="final">Beschreibung</target>
       </segment>
     </unit>
     <unit id="secrets.owner">
       <segment>
         <source>Owner</source>
+        <target state="final">Eigentümer</target>
       </segment>
     </unit>
     <unit id="secrets.created">
       <segment>
         <source>Created</source>
+        <target state="final">Erstellt</target>
       </segment>
     </unit>
     <unit id="secrets.read_count">
       <segment>
         <source>Read Count</source>
+        <target state="final">Lesezugriffe</target>
       </segment>
     </unit>
     <unit id="secrets.last_read">
       <segment>
         <source>Last Read</source>
+        <target state="final">Zuletzt gelesen</target>
       </segment>
     </unit>
     <unit id="secrets.actions">
       <segment>
         <source>Actions</source>
+        <target state="final">Aktionen</target>
       </segment>
     </unit>
     <unit id="secrets.status">
       <segment>
         <source>Status</source>
+        <target state="final">Status</target>
       </segment>
     </unit>
     <unit id="secrets.status.active">
       <segment>
         <source>Active</source>
+        <target state="final">Aktiv</target>
       </segment>
     </unit>
     <unit id="secrets.status.disabled">
       <segment>
         <source>Disabled</source>
+        <target state="final">Deaktiviert</target>
       </segment>
     </unit>
     <unit id="secrets.empty">
       <segment>
         <source>No secrets found. Click "Create Secret" to add one.</source>
+        <target state="final">Keine Secrets gefunden. Klicken Sie auf "Secret erstellen", um eines hinzuzufuegen.</target>
       </segment>
     </unit>
     <unit id="secrets.filter.identifier.placeholder">
       <segment>
         <source>Search identifier...</source>
+        <target state="final">Bezeichner suchen...</target>
       </segment>
     </unit>
     <unit id="secrets.filter.status.all">
       <segment>
         <source>All status</source>
+        <target state="final">Alle Status</target>
       </segment>
     </unit>
     <unit id="secrets.filter.owner.all">
       <segment>
         <source>All owners</source>
+        <target state="final">Alle Eigentümer</target>
       </segment>
     </unit>
     <unit id="secrets.filter.apply">
       <segment>
         <source>Filter</source>
+        <target state="final">Filtern</target>
       </segment>
     </unit>
     <unit id="secrets.filter.reset">
       <segment>
         <source>Reset filters</source>
+        <target state="final">Filter zurücksetzen</target>
       </segment>
     </unit>
     <unit id="secrets.filter.results">
       <segment>
         <source>secrets</source>
+        <target state="final">Secrets</target>
       </segment>
     </unit>
     <unit id="secrets.action.reveal">
       <segment>
         <source>Reveal secret</source>
+        <target state="final">Secret anzeigen</target>
       </segment>
     </unit>
     <unit id="secrets.action.edit">
       <segment>
         <source>Edit secret</source>
+        <target state="final">Secret bearbeiten</target>
       </segment>
     </unit>
     <unit id="secrets.action.delete">
       <segment>
         <source>Delete secret</source>
+        <target state="final">Secret löschen</target>
       </segment>
     </unit>
     <unit id="secrets.action.rotate">
       <segment>
         <source>Rotate secret</source>
+        <target state="final">Secret rotieren</target>
       </segment>
     </unit>
     <unit id="secrets.action.enable">
       <segment>
         <source>Enable secret</source>
+        <target state="final">Secret aktivieren</target>
       </segment>
     </unit>
     <unit id="secrets.action.disable">
       <segment>
         <source>Disable secret</source>
+        <target state="final">Secret deaktivieren</target>
       </segment>
     </unit>
     <unit id="secrets.create">
       <segment>
         <source>Create Secret</source>
+        <target state="final">Secret erstellen</target>
       </segment>
     </unit>
     <unit id="secrets.enabled.success">
       <segment>
         <source>Secret enabled successfully</source>
+        <target state="final">Secret erfolgreich aktiviert</target>
       </segment>
     </unit>
     <unit id="secrets.disabled.success">
       <segment>
         <source>Secret disabled successfully</source>
+        <target state="final">Secret erfolgreich deaktiviert</target>
       </segment>
     </unit>
     <unit id="secrets.delete.success">
       <segment>
         <source>Secret deleted successfully</source>
+        <target state="final">Secret erfolgreich gelöscht</target>
       </segment>
     </unit>
     <unit id="secrets.back">
       <segment>
         <source>Back to List</source>
+        <target state="final">Zurück zur Liste</target>
       </segment>
     </unit>
     <unit id="audit.title">
       <segment>
         <source>Audit Log</source>
+        <target state="final">Audit-Protokoll</target>
       </segment>
     </unit>
     <unit id="audit.empty">
       <segment>
         <source>No audit entries found</source>
+        <target state="final">Keine Audit-Eintraege gefunden</target>
       </segment>
     </unit>
     <unit id="audit.col.time">
       <segment>
         <source>Time</source>
+        <target state="final">Zeit</target>
       </segment>
     </unit>
     <unit id="audit.col.secret">
       <segment>
         <source>Secret</source>
+        <target state="final">Secret</target>
       </segment>
     </unit>
     <unit id="audit.col.action">
       <segment>
         <source>Action</source>
+        <target state="final">Aktion</target>
       </segment>
     </unit>
     <unit id="audit.col.status">
       <segment>
         <source>Status</source>
+        <target state="final">Status</target>
       </segment>
     </unit>
     <unit id="audit.col.actor">
       <segment>
         <source>Actor</source>
+        <target state="final">Akteur</target>
       </segment>
     </unit>
     <unit id="audit.col.ip_address">
       <segment>
         <source>IP Address</source>
+        <target state="final">IP-Adresse</target>
       </segment>
     </unit>
     <unit id="audit.col.details">
       <segment>
         <source>Details</source>
+        <target state="final">Details</target>
       </segment>
     </unit>
     <unit id="audit.filter.secret">
       <segment>
         <source>Secret</source>
+        <target state="final">Secret</target>
       </segment>
     </unit>
     <unit id="audit.filter.action">
       <segment>
         <source>Action</source>
+        <target state="final">Aktion</target>
       </segment>
     </unit>
     <unit id="audit.filter.status">
       <segment>
         <source>Status</source>
+        <target state="final">Status</target>
       </segment>
     </unit>
     <unit id="audit.filter.from">
       <segment>
         <source>From</source>
+        <target state="final">Von</target>
       </segment>
     </unit>
     <unit id="audit.filter.to">
       <segment>
         <source>To</source>
+        <target state="final">Bis</target>
       </segment>
     </unit>
     <unit id="audit.filter.apply">
       <segment>
         <source>Filter</source>
+        <target state="final">Filtern</target>
       </segment>
     </unit>
     <unit id="audit.filter.reset">
       <segment>
         <source>Reset</source>
+        <target state="final">Zurücksetzen</target>
       </segment>
     </unit>
     <unit id="audit.filter.status.all">
       <segment>
         <source>[all]</source>
+        <target state="final">[alle]</target>
       </segment>
     </unit>
     <unit id="audit.filter.status.success">
       <segment>
         <source>Success</source>
+        <target state="final">Erfolgreich</target>
       </segment>
     </unit>
     <unit id="audit.filter.status.failed">
       <segment>
         <source>Failed</source>
+        <target state="final">Fehlgeschlagen</target>
       </segment>
     </unit>
     <unit id="audit.filter.secret.placeholder">
       <segment>
         <source>Secret identifier</source>
+        <target state="final">Secret-Bezeichner</target>
       </segment>
     </unit>
     <unit id="audit.export">
       <segment>
         <source>Export</source>
+        <target state="final">Exportieren</target>
       </segment>
     </unit>
     <unit id="audit.verify_chain">
       <segment>
         <source>Verify Hash Chain</source>
+        <target state="final">Hash-Chain prüfen</target>
       </segment>
     </unit>
     <unit id="audit.chain_valid">
       <segment>
         <source>Hash chain is valid - no tampering detected</source>
+        <target state="final">Hash-Chain ist gültig - keine Manipulation erkannt</target>
       </segment>
     </unit>
     <unit id="audit.chain_invalid">
       <segment>
         <source>Hash chain verification failed</source>
+        <target state="final">Hash-Chain-Prüfung fehlgeschlagen</target>
       </segment>
     </unit>
     <unit id="audit.verification_errors">
       <segment>
         <source>Verification Errors</source>
+        <target state="final">Prüffehler</target>
       </segment>
     </unit>
     <unit id="migration.title">
       <segment>
         <source>Secret Migration Wizard</source>
+        <target state="final">Secret-Migrationsassistent</target>
       </segment>
     </unit>
     <unit id="migration.scan">
       <segment>
         <source>Scan</source>
+        <target state="final">Scan</target>
       </segment>
     </unit>
     <unit id="migration.review">
       <segment>
         <source>Review</source>
+        <target state="final">Prüfen</target>
       </segment>
     </unit>
     <unit id="migration.configure">
       <segment>
         <source>Configure</source>
+        <target state="final">Konfigurieren</target>
       </segment>
     </unit>
     <unit id="migration.verify">
       <segment>
         <source>Verify</source>
+        <target state="final">Verifizieren</target>
       </segment>
     </unit>
     <unit id="error">
       <segment>
         <source>Error</source>
+        <target state="final">Fehler</target>
       </segment>
     </unit>
     <unit id="secrets.notFound">
       <segment>
         <source>Secret not found: %s</source>
+        <target state="final">Secret nicht gefunden: %s</target>
       </segment>
     </unit>
     <unit id="secrets.noIdentifier">
       <segment>
         <source>No secret identifier provided</source>
+        <target state="final">Kein Secret-Bezeichner angegeben</target>
       </segment>
     </unit>
     <unit id="secrets.uidNotFound">
       <segment>
         <source>Secret UID not found</source>
+        <target state="final">Secret-UID nicht gefunden</target>
       </segment>
     </unit>
     <unit id="secrets.accessDenied">
       <segment>
         <source>Access denied</source>
+        <target state="final">Zugriff verweigert</target>
       </segment>
     </unit>
     <unit id="secrets.error">
       <segment>
         <source>Error: %s</source>
+        <target state="final">Fehler: %s</target>
       </segment>
     </unit>
     <unit id="action.back">
       <segment>
         <source>Back</source>
+        <target state="final">Zurück</target>
       </segment>
     </unit>
     <unit id="overview.secrets.description">
       <segment>
         <source>Manage encrypted secrets stored in the vault.</source>
+        <target state="final">Im Vault gespeicherte verschlüsselte Secrets verwalten.</target>
       </segment>
     </unit>
     <unit id="overview.audit.description">
       <segment>
         <source>View access logs and verify audit chain integrity.</source>
+        <target state="final">Zugriffsprotokolle anzeigen und Integritaet der Audit-Chain prüfen.</target>
       </segment>
     </unit>
     <unit id="overview.migration.description">
       <segment>
         <source>Detect and migrate plaintext secrets to the vault.</source>
+        <target state="final">Klartext-Secrets erkennen und in den Vault migrieren.</target>
       </segment>
     </unit>
     <unit id="migration.noSecretsSelected">
       <segment>
         <source>No secrets selected for migration.</source>
+        <target state="final">Keine Secrets für die Migration ausgewählt.</target>
       </segment>
     </unit>
     <unit id="migration.selectionRequired">
       <segment>
         <source>Selection Required</source>
+        <target state="final">Auswahl erforderlich</target>
       </segment>
     </unit>
     <unit id="migration.noMigrationsConfigured">
       <segment>
         <source>No migrations configured.</source>
+        <target state="final">Keine Migrationen konfiguriert.</target>
       </segment>
     </unit>
     <unit id="migration.configurationRequired">
       <segment>
         <source>Configuration Required</source>
+        <target state="final">Konfiguration erforderlich</target>
       </segment>
     </unit>
     <unit id="migration.complete">
       <segment>
         <source>Migration Complete</source>
+        <target state="final">Migration abgeschlossen</target>
       </segment>
     </unit>
     <unit id="migration.success">
       <segment>
         <source>Successfully migrated %d secret(s) to the vault.</source>
+        <target state="final">%d Secret(s) erfolgreich in den Vault migriert.</target>
       </segment>
     </unit>
     <unit id="migration.errors">
       <segment>
         <source>Migration Errors</source>
+        <target state="final">Migrationsfehler</target>
       </segment>
     </unit>
     <unit id="migration.failed">
       <segment>
         <source>%d secret(s) failed to migrate.</source>
+        <target state="final">%d Secret(s) konnten nicht migriert werden.</target>
       </segment>
     </unit>
     <unit id="overview.title">
       <segment>
         <source>Vault - Secrets Management</source>
+        <target state="final">Vault - Secrets-Verwaltung</target>
       </segment>
     </unit>
     <unit id="overview.subtitle">
       <segment>
         <source>Secure storage and management for sensitive configuration data.</source>
+        <target state="final">Sichere Speicherung und Verwaltung sensibler Konfigurationsdaten.</target>
       </segment>
     </unit>
     <unit id="overview.health.issue.heading">
       <segment>
         <source>Vault Health Issue</source>
+        <target state="final">Vault-Statusproblem</target>
       </segment>
     </unit>
     <unit id="overview.health.encryption_not_available">
       <segment>
         <source>Encryption is not available.</source>
+        <target state="final">Verschlüsselung ist nicht verfuegbar.</target>
       </segment>
     </unit>
     <unit id="overview.health.encryption_not_available.description">
       <segment>
         <source>No master key provider is configured or accessible. Vault cannot encrypt or decrypt secrets.</source>
+        <target state="final">Kein Master-Key-Provider ist konfiguriert oder erreichbar. Vault kann Secrets nicht ver- oder entschlüsseln.</target>
       </segment>
     </unit>
     <unit id="overview.health.detail">
       <segment>
         <source>Detail:</source>
+        <target state="final">Detail:</target>
       </segment>
     </unit>
     <unit id="overview.health.encryption_not_available.remedy">
       <segment>
         <source>Ensure that %s is set, or configure an alternative master key provider (environment variable or file-based).</source>
+        <target state="final">Stellen Sie sicher, dass %s gesetzt ist, oder konfigurieren Sie einen alternativen Master-Key-Provider (Umgebungsvariable oder dateibasiert).</target>
       </segment>
     </unit>
     <unit id="overview.health.encryption_broken">
       <segment>
         <source>Master key provider "%s" is available but encryption is broken.</source>
+        <target state="final">Master-Key-Provider "%s" ist verfuegbar, aber die Verschlüsselung ist defekt.</target>
       </segment>
     </unit>
     <unit id="overview.health.encryption_active">
       <segment>
         <source>Encryption is active using the %s master key provider.</source>
+        <target state="final">Verschlüsselung ist mit dem Master-Key-Provider %s aktiv.</target>
       </segment>
     </unit>
     <unit id="overview.stats.total_secrets">
       <segment>
         <source>Total Secrets</source>
+        <target state="final">Secrets gesamt</target>
       </segment>
     </unit>
     <unit id="overview.stats.active">
       <segment>
         <source>Active</source>
+        <target state="final">Aktiv</target>
       </segment>
     </unit>
     <unit id="overview.stats.disabled">
       <segment>
         <source>Disabled</source>
+        <target state="final">Deaktiviert</target>
       </segment>
     </unit>
     <unit id="overview.modules">
       <segment>
         <source>Modules</source>
+        <target state="final">Module</target>
       </segment>
     </unit>
     <unit id="overview.quickstart">
       <segment>
         <source>Quick Start</source>
+        <target state="final">Schnellstart</target>
       </segment>
     </unit>
     <unit id="overview.quickstart.store.title">
       <segment>
         <source>Store a Secret</source>
+        <target state="final">Secret speichern</target>
       </segment>
     </unit>
     <unit id="overview.quickstart.store.description">
       <segment>
         <source>Navigate to Secrets and click the + button in the header to create a new secret. Provide an identifier (e.g., stripe_api_key) and the secret value.</source>
+        <target state="final">Navigieren Sie zu Secrets und klicken Sie im Header auf die +-Schaltflaeche, um ein neues Secret zu erstellen. Geben Sie einen Bezeichner (z. B. stripe_api_key) und den Secret-Wert an.</target>
       </segment>
     </unit>
     <unit id="overview.quickstart.use.title">
       <segment>
         <source>Use in Configuration</source>
+        <target state="final">In Konfiguration verwenden</target>
       </segment>
     </unit>
     <unit id="overview.quickstart.use.description">
       <segment>
         <source>Reference secrets in your TYPO3 configuration using the vault syntax:</source>
+        <target state="final">Referenzieren Sie Secrets in Ihrer TYPO3-Konfiguration mit der Vault-Syntax:</target>
       </segment>
     </unit>
     <unit id="overview.usage.title">
       <segment>
         <source>When to Use What</source>
+        <target state="final">Wann was verwenden</target>
       </segment>
     </unit>
     <unit id="overview.usage.site_keys.title">
       <segment>
         <source>Site-Specific API Keys</source>
+        <target state="final">Seitenspezifische API-Schlüssel</target>
       </segment>
     </unit>
     <unit id="overview.usage.site_keys.description">
       <segment>
         <source>Payment gateways, external services, or any secret that differs per site. Resolved at runtime from config/sites/*/config.yaml.</source>
+        <target state="final">Payment-Gateways, externe Dienste oder jedes Secret, das sich pro Site unterscheidet. Wird zur Laufzeit aus config/sites/*/config.yaml aufgeloest.</target>
       </segment>
     </unit>
     <unit id="overview.usage.per_record.title">
       <segment>
         <source>Per-Record Credentials</source>
+        <target state="final">Zugangsdaten pro Datensatz</target>
       </segment>
     </unit>
     <unit id="overview.usage.per_record.description">
       <segment>
         <source>Let editors manage secrets per record (e.g., per-integration or per-client settings). Values encrypted automatically via TCA.</source>
+        <target state="final">Ermöglicht Redakteuren, Secrets pro Datensatz zu verwalten (z. B. pro Integration oder Kunde). Werte werden automatisch über TCA verschlüsselt.</target>
       </segment>
     </unit>
     <unit id="overview.usage.extension.title">
       <segment>
         <source>Extension Services</source>
+        <target state="final">Extension-Services</target>
       </segment>
     </unit>
     <unit id="overview.usage.extension.description">
       <segment>
         <source>When your extension needs secrets programmatically - API clients, payment processors, external integrations.</source>
+        <target state="final">Wenn Ihre Extension Secrets programmatisch benoetigt - API-Clients, Zahlungsanbieter, externe Integrationen.</target>
       </segment>
     </unit>
     <unit id="overview.usage.http_client.title">
       <segment>
         <source>HTTP Client with Secrets</source>
+        <target state="final">HTTP-Client mit Secrets</target>
       </segment>
     </unit>
     <unit id="overview.usage.http_client.description">
       <segment>
         <source>PSR-18 compatible API calls with automatic secret injection. Supports Bearer, API-Key, Basic Auth, OAuth2, and more.</source>
+        <target state="final">PSR-18-kompatible API-Aufrufe mit automatischer Secret-Injection. Unterstuetzt Bearer, API-Key, Basic Auth, OAuth2 und mehr.</target>
       </segment>
     </unit>
     <unit id="overview.usage.deployment.title">
       <segment>
         <source>Deployment &amp; CI/CD</source>
+        <target state="final">Deployment &amp; CI/CD</target>
       </segment>
     </unit>
     <unit id="overview.usage.deployment.description">
       <segment>
         <source>Automate secret provisioning in deployment pipelines, or manage secrets via scripts without backend access.</source>
+        <target state="final">Automatisieren Sie die Bereitstellung von Secrets in Deployment-Pipelines oder verwalten Sie Secrets per Skript ohne Backend-Zugriff.</target>
       </segment>
     </unit>
     <unit id="overview.usage.frontend.title">
       <segment>
         <source>Frontend Rendering</source>
+        <target state="final">Frontend-Rendering</target>
       </segment>
     </unit>
     <unit id="overview.usage.frontend.sparingly">
       <segment>
         <source>(use sparingly)</source>
+        <target state="final">(sparsam verwenden)</target>
       </segment>
     </unit>
     <unit id="overview.usage.frontend.description">
       <segment>
         <source>When secrets must appear in rendered output (e.g., JS API keys). Requires frontend_accessible flag and cache disabled.</source>
+        <target state="final">Wenn Secrets in gerendertem Output erscheinen müssen (z. B. JS-API-Schlüssel). Erfordert das Flag frontend_accessible und deaktivierten Cache.</target>
       </segment>
     </unit>
     <unit id="overview.usage.tca_helper.title">
       <segment>
         <source>TCA Helper API</source>
+        <target state="final">TCA-Helper-API</target>
       </segment>
     </unit>
     <unit id="overview.usage.tca_helper.description">
       <segment>
         <source>Shorthand for common vault field patterns with sensible defaults (exclude: true, l10n_mode: exclude).</source>
+        <target state="final">Kurzschreibweise für gaengige Vault-Feldmuster mit sinnvollen Standardwerten (exclude: true, l10n_mode: exclude).</target>
       </segment>
     </unit>
     <unit id="overview.cli.title">
       <segment>
         <source>CLI Commands</source>
+        <target state="final">CLI-Befehle</target>
       </segment>
     </unit>
     <unit id="overview.cli.col.command">
       <segment>
         <source>Command</source>
+        <target state="final">Befehl</target>
       </segment>
     </unit>
     <unit id="overview.cli.col.description">
       <segment>
         <source>Description</source>
+        <target state="final">Beschreibung</target>
       </segment>
     </unit>
     <unit id="overview.cli.init">
       <segment>
         <source>Initialize vault and generate master key</source>
+        <target state="final">Vault initialisieren und Master-Key erzeugen</target>
       </segment>
     </unit>
     <unit id="overview.cli.store">
       <segment>
         <source>Store a new secret</source>
+        <target state="final">Neues Secret speichern</target>
       </segment>
     </unit>
     <unit id="overview.cli.retrieve">
       <segment>
         <source>Retrieve a secret value</source>
+        <target state="final">Secret-Wert abrufen</target>
       </segment>
     </unit>
     <unit id="overview.cli.list">
       <segment>
         <source>List all secrets</source>
+        <target state="final">Alle Secrets auflisten</target>
       </segment>
     </unit>
     <unit id="overview.cli.rotate">
       <segment>
         <source>Rotate a secret's value</source>
+        <target state="final">Wert eines Secrets rotieren</target>
       </segment>
     </unit>
     <unit id="overview.cli.delete">
       <segment>
         <source>Delete a secret</source>
+        <target state="final">Secret löschen</target>
       </segment>
     </unit>
     <unit id="overview.cli.audit">
       <segment>
         <source>View audit log entries</source>
+        <target state="final">Audit-Log-Eintraege anzeigen</target>
       </segment>
     </unit>
     <unit id="overview.cli.scan">
       <segment>
         <source>Scan for plaintext secrets in database</source>
+        <target state="final">Datenbank nach Klartext-Secrets scannen</target>
       </segment>
     </unit>
     <unit id="overview.cli.migrate_field">
       <segment>
         <source>Migrate a database field to vault</source>
+        <target state="final">Datenbankfeld in den Vault migrieren</target>
       </segment>
     </unit>
     <unit id="overview.cli.rotate_master_key">
       <segment>
         <source>Rotate the master encryption key</source>
+        <target state="final">Master-Verschlüsselungsschlüssel rotieren</target>
       </segment>
     </unit>
     <unit id="overview.cli.cleanup_orphans">
       <segment>
         <source>Remove orphaned secrets</source>
+        <target state="final">Verwaiste Secrets entfernen</target>
       </segment>
     </unit>
     <unit id="overview.cli.help_hint">
       <segment>
         <source>Run bin/typo3 vault:&lt;command&gt; --help for detailed usage.</source>
+        <target state="final">Fuehren Sie bin/typo3 vault:&lt;command&gt; --help für detaillierte Hinweise aus.</target>
       </segment>
     </unit>
     <unit id="overview.security.title">
       <segment>
         <source>Security Features</source>
+        <target state="final">Sicherheitsfunktionen</target>
       </segment>
     </unit>
     <unit id="overview.security.envelope.title">
       <segment>
         <source>Envelope Encryption</source>
+        <target state="final">Envelope-Verschlüsselung</target>
       </segment>
     </unit>
     <unit id="overview.security.envelope.description">
       <segment>
         <source>Each secret is encrypted with its own unique Data Encryption Key (DEK), which is then encrypted with the master key.</source>
+        <target state="final">Jedes Secret wird mit einem eigenen eindeutigen Data Encryption Key (DEK) verschlüsselt, der anschliessend mit dem Master-Key verschlüsselt wird.</target>
       </segment>
     </unit>
     <unit id="overview.security.access.title">
       <segment>
         <source>Access Control</source>
+        <target state="final">Zugriffskontrolle</target>
       </segment>
     </unit>
     <unit id="overview.security.access.description">
       <segment>
         <source>Secrets can be restricted to specific backend users or groups. Every access is logged in the audit trail.</source>
+        <target state="final">Secrets können auf bestimmte Backend-Benutzer oder Gruppen beschraenkt werden. Jeder Zugriff wird im Audit-Trail protokolliert.</target>
       </segment>
     </unit>
     <unit id="overview.security.audit.title">
       <segment>
         <source>Audit Logging</source>
+        <target state="final">Audit-Protokollierung</target>
       </segment>
     </unit>
     <unit id="overview.security.audit.description">
       <segment>
         <source>Tamper-evident audit chain records all secret operations with cryptographic integrity verification.</source>
+        <target state="final">Eine manipulationssichere Audit-Chain zeichnet alle Secret-Vorgaenge mit kryptografischer Integritaetspruefung auf.</target>
       </segment>
     </unit>
     <unit id="overview.documentation.title">
       <segment>
         <source>Documentation</source>
+        <target state="final">Dokumentation</target>
       </segment>
     </unit>
     <unit id="overview.documentation.text">
       <segment>
         <source>For detailed information, see the</source>
+        <target state="final">Detaillierte Informationen finden Sie in der</target>
       </segment>
     </unit>
     <unit id="overview.documentation.link">
       <segment>
         <source>extension documentation</source>
+        <target state="final">Extension-Dokumentation</target>
       </segment>
     </unit>
     <unit id="help.title">
       <segment>
         <source>Vault Help</source>
+        <target state="final">Vault-Hilfe</target>
       </segment>
     </unit>
     <unit id="help.lead">
       <segment>
         <source>This guide explains how vault encryption works, how to manage secrets, and how to troubleshoot common issues.</source>
+        <target state="final">Dieser Leitfaden erklaert, wie die Vault-Verschlüsselung funktioniert, wie Secrets verwaltet werden und wie häufige Probleme behoben werden.</target>
       </segment>
     </unit>
     <unit id="help.getting_started.title">
       <segment>
         <source>Getting started</source>
+        <target state="final">Erste Schritte</target>
       </segment>
     </unit>
     <unit id="help.getting_started.intro">
       <segment>
         <source>The Vault extension provides secure storage for sensitive configuration data (API keys, passwords, tokens) using envelope encryption. Follow these steps to get started:</source>
+        <target state="final">Die Vault-Extension bietet sichere Speicherung sensibler Konfigurationsdaten (API-Schlüssel, Passwörter, Tokens) mit Envelope-Verschlüsselung. Folgen Sie diesen Schritten:</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step1.title">
       <segment>
         <source>Step 1 — Verify encryption health</source>
+        <target state="final">Schritt 1 - Verschlüsselungsstatus prüfen</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step1.text">
       <segment>
         <source>Visit the Dashboard and check the health indicator at the top. A green banner confirms that encryption is active and working. If you see an error, ensure that %s is set in your TYPO3 configuration or configure an alternative master key provider.</source>
+        <target state="final">Öffnen Sie das Dashboard und prüfen Sie die Statusanzeige oben. Ein grünes Banner bestaetigt, dass die Verschlüsselung aktiv ist und funktioniert. Wenn ein Fehler angezeigt wird, stellen Sie sicher, dass %s in Ihrer TYPO3-Konfiguration gesetzt ist, oder konfigurieren Sie einen alternativen Master-Key-Provider.</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step2.title">
       <segment>
         <source>Step 2 — Create your first secret</source>
+        <target state="final">Schritt 2 - Erstes Secret erstellen</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step2.text">
       <segment>
         <source>Navigate to Secrets and click the + button in the header. Choose a descriptive identifier (e.g., stripe_api_key) and enter the secret value. The value is encrypted before it reaches the database.</source>
+        <target state="final">Navigieren Sie zu Secrets und klicken Sie im Header auf die +-Schaltflaeche. Waehlen Sie einen sprechenden Bezeichner (z. B. stripe_api_key) und geben Sie den Secret-Wert ein. Der Wert wird verschlüsselt, bevor er die Datenbank erreicht.</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step3.title">
       <segment>
         <source>Step 3 — Reference secrets in configuration</source>
+        <target state="final">Schritt 3 - Secrets in der Konfiguration referenzieren</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step3.text">
       <segment>
         <source>Use the vault syntax anywhere TYPO3 resolves configuration values:</source>
+        <target state="final">Verwenden Sie die Vault-Syntax überall dort, wo TYPO3 Konfigurationswerte aufloest:</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step3.text2">
       <segment>
         <source>This works in site configuration YAML, TypoScript, and any configuration that uses the TYPO3 expression language.</source>
+        <target state="final">Das funktioniert in Site-Konfigurations-YAML, TypoScript und jeder Konfiguration, die die TYPO3 Expression Language verwendet.</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step4.title">
       <segment>
         <source>Step 4 — Migrate existing plaintext secrets (optional)</source>
+        <target state="final">Schritt 4 - Bestehende Klartext-Secrets migrieren (optional)</target>
       </segment>
     </unit>
     <unit id="help.getting_started.step4.text">
       <segment>
         <source>The Migration Wizard scans your database for plaintext secrets and guides you through encrypting them. It supports batch processing and verifies each migration before committing.</source>
+        <target state="final">Der Migrationsassistent scannt Ihre Datenbank nach Klartext-Secrets und fuehrt Sie durch deren Verschlüsselung. Er unterstuetzt Stapelverarbeitung und prueft jede Migration vor dem Speichern.</target>
       </segment>
     </unit>
     <unit id="help.encryption.title">
       <segment>
         <source>Envelope encryption</source>
+        <target state="final">Envelope-Verschlüsselung</target>
       </segment>
     </unit>
     <unit id="help.encryption.intro">
       <segment>
         <source>Vault uses a two-layer encryption scheme called envelope encryption, the same pattern used by AWS KMS, Google Cloud KMS, and Azure Key Vault:</source>
+        <target state="final">Vault verwendet ein zweistufiges Verschlüsselungsschema namens Envelope-Verschlüsselung, wie es auch AWS KMS, Google Cloud KMS und Azure Key Vault nutzen:</target>
       </segment>
     </unit>
     <unit id="help.encryption.how_it_works">
       <segment>
         <source>How it works</source>
+        <target state="final">Funktionsweise</target>
       </segment>
     </unit>
     <unit id="help.encryption.dek.label">
       <segment>
         <source>Data Encryption Key (DEK)</source>
+        <target state="final">Data Encryption Key (DEK)</target>
       </segment>
     </unit>
     <unit id="help.encryption.dek.text">
       <segment>
         <source>Each secret is encrypted with its own unique random key using AES-256-GCM. This means compromising one secret does not reveal others.</source>
+        <target state="final">Jedes Secret wird mit einem eigenen eindeutigen Zufallsschlüssel per AES-256-GCM verschlüsselt. Dadurch legt ein kompromittiertes Secret keine anderen Secrets offen.</target>
       </segment>
     </unit>
     <unit id="help.encryption.kek.label">
       <segment>
         <source>Key Encryption Key (KEK / Master Key)</source>
+        <target state="final">Key Encryption Key (KEK / Master-Key)</target>
       </segment>
     </unit>
     <unit id="help.encryption.kek.text">
       <segment>
         <source>The DEK is then encrypted with the master key and stored alongside the ciphertext. The master key never leaves the server.</source>
+        <target state="final">Der DEK wird anschliessend mit dem Master-Key verschlüsselt und zusammen mit dem Ciphertext gespeichert. Der Master-Key verlaesst den Server nie.</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.title">
       <segment>
         <source>Master key providers</source>
+        <target state="final">Master-Key-Provider</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.intro">
       <segment>
         <source>The master key can come from several sources (in priority order):</source>
+        <target state="final">Der Master-Key kann aus mehreren Quellen stammen (in Prioritaetsreihenfolge):</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.env">
       <segment>
         <source>Environment variable</source>
+        <target state="final">Umgebungsvariable</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.env.note">
       <segment>
         <source>recommended for production</source>
+        <target state="final">für Produktion empfohlen</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.file">
       <segment>
         <source>File-based</source>
+        <target state="final">Dateibasiert</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.file.note">
       <segment>
         <source>a key file outside the web root</source>
+        <target state="final">eine Schlüsseldatei außerhalb des Webroots</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.typo3">
       <segment>
         <source>TYPO3 encryption key</source>
+        <target state="final">TYPO3 encryptionKey</target>
       </segment>
     </unit>
     <unit id="help.encryption.providers.typo3.note">
       <segment>
         <source>fallback using</source>
+        <target state="final">Fallback über</target>
       </segment>
     </unit>
     <unit id="help.encryption.rotation.title">
       <segment>
         <source>Key rotation</source>
+        <target state="final">Schlüsselrotation</target>
       </segment>
     </unit>
     <unit id="help.encryption.rotation.text">
       <segment>
         <source>The master key can be rotated without downtime using %s. This re-encrypts all DEKs with the new master key. Individual secrets can also be rotated with %s.</source>
+        <target state="final">Der Master-Key kann ohne Ausfallzeit mit %s rotiert werden. Dabei werden alle DEKs mit dem neuen Master-Key neu verschlüsselt. Einzelne Secrets können ebenfalls mit %s rotiert werden.</target>
       </segment>
     </unit>
     <unit id="help.audit.title">
       <segment>
         <source>Audit trail</source>
+        <target state="final">Audit-Trail</target>
       </segment>
     </unit>
     <unit id="help.audit.intro">
       <segment>
         <source>Every secret operation (create, read, update, delete, rotate) is recorded in a tamper-evident audit chain. Each entry includes:</source>
+        <target state="final">Jeder Secret-Vorgang (Erstellen, Lesen, Aktualisieren, Löschen, Rotieren) wird in einer manipulationssicheren Audit-Chain erfasst. Jeder Eintrag enthält:</target>
       </segment>
     </unit>
     <unit id="help.audit.item.action">
       <segment>
         <source>The action performed and the secret identifier</source>
+        <target state="final">Die ausgeführte Aktion und den Secret-Bezeichner</target>
       </segment>
     </unit>
     <unit id="help.audit.item.user">
       <segment>
         <source>The backend user who performed the action</source>
+        <target state="final">Den Backend-Benutzer, der die Aktion ausgeführt hat</target>
       </segment>
     </unit>
     <unit id="help.audit.item.timestamp">
       <segment>
         <source>A timestamp and IP address</source>
+        <target state="final">Zeitstempel und IP-Adresse</target>
       </segment>
     </unit>
     <unit id="help.audit.item.hash">
       <segment>
         <source>A cryptographic hash linking each entry to the previous one</source>
+        <target state="final">Einen kryptografischen Hash, der jeden Eintrag mit dem vorherigen verbindet</target>
       </segment>
     </unit>
     <unit id="help.audit.text">
       <segment>
         <source>Use the Audit Log module to browse entries and the Verify Chain action to check integrity. Any tampered or missing entries will be flagged.</source>
+        <target state="final">Verwenden Sie das Audit-Log-Modul zum Durchsuchen der Eintraege und die Aktion Hash-Chain prüfen zur Integritaetspruefung. Manipulierte oder fehlende Eintraege werden markiert.</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.title">
       <segment>
         <source>Troubleshooting</source>
+        <target state="final">Fehlerbehebung</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.encryption.title">
       <segment>
         <source>"Encryption is not available" on the dashboard</source>
+        <target state="final">"Verschlüsselung ist nicht verfuegbar" im Dashboard</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.encryption.text">
       <segment>
         <source>The master key provider could not be initialized. Check that at least one of the following is configured:</source>
+        <target state="final">Der Master-Key-Provider konnte nicht initialisiert werden. Prüfen Sie, ob mindestens eine der folgenden Optionen konfiguriert ist:</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.encryption.item1">
       <segment>
         <source>The TYPO3_VAULT_MASTER_KEY environment variable is set</source>
+        <target state="final">Die Umgebungsvariable TYPO3_VAULT_MASTER_KEY ist gesetzt</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.encryption.item2">
       <segment>
         <source>A valid key file path is configured in extension settings</source>
+        <target state="final">Ein gültiger Pfad zur Schlüsseldatei ist in den Extension-Einstellungen konfiguriert</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.encryption.item3">
       <segment>
         <source>The TYPO3 encryptionKey is not empty</source>
+        <target state="final">Der TYPO3 encryptionKey ist nicht leer</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.decryption.title">
       <segment>
         <source>Secret values show as "decryption failed"</source>
+        <target state="final">Secret-Werte zeigen "Entschlüsselung fehlgeschlagen"</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.decryption.text">
       <segment>
         <source>This means the master key has changed since the secret was encrypted. If the master key was rotated correctly, all DEKs should have been re-encrypted. If the key was lost, the affected secrets cannot be recovered — store a new value.</source>
+        <target state="final">Das bedeutet, dass sich der Master-Key seit der Verschlüsselung des Secrets geändert hat. Wenn der Master-Key korrekt rotiert wurde, sollten alle DEKs neu verschlüsselt worden sein. Wenn der Schlüssel verloren ging, können die betroffenen Secrets nicht wiederhergestellt werden - speichern Sie einen neuen Wert.</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.no_candidates.title">
       <segment>
         <source>Migration wizard finds no candidates</source>
+        <target state="final">Migrationsassistent findet keine Kandidaten</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.no_candidates.text">
       <segment>
         <source>The scanner looks for fields matching common secret patterns (columns named *password*, *key*, *token*, *secret*). If your field uses a different naming convention, you can add it manually via the CLI:</source>
+        <target state="final">Der Scanner sucht nach Feldern, die gängigen Secret-Mustern entsprechen (Spalten mit *password*, *key*, *token*, *secret* im Namen). Wenn Ihr Feld eine andere Namenskonvention verwendet, können Sie es manuell über die CLI hinzufuegen:</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.chain.title">
       <segment>
         <source>Audit chain verification fails</source>
+        <target state="final">Audit-Chain-Prüfung schlaegt fehl</target>
       </segment>
     </unit>
     <unit id="help.troubleshooting.chain.text">
       <segment>
         <source>A broken chain means an entry was modified or deleted outside of vault operations. This could indicate tampering or a database restore from an inconsistent backup. The verification report shows exactly which entries are affected.</source>
+        <target state="final">Eine unterbrochene Chain bedeutet, dass ein Eintrag außerhalb von Vault-Operationen geändert oder gelöscht wurde. Das kann auf Manipulation oder eine Datenbankwiederherstellung aus einem inkonsistenten Backup hinweisen. Der Pruefbericht zeigt genau, welche Eintraege betroffen sind.</target>
       </segment>
     </unit>
     <unit id="help.faq.title">
       <segment>
         <source>Frequently asked questions</source>
+        <target state="final">Häufige Fragen</target>
       </segment>
     </unit>
     <unit id="help.faq.site_config.question">
       <segment>
         <source>Can I use vault secrets in site configuration YAML?</source>
+        <target state="final">Kann ich Vault-Secrets in der Site-Konfiguration YAML verwenden?</target>
       </segment>
     </unit>
     <unit id="help.faq.site_config.answer">
       <segment>
         <source>Yes. Use the %vault(identifier)% syntax in your config/sites/*/config.yaml. Values are resolved at runtime, so they never appear in plain text in files.</source>
+        <target state="final">Ja. Verwenden Sie die Syntax %vault(identifier)% in config/sites/*/config.yaml. Werte werden zur Laufzeit aufgeloest und erscheinen daher nie als Klartext in Dateien.</target>
       </segment>
     </unit>
     <unit id="help.faq.lost_key.question">
       <segment>
         <source>What happens if I lose the master key?</source>
+        <target state="final">Was passiert, wenn ich den Master-Key verliere?</target>
       </segment>
     </unit>
     <unit id="help.faq.lost_key.answer">
       <segment>
         <source>Without the master key, encrypted secrets cannot be recovered. This is by design — the security of envelope encryption depends on the master key. Always back up your master key separately from the database.</source>
+        <target state="final">Ohne Master-Key können verschlüsselte Secrets nicht wiederhergestellt werden. Das ist beabsichtigt - die Sicherheit der Envelope-Verschlüsselung hängt vom Master-Key ab. Sichern Sie den Master-Key immer getrennt von der Datenbank.</target>
       </segment>
     </unit>
     <unit id="help.faq.editors.question">
       <segment>
         <source>Can editors access secrets?</source>
+        <target state="final">Können Redakteure auf Secrets zugreifen?</target>
       </segment>
     </unit>
     <unit id="help.faq.editors.answer">
       <segment>
         <source>The vault backend module is restricted to administrators. However, editors can interact with vault-backed TCA fields (e.g., renderType=vaultSecret) without seeing the actual values — they enter values which are encrypted automatically.</source>
+        <target state="final">Das Vault-Backend-Modul ist auf Administratoren beschraenkt. Redakteure können jedoch mit Vault-gestuetzten TCA-Feldern (z. B. renderType=vaultSecret) arbeiten, ohne die eigentlichen Werte zu sehen - eingegebene Werte werden automatisch verschlüsselt.</target>
       </segment>
     </unit>
     <unit id="help.faq.cicd.question">
       <segment>
         <source>How do I rotate secrets in a CI/CD pipeline?</source>
+        <target state="final">Wie rotiere ich Secrets in einer CI/CD-Pipeline?</target>
       </segment>
     </unit>
     <unit id="help.faq.cicd.answer.intro">
       <segment>
         <source>Use the CLI commands in your deployment scripts:</source>
+        <target state="final">Verwenden Sie die CLI-Befehle in Ihren Deployment-Skripten:</target>
       </segment>
     </unit>
     <unit id="help.faq.cicd.answer.outro">
       <segment>
         <source>Ensure the TYPO3_VAULT_MASTER_KEY environment variable is available in your CI/CD environment.</source>
+        <target state="final">Stellen Sie sicher, dass die Umgebungsvariable TYPO3_VAULT_MASTER_KEY in Ihrer CI/CD-Umgebung verfuegbar ist.</target>
       </segment>
     </unit>
     <unit id="migration.index.description">
       <segment>
         <source>This wizard helps you detect and migrate plaintext secrets from your database and configuration to the secure vault.</source>
+        <target state="final">Dieser Assistent hilft Ihnen, Klartext-Secrets aus Datenbank und Konfiguration zu erkennen und in den sicheren Vault zu migrieren.</target>
       </segment>
     </unit>
     <unit id="migration.index.how_it_works">
       <segment>
         <source>How it works</source>
+        <target state="final">Funktionsweise</target>
       </segment>
     </unit>
     <unit id="migration.index.step.scan">
       <segment>
         <source>The system scans your database columns and extension configuration for values that look like secrets (API keys, passwords, tokens).</source>
+        <target state="final">Das System scannt Datenbankspalten und Extension-Konfiguration nach Werten, die wie Secrets aussehen (API-Schlüssel, Passwörter, Tokens).</target>
       </segment>
     </unit>
     <unit id="migration.index.step.review">
       <segment>
         <source>You review the detected secrets and select which ones to migrate.</source>
+        <target state="final">Sie prüfen die erkannten Secrets und waehlen aus, welche migriert werden sollen.</target>
       </segment>
     </unit>
     <unit id="migration.index.step.configure">
       <segment>
         <source>Set migration options like identifier patterns and ownership.</source>
+        <target state="final">Legen Sie Migrationsoptionen wie Bezeichnermuster und Eigentümer fest.</target>
       </segment>
     </unit>
     <unit id="migration.index.step.execute">
       <segment>
         <source>The selected secrets are encrypted and stored in the vault, and database columns are updated with vault references.</source>
+        <target state="final">Die ausgewählten Secrets werden verschlüsselt und im Vault gespeichert; Datenbankspalten werden mit Vault-Referenzen aktualisiert.</target>
       </segment>
     </unit>
     <unit id="migration.index.step.verify">
       <segment>
         <source>Confirm that the migration completed successfully.</source>
+        <target state="final">Bestaetigen Sie, dass die Migration erfolgreich abgeschlossen wurde.</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.title">
       <segment>
         <source>What is detected?</source>
+        <target state="final">Was wird erkannt?</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.database.title">
       <segment>
         <source>Database Columns</source>
+        <target state="final">Datenbankspalten</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.database.subtitle">
       <segment>
         <source>Columns with names suggesting secrets</source>
+        <target state="final">Spalten mit Namen, die auf Secrets hinweisen</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.patterns.title">
       <segment>
         <source>Known API Key Formats</source>
+        <target state="final">Bekannte API-Schlüsselformate</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.patterns.subtitle">
       <segment>
         <source>Values matching patterns for</source>
+        <target state="final">Werte mit Mustern für</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.patterns.list">
       <segment>
         <source>Stripe, AWS, Google API keys</source>
+        <target state="final">Stripe-, AWS- und Google-API-Schlüssel</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.patterns.github">
       <segment>
         <source>GitHub tokens (PAT, OAuth)</source>
+        <target state="final">GitHub-Tokens (PAT, OAuth)</target>
       </segment>
     </unit>
     <unit id="migration.index.detected.patterns.other">
       <segment>
         <source>Slack, SendGrid, Twilio tokens</source>
+        <target state="final">Slack-, SendGrid- und Twilio-Tokens</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.title">
       <segment>
         <source>Important Notes</source>
+        <target state="final">Wichtige Hinweise</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.backup">
       <segment>
         <source>Always create a database backup before running migrations.</source>
+        <target state="final">Erstellen Sie vor Migrationen immer ein Datenbank-Backup.</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.test">
       <segment>
         <source>Run the scan on a test system first to review what will be detected.</source>
+        <target state="final">Fuehren Sie den Scan zuerst auf einem Testsystem aus, um die Erkennung zu prüfen.</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.false_positives">
       <segment>
         <source>Not all detected values are actual secrets. Review carefully before migrating.</source>
+        <target state="final">Nicht alle erkannten Werte sind tatsächlich Secrets. Vor der Migration sorgfältig prüfen.</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.hashes">
       <segment>
         <source>Hashed passwords (bcrypt, argon2) are automatically excluded as they are already secure.</source>
+        <target state="final">Gehashte Passwörter (bcrypt, argon2) werden automatisch ausgeschlossen, da sie bereits sicher sind.</target>
       </segment>
     </unit>
     <unit id="migration.index.config_secrets.title">
       <segment>
         <source>Configuration Secrets</source>
+        <target state="final">Konfigurations-Secrets</target>
       </segment>
     </unit>
     <unit id="migration.index.config_secrets.text">
       <segment>
         <source>Configuration secrets (in LocalConfiguration.php or extension settings) are detected but must be migrated manually. Replace the value with %vault(identifier)% after storing the secret in the vault.</source>
+        <target state="final">Konfigurations-Secrets (in LocalConfiguration.php oder Extension-Einstellungen) werden erkannt, müssen aber manuell migriert werden. Ersetzen Sie den Wert durch %vault(identifier)%, nachdem Sie das Secret im Vault gespeichert haben.</target>
       </segment>
     </unit>
     <unit id="migration.index.start_scan">
       <segment>
         <source>Start Scan</source>
+        <target state="final">Scan starten</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.backup.label">
       <segment>
         <source>Backup first</source>
+        <target state="final">Zuerst Backup</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.test.label">
       <segment>
         <source>Test environment</source>
+        <target state="final">Testumgebung</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.false_positives.label">
       <segment>
         <source>False positives</source>
+        <target state="final">False Positives</target>
       </segment>
     </unit>
     <unit id="migration.index.notes.hashes.label">
       <segment>
         <source>Password hashes</source>
+        <target state="final">Passwort-Hashes</target>
       </segment>
     </unit>
     <unit id="migration.scan.title">
       <segment>
         <source>Step 1: Scan for Plaintext Secrets</source>
+        <target state="final">Schritt 1: Nach Klartext-Secrets scannen</target>
       </segment>
     </unit>
     <unit id="migration.scan.description">
       <segment>
         <source>The system has scanned your TYPO3 installation for potential plaintext secrets that should be migrated to the vault.</source>
+        <target state="final">Das System hat Ihre TYPO3-Installation nach potenziellen Klartext-Secrets gescannt, die in den Vault migriert werden sollten.</target>
       </segment>
     </unit>
     <unit id="migration.scan.potential_secrets">
       <segment>
         <source>Potential secrets detected</source>
+        <target state="final">Potenzielle Secrets erkannt</target>
       </segment>
     </unit>
     <unit id="migration.scan.in_database">
       <segment>
         <source>In database columns</source>
+        <target state="final">In Datenbankspalten</target>
       </segment>
     </unit>
     <unit id="migration.scan.in_config">
       <segment>
         <source>In configuration</source>
+        <target state="final">In der Konfiguration</target>
       </segment>
     </unit>
     <unit id="migration.scan.by_severity">
       <segment>
         <source>Secrets by Severity</source>
+        <target state="final">Secrets nach Schweregrad</target>
       </segment>
     </unit>
     <unit id="migration.scan.severity.critical">
       <segment>
         <source>Critical</source>
+        <target state="final">Kritisch</target>
       </segment>
     </unit>
     <unit id="migration.scan.severity.high">
       <segment>
         <source>High</source>
+        <target state="final">Hoch</target>
       </segment>
     </unit>
     <unit id="migration.scan.severity.medium">
       <segment>
         <source>Medium</source>
+        <target state="final">Mittel</target>
       </segment>
     </unit>
     <unit id="migration.scan.severity.low">
       <segment>
         <source>Low</source>
+        <target state="final">Niedrig</target>
       </segment>
     </unit>
     <unit id="migration.scan.found">
       <segment>
         <source>found</source>
+        <target state="final">gefunden</target>
       </segment>
     </unit>
     <unit id="migration.scan.col.location">
       <segment>
         <source>Location</source>
+        <target state="final">Ort</target>
       </segment>
     </unit>
     <unit id="migration.scan.col.patterns">
       <segment>
         <source>Patterns</source>
+        <target state="final">Muster</target>
       </segment>
     </unit>
     <unit id="migration.scan.col.records">
       <segment>
         <source>Records</source>
+        <target state="final">Datensätze</target>
       </segment>
     </unit>
     <unit id="migration.scan.records">
       <segment>
         <source>records</source>
+        <target state="final">Datensätze</target>
       </segment>
     </unit>
     <unit id="migration.scan.patterns.hint">
       <segment>
         <source>Known API key formats (Stripe, AWS, GitHub, etc.). "—" means detected by field name only.</source>
+        <target state="final">Bekannte API-Schlüsselformate (Stripe, AWS, GitHub usw.). "-" bedeutet: nur anhand des Feldnamens erkannt.</target>
       </segment>
     </unit>
     <unit id="migration.scan.records.hint">
       <segment>
         <source>Database records affected. "n/a" for configuration secrets (must be migrated manually).</source>
+        <target state="final">Betroffene Datenbankdatensaetze. "n/a" für Konfigurations-Secrets (müssen manuell migriert werden).</target>
       </segment>
     </unit>
     <unit id="migration.scan.back">
       <segment>
         <source>Back</source>
+        <target state="final">Zurück</target>
       </segment>
     </unit>
     <unit id="migration.scan.rescan">
       <segment>
         <source>Rescan</source>
+        <target state="final">Erneut scannen</target>
       </segment>
     </unit>
     <unit id="migration.scan.continue">
       <segment>
         <source>Continue to Review (%d database secrets)</source>
+        <target state="final">Weiter zur Prüfung (%d Datenbank-Secrets)</target>
       </segment>
     </unit>
     <unit id="migration.scan.no_database_secrets.title">
       <segment>
         <source>No Database Secrets to Migrate</source>
+        <target state="final">Keine Datenbank-Secrets zu migrieren</target>
       </segment>
     </unit>
     <unit id="migration.scan.no_database_secrets.text">
       <segment>
         <source>Only configuration secrets were detected. These must be migrated manually by updating your configuration to use %vault(identifier)% references. See the documentation for details.</source>
+        <target state="final">Es wurden nur Konfigurations-Secrets erkannt. Diese müssen manuell migriert werden, indem Ihre Konfiguration auf %vault(identifier)%-Referenzen umgestellt wird. Details finden Sie in der Dokumentation.</target>
       </segment>
     </unit>
     <unit id="migration.scan.no_secrets.title">
       <segment>
         <source>No Plaintext Secrets Detected</source>
+        <target state="final">Keine Klartext-Secrets erkannt</target>
       </segment>
     </unit>
     <unit id="migration.scan.no_secrets.text">
       <segment>
         <source>Great! No potential plaintext secrets were found in your database or configuration. Your sensitive data appears to be properly protected.</source>
+        <target state="final">Gut. In Datenbank oder Konfiguration wurden keine potenziellen Klartext-Secrets gefunden. Ihre sensiblen Daten scheinen korrekt geschuetzt zu sein.</target>
       </segment>
     </unit>
     <unit id="migration.review.title">
       <segment>
         <source>Step 2: Review and Select Secrets</source>
+        <target state="final">Schritt 2: Secrets prüfen und auswählen</target>
       </segment>
     </unit>
     <unit id="migration.review.description">
       <segment>
         <source>Select which database secrets you want to migrate to the vault. Configuration secrets must be migrated manually.</source>
+        <target state="final">Waehlen Sie aus, welche Datenbank-Secrets in den Vault migriert werden sollen. Konfigurations-Secrets müssen manuell migriert werden.</target>
       </segment>
     </unit>
     <unit id="migration.review.db_only.title">
       <segment>
         <source>Database Secrets Only</source>
+        <target state="final">Nur Datenbank-Secrets</target>
       </segment>
     </unit>
     <unit id="migration.review.db_only.text">
       <segment>
         <source>Only database secrets can be migrated via this wizard. Configuration secrets need to be updated manually to use %vault(identifier)% references.</source>
+        <target state="final">Nur Datenbank-Secrets können mit diesem Assistenten migriert werden. Konfigurations-Secrets müssen manuell auf %vault(identifier)%-Referenzen umgestellt werden.</target>
       </segment>
     </unit>
     <unit id="migration.review.select_all">
       <segment>
         <source>Select all</source>
+        <target state="final">Alle auswählen</target>
       </segment>
     </unit>
     <unit id="migration.review.col.location">
       <segment>
         <source>Location</source>
+        <target state="final">Ort</target>
       </segment>
     </unit>
     <unit id="migration.review.col.records">
       <segment>
         <source>Records</source>
+        <target state="final">Datensätze</target>
       </segment>
     </unit>
     <unit id="migration.review.col.severity">
       <segment>
         <source>Severity</source>
+        <target state="final">Schweregrad</target>
       </segment>
     </unit>
     <unit id="migration.review.col.patterns">
       <segment>
         <source>Patterns</source>
+        <target state="final">Muster</target>
       </segment>
     </unit>
     <unit id="migration.review.patterns.hint">
       <segment>
         <source>Known API key formats (Stripe, AWS, GitHub, etc.). "—" means detected by field name only.</source>
+        <target state="final">Bekannte API-Schlüsselformate (Stripe, AWS, GitHub usw.). "-" bedeutet: nur anhand des Feldnamens erkannt.</target>
       </segment>
     </unit>
     <unit id="migration.review.back_to_scan">
       <segment>
         <source>Back to Scan</source>
+        <target state="final">Zurück zum Scan</target>
       </segment>
     </unit>
     <unit id="migration.review.configure_selected">
       <segment>
         <source>Configure Selected</source>
+        <target state="final">Auswahl konfigurieren</target>
       </segment>
     </unit>
     <unit id="migration.review.no_secrets.title">
       <segment>
         <source>No Database Secrets Found</source>
+        <target state="final">Keine Datenbank-Secrets gefunden</target>
       </segment>
     </unit>
     <unit id="migration.review.no_secrets.text">
       <segment>
         <source>No database secrets were found to migrate. The scan may have detected only configuration secrets, which must be migrated manually by updating your configuration to use %vault(identifier)% references.</source>
+        <target state="final">Es wurden keine zu migrierenden Datenbank-Secrets gefunden. Der Scan hat möglicherweise nur Konfigurations-Secrets erkannt, die manuell auf %vault(identifier)%-Referenzen umgestellt werden müssen.</target>
       </segment>
     </unit>
     <unit id="migration.configure.title">
       <segment>
         <source>Step 3: Configure Migration</source>
+        <target state="final">Schritt 3: Migration konfigurieren</target>
       </segment>
     </unit>
     <unit id="migration.configure.description">
       <segment>
         <source>Review the migration settings for each selected secret. The identifier pattern determines how secrets will be stored in the vault.</source>
+        <target state="final">Prüfen Sie die Migrationseinstellungen für jedes ausgewählte Secret. Das Bezeichnermuster legt fest, wie Secrets im Vault gespeichert werden.</target>
       </segment>
     </unit>
     <unit id="migration.configure.warning.title">
       <segment>
         <source>Database Modification</source>
+        <target state="final">Datenbankaenderung</target>
       </segment>
     </unit>
     <unit id="migration.configure.warning.text">
       <segment>
         <source>This will modify your database. Make sure you have a backup before proceeding.</source>
+        <target state="final">Dies ändert Ihre Datenbank. Stellen Sie sicher, dass vor dem Fortfahren ein Backup vorhanden ist.</target>
       </segment>
     </unit>
     <unit id="migration.configure.col.table">
       <segment>
         <source>Table</source>
+        <target state="final">Tabelle</target>
       </segment>
     </unit>
     <unit id="migration.configure.col.column">
       <segment>
         <source>Column</source>
+        <target state="final">Spalte</target>
       </segment>
     </unit>
     <unit id="migration.configure.col.identifier_pattern">
       <segment>
         <source>Identifier Pattern</source>
+        <target state="final">Bezeichnermuster</target>
       </segment>
     </unit>
     <unit id="migration.configure.pattern_help">
       <segment>
         <source>Use {uid} as placeholder for record UID</source>
+        <target state="final">{uid} als Platzhalter für die Datensatz-UID verwenden</target>
       </segment>
     </unit>
     <unit id="migration.configure.options.title">
       <segment>
         <source>Migration Options</source>
+        <target state="final">Migrationsoptionen</target>
       </segment>
     </unit>
     <unit id="migration.configure.options.clear_originals">
       <segment>
         <source>Replace original values with vault identifiers</source>
+        <target state="final">Originalwerte durch Vault-Bezeichner ersetzen</target>
       </segment>
     </unit>
     <unit id="migration.configure.options.clear_originals.help">
       <segment>
         <source>When enabled, the original plaintext values in the database will be replaced with vault identifiers. This is the recommended approach for production environments.</source>
+        <target state="final">Wenn aktiviert, werden die urspruenglichen Klartextwerte in der Datenbank durch Vault-Bezeichner ersetzt. Dies ist der empfohlene Ansatz für Produktionsumgebungen.</target>
       </segment>
     </unit>
     <unit id="migration.configure.back_to_review">
       <segment>
         <source>Back to Review</source>
+        <target state="final">Zurück zur Prüfung</target>
       </segment>
     </unit>
     <unit id="migration.configure.execute">
       <segment>
         <source>Execute Migration</source>
+        <target state="final">Migration ausführen</target>
       </segment>
     </unit>
     <unit id="migration.configure.warning.label">
       <segment>
         <source>Warning:</source>
+        <target state="final">Warnung:</target>
       </segment>
     </unit>
     <unit id="migration.verify.title">
       <segment>
         <source>Step 5: Migration Results</source>
+        <target state="final">Schritt 5: Migrationsergebnisse</target>
       </segment>
     </unit>
     <unit id="migration.verify.secrets_migrated">
       <segment>
         <source>Secrets migrated</source>
+        <target state="final">Secrets migriert</target>
       </segment>
     </unit>
     <unit id="migration.verify.failed">
       <segment>
         <source>Failed</source>
+        <target state="final">Fehlgeschlagen</target>
       </segment>
     </unit>
     <unit id="migration.verify.details.title">
       <segment>
         <source>Migration Details</source>
+        <target state="final">Migrationsdetails</target>
       </segment>
     </unit>
     <unit id="migration.verify.col.table">
       <segment>
         <source>Table</source>
+        <target state="final">Tabelle</target>
       </segment>
     </unit>
     <unit id="migration.verify.col.column">
       <segment>
         <source>Column</source>
+        <target state="final">Spalte</target>
       </segment>
     </unit>
     <unit id="migration.verify.col.migrated">
       <segment>
         <source>Migrated</source>
+        <target state="final">Migriert</target>
       </segment>
     </unit>
     <unit id="migration.verify.col.skipped">
       <segment>
         <source>Skipped</source>
+        <target state="final">Übersprungen</target>
       </segment>
     </unit>
     <unit id="migration.verify.col.failed">
       <segment>
         <source>Failed</source>
+        <target state="final">Fehlgeschlagen</target>
       </segment>
     </unit>
     <unit id="migration.verify.col.status">
       <segment>
         <source>Status</source>
+        <target state="final">Status</target>
       </segment>
     </unit>
     <unit id="migration.verify.status.error">
       <segment>
         <source>Error</source>
+        <target state="final">Fehler</target>
       </segment>
     </unit>
     <unit id="migration.verify.status.partial">
       <segment>
         <source>Partial</source>
+        <target state="final">Teilweise</target>
       </segment>
     </unit>
     <unit id="migration.verify.status.complete">
       <segment>
         <source>Complete</source>
+        <target state="final">Vollständig</target>
       </segment>
     </unit>
     <unit id="migration.verify.db_updated.title">
       <segment>
         <source>Database Updated</source>
+        <target state="final">Datenbank aktualisiert</target>
       </segment>
     </unit>
     <unit id="migration.verify.db_updated.text">
       <segment>
         <source>Original plaintext values have been replaced with vault identifiers in the database.</source>
+        <target state="final">Urspruengliche Klartextwerte wurden in der Datenbank durch Vault-Bezeichner ersetzt.</target>
       </segment>
     </unit>
     <unit id="migration.verify.next_steps.title">
       <segment>
         <source>Next Steps</source>
+        <target state="final">Nächste Schritte</target>
       </segment>
     </unit>
     <unit id="migration.verify.next_steps.view">
       <segment>
         <source>View migrated secrets</source>
+        <target state="final">Migrierte Secrets anzeigen</target>
       </segment>
     </unit>
     <unit id="migration.verify.next_steps.view.suffix">
       <segment>
         <source>in the Secrets Manager</source>
+        <target state="final">im Secret-Manager</target>
       </segment>
     </unit>
     <unit id="migration.verify.next_steps.update_code">
       <segment>
         <source>Update your extension code to use VaultFieldResolver::resolveFields() to retrieve secrets</source>
+        <target state="final">Aktualisieren Sie Ihren Extension-Code, um Secrets mit VaultFieldResolver::resolveFields() abzurufen</target>
       </segment>
     </unit>
     <unit id="migration.verify.next_steps.test">
       <segment>
         <source>Test that your application still works correctly with the migrated secrets</source>
+        <target state="final">Testen Sie, ob Ihre Anwendung mit den migrierten Secrets weiterhin korrekt funktioniert</target>
       </segment>
     </unit>
     <unit id="migration.verify.next_steps.rescan">
       <segment>
         <source>Consider running another scan to check for any remaining plaintext secrets</source>
+        <target state="final">Fuehren Sie gegebenenfalls einen weiteren Scan aus, um verbleibende Klartext-Secrets zu finden</target>
       </segment>
     </unit>
     <unit id="migration.verify.run_another_scan">
       <segment>
         <source>Run Another Scan</source>
+        <target state="final">Weiteren Scan ausführen</target>
       </segment>
     </unit>
     <unit id="migration.verify.view_secrets">
       <segment>
         <source>View Secrets</source>
+        <target state="final">Secrets anzeigen</target>
       </segment>
     </unit>
   </file>

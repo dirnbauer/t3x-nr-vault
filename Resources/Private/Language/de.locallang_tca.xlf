@@ -1,189 +1,226 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="de">
   <file id="f1">
     <unit id="tx_nrvault_secret">
       <segment>
         <source>Vault Secret</source>
+        <target state="final">Vault-Secret</target>
       </segment>
     </unit>
     <unit id="tabs.access">
       <segment>
         <source>Access Control</source>
+        <target state="final">Zugriffskontrolle</target>
       </segment>
     </unit>
     <unit id="tabs.settings">
       <segment>
         <source>Settings</source>
+        <target state="final">Einstellungen</target>
       </segment>
     </unit>
     <unit id="tabs.info">
       <segment>
         <source>Information</source>
+        <target state="final">Informationen</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.identifier">
       <segment>
         <source>Identifier</source>
+        <target state="final">Bezeichner</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.identifier.description">
       <segment>
         <source>Unique identifier for this secret (alphanumeric, underscores, dashes)</source>
+        <target state="final">Eindeutiger Bezeichner für dieses Secret (alphanumerisch, Unterstriche, Bindestriche)</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.description">
       <segment>
         <source>Description</source>
+        <target state="final">Beschreibung</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.owner_uid">
       <segment>
         <source>Owner</source>
+        <target state="final">Eigentümer</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.owner_uid.description">
       <segment>
         <source>Backend user who owns this secret</source>
+        <target state="final">Backend-Benutzer, dem dieses Secret gehoert</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.allowed_groups">
       <segment>
         <source>Allowed Groups</source>
+        <target state="final">Erlaubte Gruppen</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.allowed_groups.description">
       <segment>
         <source>Backend groups that can access this secret</source>
+        <target state="final">Backend-Gruppen, die auf dieses Secret zugreifen können</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.context">
       <segment>
         <source>Context</source>
+        <target state="final">Kontext</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.context.description">
       <segment>
         <source>Application context (e.g., production, staging)</source>
+        <target state="final">Application Context (z. B. production, staging)</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.frontend_accessible">
       <segment>
         <source>Frontend Accessible</source>
+        <target state="final">Im Frontend zugänglich</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.frontend_accessible.description">
       <segment>
         <source>Allow this secret to be accessed in frontend context (TypoScript, Fluid)</source>
+        <target state="final">Zugriff auf dieses Secret im Frontend-Kontext erlauben (TypoScript, Fluid)</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.expires_at">
       <segment>
         <source>Expires At</source>
+        <target state="final">Laeuft ab am</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.expires_at.description">
       <segment>
         <source>Optional expiration date for the secret</source>
+        <target state="final">Optionales Ablaufdatum für das Secret</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.metadata">
       <segment>
         <source>Custom Metadata</source>
+        <target state="final">Benutzerdefinierte Metadaten</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.metadata.description">
       <segment>
         <source>Additional metadata as JSON</source>
+        <target state="final">Zusätzliche Metadaten als JSON</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.scope_pid">
       <segment>
         <source>Scope Page</source>
+        <target state="final">Scope-Seite</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.scope_pid.description">
       <segment>
         <source>Page used for multi-site scoping of this secret</source>
+        <target state="final">Seite für Multi-Site-Scoping dieses Secrets</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.version">
       <segment>
         <source>Version</source>
+        <target state="final">Version</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.last_rotated_at">
       <segment>
         <source>Last Rotated</source>
+        <target state="final">Zuletzt rotiert</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.read_count">
       <segment>
         <source>Read Count</source>
+        <target state="final">Lesezugriffe</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.last_read_at">
       <segment>
         <source>Last Read</source>
+        <target state="final">Zuletzt gelesen</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.adapter">
       <segment>
         <source>Storage Adapter</source>
+        <target state="final">Speicheradapter</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.secret_input">
       <segment>
         <source>Secret Value</source>
+        <target state="final">Secret-Wert</target>
       </segment>
     </unit>
     <unit id="tx_nrvault_secret.secret_input.description">
       <segment>
         <source>The encrypted secret value stored in the vault</source>
+        <target state="final">Der im Vault gespeicherte verschlüsselte Secret-Wert</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.placeholder_new">
       <segment>
         <source>Enter secret value</source>
+        <target state="final">Secret-Wert eingeben</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.placeholder_rotate">
       <segment>
         <source>Enter new secret value to rotate</source>
+        <target state="final">Neuen Secret-Wert zur Rotation eingeben</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.help_new">
       <segment>
         <source>Enter the secret value. It will be encrypted when the record is saved.</source>
+        <target state="final">Geben Sie den Secret-Wert ein. Er wird beim Speichern des Datensatzes verschlüsselt.</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.help_rotate">
       <segment>
         <source>Leave empty to keep current secret. Enter a new value to rotate.</source>
+        <target state="final">Leer lassen, um das aktuelle Secret beizubehalten. Einen neuen Wert eingeben, um zu rotieren.</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.current_secret">
       <segment>
         <source>Current Secret</source>
+        <target state="final">Aktuelles Secret</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.new_secret">
       <segment>
         <source>New Secret Value</source>
+        <target state="final">Neuer Secret-Wert</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.secret_value">
       <segment>
         <source>Secret Value</source>
+        <target state="final">Secret-Wert</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.rotate">
       <segment>
         <source>Rotate Secret</source>
+        <target state="final">Secret rotieren</target>
       </segment>
     </unit>
     <unit id="vault_secret_input.no_secret">
       <segment>
         <source>No secret value stored. Enter a value below.</source>
+        <target state="final">Kein Secret-Wert gespeichert. Geben Sie unten einen Wert ein.</target>
       </segment>
     </unit>
   </file>

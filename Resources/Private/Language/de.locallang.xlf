@@ -1,39 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en">
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="de">
   <file id="f1">
     <unit id="vault_secret.placeholder_exists">
       <segment>
         <source>Secret stored in vault (enter new value to update)</source>
+        <target state="final">Secret im Vault gespeichert (neuen Wert eingeben, um zu aktualisieren)</target>
       </segment>
     </unit>
     <unit id="task.orphanCleanup.title">
       <segment>
         <source>Vault Orphan Cleanup</source>
+        <target state="final">Vault-Bereinigung verwaister Secrets</target>
       </segment>
     </unit>
     <unit id="task.orphanCleanup.description">
       <segment>
         <source>Removes vault secrets whose source TCA records have been deleted. Helps maintain vault hygiene and prevent accumulation of unused encrypted data.</source>
+        <target state="final">Entfernt Vault-Secrets, deren TCA-Quelldatensaetze gelöscht wurden. Hilft, den Vault sauber zu halten und ungenutzte verschlüsselte Daten zu vermeiden.</target>
       </segment>
     </unit>
     <unit id="task.orphanCleanup.retentionDays">
       <segment>
         <source>Retention days</source>
+        <target state="final">Aufbewahrungstage</target>
       </segment>
     </unit>
     <unit id="task.orphanCleanup.retentionDays.description">
       <segment>
         <source>Keep orphans for this many days before deletion. Set to 0 to delete immediately. Default: 7 days.</source>
+        <target state="final">Verwaiste Eintraege vor dem Löschen für diese Anzahl Tage behalten. 0 loescht sofort. Standard: 7 Tage.</target>
       </segment>
     </unit>
     <unit id="task.orphanCleanup.tableFilter">
       <segment>
         <source>Table filter</source>
+        <target state="final">Tabellenfilter</target>
       </segment>
     </unit>
     <unit id="task.orphanCleanup.tableFilter.description">
       <segment>
         <source>Optional: Only check secrets from this specific table. Leave empty to check all tables.</source>
+        <target state="final">Optional: Nur Secrets aus dieser Tabelle prüfen. Leer lassen, um alle Tabellen zu prüfen.</target>
       </segment>
     </unit>
   </file>
