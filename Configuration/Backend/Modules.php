@@ -15,9 +15,10 @@ use Netresearch\NrVault\Controller\SecretsController;
 /**
  * Backend module configuration for nr_vault.
  *
- * Parent module with submodules (following TYPO3 styleguide pattern).
- * - Parent shows submodule overview with cards
- * - Submodule selector appears in DocHeader
+ * Parent module with internal hidden sibling routes.
+ * - Parent is a normal visible module in the main navigation
+ * - Internal route modules keep existing route identifiers without rendering
+ *   in the main module navigation
  *
  * Uses 'tools' as parent for v13+v14 compatibility:
  * - v13: 'tools' exists natively as the admin tools group
@@ -25,14 +26,10 @@ use Netresearch\NrVault\Controller\SecretsController;
  *
  * Uses LLL:EXT: label format (compatible with TYPO3 v13+v14)
  *
- * v13 compatibility: 'admin_vault_overview' is registered as first submodule so that
- * v13 (which redirects to the first submodule) shows the overview page.
- * v14 uses 'showSubmoduleOverview' on the parent module for the same effect.
+ * Existing route identifiers stay unchanged for controller and template links.
  */
 return [
     // Parent module - custom overview with usage information
-    // dependsOnSubmodules: true enables the submodule dropdown in DocHeader
-    // showSubmoduleOverview: true prevents redirect to last-used submodule
     'admin_vault' => [
         'parent' => 'tools',
         'position' => ['after' => 'admin_sites'],
@@ -41,11 +38,6 @@ return [
         'path' => '/module/admin/vault',
         'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/overview.xlf',
         'iconIdentifier' => 'module-vault',
-        'appearance' => [
-            'dependsOnSubmodules' => true,
-        ],
-        // v14+: Show overview page for parent module
-        'showSubmoduleOverview' => true,
         'routes' => [
             '_default' => [
                 'target' => OverviewController::class . '::indexAction',
@@ -56,13 +48,10 @@ return [
         ],
     ],
 
-    // Overview submodule - v13 compatibility
-    // In v13, dependsOnSubmodules redirects to the first submodule.
-    // This ensures the overview page is shown instead of secrets.
-    // In v14, showSubmoduleOverview on the parent handles this natively.
+    // Hidden route module for direct links to the overview.
     'admin_vault_overview' => [
-        'parent' => 'admin_vault',
-        'position' => ['before' => '*'],
+        'parent' => 'tools',
+        'position' => ['after' => 'admin_vault'],
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/overview',
@@ -81,9 +70,10 @@ return [
         ],
     ],
 
-    // Secrets submodule
+    // Secrets - hidden sibling route module
     'admin_vault_secrets' => [
-        'parent' => 'admin_vault',
+        'parent' => 'tools',
+        'position' => ['after' => 'admin_vault_overview'],
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/secrets',
@@ -112,9 +102,10 @@ return [
         ],
     ],
 
-    // Audit submodule
+    // Audit - hidden sibling route module
     'admin_vault_audit' => [
-        'parent' => 'admin_vault',
+        'parent' => 'tools',
+        'position' => ['after' => 'admin_vault_secrets'],
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/audit',
@@ -135,10 +126,11 @@ return [
         ],
     ],
 
-    // Migration wizard submodule
+    // Migration wizard - hidden sibling route module
     // Uses handleRequest pattern like TYPO3 core - dispatches based on ?action= query param
     'admin_vault_migration' => [
-        'parent' => 'admin_vault',
+        'parent' => 'tools',
+        'position' => ['after' => 'admin_vault_audit'],
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/admin/vault/migration',
