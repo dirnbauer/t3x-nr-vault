@@ -68,6 +68,9 @@ return [
         'path' => '/module/admin/vault/overview',
         'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/overview_submodule.xlf',
         'iconIdentifier' => 'module-vault',
+        'appearance' => [
+            'renderInModuleMenu' => false,
+        ],
         'routes' => [
             '_default' => [
                 'target' => OverviewController::class . '::indexAction',
@@ -85,6 +88,9 @@ return [
         'workspaces' => 'live',
         'path' => '/module/admin/vault/secrets',
         'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/secrets.xlf',
+        'appearance' => [
+            'renderInModuleMenu' => false,
+        ],
         'routes' => [
             '_default' => [
                 'target' => SecretsController::class . '::listAction',
@@ -113,6 +119,9 @@ return [
         'workspaces' => 'live',
         'path' => '/module/admin/vault/audit',
         'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/audit.xlf',
+        'appearance' => [
+            'renderInModuleMenu' => false,
+        ],
         'routes' => [
             '_default' => [
                 'target' => AuditController::class . '::listAction',
@@ -134,6 +143,9 @@ return [
         'workspaces' => 'live',
         'path' => '/module/admin/vault/migration',
         'labels' => 'LLL:EXT:nr_vault/Resources/Private/Language/Modules/migration.xlf',
+        'appearance' => [
+            'renderInModuleMenu' => false,
+        ],
         'routes' => [
             '_default' => [
                 'target' => MigrationController::class . '::handleRequest',
